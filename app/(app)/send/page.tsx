@@ -52,7 +52,7 @@ function formatDate(iso: string) {
 }
 
 /**
- * Page component for sending AFK tokens.
+ * Page component for sending ACBU tokens.
  */
 export default function SendPage() {
   const opts = useApiOpts();
@@ -192,7 +192,7 @@ export default function SendPage() {
                     <Link key={t.transaction_id} href={`/send/${t.transaction_id}`} className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted">
                       <div className="flex-1 min-w-0"><p className="font-medium text-foreground truncate">Transfer</p><p className="text-xs text-muted-foreground">{formatDate(t.created_at)}</p></div>
                       <div className="text-right">
-                        <p className="font-semibold text-foreground">AFK {formatAmount(t.amount_acbu)}</p>
+                        <p className="font-semibold text-foreground">ACBU {formatAmount(t.amount_acbu)}</p>
                         <Badge variant="outline" className={`mt-1 text-xs ${getStatusColor(t.status)}`}>
                           {t.status === 'completed' && <Check className="mr-1 h-3 w-3" />}
                           {t.status === 'pending' && <AlertCircle className="mr-1 h-3 w-3" />}
@@ -210,7 +210,7 @@ export default function SendPage() {
 
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
         <DialogContent className="max-w-md border-border">
-          <DialogHeader><DialogTitle>Send Money</DialogTitle><DialogDescription>Transfer AFK securely to another wallet</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>Send Money</DialogTitle><DialogDescription>Transfer ACBU securely to another wallet</DialogDescription></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-foreground">Recipient</Label>
@@ -232,11 +232,11 @@ export default function SendPage() {
             <div className="space-y-2">
               <Label className="text-foreground">Amount</Label>
               <div className="flex gap-2">
-                <span className="flex items-center text-muted-foreground font-medium">AFK</span>
+                <span className="flex items-center text-muted-foreground font-medium">ACBU</span>
                 <Input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="border-border text-lg font-semibold" />
               </div>
               {exceedsBalance && <p className="text-xs text-destructive">Insufficient balance.</p>}
-              <p className="text-xs text-muted-foreground">Available: AFK {formatAmount(BALANCE_PLACEHOLDER)}</p>
+              <p className="text-xs text-muted-foreground">Available: ACBU {formatAmount(BALANCE_PLACEHOLDER)}</p>
             </div>
             <div className="space-y-2">
               <Label className="text-foreground">Note (Optional)</Label>
@@ -258,11 +258,11 @@ export default function SendPage() {
             {submitError && <p className="text-sm text-destructive">{submitError}</p>}
             <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">To</p><p className="font-semibold text-foreground truncate">{selectedContact?.alias || selectedContact?.pay_uri || customRecipient || '—'}</p></div>
             <div className="flex items-center justify-center"><div className="rounded-full bg-secondary p-2"><ArrowRight className="h-5 w-5 text-secondary-foreground" /></div></div>
-            <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">Amount</p><p className="text-2xl font-bold text-foreground">AFK {formatAmount(amount)}</p><p className="mt-2 text-xs text-muted-foreground">Network Fee: Free</p></div>
+            <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">Amount</p><p className="text-2xl font-bold text-foreground">ACBU {formatAmount(amount)}</p><p className="mt-2 text-xs text-muted-foreground">Network Fee: Free</p></div>
           </div>
           <div className="flex gap-3">
             <AlertDialogCancel className="flex-1 border-border" disabled={sending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmTransfer} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={sending}>{sending ? 'Sending...' : `Send AFK ${amount}`}</AlertDialogAction>
+            <AlertDialogAction onClick={handleConfirmTransfer} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={sending}>{sending ? 'Sending...' : `Send ACBU ${amount}`}</AlertDialogAction>
           </div>
         </AlertDialogContent>
       </AlertDialog>
@@ -272,7 +272,7 @@ export default function SendPage() {
           <div className="flex flex-col items-center text-center py-6">
             <div className="rounded-full bg-green-100 p-4 mb-4"><Check className="h-8 w-8 text-green-600" /></div>
             <h2 className="text-xl font-bold text-foreground mb-2">Transfer Sent!</h2>
-            <p className="text-muted-foreground mb-4">Your transfer for AFK {formatAmount(lastSentAmount)} is being processed.</p>
+            <p className="text-muted-foreground mb-4">Your transfer for ACBU {formatAmount(lastSentAmount)} is being processed.</p>
             <Badge variant="secondary" className="mb-4">Pending</Badge>
           </div>
         </DialogContent>

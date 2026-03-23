@@ -164,7 +164,7 @@ export default function BillsPage() {
         <div className="mb-5">
           <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
             <p className="text-sm font-medium opacity-90">Available Balance</p>
-            <p className="text-3xl font-bold">AFK {formatAmount(mockBalance)}</p>
+            <p className="text-3xl font-bold">ACBU {formatAmount(mockBalance)}</p>
           </Card>
         </div>
 
@@ -200,7 +200,7 @@ export default function BillsPage() {
                     </p>
                     <div className="flex items-center gap-2">
                        <span className="text-xs text-muted-foreground">
-                        AFK {formatAmount(provider.minAmount)} - AFK {formatAmount(provider.maxAmount)}
+                        ACBU {formatAmount(provider.minAmount)} - ACBU {formatAmount(provider.maxAmount)}
                       </span>
                     </div>
                   </div>
@@ -228,7 +228,7 @@ export default function BillsPage() {
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       )}
                       <p className="font-semibold text-foreground">
-                        -AFK {formatAmount(tx.amount)}
+                        -ACBU {formatAmount(tx.amount)}
                       </p>
                     </div>
                   </div>
@@ -261,7 +261,7 @@ export default function BillsPage() {
             <AlertDialogDescription>
               {paymentStep === 'input' && selectedProvider?.description}
               {paymentStep === 'confirm' &&
-                `Pay AFK ${formatAmount(amount)} to ${selectedProvider?.name}`}
+                `Pay ACBU ${formatAmount(amount)} to ${selectedProvider?.name}`}
               {paymentStep === 'success' &&
                 'Your bill payment has been processed.'}
             </AlertDialogDescription>
@@ -275,7 +275,7 @@ export default function BillsPage() {
                 </label>
                 <div className="flex gap-2">
                   <span className="flex items-center text-muted-foreground">
-                    AFK
+                    ACBU
                   </span>
                   <Input
                     type="number"
@@ -286,7 +286,7 @@ export default function BillsPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Min: AFK {formatAmount(selectedProvider?.minAmount)} | Max: AFK{' '}
+                  Min: ACBU {formatAmount(selectedProvider?.minAmount)} | Max: ACBU{' '}
                   {formatAmount(selectedProvider?.maxAmount)}
                 </p>
               </div>
@@ -316,7 +316,7 @@ export default function BillsPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Amount:</span>
-                <span className="font-medium text-foreground">AFK {formatAmount(amount)}</span>
+                <span className="font-medium text-foreground">ACBU {formatAmount(amount)}</span>
               </div>
               <div className="flex justify-between text-sm border-t border-border pt-2">
                 <span className="text-muted-foreground">Fee:</span>

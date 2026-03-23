@@ -35,7 +35,7 @@ export default function BusinessPage() {
         <div className="grid grid-cols-2 gap-3 mb-6">
           <Card className="border-border p-4">
             <p className="text-xs text-muted-foreground mb-2">Monthly Volume</p>
-            <p className="text-2xl font-bold text-foreground">AFK 145,320</p>
+            <p className="text-2xl font-bold text-foreground">ACBU 145,320</p>
           </Card>
           <Card className="border-border p-4">
             <p className="text-xs text-muted-foreground mb-2">Employees</p>

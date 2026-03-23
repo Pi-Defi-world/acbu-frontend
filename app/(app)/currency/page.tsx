@@ -83,9 +83,9 @@ export default function CurrencyPage() {
         {/* Balance Card */}
         <div className="mb-6">
           <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
-            <p className="text-sm font-medium opacity-90">AFK Balance</p>
-            <p className="text-3xl font-bold mb-2">AFK {formatAmount(mockBalance)}</p>
-            <p className="text-xs opacity-75">≈ AFK {formatAmount(mockBalance * mockRate, 0)}</p>
+            <p className="text-sm font-medium opacity-90">ACBU Balance</p>
+            <p className="text-3xl font-bold mb-2">ACBU {formatAmount(mockBalance)}</p>
+            <p className="text-xs opacity-75">≈ ACBU {formatAmount(mockBalance * mockRate, 0)}</p>
           </Card>
         </div>
 
@@ -107,7 +107,7 @@ export default function CurrencyPage() {
           <TabsContent value="mint" className="px-4 py-6 space-y-4">
             <div>
               <p className="text-sm text-muted-foreground mb-3">
-                Convert USDC to AFK on Stellar
+                Convert USDC to ACBU on Stellar
               </p>
               <Card className="border-border p-4 mb-4">
                 <p className="text-xs text-muted-foreground mb-1">Source</p>
@@ -138,7 +138,7 @@ export default function CurrencyPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  You'll receive: AFK{' '}
+                  You'll receive: ACBU{' '}
                   {mintAmount
                     ? formatAmount(parseFloat(mintAmount) * exchangeRate)
                     : '0.00'}
@@ -164,7 +164,7 @@ export default function CurrencyPage() {
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
               >
                 <ArrowDown className="w-4 h-4 mr-2" />
-                Mint AFK
+                Mint ACBU
               </Button>
             </div>
           </TabsContent>
@@ -173,7 +173,7 @@ export default function CurrencyPage() {
           <TabsContent value="burn" className="px-4 py-6 space-y-4">
             <div>
               <p className="text-sm text-muted-foreground mb-3">
-                Convert AFK to fiat and withdraw
+                Convert ACBU to fiat and withdraw
               </p>
               <Card className="border-border p-4 mb-4">
                 <p className="text-xs text-muted-foreground mb-1">Destination</p>
@@ -194,7 +194,7 @@ export default function CurrencyPage() {
                 </label>
                 <div className="flex gap-2">
                   <span className="flex items-center text-muted-foreground">
-                    AFK
+                    ACBU
                   </span>
                   <Input
                     type="number"
@@ -205,7 +205,7 @@ export default function CurrencyPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Available: AFK {formatAmount(mockBalance)}
+                  Available: ACBU {formatAmount(mockBalance)}
                 </p>
                 {parseFloat(burnAmount || '0') > mockBalance && (
                   <p className="text-xs text-destructive mt-1">
@@ -282,11 +282,11 @@ export default function CurrencyPage() {
 
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">
-                    Amount (AFK)
+                    Amount (ACBU)
                   </label>
                   <div className="flex gap-2">
                     <span className="flex items-center text-muted-foreground">
-                      AFK
+                      ACBU
                     </span>
                     <Input
                       type="number"
@@ -308,7 +308,7 @@ export default function CurrencyPage() {
                           : `${intlCurrency} 0.00`}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        at {intlCurrency} 1.80 per AFK
+                        at {intlCurrency} 1.80 per ACBU
                       </p>
                     </div>
                   </div>
@@ -341,11 +341,11 @@ export default function CurrencyPage() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {activeTab === 'mint' &&
-                `Mint AFK ${formatAmount(parseFloat(mintAmount || '0') * exchangeRate)} from USDC`}
+                `Mint ACBU ${formatAmount(parseFloat(mintAmount || '0') * exchangeRate)} from USDC`}
               {activeTab === 'burn' &&
-                `Burn AFK ${formatAmount(burnAmount)} and withdraw to ${burnDestination}`}
+                `Burn ACBU ${formatAmount(burnAmount)} and withdraw to ${burnDestination}`}
               {activeTab === 'international' &&
-                `Send AFK ${formatAmount(intlAmount)} to ${intlCountry} (${intlCurrency})`}
+                `Send ACBU ${formatAmount(intlAmount)} to ${intlCountry} (${intlCurrency})`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-2">
@@ -353,8 +353,8 @@ export default function CurrencyPage() {
               <span className="text-muted-foreground">Amount:</span>
               <span className="font-medium text-foreground">
                 {activeTab === 'mint' && `$${mintAmount}`}
-                {activeTab === 'burn' && `AFK ${formatAmount(burnAmount)}`}
-                {activeTab === 'international' && `AFK ${formatAmount(intlAmount)}`}
+                {activeTab === 'burn' && `ACBU ${formatAmount(burnAmount)}`}
+                {activeTab === 'international' && `ACBU ${formatAmount(intlAmount)}`}
               </span>
             </div>
             <div className="flex justify-between text-sm border-t border-border pt-2">

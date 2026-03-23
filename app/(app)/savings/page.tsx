@@ -174,7 +174,7 @@ export default function SavingsPage() {
               <h2 className="text-lg font-bold text-foreground">Savings balance (API)</h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
-            <p className="text-3xl font-bold text-foreground mb-1">{positionsLoading ? '—' : `AFK ${formatAmount(positionsBalance)}`}</p>
+            <p className="text-3xl font-bold text-foreground mb-1">{positionsLoading ? '—' : `ACBU ${formatAmount(positionsBalance)}`}</p>
             <div className="flex gap-2 mt-3">
               <Link href="/savings/deposit"><Button size="sm" variant="outline" className="border-border">Deposit</Button></Link>
               <Link href="/savings/withdraw"><Button size="sm" variant="outline" className="border-border">Withdraw</Button></Link>
@@ -189,13 +189,13 @@ export default function SavingsPage() {
               </h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
-            <p className="text-3xl font-bold text-foreground mb-1">AFK 2,500.00</p>
+            <p className="text-3xl font-bold text-foreground mb-1">ACBU 2,500.00</p>
             <p className="text-xs text-muted-foreground mb-3">
               Earning 8% APY interest
             </p>
             <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
               <TrendingUp className="w-3 h-3" />
-              <span>+AFK 16.67 this month</span>
+              <span>+ACBU 16.67 this month</span>
             </div>
           </Card>
 
@@ -239,7 +239,7 @@ export default function SavingsPage() {
                     <div className="px-1 mb-2">
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-xs font-medium text-muted-foreground">
-                          AFK {formatAmount(account.balance)}
+                          ACBU {formatAmount(account.balance)}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {percentage.toFixed(0)}%
@@ -291,7 +291,7 @@ export default function SavingsPage() {
                         {goal.name}
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        Target: AFK {formatAmount(goal.targetAmount)}
+                        Target: ACBU {formatAmount(goal.targetAmount)}
                       </p>
                     </div>
                     <Badge variant="secondary" className="text-xs">
@@ -302,7 +302,7 @@ export default function SavingsPage() {
                   <div className="mb-2">
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-sm font-medium text-foreground">
-                        AFK {formatAmount(goal.currentAmount)}
+                        ACBU {formatAmount(goal.currentAmount)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {progress.toFixed(0)}%
@@ -317,7 +317,7 @@ export default function SavingsPage() {
                   </div>
 
                   <p className="text-xs text-muted-foreground">
-                    AFK {formatAmount(goal.targetAmount - goal.currentAmount)} to go
+                    ACBU {formatAmount(goal.targetAmount - goal.currentAmount)} to go
                   </p>
                 </Card>
               );
@@ -388,7 +388,7 @@ export default function SavingsPage() {
                 <Card className="border-border bg-muted p-3">
                   <p className="text-xs text-muted-foreground mb-1">Balance</p>
                   <p className="text-2xl font-bold text-foreground">
-                    AFK {formatAmount(selectedAccount.balance)}
+                    ACBU {formatAmount(selectedAccount.balance)}
                   </p>
                 </Card>
               </div>
@@ -444,7 +444,7 @@ export default function SavingsPage() {
                 Amount to Deposit
               </Label>
               <div className="flex gap-2">
-                <span className="flex items-center text-muted-foreground">AFK</span>
+                <span className="flex items-center text-muted-foreground">ACBU</span>
                 <Input
                   id="deposit-amount"
                   type="number"
@@ -460,7 +460,7 @@ export default function SavingsPage() {
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-muted-foreground">Monthly Interest*</span>
                 <span className="font-medium text-foreground">
-                  AFK
+                  ACBU
                   {formatAmount(
                     (parseFloat(depositAmount || '0') *
                       (selectedAccount?.apy || 0)) /

@@ -97,7 +97,7 @@ export default function MintPage() {
           </button>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">Mint & Burn</h1>
-            <p className="text-xs text-muted-foreground">Create and redeem AFK</p>
+            <p className="text-xs text-muted-foreground">Create and redeem ACBU</p>
           </div>
         </div>
       </header>
@@ -105,8 +105,8 @@ export default function MintPage() {
       <PageContainer>
         <div className="mb-6">
           <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
-            <p className="text-sm font-medium opacity-90">AFK Balance</p>
-            <p className="text-3xl font-bold mb-2">AFK {formatAmount(BALANCE_PLACEHOLDER)}</p>
+            <p className="text-sm font-medium opacity-90">ACBU Balance</p>
+            <p className="text-3xl font-bold mb-2">ACBU {formatAmount(BALANCE_PLACEHOLDER)}</p>
             <p className="text-xs opacity-75">Native ACBU Currency</p>
           </Card>
         </div>
@@ -120,7 +120,7 @@ export default function MintPage() {
 
           <TabsContent value="mint" className="py-6 space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground mb-3">Convert USDC to AFK on Stellar network</p>
+              <p className="text-sm text-muted-foreground mb-3">Convert USDC to ACBU on Stellar network</p>
               {mintError && <p className="text-sm text-destructive mb-2">{mintError}</p>}
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">USDC amount</label>
@@ -134,14 +134,14 @@ export default function MintPage() {
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Network Fee</span><span className="font-medium text-foreground">See quote</span></div>
               </Card>
               <Button onClick={handleMintConfirm} disabled={!usdcAmount || parseFloat(usdcAmount) <= 0 || !walletAddress.trim()} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6">
-                <ArrowDown className="w-4 h-4 mr-2" />Mint AFK
+                <ArrowDown className="w-4 h-4 mr-2" />Mint ACBU
               </Button>
             </div>
           </TabsContent>
 
           <TabsContent value="burn" className="py-6 space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground mb-3">Redeem AFK for fiat withdrawal</p>
+              <p className="text-sm text-muted-foreground mb-3">Redeem ACBU for fiat withdrawal</p>
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Destination</label>
                 <select value={burnDestination} onChange={(e) => setBurnDestination(e.target.value)} className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background">
@@ -151,14 +151,14 @@ export default function MintPage() {
               <div className="mt-4">
                 <label className="text-sm font-medium text-foreground mb-2 block">Amount to Burn</label>
                 <div className="flex gap-2">
-                  <span className="flex items-center text-muted-foreground font-medium">AFK</span>
+                  <span className="flex items-center text-muted-foreground font-medium">ACBU</span>
                   <Input type="number" placeholder="0.00" value={burnAmount} onChange={(e) => setBurnAmount(e.target.value)} className="border-border text-lg font-semibold" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">Available: AFK {formatAmount(BALANCE_PLACEHOLDER)}</p>
+                <p className="text-xs text-muted-foreground mt-2">Available: ACBU {formatAmount(BALANCE_PLACEHOLDER)}</p>
               </div>
               <Card className="border-border bg-muted p-3 mt-4">
                 <div className="flex justify-between text-sm mb-2"><span className="text-muted-foreground">You'll receive</span><span className="font-medium text-foreground">{burnAmount ? `Local currency (see /burn for details)` : '—'}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Processing Fee</span><span className="font-medium text-foreground">AFK 1.00</span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Processing Fee</span><span className="font-medium text-foreground">ACBU 1.00</span></div>
               </Card>
               <Button onClick={handleBurnConfirm} disabled={!burnAmount || parseFloat(burnAmount) <= 0} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6">
                 <ArrowUp className="w-4 h-4 mr-2" />Burn & Redeem
@@ -182,7 +182,7 @@ export default function MintPage() {
               ) : (
                 <Card className="border-border p-4"><p className="text-muted-foreground">No rates available. Use the API to load rates.</p></Card>
               )}
-              <Card className="border-border bg-muted p-4 mt-6"><p className="text-sm font-semibold text-foreground mb-2">How it works</p><ul className="text-xs text-muted-foreground space-y-2"><li>• Mint converts USDC to native AFK</li><li>• Burn redeems AFK for fiat</li><li>• Rates from backend</li></ul></Card>
+              <Card className="border-border bg-muted p-4 mt-6"><p className="text-sm font-semibold text-foreground mb-2">How it works</p><ul className="text-xs text-muted-foreground space-y-2"><li>• Mint converts USDC to native ACBU</li><li>• Burn redeems ACBU for fiat</li><li>• Rates from backend</li></ul></Card>
             </div>
           </TabsContent>
         </Tabs>
@@ -200,7 +200,7 @@ export default function MintPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-2">
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Amount:</span><span className="font-medium text-foreground">{activeTab === 'mint' ? `USDC ${usdcAmount}` : `AFK ${formatAmount(burnAmount)}`}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Amount:</span><span className="font-medium text-foreground">{activeTab === 'mint' ? `USDC ${usdcAmount}` : `ACBU ${formatAmount(burnAmount)}`}</span></div>
             {activeTab === 'mint' && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Wallet:</span><span className="font-mono text-xs truncate max-w-[200px]">{walletAddress}</span></div>}
           </div>
           <div className="flex gap-2">

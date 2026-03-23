@@ -105,7 +105,7 @@ export default function SmeTransferDetailPage() {
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Amount</span>
-            <span className="font-semibold">AFK {formatAmount(data.amount_acbu as string)}</span>
+            <span className="font-semibold">ACBU {formatAmount(data.amount_acbu as string)}</span>
           </div>
           {createdAt && (
             <div className="flex justify-between text-sm">

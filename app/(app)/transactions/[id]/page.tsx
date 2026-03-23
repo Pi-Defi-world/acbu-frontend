@@ -109,7 +109,7 @@ export default function TransactionDetailPage() {
           {data.amount_acbu != null && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Amount (ACBU)</span>
-              <span className="font-semibold">AFK {formatAmount(data.amount_acbu)}</span>
+              <span className="font-semibold">ACBU {formatAmount(data.amount_acbu)}</span>
             </div>
           )}
           {data.usdc_amount != null && (
