@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
 import type { UserMe } from '@/types/api';
+import Link from 'next/link';
 
 const menuItems = [
   { section: 'Account', items: [{ title: 'Profile', icon: User, href: '/me/profile' }, { title: 'Settings', icon: Settings, href: '/me/settings' }, { title: 'Wallet', icon: Eye, href: '/me/settings/wallet' }] },
@@ -105,7 +106,7 @@ export default function MePage() {
                 {section.items.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <button key={item.href} onClick={() => router.push(item.href)} className="w-full text-left transition-colors active:bg-muted">
+                    <Link key={item.href} href={item.href} className="w-full text-left transition-colors active:bg-muted">
                       <div className="rounded-lg border border-border bg-card p-4 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <Icon className="w-5 h-5 text-primary flex-shrink-0" />
@@ -116,7 +117,7 @@ export default function MePage() {
                           <ArrowRight className="w-4 h-4 text-muted-foreground" />
                         </div>
                       </div>
-                    </button>
+                    </Link>
                   );
                 })}
               </div>
