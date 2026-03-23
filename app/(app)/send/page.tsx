@@ -98,7 +98,7 @@ export default function SendPage() {
     setSubmitError('');
     setSending(true);
     try {
-      await transfersApi.createTransfer({ to, amount_acbu: amount }, opts);
+      await transfersApi.createTransfer({ to, amount_acbu: amount, note }, opts);
       loadTransfers();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
