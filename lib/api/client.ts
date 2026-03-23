@@ -45,6 +45,7 @@ async function request<T>(
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
     signal: opts.signal,
+    credentials: 'include', // Include httpOnly cookies in all requests
   });
   let data: { error?: string; message?: string; details?: unknown };
   const ct = res.headers.get('content-type');
