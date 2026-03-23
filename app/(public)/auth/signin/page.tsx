@@ -85,12 +85,12 @@ export default function SignInPage() {
 
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">
-                Username
+                Username, email, or phone
               </label>
               <Input
                 type="text"
                 autoComplete="username"
-                placeholder="Username"
+                placeholder="Username, email, or phone"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="border-border"
