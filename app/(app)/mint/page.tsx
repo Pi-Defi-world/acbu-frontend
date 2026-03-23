@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
 import * as ratesApi from '@/lib/api/rates';
 import * as mintApi from '@/lib/api/mint';
+import * as burnApi from '@/lib/api/burn';
 import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
 
@@ -37,6 +38,8 @@ export default function MintPage() {
   const [walletAddress, setWalletAddress] = useState('');
   const [burnAmount, setBurnAmount] = useState('');
   const [burnDestination, setBurnDestination] = useState('bank');
+  const [burnAccountNumber, setBurnAccountNumber] = useState('');
+  const [burnError, setBurnError] = useState('');
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [ratesLoading, setRatesLoading] = useState(false);
   const [mintError, setMintError] = useState('');
@@ -72,19 +75,39 @@ export default function MintPage() {
       setExecuting(false);
     }
   };
+  const handleExecuteBurn = async () => {
+    setBurnError('');
+    setExecuting(true);
+    try {
+      const res = await burnApi.burnAcbu(
+        burnAmount,
+        'USD',
+        { account_number: burnAccountNumber.trim(), type: burnDestination === 'mobile' ? 'mobile_money' : 'bank' },
+        opts
+      );
+      setTxId(res.transaction_id);
+      setStep('success');
+    } catch (e) {
+      setBurnError(e instanceof Error ? e.message : 'Burn failed');
+      setStep('input');
+    } finally {
+      setExecuting(false);
+    }
+  };
   const handleExecute = async () => {
     if (activeTab === 'mint') {
       await handleExecuteMint();
-      return;
+    } else {
+      await handleExecuteBurn();
     }
-    await new Promise((r) => setTimeout(r, 500));
-    setStep('success');
   };
   const resetForm = () => {
     setStep('input');
     setUsdcAmount('');
     setWalletAddress('');
     setBurnAmount('');
+    setBurnAccountNumber('');
+    setBurnError('');
     setTxId(null);
   };
 
@@ -142,11 +165,16 @@ export default function MintPage() {
           <TabsContent value="burn" className="py-6 space-y-4">
             <div>
               <p className="text-sm text-muted-foreground mb-3">Redeem AFK for fiat withdrawal</p>
+              {burnError && <p className="text-sm text-destructive mb-2">{burnError}</p>}
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Destination</label>
                 <select value={burnDestination} onChange={(e) => setBurnDestination(e.target.value)} className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background">
                   <option value="bank">Bank Transfer</option><option value="mobile">Mobile Money</option><option value="wallet">Digital Wallet</option>
                 </select>
+              </div>
+              <div className="mt-4">
+                <label className="text-sm font-medium text-foreground mb-2 block">Account Number</label>
+                <Input placeholder="Account / phone number" value={burnAccountNumber} onChange={(e) => setBurnAccountNumber(e.target.value)} className="border-border" />
               </div>
               <div className="mt-4">
                 <label className="text-sm font-medium text-foreground mb-2 block">Amount to Burn</label>
@@ -160,7 +188,7 @@ export default function MintPage() {
                 <div className="flex justify-between text-sm mb-2"><span className="text-muted-foreground">You'll receive</span><span className="font-medium text-foreground">{burnAmount ? `Local currency (see /burn for details)` : '—'}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Processing Fee</span><span className="font-medium text-foreground">AFK 1.00</span></div>
               </Card>
-              <Button onClick={handleBurnConfirm} disabled={!burnAmount || parseFloat(burnAmount) <= 0} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6">
+              <Button onClick={handleBurnConfirm} disabled={!burnAmount || parseFloat(burnAmount) <= 0 || !burnAccountNumber.trim()} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6">
                 <ArrowUp className="w-4 h-4 mr-2" />Burn & Redeem
               </Button>
             </div>
