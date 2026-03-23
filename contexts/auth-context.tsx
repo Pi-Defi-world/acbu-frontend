@@ -3,77 +3,73 @@
 import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
 import * as authApi from '@/lib/api/auth';
 
-const AUTH_STORAGE_KEY = 'acbu_api_key';
+/**
+ * SECURITY: API key is now stored in httpOnly cookie (server-set, JS-inaccessible).
+ * Only user_id is stored in sessionStorage as it's non-sensitive.
+ * Browser automatically includes the httpOnly cookie in all API requests.
+ */
 const USER_ID_KEY = 'acbu_user_id';
 
 interface AuthState {
-  apiKey: string | null;
   userId: string | null;
   isAuthenticated: boolean;
 }
 
 interface AuthContextValue extends AuthState {
-  login: (apiKey: string, userId: string) => void;
+  login: (userId: string) => void;
   logout: () => Promise<void>;
-  setAuth: (apiKey: string | null, userId: string | null) => void;
+  setAuth: (userId: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getStoredAuth(): AuthState {
   if (typeof window === 'undefined') {
-    return { apiKey: null, userId: null, isAuthenticated: false };
+    return { userId: null, isAuthenticated: false };
   }
-  const apiKey = sessionStorage.getItem(AUTH_STORAGE_KEY);
   const userId = sessionStorage.getItem(USER_ID_KEY);
   return {
-    apiKey,
     userId,
-    isAuthenticated: !!apiKey && !!userId,
+    isAuthenticated: !!userId,
   };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({ apiKey: null, userId: null, isAuthenticated: false });
+  const [state, setState] = useState<AuthState>({ userId: null, isAuthenticated: false });
 
   useEffect(() => {
     setState(getStoredAuth());
   }, []);
 
-  const setAuth = useCallback((apiKey: string | null, userId: string | null) => {
+  const setAuth = useCallback((userId: string | null) => {
     if (typeof window !== 'undefined') {
-      if (apiKey && userId) {
-        sessionStorage.setItem(AUTH_STORAGE_KEY, apiKey);
+      if (userId) {
         sessionStorage.setItem(USER_ID_KEY, userId);
       } else {
-        sessionStorage.removeItem(AUTH_STORAGE_KEY);
         sessionStorage.removeItem(USER_ID_KEY);
       }
     }
     setState({
-      apiKey,
       userId,
-      isAuthenticated: !!apiKey && !!userId,
+      isAuthenticated: !!userId,
     });
   }, []);
 
   const login = useCallback(
-    (apiKey: string, userId: string) => {
-      setAuth(apiKey, userId);
+    (userId: string) => {
+      setAuth(userId);
     },
     [setAuth]
   );
 
   const logout = useCallback(async () => {
-    if (state.apiKey) {
-      try {
-        await authApi.signout({ token: state.apiKey });
-      } catch {
-        // ignore network errors; clear local state anyway
-      }
+    try {
+      await authApi.signout();
+    } catch {
+      // ignore network errors; clear local state anyway
     }
-    setAuth(null, null);
-  }, [setAuth, state.apiKey]);
+    setAuth(null);
+  }, [setAuth]);
 
   const value = useMemo(
     () => ({

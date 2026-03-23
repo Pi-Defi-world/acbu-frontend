@@ -35,7 +35,8 @@ export default function TwoFactorPage() {
       }
 
       const result = await authApi.verify2fa(challengeToken, code);
-      login(result.api_key, result.user_id);
+      // API key is now stored in httpOnly cookie by backend; only store userId locally
+      login(result.user_id);
       router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed');

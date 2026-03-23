@@ -47,7 +47,8 @@ export default function SignInPage() {
       }
 
       if ('api_key' in result) {
-        login(result.api_key, result.user_id);
+        // API key is now stored in httpOnly cookie by backend; only store userId locally
+        login(result.user_id);
         router.push('/');
       }
     } catch (err) {
