@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
@@ -15,6 +16,8 @@ export default function GuardiansPage() {
   const [guardians, setGuardians] = useState<GuardianItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [addAddress, setAddAddress] = useState('');
+  const [adding, setAdding] = useState(false);
 
   const load = () => {
     setError('');
@@ -29,6 +32,22 @@ export default function GuardiansPage() {
     setLoading(true);
     load();
   }, [opts.token]);
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addAddress.trim()) return;
+    setAdding(true);
+    setError('');
+    try {
+      await userApi.postGuardian({ address: addAddress.trim() }, opts);
+      setAddAddress('');
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Add failed');
+    } finally {
+      setAdding(false);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -68,16 +87,20 @@ export default function GuardiansPage() {
       </div>
       <PageContainer>
         {error && <p className="text-destructive text-sm mb-3">{error}</p>}
+        <form onSubmit={handleAdd} className="space-y-2 mb-6">
+          <Input placeholder="Guardian address" value={addAddress} onChange={(e) => setAddAddress(e.target.value)} className="border-border" />
+          <Button type="submit" disabled={adding || !addAddress.trim()}>Add guardian</Button>
+        </form>
         <div className="space-y-2">
           {guardians.length === 0 ? (
             <Card className="border-border p-6 text-center">
-              <p className="text-sm text-muted-foreground">No guardians yet. Add recovery guardians from the recovery flow.</p>
+              <p className="text-sm text-muted-foreground">No guardians yet. Add one above.</p>
             </Card>
           ) : (
             guardians.map((g) => (
               <Card key={g.id} className="border-border p-4 flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">Guardian {g.id}</p>
+                  <p className="font-medium text-foreground truncate">{g.id}</p>
                 </div>
                 <Button variant="outline" size="sm" className="border-destructive/30 text-destructive shrink-0" onClick={() => handleDelete(g.id)}>Remove</Button>
               </Card>
