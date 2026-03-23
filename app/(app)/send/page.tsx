@@ -235,7 +235,7 @@ export default function SendPage() {
               <Label className="text-foreground">Amount</Label>
               <div className="flex gap-2">
                 <span className="flex items-center text-muted-foreground font-medium">AFK</span>
-                <Input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="border-border text-lg font-semibold" />
+                <Input type="number" placeholder="0.00" min="0" value={amount} onChange={(e) => { const v = e.target.value; if (v === '' || parseFloat(v) >= 0) setAmount(v); }} onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }} className="border-border text-lg font-semibold" />
               </div>
               {exceedsBalance && <p className="text-xs text-destructive">Insufficient balance.</p>}
               <p className="text-xs text-muted-foreground">Available: AFK {formatAmount(BALANCE_PLACEHOLDER)}</p>
