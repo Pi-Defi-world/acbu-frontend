@@ -11,6 +11,7 @@ import { ArrowRight, Briefcase, Users, PiggyBank, CreditCard, Settings, Zap } fr
 const businessServices = [
   { id: 'sme', title: 'SME Services', description: 'Business accounts, transfers & statements', icon: Briefcase, badge: 'Pro', href: '/sme' },
   { id: 'salary', title: 'Payroll', description: 'Disburse salaries and manage batches', icon: Users, badge: 'New', href: '/salary' },
+  { id: 'campaigns', title: 'Crowdfunding', description: 'Raise funds for projects via Trivela', icon: Zap, badge: 'Alpha', href: '/campaigns/1' },
   { id: 'enterprise', title: 'Enterprise', description: 'Bulk transfers and treasury management', icon: PiggyBank, href: '/enterprise' },
   { id: 'gateway', title: 'Payment Gateway', description: 'Create charges and manage escrow', icon: CreditCard, href: '/gateway' },
 ];
