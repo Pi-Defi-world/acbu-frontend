@@ -24,6 +24,8 @@ import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
 
 const BALANCE_PLACEHOLDER = '—';
+const MINT_NETWORK_FEE_TEXT = 'Estimated at confirmation';
+const BURN_PROCESSING_FEE_TEXT = 'Estimated at confirmation';
 
 /**
  * Mint and Burn page for ACBU tokens.
@@ -131,7 +133,7 @@ export default function MintPage() {
                 <Input placeholder="G..." value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} className="border-border font-mono text-sm" maxLength={56} />
               </div>
               <Card className="border-border bg-muted p-3 mt-4">
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Network Fee</span><span className="font-medium text-foreground">See quote</span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Network Fee</span><span className="font-medium text-foreground">{MINT_NETWORK_FEE_TEXT}</span></div>
               </Card>
               <Button onClick={handleMintConfirm} disabled={!usdcAmount || parseFloat(usdcAmount) <= 0 || !walletAddress.trim()} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6">
                 <ArrowDown className="w-4 h-4 mr-2" />Mint AFK
@@ -158,7 +160,7 @@ export default function MintPage() {
               </div>
               <Card className="border-border bg-muted p-3 mt-4">
                 <div className="flex justify-between text-sm mb-2"><span className="text-muted-foreground">You'll receive</span><span className="font-medium text-foreground">{burnAmount ? `Local currency (see /burn for details)` : '—'}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Processing Fee</span><span className="font-medium text-foreground">AFK 1.00</span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Processing Fee</span><span className="font-medium text-foreground">{BURN_PROCESSING_FEE_TEXT}</span></div>
               </Card>
               <Button onClick={handleBurnConfirm} disabled={!burnAmount || parseFloat(burnAmount) <= 0} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6">
                 <ArrowUp className="w-4 h-4 mr-2" />Burn & Redeem
