@@ -2,11 +2,15 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
 import * as authApi from '@/lib/api/auth';
+import { onAuthError } from '@/lib/api/client';
 
 /**
  * SECURITY: API key is now stored in httpOnly cookie (server-set, JS-inaccessible).
  * Only user_id is stored in sessionStorage as it's non-sensitive.
  * Browser automatically includes the httpOnly cookie in all API requests.
+ * 
+ * 401 Handling: When the httpOnly cookie expires or becomes invalid,
+ * the API client detects 401 responses and triggers auth state cleanup.
  */
 const USER_ID_KEY = 'acbu_user_id';
 
@@ -69,6 +73,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // ignore network errors; clear local state anyway
     }
     setAuth(null);
+  }, [setAuth]);
+
+  // Register 401 error handler: when API returns 401, clear stale auth state
+  useEffect(() => {
+    onAuthError(() => {
+      setAuth(null);
+    });
   }, [setAuth]);
 
   const value = useMemo(

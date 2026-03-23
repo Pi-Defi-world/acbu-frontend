@@ -4,7 +4,7 @@
 
 // Auth
 export interface SigninResponse {
-  api_key: string;
+  api_key?: string;  // Deprecated: now returned via httpOnly cookie only
   user_id: string;
   wallet_created?: boolean;
   passphrase?: string;
