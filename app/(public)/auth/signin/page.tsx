@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,12 +12,20 @@ import * as authApi from '@/lib/api/auth';
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [passcode, setPasscode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    if (searchParams.get('created') === '1') {
+      setSuccess('Account created successfully. Please sign in.');
+    }
+  }, [searchParams]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +75,11 @@ export default function SignInPage() {
               <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
                 <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
+            {success && (
+              <div className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10">
+                <p className="text-sm text-green-600">{success}</p>
               </div>
             )}
 
