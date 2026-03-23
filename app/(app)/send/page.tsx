@@ -72,12 +72,13 @@ export default function SendPage() {
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [submitError, setSubmitError] = useState('');
   const [sending, setSending] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   const loadTransfers = () => {
-    transfersApi.getTransfers(opts).then((data) => setTransfers(data.transfers ?? [])).catch(() => {}).finally(() => setLoadingTransfers(false));
+    transfersApi.getTransfers(opts).then((data) => setTransfers(data.transfers ?? [])).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load transfers')).finally(() => setLoadingTransfers(false));
   };
   const loadContacts = () => {
-    userApi.getContacts(opts).then((data) => setContacts(data.contacts ?? [])).catch(() => {}).finally(() => setLoadingContacts(false));
+    userApi.getContacts(opts).then((data) => setContacts(data.contacts ?? [])).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
   };
   useEffect(() => {
     loadTransfers();
@@ -142,6 +143,7 @@ export default function SendPage() {
       </header>
 
       <PageContainer>
+        {loadError && <p className="text-destructive text-sm mb-3">{loadError}</p>}
         <div className="rounded-lg border border-border bg-gradient-to-br from-primary to-secondary p-5 text-primary-foreground mb-5">
           <p className="text-sm font-medium opacity-90 mb-1">Available Balance</p>
           <p className="text-3xl font-bold">ACBU {formatAmount(BALANCE_PLACEHOLDER)}</p>

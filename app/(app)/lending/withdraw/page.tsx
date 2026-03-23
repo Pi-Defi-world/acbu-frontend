@@ -23,7 +23,9 @@ export default function LendingWithdrawPage() {
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === 'string' && uri.length >= 56) setLender(uri);
-    }).catch(() => {});
+    }).catch((e) => {
+      console.error(e instanceof Error ? e.message : 'Failed to load receive address');
+    });
   }, [opts.token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
