@@ -27,7 +27,7 @@ export default function KYCPage() {
     }).finally(() => setLoading(false));
   }, [opts.token]);
 
-  const kycLevel = applications.some((a) => a.status === 'approved') ? 2 : applications.length > 0 ? 1 : 0;
+  const kycLevel: number = applications.some((a) => a.status === 'approved') ? 2 : applications.length > 0 ? 1 : 0;
   const maxLevel = 3;
 
   const statusColor = (status?: string) => {

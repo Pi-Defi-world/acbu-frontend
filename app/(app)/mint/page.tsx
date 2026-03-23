@@ -21,9 +21,13 @@ import { useApiOpts } from '@/hooks/use-api';
 import * as ratesApi from '@/lib/api/rates';
 import * as mintApi from '@/lib/api/mint';
 import type { RatesResponse } from '@/types/api';
+import { formatAmount } from '@/lib/utils';
 
 const BALANCE_PLACEHOLDER = '—';
 
+/**
+ * Mint and Burn page for ACBU tokens.
+ */
 export default function MintPage() {
   const router = useRouter();
   const opts = useApiOpts();
@@ -102,7 +106,7 @@ export default function MintPage() {
         <div className="mb-6">
           <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
             <p className="text-sm font-medium opacity-90">AFK Balance</p>
-            <p className="text-3xl font-bold mb-2">AFK {BALANCE_PLACEHOLDER}</p>
+            <p className="text-3xl font-bold mb-2">AFK {formatAmount(BALANCE_PLACEHOLDER)}</p>
             <p className="text-xs opacity-75">Native ACBU Currency</p>
           </Card>
         </div>
@@ -150,7 +154,7 @@ export default function MintPage() {
                   <span className="flex items-center text-muted-foreground font-medium">AFK</span>
                   <Input type="number" placeholder="0.00" value={burnAmount} onChange={(e) => setBurnAmount(e.target.value)} className="border-border text-lg font-semibold" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">Available: AFK {BALANCE_PLACEHOLDER}</p>
+                <p className="text-xs text-muted-foreground mt-2">Available: AFK {formatAmount(BALANCE_PLACEHOLDER)}</p>
               </div>
               <Card className="border-border bg-muted p-3 mt-4">
                 <div className="flex justify-between text-sm mb-2"><span className="text-muted-foreground">You'll receive</span><span className="font-medium text-foreground">{burnAmount ? `Local currency (see /burn for details)` : '—'}</span></div>
@@ -188,10 +192,15 @@ export default function MintPage() {
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>{activeTab === 'mint' ? 'Confirm Mint' : 'Confirm Burn'}</AlertDialogTitle>
-            <AlertDialogDescription>{activeTab === 'mint' ? `Mint from USDC ${usdcAmount}` : `Burn AFK ${burnAmount}`}</AlertDialogDescription>
+            <AlertDialogDescription>
+              {activeTab === 'mint' &&
+                `Mint ACBU ${formatAmount(usdcAmount)} from USDC`}
+              {activeTab === 'burn' &&
+                `Burn ACBU ${formatAmount(burnAmount)} and withdraw to bank account`}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-2">
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Amount:</span><span className="font-medium text-foreground">{activeTab === 'mint' ? `USDC ${usdcAmount}` : `AFK ${burnAmount}`}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Amount:</span><span className="font-medium text-foreground">{activeTab === 'mint' ? `USDC ${usdcAmount}` : `AFK ${formatAmount(burnAmount)}`}</span></div>
             {activeTab === 'mint' && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Wallet:</span><span className="font-mono text-xs truncate max-w-[200px]">{walletAddress}</span></div>}
           </div>
           <div className="flex gap-2">

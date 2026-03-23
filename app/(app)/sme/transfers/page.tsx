@@ -9,11 +9,15 @@ import { ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as smeApi from '@/lib/api/sme';
 import type { TransferItem } from '@/types/api';
+import { formatAmount } from '@/lib/utils';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
 }
 
+/**
+ * SME Transfers list page.
+ */
 export default function SmeTransfersPage() {
   const opts = useApiOpts();
   const [transfers, setTransfers] = useState<TransferItem[]>([]);
@@ -62,7 +66,7 @@ export default function SmeTransfersPage() {
                     <p className="text-xs text-muted-foreground">{formatDate(t.created_at)}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="font-semibold text-foreground">AFK {t.amount_acbu ?? '—'}</p>
+                    <p className="font-semibold text-foreground">AFK {formatAmount(t.amount_acbu)}</p>
                     <Badge variant="outline" className="text-xs mt-1">{t.status}</Badge>
                   </div>
                 </Card>

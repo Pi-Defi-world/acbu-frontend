@@ -9,11 +9,15 @@ import { ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
 import * as transfersApi from '@/lib/api/transfers';
+import { formatAmount } from '@/lib/utils';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+/**
+ * Detailed view of a specific transfer by ID.
+ */
 export default function TransferDetailPage() {
   const params = useParams();
   const id = params?.id as string;
@@ -81,7 +85,6 @@ export default function TransferDetailPage() {
   }
 
   const status = (data.status as string) ?? '—';
-  const amount = (data.amount_acbu as string) ?? '—';
   const createdAt = (data.created_at as string) ?? '';
   const completedAt = (data.completed_at as string) ?? '';
   const txHash = (data.blockchain_tx_hash as string) ?? '';
@@ -102,7 +105,7 @@ export default function TransferDetailPage() {
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Amount</span>
-            <span className="font-semibold">AFK {amount}</span>
+            <span className="font-semibold">AFK {formatAmount(data.amount_acbu as string)}</span>
           </div>
           {createdAt && (
             <div className="flex justify-between text-sm">

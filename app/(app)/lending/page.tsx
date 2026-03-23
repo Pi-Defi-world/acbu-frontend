@@ -29,6 +29,7 @@ import { useRouter } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
 import * as lendingApi from '@/lib/api/lending';
+import { formatAmount } from '@/lib/utils';
 
 interface LoanProduct {
   id: string;
@@ -108,6 +109,9 @@ const mockActiveLoan: ActiveLoan = {
   remainingTerm: 18,
 };
 
+/**
+ * Lending and loan management page.
+ */
 export default function LendingPage() {
   const router = useRouter();
   const opts = useApiOpts();
@@ -204,7 +208,7 @@ export default function LendingPage() {
         {(lendingLoading || lendingBalance != null) && (
           <Card className="border-border bg-gradient-to-br from-primary/20 to-secondary/10 p-5 mb-4">
             <h3 className="text-sm font-semibold text-foreground mb-2">Lender balance (API)</h3>
-            <p className="text-2xl font-bold text-foreground">{lendingLoading ? '—' : String(lendingBalance ?? '0')}</p>
+            <p className="text-2xl font-bold text-foreground">{lendingLoading ? '—' : formatAmount(lendingBalance)}</p>
             <div className="flex gap-2 mt-3">
               <Link href="/lending/deposit"><Button size="sm" variant="outline" className="border-border">Deposit</Button></Link>
               <Link href="/lending/withdraw"><Button size="sm" variant="outline" className="border-border">Withdraw</Button></Link>
@@ -238,7 +242,7 @@ export default function LendingPage() {
                   Remaining Balance
                 </p>
                 <p className="text-lg font-bold text-foreground">
-                  AFK {mockActiveLoan.balance.toFixed(2)}
+                  AFK {formatAmount(mockActiveLoan.balance)}
                 </p>
               </div>
               <div>
@@ -246,7 +250,7 @@ export default function LendingPage() {
                   Monthly Payment
                 </p>
                 <p className="text-lg font-bold text-foreground">
-                  AFK {mockActiveLoan.monthlyPayment.toFixed(2)}
+                  AFK {formatAmount(mockActiveLoan.monthlyPayment)}
                 </p>
               </div>
             </div>
@@ -313,8 +317,8 @@ export default function LendingPage() {
                     {product.minRate}% - {product.maxRate}% APR
                   </Badge>
                   <Badge variant="outline" className="text-xs">
-                    AFK {product.minAmount.toLocaleString()} - AFK
-                    {product.maxAmount.toLocaleString()}
+                    AFK {formatAmount(product.minAmount)} - AFK
+                    {formatAmount(product.maxAmount)}
                   </Badge>
                 </div>
               </Card>
@@ -432,7 +436,7 @@ export default function LendingPage() {
                     Min Amount
                   </p>
                   <p className="font-bold text-foreground">
-                    AFK {selectedProduct.minAmount.toLocaleString()}
+                    AFK {formatAmount(selectedProduct.minAmount)}
                   </p>
                 </Card>
                 <Card className="border-border bg-muted p-3">
@@ -440,7 +444,7 @@ export default function LendingPage() {
                     Max Amount
                   </p>
                   <p className="font-bold text-foreground">
-                    AFK {selectedProduct.maxAmount.toLocaleString()}
+                    AFK {formatAmount(selectedProduct.maxAmount)}
                   </p>
                 </Card>
               </div>
@@ -527,8 +531,8 @@ export default function LendingPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  AFK {selectedLoanProduct.minAmount.toLocaleString()} -{' '}
-                  AFK {selectedLoanProduct.maxAmount.toLocaleString()}
+                  AFK {formatAmount(selectedLoanProduct.minAmount)} -{' '}
+                  AFK {formatAmount(selectedLoanProduct.maxAmount)}
                 </p>
               </div>
 
@@ -559,7 +563,7 @@ export default function LendingPage() {
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-muted-foreground">Est. Monthly Payment</span>
                     <span className="font-bold text-foreground">
-                      AFK {monthlyPayment.toFixed(2)}
+                      AFK {formatAmount(monthlyPayment)}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">

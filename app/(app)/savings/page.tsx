@@ -29,6 +29,7 @@ import { useRouter } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
 import * as savingsApi from '@/lib/api/savings';
+import { formatAmount } from '@/lib/utils';
 
 interface SavingsAccount {
   id: string;
@@ -95,6 +96,9 @@ const mockGoals: SavingsGoal[] = [
   },
 ];
 
+/**
+ * Savings management page.
+ */
 export default function SavingsPage() {
   const router = useRouter();
   const opts = useApiOpts();
@@ -112,7 +116,7 @@ export default function SavingsPage() {
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === 'string') setApiUser(uri);
-    }).catch(() => {});
+    }).catch(() => { });
   }, [opts.token]);
   useEffect(() => {
     if (!apiUser) return;
@@ -164,203 +168,201 @@ export default function SavingsPage() {
       {/* Main Content */}
       <PageContainer>
         <div className="space-y-6">
-        {/* API balance */}
-        {(positionsLoading || positionsBalance != null) && (
+          {/* API balance */}
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-lg font-bold text-foreground">Savings balance (API)</h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
-            <p className="text-3xl font-bold text-foreground mb-1">{positionsLoading ? '—' : `AFK ${positionsBalance ?? '0'}`}</p>
+            <p className="text-3xl font-bold text-foreground mb-1">{positionsLoading ? '—' : `AFK ${formatAmount(positionsBalance)}`}</p>
             <div className="flex gap-2 mt-3">
               <Link href="/savings/deposit"><Button size="sm" variant="outline" className="border-border">Deposit</Button></Link>
               <Link href="/savings/withdraw"><Button size="sm" variant="outline" className="border-border">Withdraw</Button></Link>
             </div>
           </Card>
-        )}
 
-        {/* Overview Card */}
-        <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-bold text-foreground">
-              Total Savings
-            </h2>
-            <PiggyBank className="w-5 h-5 text-green-600" />
-          </div>
-          <p className="text-3xl font-bold text-foreground mb-1">AFK 2,500.00</p>
-          <p className="text-xs text-muted-foreground mb-3">
-            Earning 8% APY interest
-          </p>
-          <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
-            <TrendingUp className="w-3 h-3" />
-            <span>+AFK 16.67 this month</span>
-          </div>
-        </Card>
+          {/* Overview Card */}
+          <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-bold text-foreground">
+                Total Savings
+              </h2>
+              <PiggyBank className="w-5 h-5 text-green-600" />
+            </div>
+            <p className="text-3xl font-bold text-foreground mb-1">AFK 2,500.00</p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Earning 8% APY interest
+            </p>
+            <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
+              <TrendingUp className="w-3 h-3" />
+              <span>+AFK 16.67 this month</span>
+            </div>
+          </Card>
 
-        {/* Savings Accounts */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground">
-            Savings Accounts
-          </h3>
-          {savingsAccounts.map((account) => {
-            const percentage =
-              account.balance > 0
-                ? (account.balance / (account.balance + 1000)) * 100
-                : 0;
-            return (
-              <div key={account.id}>
-                <button
-                  onClick={() => handleSelectAccount(account)}
-                  className="w-full text-left mb-2"
-                >
-                  <Card
-                    className={`border-border bg-gradient-to-br ${account.color} p-4 cursor-pointer hover:border-primary/50 transition-all`}
+          {/* Savings Accounts */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-foreground">
+              Savings Accounts
+            </h3>
+            {savingsAccounts.map((account) => {
+              const percentage =
+                account.balance > 0
+                  ? (account.balance / (account.balance + 1000)) * 100
+                  : 0;
+              return (
+                <div key={account.id}>
+                  <button
+                    onClick={() => handleSelectAccount(account)}
+                    className="w-full text-left mb-2"
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="text-primary">{account.icon}</div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-foreground">
-                          {account.apy}%
+                    <Card
+                      className={`border-border bg-gradient-to-br ${account.color} p-4 cursor-pointer hover:border-primary/50 transition-all`}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="text-primary">{account.icon}</div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-foreground">
+                            {account.apy}%
+                          </p>
+                          <p className="text-xs text-muted-foreground">APY</p>
+                        </div>
+                      </div>
+                      <h4 className="font-semibold text-foreground mb-1">
+                        {account.name}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        {account.description}
+                      </p>
+                    </Card>
+                  </button>
+                  {account.balance > 0 && (
+                    <div className="px-1 mb-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          AFK {formatAmount(account.balance)}
                         </p>
-                        <p className="text-xs text-muted-foreground">APY</p>
+                        <p className="text-xs text-muted-foreground">
+                          {percentage.toFixed(0)}%
+                        </p>
+                      </div>
+                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all"
+                          style={{ width: `${percentage}%` }}
+                        />
                       </div>
                     </div>
-                    <h4 className="font-semibold text-foreground mb-1">
-                      {account.name}
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      {account.description}
-                    </p>
-                  </Card>
-                </button>
-                {account.balance > 0 && (
-                  <div className="px-1 mb-2">
+                  )}
+                  <Button
+                    onClick={() => handleDeposit(account)}
+                    variant="outline"
+                    className="w-full border-border text-xs h-8"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Deposit
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Goals Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">
+                Savings Goals
+              </h3>
+              <Button size="sm" variant="outline" className="h-7 border-border bg-transparent">
+                <Plus className="w-3 h-3 mr-1" />
+                New Goal
+              </Button>
+            </div>
+
+            {mockGoals.map((goal) => {
+              const progress = (goal.currentAmount / goal.targetAmount) * 100;
+              return (
+                <Card
+                  key={goal.id}
+                  className="border-border bg-card p-4 cursor-pointer hover:bg-muted transition-colors"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="font-semibold text-foreground">
+                        {goal.name}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Target: AFK {formatAmount(goal.targetAmount)}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {goal.deadline}
+                    </Badge>
+                  </div>
+
+                  <div className="mb-2">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        AFK {account.balance.toFixed(2)}
+                      <p className="text-sm font-medium text-foreground">
+                        AFK {formatAmount(goal.currentAmount)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {percentage.toFixed(0)}%
+                        {progress.toFixed(0)}%
                       </p>
                     </div>
                     <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-primary transition-all"
-                        style={{ width: `${percentage}%` }}
+                        className="h-full bg-accent transition-all"
+                        style={{ width: `${progress}%` }}
                       />
                     </div>
                   </div>
-                )}
-                <Button
-                  onClick={() => handleDeposit(account)}
-                  variant="outline"
-                  className="w-full border-border text-xs h-8"
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Deposit
-                </Button>
-              </div>
-            );
-          })}
-        </div>
 
-        {/* Goals Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">
-              Savings Goals
-            </h3>
-            <Button size="sm" variant="outline" className="h-7 border-border bg-transparent">
-              <Plus className="w-3 h-3 mr-1" />
-              New Goal
-            </Button>
+                  <p className="text-xs text-muted-foreground">
+                    AFK {formatAmount(goal.targetAmount - goal.currentAmount)} to go
+                  </p>
+                </Card>
+              );
+            })}
           </div>
 
-          {mockGoals.map((goal) => {
-            const progress = (goal.currentAmount / goal.targetAmount) * 100;
-            return (
-              <Card
-                key={goal.id}
-                className="border-border bg-card p-4 cursor-pointer hover:bg-muted transition-colors"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h4 className="font-semibold text-foreground">
-                      {goal.name}
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      Target: AFK {goal.targetAmount.toFixed(2)}
-                    </p>
-                  </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {goal.deadline}
-                  </Badge>
+          {/* Benefits Section */}
+          <Card className="border-border bg-card p-5">
+            <h4 className="font-semibold text-foreground mb-3">Why Save with Us?</h4>
+            <div className="space-y-2">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Competitive Rates
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Up to 8% APY on savings
+                  </p>
                 </div>
-
-                <div className="mb-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-medium text-foreground">
-                      AFK {goal.currentAmount.toFixed(2)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {progress.toFixed(0)}%
-                    </p>
-                  </div>
-                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-accent transition-all"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Instant Access
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Withdraw anytime, no penalties
+                  </p>
                 </div>
-
-                <p className="text-xs text-muted-foreground">
-                  AFK {(goal.targetAmount - goal.currentAmount).toFixed(2)} to go
-                </p>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Benefits Section */}
-        <Card className="border-border bg-card p-5">
-          <h4 className="font-semibold text-foreground mb-3">Why Save with Us?</h4>
-          <div className="space-y-2">
-            <div className="flex items-start gap-3">
-              <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Competitive Rates
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Up to 8% APY on savings
-                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Goal Tracking
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Monitor progress toward your goals
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Instant Access
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Withdraw anytime, no penalties
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Goal Tracking
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Monitor progress toward your goals
-                </p>
-              </div>
-            </div>
-          </div>
-        </Card>
+          </Card>
         </div>
       </PageContainer>
 
@@ -386,7 +388,7 @@ export default function SavingsPage() {
                 <Card className="border-border bg-muted p-3">
                   <p className="text-xs text-muted-foreground mb-1">Balance</p>
                   <p className="text-2xl font-bold text-foreground">
-                    AFK {selectedAccount.balance.toFixed(2)}
+                    AFK {formatAmount(selectedAccount.balance)}
                   </p>
                 </Card>
               </div>
@@ -459,12 +461,12 @@ export default function SavingsPage() {
                 <span className="text-muted-foreground">Monthly Interest*</span>
                 <span className="font-medium text-foreground">
                   AFK
-                  {(
+                  {formatAmount(
                     (parseFloat(depositAmount || '0') *
                       (selectedAccount?.apy || 0)) /
                     12 /
                     100
-                  ).toFixed(2)}
+                  )}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">

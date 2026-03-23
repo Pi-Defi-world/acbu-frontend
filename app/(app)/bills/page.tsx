@@ -24,6 +24,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
+import { formatAmount } from '@/lib/utils';
 
 interface BillProvider {
   id: string;
@@ -74,6 +75,9 @@ const billProviders: BillProvider[] = [
   },
 ];
 
+/**
+ * Bill payment and history page.
+ */
 export default function BillsPage() {
   const [activeTab, setActiveTab] = useState<'catalog' | 'history'>('catalog');
   const [selectedProvider, setSelectedProvider] = useState<BillProvider | null>(null);
@@ -160,12 +164,12 @@ export default function BillsPage() {
         <div className="mb-5">
           <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
             <p className="text-sm font-medium opacity-90">Available Balance</p>
-            <p className="text-3xl font-bold">AFK {mockBalance.toFixed(2)}</p>
+            <p className="text-3xl font-bold">AFK {formatAmount(mockBalance)}</p>
           </Card>
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="catalog" onValueChange={(v) => setActiveTab(v as any)}>
+        <Tabs defaultValue="catalog" onValueChange={(v) => setActiveTab(v as 'catalog' | 'history')}>
           <TabsList className="grid w-full grid-cols-2 px-4 gap-2 bg-transparent border-b border-border rounded-none">
             <TabsTrigger value="catalog" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
               Catalog
@@ -195,8 +199,8 @@ export default function BillsPage() {
                       {provider.description}
                     </p>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        AFK {provider.minAmount} - AFK {provider.maxAmount}
+                       <span className="text-xs text-muted-foreground">
+                        AFK {formatAmount(provider.minAmount)} - AFK {formatAmount(provider.maxAmount)}
                       </span>
                     </div>
                   </div>
@@ -224,7 +228,7 @@ export default function BillsPage() {
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       )}
                       <p className="font-semibold text-foreground">
-                        -AFK {tx.amount}
+                        -AFK {formatAmount(tx.amount)}
                       </p>
                     </div>
                   </div>
@@ -257,7 +261,7 @@ export default function BillsPage() {
             <AlertDialogDescription>
               {paymentStep === 'input' && selectedProvider?.description}
               {paymentStep === 'confirm' &&
-                `Pay AFK ${amount} to ${selectedProvider?.name}`}
+                `Pay AFK ${formatAmount(amount)} to ${selectedProvider?.name}`}
               {paymentStep === 'success' &&
                 'Your bill payment has been processed.'}
             </AlertDialogDescription>
@@ -282,8 +286,8 @@ export default function BillsPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Min: AFK {selectedProvider?.minAmount} | Max: AFK{' '}
-                  {selectedProvider?.maxAmount}
+                  Min: AFK {formatAmount(selectedProvider?.minAmount)} | Max: AFK{' '}
+                  {formatAmount(selectedProvider?.maxAmount)}
                 </p>
               </div>
 
@@ -312,7 +316,7 @@ export default function BillsPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Amount:</span>
-                <span className="font-medium text-foreground">AFK {amount}</span>
+                <span className="font-medium text-foreground">AFK {formatAmount(amount)}</span>
               </div>
               <div className="flex justify-between text-sm border-t border-border pt-2">
                 <span className="text-muted-foreground">Fee:</span>
@@ -367,6 +371,7 @@ export default function BillsPage() {
           </div>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </>
   );
 }

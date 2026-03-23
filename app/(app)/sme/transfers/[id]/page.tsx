@@ -9,11 +9,15 @@ import { ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
 import * as smeApi from '@/lib/api/sme';
+import { formatAmount } from '@/lib/utils';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+/**
+ * Detailed view of an SME transfer.
+ */
 export default function SmeTransferDetailPage() {
   const params = useParams();
   const id = params?.id as string;
@@ -101,7 +105,7 @@ export default function SmeTransferDetailPage() {
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Amount</span>
-            <span className="font-semibold">AFK {amount}</span>
+            <span className="font-semibold">AFK {formatAmount(data.amount_acbu as string)}</span>
           </div>
           {createdAt && (
             <div className="flex justify-between text-sm">

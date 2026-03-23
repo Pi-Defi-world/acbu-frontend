@@ -15,6 +15,9 @@ const businessServices = [
   { id: 'gateway', title: 'Payment Gateway', description: 'Create charges and manage escrow', icon: CreditCard, href: '/gateway' },
 ];
 
+/**
+ * Business overview and services page.
+ */
 export default function BusinessPage() {
   const router = useRouter();
 

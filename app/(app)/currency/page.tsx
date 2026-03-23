@@ -16,7 +16,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ArrowDown, ArrowUp, TrendingUp } from 'lucide-react';
+import { formatAmount } from '@/lib/utils';
 
+/**
+ * Currency management hub.
+ */
 export default function CurrencyPage() {
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'international'>(
     'mint'
@@ -80,13 +84,13 @@ export default function CurrencyPage() {
         <div className="mb-6">
           <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
             <p className="text-sm font-medium opacity-90">AFK Balance</p>
-            <p className="text-3xl font-bold mb-2">AFK {mockBalance.toFixed(2)}</p>
-            <p className="text-xs opacity-75">≈ AFK {(mockBalance * mockRate).toLocaleString()}</p>
+            <p className="text-3xl font-bold mb-2">AFK {formatAmount(mockBalance)}</p>
+            <p className="text-xs opacity-75">≈ AFK {formatAmount(mockBalance * mockRate, 0)}</p>
           </Card>
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="mint" className="w-full" onValueChange={(v) => setActiveTab(v as any)}>
+        <Tabs defaultValue="mint" className="w-full" onValueChange={(v) => setActiveTab(v as 'mint' | 'burn' | 'international')}>
           <TabsList className="grid w-full grid-cols-3 px-4 gap-2 bg-transparent border-b border-border rounded-none">
             <TabsTrigger value="mint" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
               Mint
@@ -136,7 +140,7 @@ export default function CurrencyPage() {
                 <p className="text-xs text-muted-foreground mt-2">
                   You'll receive: AFK{' '}
                   {mintAmount
-                    ? (parseFloat(mintAmount) * exchangeRate).toFixed(2)
+                    ? formatAmount(parseFloat(mintAmount) * exchangeRate)
                     : '0.00'}
                 </p>
               </div>
@@ -201,7 +205,7 @@ export default function CurrencyPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Available: AFK {mockBalance.toFixed(2)}
+                  Available: AFK {formatAmount(mockBalance)}
                 </p>
                 {parseFloat(burnAmount || '0') > mockBalance && (
                   <p className="text-xs text-destructive mt-1">
@@ -300,7 +304,7 @@ export default function CurrencyPage() {
                     <div className="text-sm">
                       <p className="font-medium text-foreground">
                         {intlAmount
-                          ? `${intlCurrency} ${(parseFloat(intlAmount) * 1.8).toFixed(2)}`
+                          ? `${intlCurrency} ${formatAmount(parseFloat(intlAmount) * 1.8)}`
                           : `${intlCurrency} 0.00`}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -337,11 +341,11 @@ export default function CurrencyPage() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {activeTab === 'mint' &&
-                `Mint AFK ${(parseFloat(mintAmount || '0') * exchangeRate).toFixed(2)} from USDC`}
+                `Mint AFK ${formatAmount(parseFloat(mintAmount || '0') * exchangeRate)} from USDC`}
               {activeTab === 'burn' &&
-                `Burn AFK ${burnAmount} and withdraw to ${burnDestination}`}
+                `Burn AFK ${formatAmount(burnAmount)} and withdraw to ${burnDestination}`}
               {activeTab === 'international' &&
-                `Send AFK ${intlAmount} to ${intlCountry} (${intlCurrency})`}
+                `Send AFK ${formatAmount(intlAmount)} to ${intlCountry} (${intlCurrency})`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-2">
@@ -349,8 +353,8 @@ export default function CurrencyPage() {
               <span className="text-muted-foreground">Amount:</span>
               <span className="font-medium text-foreground">
                 {activeTab === 'mint' && `$${mintAmount}`}
-                {activeTab === 'burn' && `AFK ${burnAmount}`}
-                {activeTab === 'international' && `AFK ${intlAmount}`}
+                {activeTab === 'burn' && `AFK ${formatAmount(burnAmount)}`}
+                {activeTab === 'international' && `AFK ${formatAmount(intlAmount)}`}
               </span>
             </div>
             <div className="flex justify-between text-sm border-t border-border pt-2">

@@ -17,6 +17,9 @@ const menuItems = [
   { section: 'Support', items: [{ title: 'Help & Support', icon: HelpCircle, href: '/me/help' }, { title: 'Activity History', icon: Clock, href: '/activity' }] },
 ];
 
+/**
+ * User profile and account summary page.
+ */
 export default function MePage() {
   const router = useRouter();
   const { logout } = useAuth();

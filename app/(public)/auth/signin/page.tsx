@@ -38,8 +38,10 @@ export default function SignInPage() {
         return;
       }
 
-      login(result.api_key, result.user_id);
-      router.push('/');
+      if ('api_key' in result) {
+        login(result.api_key, result.user_id);
+        router.push('/');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign in failed');
     } finally {
