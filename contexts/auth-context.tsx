@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
 import * as authApi from '@/lib/api/auth';
 
 const AUTH_STORAGE_KEY = 'acbu_api_key';
@@ -75,12 +75,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuth(null, null);
   }, [setAuth, state.apiKey]);
 
-  const value: AuthContextValue = {
-    ...state,
-    login,
-    logout,
-    setAuth,
-  };
+  const value = useMemo(
+    () => ({
+      ...state,
+      login,
+      logout,
+      setAuth,
+    }),
+    [state, login, logout, setAuth]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

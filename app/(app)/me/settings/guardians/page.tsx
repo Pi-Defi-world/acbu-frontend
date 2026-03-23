@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
@@ -16,24 +16,24 @@ export default function GuardiansPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const load = () => {
+  const load = useCallback(() => {
     setError('');
     userApi.getGuardians(opts).then((data) => {
       setGuardians(data.guardians ?? []);
     }).catch((e) => {
       setError(e instanceof Error ? e.message : 'Failed to load guardians');
     }).finally(() => setLoading(false));
-  };
+  }, [opts.token]);
 
   useEffect(() => {
     setLoading(true);
     load();
-  }, [opts.token]);
+  }, [load]);
 
   const handleDelete = async (id: string) => {
     try {
       await userApi.deleteGuardian(id, opts);
-      setGuardians((prev) => prev.filter((g) => g.id !== id));
+      setGuardians((prev: GuardianItem[]) => prev.filter((g: GuardianItem) => g.id !== id));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Delete failed');
     }

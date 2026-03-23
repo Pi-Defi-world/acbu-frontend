@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
@@ -20,19 +20,19 @@ export default function ContactsPage() {
   const [addPayUri, setAddPayUri] = useState('');
   const [adding, setAdding] = useState(false);
 
-  const load = () => {
+  const load = useCallback(() => {
     setError('');
     userApi.getContacts(opts).then((data) => {
       setContacts(data.contacts ?? []);
     }).catch((e) => {
       setError(e instanceof Error ? e.message : 'Failed to load contacts');
     }).finally(() => setLoading(false));
-  };
+  }, [opts.token]);
 
   useEffect(() => {
     setLoading(true);
     load();
-  }, [opts.token]);
+  }, [load]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +54,7 @@ export default function ContactsPage() {
   const handleDelete = async (id: string) => {
     try {
       await userApi.deleteContact(id, opts);
-      setContacts((prev) => prev.filter((c) => c.id !== id));
+      setContacts((prev: ContactItem[]) => prev.filter((c: ContactItem) => c.id !== id));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Delete failed');
     }
@@ -90,8 +90,8 @@ export default function ContactsPage() {
       <PageContainer>
         {error && <p className="text-destructive text-sm mb-3">{error}</p>}
         <form onSubmit={handleAdd} className="space-y-2 mb-6">
-          <Input placeholder="Alias" value={addAlias} onChange={(e) => setAddAlias(e.target.value)} className="border-border" />
-          <Input placeholder="Pay URI or address" value={addPayUri} onChange={(e) => setAddPayUri(e.target.value)} className="border-border" />
+          <Input placeholder="Alias" value={addAlias} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddAlias(e.target.value)} className="border-border" />
+          <Input placeholder="Pay URI or address" value={addPayUri} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddPayUri(e.target.value)} className="border-border" />
           <Button type="submit" disabled={adding || (!addAlias.trim() && !addPayUri.trim())}>Add contact</Button>
         </form>
         <div className="space-y-2">
