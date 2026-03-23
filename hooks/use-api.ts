@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { apiOpts } from '@/lib/api/client';
 import type { RequestOptions } from '@/lib/api/client';
@@ -8,5 +9,5 @@ import type { RequestOptions } from '@/lib/api/client';
  */
 export function useApiOpts(): RequestOptions {
   const { apiKey } = useAuth();
-  return apiOpts(apiKey);
+  return useMemo(() => apiOpts(apiKey), [apiKey]);
 }
