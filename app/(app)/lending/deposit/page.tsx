@@ -55,8 +55,8 @@ export default function LendingDepositPage() {
           {success && <p className="text-green-600 text-sm">{success}</p>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Lender (Stellar address or ID)</label>
-              <Input value={lender} onChange={(e) => setLender(e.target.value)} className="border-border font-mono text-sm" placeholder="G... or lender id" />
+              <label className="text-sm font-medium text-foreground mb-2 block">Your account</label>
+              <Input value={lender} readOnly className="border-border font-mono text-sm bg-muted" />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">Amount</label>

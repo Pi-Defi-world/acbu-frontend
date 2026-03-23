@@ -59,8 +59,8 @@ export default function SavingsWithdrawPage() {
           {success && <p className="text-green-600 text-sm">{success}</p>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">User (Stellar address or ID)</label>
-              <Input value={user} onChange={(e) => setUser(e.target.value)} className="border-border font-mono text-sm" placeholder="G... or user id" />
+              <label className="text-sm font-medium text-foreground mb-2 block">Your account</label>
+              <Input value={user} readOnly className="border-border font-mono text-sm bg-muted" />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">Term (seconds)</label>
