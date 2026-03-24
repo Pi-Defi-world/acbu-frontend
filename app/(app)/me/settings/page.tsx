@@ -31,12 +31,21 @@ export default function SettingsPage() {
           {items.map((item) => {
             const Icon = item.icon;
             return (
-              <button key={item.href} onClick={() => router.push(item.href)} className="w-full text-left">
+              <button
+                key={item.href}
+                onClick={() => router.push(item.href)}
+                className="w-full text-left"
+                aria-label={`Go to ${item.title} settings - ${item.description}`}
+              >
                 <Card className="border-border p-4 flex items-center gap-3">
                   <Icon className="w-5 h-5 text-primary flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">{item.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                    <p className="font-medium text-foreground truncate">
+                      {item.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {item.description}
+                    </p>
                   </div>
                 </Card>
               </button>
