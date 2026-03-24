@@ -36,6 +36,7 @@ import { PageContainer } from '@/components/layout/page-container';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
 import * as transfersApi from '@/lib/api/transfers';
+import { resolveRecipient } from '@/lib/api/recipient';
 import type { ContactItem, TransferItem } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
 
@@ -72,6 +73,8 @@ export default function SendPage() {
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [submitError, setSubmitError] = useState('');
   const [sending, setSending] = useState(false);
+  const [resolvedPayUri, setResolvedPayUri] = useState<string | null>(null);
+  const [resolving, setResolving] = useState(false);
 
   const loadTransfers = () => {
     transfersApi.getTransfers(opts).then((data) => setTransfers(data.transfers ?? [])).catch(() => {}).finally(() => setLoadingTransfers(false));
@@ -89,7 +92,32 @@ export default function SendPage() {
     setUseContact(true);
   };
 
-  const getToValue = () => useContact && selectedContact ? (selectedContact.pay_uri || selectedContact.alias || selectedContact.id) : customRecipient.trim();
+  const getToValue = () =>
+    useContact && selectedContact
+      ? (selectedContact.pay_uri || selectedContact.alias || selectedContact.id)
+      : (resolvedPayUri ?? customRecipient.trim());
+
+  // Resolve username/phone to Stellar pay_uri before showing confirm dialog
+  const handleContinue = async () => {
+    setSubmitError('');
+    if (!useContact && customRecipient.trim()) {
+      setResolving(true);
+      try {
+        const result = await resolveRecipient(customRecipient.trim(), opts);
+        if (!result.resolved || !result.pay_uri) {
+          setSubmitError('Recipient not found. Check the username or phone number.');
+          return;
+        }
+        setResolvedPayUri(result.pay_uri);
+      } catch {
+        setSubmitError('Could not resolve recipient. Try again.');
+        return;
+      } finally {
+        setResolving(false);
+      }
+    }
+    setShowConfirmDialog(true);
+  };
 
   const handleConfirmTransfer = async () => {
     const to = getToValue();
@@ -106,6 +134,7 @@ export default function SendPage() {
       setAmount('');
       setNote('');
       setCustomRecipient('');
+      setResolvedPayUri(null);
       setSelectedContact(null);
       setTimeout(() => setShowSuccessDialog(false), 2500);
     } catch (e) {
@@ -225,7 +254,8 @@ export default function SendPage() {
                   </Select>
                 </TabsContent>
                 <TabsContent value="custom">
-                  <Input placeholder="Wallet address or email" value={customRecipient} onChange={(e) => setCustomRecipient(e.target.value)} className="border-border" />
+                  <Input placeholder="Username, phone, or wallet address" value={customRecipient} onChange={(e) => { setCustomRecipient(e.target.value); setResolvedPayUri(null); setSubmitError(''); }} className="border-border" />
+                  {submitError && !showConfirmDialog && <p className="text-xs text-destructive mt-1">{submitError}</p>}
                 </TabsContent>
               </Tabs>
             </div>
@@ -245,7 +275,7 @@ export default function SendPage() {
             <Card className="border-border bg-muted p-3"><div className="flex justify-between text-sm"><span className="text-muted-foreground">Network Fee</span><span className="font-medium text-foreground">Free</span></div></Card>
             <div className="flex gap-3 pt-2">
               <Button variant="outline" onClick={() => setShowSendDialog(false)} className="flex-1 border-border">Cancel</Button>
-              <Button onClick={() => setShowConfirmDialog(true)} disabled={!isFormValid()} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">Continue</Button>
+              <Button onClick={handleContinue} disabled={!isFormValid() || resolving} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">{resolving ? 'Resolving...' : 'Continue'}</Button>
             </div>
           </div>
         </DialogContent>
@@ -256,7 +286,7 @@ export default function SendPage() {
           <AlertDialogHeader><AlertDialogTitle>Confirm Transfer</AlertDialogTitle><AlertDialogDescription>Review the details before confirming</AlertDialogDescription></AlertDialogHeader>
           <div className="space-y-3 py-4">
             {submitError && <p className="text-sm text-destructive">{submitError}</p>}
-            <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">To</p><p className="font-semibold text-foreground truncate">{selectedContact?.alias || selectedContact?.pay_uri || customRecipient || '—'}</p></div>
+            <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">To</p><p className="font-semibold text-foreground truncate">{selectedContact?.alias || selectedContact?.pay_uri || customRecipient || '—'}</p>{!useContact && resolvedPayUri && <p className="text-xs text-muted-foreground mt-1 truncate">{resolvedPayUri}</p>}</div>
             <div className="flex items-center justify-center"><div className="rounded-full bg-secondary p-2"><ArrowRight className="h-5 w-5 text-secondary-foreground" /></div></div>
             <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">Amount</p><p className="text-2xl font-bold text-foreground">AFK {formatAmount(amount)}</p><p className="mt-2 text-xs text-muted-foreground">Network Fee: Free</p></div>
           </div>
