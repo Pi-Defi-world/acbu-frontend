@@ -44,7 +44,7 @@ interface SavingsAccount {
  * Savings account type definitions used for display.
  * APY rates and descriptions are product constants; balance is derived from API.
  */
-const SAVINGS_ACCOUNT_TYPES: Omit<SavingsAccount, 'balance' | 'icon'>[] = [
+const SAVINGS_ACCOUNT_TYPES: Omit<SavingsAccount, "balance" | "icon">[] = [
   {
     id: "high-yield",
     name: "High-Yield Savings",
@@ -106,7 +106,7 @@ export default function SavingsPage() {
     string | number | null
   >(null);
   const [positionsLoading, setPositionsLoading] = useState(false);
-  const [receiveError, setReceiveError] = useState('');
+  const [receiveError, setReceiveError] = useState("");
   const [selectedAccount, setSelectedAccount] = useState<SavingsAccount | null>(
     null
   );
@@ -136,18 +136,21 @@ export default function SavingsPage() {
   }, [apiUser, opts.token]);
 
   // Build savings accounts from product constants + API balance
-  const apiBalance = typeof positionsBalance === 'number'
-    ? positionsBalance
-    : typeof positionsBalance === 'string'
+  const apiBalance =
+    typeof positionsBalance === "number"
+      ? positionsBalance
+      : typeof positionsBalance === "string"
       ? parseFloat(positionsBalance) || 0
       : 0;
 
-  const savingsAccounts: SavingsAccount[] = SAVINGS_ACCOUNT_TYPES.map((acct) => ({
-    ...acct,
-    icon: ACCOUNT_ICONS[acct.id] ?? <PiggyBank className="w-6 h-6" />,
-    // Assign the API balance to the high-yield account (primary account)
-    balance: acct.id === 'high-yield' ? apiBalance : 0,
-  }));
+  const savingsAccounts: SavingsAccount[] = SAVINGS_ACCOUNT_TYPES.map(
+    (acct) => ({
+      ...acct,
+      icon: ACCOUNT_ICONS[acct.id] ?? <PiggyBank className="w-6 h-6" />,
+      // Assign the API balance to the high-yield account (primary account)
+      balance: acct.id === "high-yield" ? apiBalance : 0,
+    })
+  );
 
   const totalSavings = savingsAccounts.reduce((sum, a) => sum + a.balance, 0);
 
@@ -579,7 +582,7 @@ export default function SavingsPage() {
             <div className="space-y-2">
               <Label className="text-foreground">Deadline</Label>
               <Input
-                placeholder="e.g. Dec 2025"
+                type="month"
                 value={newGoalDeadline}
                 onChange={(e) => setNewGoalDeadline(e.target.value)}
                 className="border-border"
