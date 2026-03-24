@@ -16,6 +16,12 @@ export default function ReservesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const formatReserveRatio = (value: ReservesResponse['reserve_ratio']) => {
+    if (value == null) return '';
+    if (typeof value === 'number') return `${value.toFixed(2)}×`;
+    return `${value}×`;
+  };
+
   useEffect(() => {
     let cancelled = false;
     reservesApi.getReserves(opts).then((res) => {
@@ -41,9 +47,31 @@ export default function ReservesPage() {
         {loading ? (
           <Skeleton className="h-24 w-full" />
         ) : data ? (
-          <Card className="border-border p-4 space-y-2">
-            {data.reserve_ratio != null && <div className="flex justify-between"><span className="text-muted-foreground">Reserve ratio</span><span className="font-medium">{data.reserve_ratio}</span></div>}
-            {data.health != null && <div className="flex justify-between"><span className="text-muted-foreground">Health</span><span className="font-medium">{data.health}</span></div>}
+          <Card className="border-border p-4 space-y-3">
+            {data.reserve_ratio != null && (
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground">Reserve ratio</span>
+                  <span className="text-xs text-muted-foreground">Reserves ÷ liabilities (ratio, 1.0 means fully backed).</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="font-medium">{formatReserveRatio(data.reserve_ratio)}</span>
+                  <span className="text-xs text-muted-foreground">ratio</span>
+                </div>
+              </div>
+            )}
+            {data.health != null && (
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground">Health</span>
+                  <span className="text-xs text-muted-foreground">Overall system status reported by the issuer.</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="font-medium">{data.health}</span>
+                  <span className="text-xs text-muted-foreground">status</span>
+                </div>
+              </div>
+            )}
             {Object.keys(data).filter((k) => !['reserve_ratio', 'health'].includes(k)).length > 0 && (
               <pre className="text-xs text-muted-foreground mt-2 overflow-auto">{JSON.stringify(data, null, 2)}</pre>
             )}
