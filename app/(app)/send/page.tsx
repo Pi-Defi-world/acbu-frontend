@@ -19,9 +19,20 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { SkeletonList } from '@/components/ui/skeleton-list';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Plus, History, Check, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { useApiOpts } from '@/hooks/use-api';
+import * as transfersApi from '@/lib/api/transfers';
+import * as userApi from '@/lib/api/user';
+import type { TransferItem, ContactItem } from '@/types/api';
+import { formatAmount } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -29,9 +40,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Plus, Check, AlertCircle } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
@@ -166,7 +174,7 @@ export default function SendPage() {
               <h3 className="mb-3 text-sm font-semibold text-foreground">Frequent Recipients</h3>
               <div className="space-y-2">
                 {loadingContacts ? (
-                  <div className="animate-pulse h-12 bg-muted rounded-lg" />
+                  <Skeleton className="h-12 w-full" />
                 ) : contacts.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No contacts. Add one in Settings.</p>
                 ) : (
@@ -185,7 +193,7 @@ export default function SendPage() {
             <div>
               <h3 className="mb-3 text-sm font-semibold text-foreground">Recent Transfers</h3>
               {loadingTransfers ? (
-                <div className="space-y-2"><div className="h-14 bg-muted rounded-lg animate-pulse" /><div className="h-14 bg-muted rounded-lg animate-pulse" /></div>
+                <SkeletonList count={2} itemHeight="h-14" />
               ) : transfers.length === 0 ? (
                 <div className="rounded-lg border border-border bg-card p-6 text-center"><p className="text-sm text-muted-foreground">No transfers yet</p></div>
               ) : (

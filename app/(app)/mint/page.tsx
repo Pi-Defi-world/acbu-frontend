@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
@@ -199,7 +200,7 @@ export default function MintPage() {
           <TabsContent value="rates" className="py-6 space-y-4">
             <div className="space-y-3">
               {ratesLoading ? (
-                <div className="animate-pulse h-20 bg-muted rounded-lg" />
+                <Skeleton className="h-20 w-full" />
               ) : rates?.rates?.length ? (
                 rates.rates.map((r: { currency?: string; rate?: number }, i: number) => (
                   <Card key={i} className="border-border p-4">

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
+import { SkeletonList } from '@/components/ui/skeleton-list';
 import { ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as ratesApi from '@/lib/api/rates';
@@ -38,10 +39,7 @@ export default function RatesPage() {
       <PageContainer>
         {error && <p className="text-destructive text-sm mb-3">{error}</p>}
         {loading ? (
-          <div className="space-y-2">
-            <div className="h-20 bg-muted rounded-lg animate-pulse" />
-            <div className="h-20 bg-muted rounded-lg animate-pulse" />
-          </div>
+          <SkeletonList count={2} itemHeight="h-20" />
         ) : rates?.rates?.length ? (
           <div className="space-y-2">
             {(rates.rates as Array<{ currency?: string; rate?: number }>).map((r, i) => (
