@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
+import { SkeletonList } from "@/components/ui/skeleton-list";
 import { ArrowLeft } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import * as ratesApi from "@/lib/api/rates";
@@ -18,7 +19,7 @@ export default function RatesPage() {
   const formatRate = (rate: number | undefined): string => {
     if (rate == null) return "—";
 
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 6,
       useGrouping: true,
@@ -50,6 +51,7 @@ export default function RatesPage() {
         <div className="px-4 py-3 flex items-center gap-3">
           <Link
             href="/me"
+            aria-label="Go back" 
             className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2"
           >
             <ArrowLeft className="w-5 h-5 text-primary" />
@@ -60,10 +62,7 @@ export default function RatesPage() {
       <PageContainer>
         {error && <p className="text-destructive text-sm mb-3">{error}</p>}
         {loading ? (
-          <div className="space-y-2">
-            <div className="h-20 bg-muted rounded-lg animate-pulse" />
-            <div className="h-20 bg-muted rounded-lg animate-pulse" />
-          </div>
+          <SkeletonList count={2} itemHeight="h-20" />
         ) : rates?.rates?.length ? (
           <div className="space-y-2">
             {(rates.rates as Array<{ currency?: string; rate?: number }>).map(

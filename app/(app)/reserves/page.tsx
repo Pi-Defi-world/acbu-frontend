@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft, Database } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as reservesApi from '@/lib/api/reserves';
 import type { ReservesResponse } from '@/types/api';
@@ -38,7 +39,7 @@ export default function ReservesPage() {
       <PageContainer>
         {error && <p className="text-destructive text-sm mb-3">{error}</p>}
         {loading ? (
-          <div className="h-24 bg-muted rounded-lg animate-pulse" />
+          <Skeleton className="h-24 w-full" />
         ) : data ? (
           <Card className="border-border p-4 space-y-2">
             {data.reserve_ratio != null && <div className="flex justify-between"><span className="text-muted-foreground">Reserve ratio</span><span className="font-medium">{data.reserve_ratio}</span></div>}

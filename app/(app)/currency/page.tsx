@@ -83,9 +83,9 @@ export default function CurrencyPage() {
         {/* Balance Card */}
         <div className="mb-6">
           <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
-            <p className="text-sm font-medium opacity-90">AFK Balance</p>
+             <p className="text-sm font-medium opacity-90">AFK Balance</p>
             <p className="text-3xl font-bold mb-2">AFK {formatAmount(mockBalance)}</p>
-            <p className="text-xs opacity-75">≈ AFK {formatAmount(mockBalance * mockRate, 0)}</p>
+            <p className="text-xs opacity-75">≈ ₦{formatAmount(mockBalance * mockRate, 0)}</p>
           </Card>
         </div>
 

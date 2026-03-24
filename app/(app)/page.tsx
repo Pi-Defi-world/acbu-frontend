@@ -13,8 +13,11 @@ import {
   ArrowDownLeft,
   TrendingUp,
   Coins,
+  Clock,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
+import { SkeletonList } from '@/components/ui/skeleton-list';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useApiOpts } from '@/hooks/use-api';
 import * as transfersApi from '@/lib/api/transfers';
 import type { TransferItem } from '@/types/api';
@@ -124,19 +127,17 @@ export default function Home() {
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             {loading ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="rounded-lg border border-border bg-card p-3 animate-pulse">
-                    <div className="flex gap-3 mb-2"><div className="h-8 w-8 rounded-full bg-muted" /><div className="flex-1 h-4 bg-muted rounded" /></div>
-                    <div className="h-4 w-24 bg-muted rounded ml-11" />
-                  </div>
-                ))}
-              </div>
+              <SkeletonList count={3} itemHeight="h-20" />
             ) : transfers.length === 0 ? (
-              <div className="rounded-lg border border-border bg-card p-6 text-center">
-                <p className="text-sm text-muted-foreground">No recent transfers</p>
-                <Link href="/send" className="text-xs text-primary font-medium mt-2 inline-block">Send money</Link>
-              </div>
+              <EmptyState
+                icon={<Clock className="w-10 h-10" />}
+                title="No recent transfers"
+                action={
+                  <Link href="/send" className="text-xs text-primary font-medium">
+                    Send money
+                  </Link>
+                }
+              />
             ) : (
               <div className="space-y-2">
                 {transfers.slice(0, 5).map((t) => (

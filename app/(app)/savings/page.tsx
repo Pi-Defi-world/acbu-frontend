@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -21,11 +20,9 @@ import {
   Target,
   Zap,
   CheckCircle,
-  ArrowRight,
   Plus,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
-import { useRouter } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
 import * as savingsApi from '@/lib/api/savings';
@@ -41,21 +38,15 @@ interface SavingsAccount {
   color: string;
 }
 
-interface SavingsGoal {
-  id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline: string;
-}
-
-const savingsAccounts: SavingsAccount[] = [
+/**
+ * Savings account type definitions used for display.
+ * APY rates and descriptions are product constants; balance is derived from API.
+ */
+const SAVINGS_ACCOUNT_TYPES: Omit<SavingsAccount, 'balance' | 'icon'>[] = [
   {
     id: 'high-yield',
     name: 'High-Yield Savings',
     apy: 8.0,
-    balance: 2500,
-    icon: <TrendingUp className="w-6 h-6" />,
     description: 'Best rates with instant access',
     color: 'from-green-500/10 to-green-600/10',
   },
@@ -63,8 +54,6 @@ const savingsAccounts: SavingsAccount[] = [
     id: 'goal-saver',
     name: 'Goal Saver',
     apy: 5.5,
-    balance: 0,
-    icon: <Target className="w-6 h-6" />,
     description: 'Save for specific goals',
     color: 'from-blue-500/10 to-blue-600/10',
   },
@@ -72,39 +61,26 @@ const savingsAccounts: SavingsAccount[] = [
     id: 'flex-saver',
     name: 'Flex Saver',
     apy: 4.2,
-    balance: 0,
-    icon: <Zap className="w-6 h-6" />,
     description: 'Flexible with quick withdrawals',
     color: 'from-amber-500/10 to-amber-600/10',
   },
 ];
 
-const mockGoals: SavingsGoal[] = [
-  {
-    id: '1',
-    name: 'Emergency Fund',
-    targetAmount: 5000,
-    currentAmount: 2500,
-    deadline: 'Dec 2024',
-  },
-  {
-    id: '2',
-    name: 'Business Startup',
-    targetAmount: 10000,
-    currentAmount: 3200,
-    deadline: 'Jun 2025',
-  },
-];
+const ACCOUNT_ICONS: Record<string, React.ReactNode> = {
+  'high-yield': <TrendingUp className="w-6 h-6" />,
+  'goal-saver': <Target className="w-6 h-6" />,
+  'flex-saver': <Zap className="w-6 h-6" />,
+};
 
 /**
  * Savings management page.
  */
 export default function SavingsPage() {
-  const router = useRouter();
   const opts = useApiOpts();
   const [apiUser, setApiUser] = useState('');
   const [positionsBalance, setPositionsBalance] = useState<string | number | null>(null);
   const [positionsLoading, setPositionsLoading] = useState(false);
+  const [receiveError, setReceiveError] = useState('');
   const [selectedAccount, setSelectedAccount] = useState<SavingsAccount | null>(
     null
   );
@@ -113,10 +89,13 @@ export default function SavingsPage() {
   const [showDepositDialog, setShowDepositDialog] = useState(false);
 
   useEffect(() => {
+    setReceiveError('');
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === 'string') setApiUser(uri);
-    }).catch(() => { });
+    }).catch((e) => {
+      setReceiveError(e instanceof Error ? e.message : 'Failed to load receive address');
+    });
   }, [opts.token]);
   useEffect(() => {
     if (!apiUser) return;
@@ -125,6 +104,22 @@ export default function SavingsPage() {
       setPositionsBalance(res.balance);
     }).catch(() => setPositionsBalance(null)).finally(() => setPositionsLoading(false));
   }, [apiUser, opts.token]);
+
+  // Build savings accounts from product constants + API balance
+  const apiBalance = typeof positionsBalance === 'number'
+    ? positionsBalance
+    : typeof positionsBalance === 'string'
+      ? parseFloat(positionsBalance) || 0
+      : 0;
+
+  const savingsAccounts: SavingsAccount[] = SAVINGS_ACCOUNT_TYPES.map((acct) => ({
+    ...acct,
+    icon: ACCOUNT_ICONS[acct.id] ?? <PiggyBank className="w-6 h-6" />,
+    // Assign the API balance to the high-yield account (primary account)
+    balance: acct.id === 'high-yield' ? apiBalance : 0,
+  }));
+
+  const totalSavings = savingsAccounts.reduce((sum, a) => sum + a.balance, 0);
 
   const handleSelectAccount = (account: SavingsAccount) => {
     setSelectedAccount(account);
@@ -151,13 +146,13 @@ export default function SavingsPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/"
             className="p-2 hover:bg-muted rounded transition-colors"
             aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Link>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">Savings</h1>
             <p className="text-xs text-muted-foreground">Grow your wealth</p>
@@ -168,34 +163,26 @@ export default function SavingsPage() {
       {/* Main Content */}
       <PageContainer>
         <div className="space-y-6">
-          {/* API balance */}
+          {receiveError && (
+            <p className="text-sm text-destructive">{receiveError}</p>
+          )}
+          {/* Total Savings - driven by API */}
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-foreground">Savings balance (API)</h2>
+              <h2 className="text-lg font-bold text-foreground">Total Savings</h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
-            <p className="text-3xl font-bold text-foreground mb-1">{positionsLoading ? '—' : `AFK ${formatAmount(positionsBalance)}`}</p>
+            <p className="text-3xl font-bold text-foreground mb-1">
+              {positionsLoading ? '—' : `AFK ${formatAmount(totalSavings)}`}
+            </p>
+            {!positionsLoading && totalSavings > 0 && (
+              <p className="text-xs text-muted-foreground mb-3">
+                Earning up to {Math.max(...savingsAccounts.map((a) => a.apy))}% APY interest
+              </p>
+            )}
             <div className="flex gap-2 mt-3">
               <Link href="/savings/deposit"><Button size="sm" variant="outline" className="border-border">Deposit</Button></Link>
               <Link href="/savings/withdraw"><Button size="sm" variant="outline" className="border-border">Withdraw</Button></Link>
-            </div>
-          </Card>
-
-          {/* Overview Card */}
-          <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-foreground">
-                Total Savings
-              </h2>
-              <PiggyBank className="w-5 h-5 text-green-600" />
-            </div>
-            <p className="text-3xl font-bold text-foreground mb-1">AFK 2,500.00</p>
-            <p className="text-xs text-muted-foreground mb-3">
-              Earning 8% APY interest
-            </p>
-            <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
-              <TrendingUp className="w-3 h-3" />
-              <span>+AFK 16.67 this month</span>
             </div>
           </Card>
 
@@ -278,50 +265,11 @@ export default function SavingsPage() {
               </Button>
             </div>
 
-            {mockGoals.map((goal) => {
-              const progress = (goal.currentAmount / goal.targetAmount) * 100;
-              return (
-                <Card
-                  key={goal.id}
-                  className="border-border bg-card p-4 cursor-pointer hover:bg-muted transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-semibold text-foreground">
-                        {goal.name}
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        Target: AFK {formatAmount(goal.targetAmount)}
-                      </p>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {goal.deadline}
-                    </Badge>
-                  </div>
-
-                  <div className="mb-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium text-foreground">
-                        AFK {formatAmount(goal.currentAmount)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {progress.toFixed(0)}%
-                      </p>
-                    </div>
-                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-accent transition-all"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-muted-foreground">
-                    AFK {formatAmount(goal.targetAmount - goal.currentAmount)} to go
-                  </p>
-                </Card>
-              );
-            })}
+            <Card className="border-border bg-card p-4">
+              <p className="text-sm text-muted-foreground text-center py-2">
+                No savings goals yet. Create one to start tracking your progress.
+              </p>
+            </Card>
           </div>
 
           {/* Benefits Section */}
