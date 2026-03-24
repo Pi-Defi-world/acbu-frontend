@@ -16,6 +16,12 @@ export default function ReservesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const formatReserveRatio = (value: ReservesResponse['reserve_ratio']) => {
+    if (value == null) return '';
+    if (typeof value === 'number') return `${value.toFixed(2)}×`;
+    return `${value}×`;
+  };
+
   useEffect(() => {
     let cancelled = false;
     reservesApi.getReserves(opts).then((res) => {
@@ -48,7 +54,10 @@ export default function ReservesPage() {
                   <span className="text-muted-foreground">Reserve ratio</span>
                   <span className="text-xs text-muted-foreground">Reserves ÷ liabilities (ratio, 1.0 means fully backed).</span>
                 </div>
-                <span className="font-medium">{data.reserve_ratio}</span>
+                <div className="flex flex-col items-end">
+                  <span className="font-medium">{formatReserveRatio(data.reserve_ratio)}</span>
+                  <span className="text-xs text-muted-foreground">ratio</span>
+                </div>
               </div>
             )}
             {data.health != null && (
@@ -57,7 +66,10 @@ export default function ReservesPage() {
                   <span className="text-muted-foreground">Health</span>
                   <span className="text-xs text-muted-foreground">Overall system status reported by the issuer.</span>
                 </div>
-                <span className="font-medium">{data.health}</span>
+                <div className="flex flex-col items-end">
+                  <span className="font-medium">{data.health}</span>
+                  <span className="text-xs text-muted-foreground">status</span>
+                </div>
               </div>
             )}
             {Object.keys(data).filter((k) => !['reserve_ratio', 'health'].includes(k)).length > 0 && (
