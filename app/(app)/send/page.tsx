@@ -102,13 +102,15 @@ export default function SendPage() {
       loadTransfers();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
-      setShowSuccessDialog(true);
       setLastSentAmount(amount);
-      setAmount('');
-      setNote('');
-      setCustomRecipient('');
-      setSelectedContact(null);
-      setTimeout(() => setShowSuccessDialog(false), 2500);
+      setShowSuccessDialog(true);
+      setTimeout(() => {
+        setShowSuccessDialog(false);
+        setAmount('');
+        setNote('');
+        setCustomRecipient('');
+        setSelectedContact(null);
+      }, 2500);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Transfer failed');
     } finally {
