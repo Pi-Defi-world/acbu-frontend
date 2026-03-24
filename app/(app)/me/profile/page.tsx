@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { PageContainer } from "@/components/layout/page-container";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
-import { useApiOpts } from "@/hooks/use-api";
-import * as userApi from "@/lib/api/user";
-import type { UserMe, PatchMeBody } from "@/types/api";
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { PageContainer } from '@/components/layout/page-container';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft } from 'lucide-react';
+import { useApiOpts } from '@/hooks/use-api';
+import * as userApi from '@/lib/api/user';
+import type { UserMe, PatchMeBody } from '@/types/api';
 
 export default function ProfilePage() {
     const opts = useApiOpts();
@@ -70,26 +71,20 @@ export default function ProfilePage() {
         setSaved(false);
     };
 
-    const handleSave = async () => {
-        setError("");
-        setSaving(true);
-        try {
-            const body: PatchMeBody = {
-                username: formData.username || undefined,
-                email: formData.email || null,
-                phone_e164: formData.phone_e164 || null,
-                privacy_hide_from_search: formData.privacy_hide_from_search,
-            };
-            const updated = await userApi.patchMe(body, opts);
-            setUser(updated);
-            setSaved(true);
-            setTimeout(() => setSaved(false), 3000);
-        } catch (e) {
-            setError(e instanceof Error ? e.message : "Save failed");
-        } finally {
-            setSaving(false);
-        }
-    };
+  if (loading) {
+    return (
+      <>
+        <div className="flex items-center gap-3 px-4 pt-4 pb-6 border-b border-border">
+          <Link href="/me"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+          <h1 className="text-xl font-bold text-foreground">Profile</h1>
+        </div>
+        <PageContainer>
+          <Skeleton className="h-10 w-full mb-2" />
+          <Skeleton className="h-10 w-full" />
+        </PageContainer>
+      </>
+    );
+  }
 
     if (loading) {
         return (

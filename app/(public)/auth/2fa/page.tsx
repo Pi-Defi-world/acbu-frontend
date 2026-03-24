@@ -1,23 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
-import { useAuth } from "@/contexts/auth-context";
-import * as authApi from "@/lib/api/auth";
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { AlertCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/auth-context';
+import * as authApi from '@/lib/api/auth';
+
+const CHALLENGE_TOKEN_KEY = '2fa_challenge_token';
 
 export default function TwoFactorPage() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const challengeToken = searchParams.get("challenge_token") ?? "";
-    const { login } = useAuth();
-    const [code, setCode] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+  const router = useRouter();
+  const { login } = useAuth();
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [challengeToken, setChallengeToken] = useState('');
+
+  // Retrieve challenge token from sessionStorage (not from URL)
+  // This prevents exposure via Referer headers, browser history, and server logs
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = sessionStorage.getItem(CHALLENGE_TOKEN_KEY);
+      if (token) {
+        setChallengeToken(token);
+      }
+    }
+  }, []);
 
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,17 +46,17 @@ export default function TwoFactorPage() {
                 return;
             }
 
-            const result = await authApi.verify2fa(challengeToken, code);
-            login(result.api_key, result.user_id);
-            router.push("/");
-        } catch (err) {
-            setError(
-                err instanceof Error ? err.message : "Verification failed",
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
+      const result = await authApi.verify2fa(challengeToken, code);
+      login(result.api_key, result.user_id);
+      // Clear challenge token from sessionStorage
+      sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
+      router.push('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
     return (
         <div className="min-h-screen bg-background flex items-center justify-center p-4">

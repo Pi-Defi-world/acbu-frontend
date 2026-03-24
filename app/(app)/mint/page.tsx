@@ -1,28 +1,29 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { PageContainer } from "@/components/layout/page-container";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { PageContainer } from '@/components/layout/page-container';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { ArrowDown, ArrowUp, ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useApiOpts } from "@/hooks/use-api";
-import * as ratesApi from "@/lib/api/rates";
-import * as mintApi from "@/lib/api/mint";
-import * as burnApi from "@/lib/api/burn";
-import type { RatesResponse } from "@/types/api";
-import { formatAmount } from "@/lib/utils";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
+import { useApiOpts } from '@/hooks/use-api';
+import * as ratesApi from '@/lib/api/rates';
+import * as mintApi from '@/lib/api/mint';
+import * as burnApi from '@/lib/api/burn';
+import type { RatesResponse } from '@/types/api';
+import { formatAmount } from '@/lib/utils';
 
 const BALANCE_PLACEHOLDER = "—";
 const MINT_NETWORK_FEE_TEXT = "Estimated at confirmation";
@@ -32,23 +33,20 @@ const BURN_PROCESSING_FEE_TEXT = "Estimated at confirmation";
  * Mint and Burn page for ACBU tokens.
  */
 export default function MintPage() {
-    const router = useRouter();
-    const opts = useApiOpts();
-    const [activeTab, setActiveTab] = useState<"mint" | "burn" | "rates">(
-        "mint",
-    );
-    const [step, setStep] = useState<"input" | "confirm" | "success">("input");
-    const [usdcAmount, setUsdcAmount] = useState("");
-    const [walletAddress, setWalletAddress] = useState("");
-    const [burnAmount, setBurnAmount] = useState("");
-    const [burnDestination, setBurnDestination] = useState("bank");
-    const [burnAccountNumber, setBurnAccountNumber] = useState("");
-    const [burnError, setBurnError] = useState("");
-    const [rates, setRates] = useState<RatesResponse | null>(null);
-    const [ratesLoading, setRatesLoading] = useState(false);
-    const [mintError, setMintError] = useState("");
-    const [txId, setTxId] = useState<string | null>(null);
-    const [executing, setExecuting] = useState(false);
+  const opts = useApiOpts();
+  const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
+  const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
+  const [usdcAmount, setUsdcAmount] = useState('');
+  const [walletAddress, setWalletAddress] = useState('');
+  const [burnAmount, setBurnAmount] = useState('');
+  const [burnDestination, setBurnDestination] = useState('bank');
+  const [burnAccountNumber, setBurnAccountNumber] = useState('');
+  const [burnError, setBurnError] = useState('');
+  const [rates, setRates] = useState<RatesResponse | null>(null);
+  const [ratesLoading, setRatesLoading] = useState(false);
+  const [mintError, setMintError] = useState('');
+  const [txId, setTxId] = useState<string | null>(null);
+  const [executing, setExecuting] = useState(false);
 
     useEffect(() => {
         if (activeTab !== "rates") return;
@@ -131,27 +129,19 @@ export default function MintPage() {
         setTxId(null);
     };
 
-    return (
-        <>
-            <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-                <div className="px-4 py-4 flex items-center gap-3">
-                    <button
-                        onClick={() => router.back()}
-                        className="p-2 hover:bg-muted rounded transition-colors"
-                        aria-label="Go back"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                    </button>
-                    <div className="flex-1">
-                        <h1 className="text-lg font-bold text-foreground">
-                            Mint & Burn
-                        </h1>
-                        <p className="text-xs text-muted-foreground">
-                            Create and redeem AFK
-                        </p>
-                    </div>
-                </div>
-            </header>
+  return (
+    <>
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+        <div className="px-4 py-4 flex items-center gap-3">
+          <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div className="flex-1">
+            <h1 className="text-lg font-bold text-foreground">Mint & Burn</h1>
+            <p className="text-xs text-muted-foreground">Create and redeem AFK</p>
+          </div>
+        </div>
+      </header>
 
             <PageContainer>
                 <div className="mb-6">
@@ -380,55 +370,27 @@ export default function MintPage() {
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="rates" className="py-6 space-y-4">
-                        <div className="space-y-3">
-                            {ratesLoading ? (
-                                <div className="animate-pulse h-20 bg-muted rounded-lg" />
-                            ) : rates?.rates?.length ? (
-                                rates.rates.map(
-                                    (
-                                        r: { currency?: string; rate?: number },
-                                        i: number,
-                                    ) => (
-                                        <Card
-                                            key={i}
-                                            className="border-border p-4"
-                                        >
-                                            <div className="flex justify-between">
-                                                <p className="font-semibold text-foreground">
-                                                    {r.currency ?? "Rate"}
-                                                </p>
-                                                <p className="text-lg font-bold text-primary">
-                                                    {r.rate != null
-                                                        ? String(r.rate)
-                                                        : "—"}
-                                                </p>
-                                            </div>
-                                        </Card>
-                                    ),
-                                )
-                            ) : (
-                                <Card className="border-border p-4">
-                                    <p className="text-muted-foreground">
-                                        No rates available. Use the API to load
-                                        rates.
-                                    </p>
-                                </Card>
-                            )}
-                            <Card className="border-border bg-muted p-4 mt-6">
-                                <p className="text-sm font-semibold text-foreground mb-2">
-                                    How it works
-                                </p>
-                                <ul className="text-xs text-muted-foreground space-y-2">
-                                    <li>• Mint converts USDC to native AFK</li>
-                                    <li>• Burn redeems AFK for fiat</li>
-                                    <li>• Rates from backend</li>
-                                </ul>
-                            </Card>
-                        </div>
-                    </TabsContent>
-                </Tabs>
-            </PageContainer>
+          <TabsContent value="rates" className="py-6 space-y-4">
+            <div className="space-y-3">
+              {ratesLoading ? (
+                <Skeleton className="h-20 w-full" />
+              ) : rates?.rates?.length ? (
+                rates.rates.map((r: { currency?: string; rate?: number }) => (
+                  <Card key={r.currency ?? r.rate} className="border-border p-4">
+                    <div className="flex justify-between">
+                      <p className="font-semibold text-foreground">{r.currency ?? 'Rate'}</p>
+                      <p className="text-lg font-bold text-primary">{r.rate != null ? String(r.rate) : '—'}</p>
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <Card className="border-border p-4"><p className="text-muted-foreground">No rates available. Use the API to load rates.</p></Card>
+              )}
+              <Card className="border-border bg-muted p-4 mt-6"><p className="text-sm font-semibold text-foreground mb-2">How it works</p><ul className="text-xs text-muted-foreground space-y-2"><li>• Mint converts USDC to native AFK</li><li>• Burn redeems AFK for fiat</li><li>• Rates from backend</li></ul></Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </PageContainer>
 
             <AlertDialog open={step === "confirm"}>
                 <AlertDialogContent className="max-w-md border-border">

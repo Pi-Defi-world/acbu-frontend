@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
@@ -65,7 +66,9 @@ export default function TransferDetailPage() {
             <h1 className="text-lg font-bold text-foreground">Transfer</h1>
           </div>
         </div>
-        <PageContainer><div className="animate-pulse h-32 bg-muted rounded-lg" /></PageContainer>
+        <PageContainer>
+          <Skeleton className="h-32 w-full" />
+        </PageContainer>
       </>
     );
   }
