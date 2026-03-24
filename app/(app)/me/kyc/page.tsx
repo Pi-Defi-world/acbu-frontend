@@ -26,7 +26,7 @@ export default function KYCPage() {
     }).catch((e) => {
       setError(e instanceof Error ? e.message : 'Failed to load');
     }).finally(() => setLoading(false));
-  }, [opts.token]);
+  }, [opts]);
 
   const kycLevel: number = applications.some((a) => a.status === 'approved') ? 2 : applications.length > 0 ? 1 : 0;
   const maxLevel = 3;

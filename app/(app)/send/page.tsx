@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -82,16 +82,16 @@ export default function SendPage() {
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState('');
 
-  const loadTransfers = () => {
+  const loadTransfers = useCallback(() => {
     transfersApi.getTransfers(opts).then((data) => setTransfers(data.transfers ?? [])).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load transfers')).finally(() => setLoadingTransfers(false));
-  };
-  const loadContacts = () => {
+  }, [opts]);
+  const loadContacts = useCallback(() => {
     userApi.getContacts(opts).then((data) => setContacts(data.contacts ?? [])).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
-  };
+  }, [opts]);
   useEffect(() => {
     loadTransfers();
     loadContacts();
-  }, [opts.token]);
+  }, [loadTransfers, loadContacts]);
 
   const handleRecipientSelect = (contact: ContactItem) => {
     setSelectedContact(contact);
@@ -166,11 +166,11 @@ export default function SendPage() {
               <Button onClick={() => setShowSendDialog(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4">
                 <Plus className="mb-2 h-5 w-5" /><span>New Transfer</span>
               </Button>
-              <Link href="/me/settings/contacts">
-                <Button variant="outline" className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full">
+              <Button asChild variant="outline" className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full">
+                <Link href="/me/settings/contacts">
                   <Plus className="mb-2 h-5 w-5" /><span>Add Contact</span>
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
             <div>
               <h3 className="mb-3 text-sm font-semibold text-foreground">Frequent Recipients</h3>
