@@ -10,7 +10,7 @@ import { ArrowLeft, AlertCircle, CheckCircle, Lock } from 'lucide-react';
 
 export default function RecoveryPage() {
   const [step, setStep] = useState<'method' | 'verify' | 'reset' | 'success'>('method');
-  const [recoveryMethod, setRecoveryMethod] = useState<'email' | 'phone' | 'guardian'>('email');
+  const [recoveryMethod, setRecoveryMethod] = useState<string>('email');
   const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -103,7 +103,7 @@ export default function RecoveryPage() {
                         name="recovery"
                         value={method.id}
                         checked={recoveryMethod === method.id}
-                        onChange={(e) => setRecoveryMethod(e.target.value as any)}
+                        onChange={(e) => setRecoveryMethod(e.target.value)}
                         className="w-4 h-4"
                       />
                       <div>

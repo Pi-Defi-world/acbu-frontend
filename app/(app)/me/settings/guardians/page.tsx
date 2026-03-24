@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft } from 'lucide-react';
+import { SkeletonList } from '@/components/ui/skeleton-list';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ArrowLeft, Shield } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
 import type { GuardianItem } from '@/types/api';
@@ -19,19 +21,19 @@ export default function GuardiansPage() {
   const [addAddress, setAddAddress] = useState('');
   const [adding, setAdding] = useState(false);
 
-  const load = () => {
+  const load = useCallback(() => {
     setError('');
     userApi.getGuardians(opts).then((data) => {
       setGuardians(data.guardians ?? []);
     }).catch((e) => {
       setError(e instanceof Error ? e.message : 'Failed to load guardians');
     }).finally(() => setLoading(false));
-  };
+  }, [opts.token]);
 
   useEffect(() => {
     setLoading(true);
     load();
-  }, [opts.token]);
+  }, [load]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +54,7 @@ export default function GuardiansPage() {
   const handleDelete = async (id: string) => {
     try {
       await userApi.deleteGuardian(id, opts);
-      setGuardians((prev) => prev.filter((g) => g.id !== id));
+      setGuardians((prev: GuardianItem[]) => prev.filter((g: GuardianItem) => g.id !== id));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Delete failed');
     }
@@ -68,10 +70,7 @@ export default function GuardiansPage() {
           </div>
         </div>
         <PageContainer>
-          <div className="animate-pulse space-y-2">
-            <div className="h-14 bg-muted rounded-lg" />
-            <div className="h-14 bg-muted rounded-lg" />
-          </div>
+          <SkeletonList count={2} itemHeight="h-14" />
         </PageContainer>
       </>
     );
@@ -93,9 +92,11 @@ export default function GuardiansPage() {
         </form>
         <div className="space-y-2">
           {guardians.length === 0 ? (
-            <Card className="border-border p-6 text-center">
-              <p className="text-sm text-muted-foreground">No guardians yet. Add one above.</p>
-            </Card>
+            <EmptyState
+              icon={<Shield className="w-10 h-10" />}
+              title="No guardians yet"
+              description="Add trusted guardians who can help you recover your account if needed."
+            />
           ) : (
             guardians.map((g) => (
               <Card key={g.id} className="border-border p-4 flex items-center justify-between gap-3">
