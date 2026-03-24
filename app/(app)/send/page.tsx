@@ -24,10 +24,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger, TabsList } from '@/components/ui/tabs';
 import { SkeletonList } from '@/components/ui/skeleton-list';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, History, Check, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { Plus, History, Check, AlertCircle, ArrowRight } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as transfersApi from '@/lib/api/transfers';
 import * as userApi from '@/lib/api/user';
@@ -41,11 +41,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PageContainer } from '@/components/layout/page-container';
-import { useApiOpts } from '@/hooks/use-api';
-import * as userApi from '@/lib/api/user';
-import * as transfersApi from '@/lib/api/transfers';
-import type { ContactItem, TransferItem } from '@/types/api';
-import { formatAmount } from '@/lib/utils';
 
 const BALANCE_PLACEHOLDER = '—';
 
@@ -91,7 +86,7 @@ export default function SendPage() {
   useEffect(() => {
     loadTransfers();
     loadContacts();
-  }, [loadTransfers, loadContacts]);
+  }, [loadTransfers, loadContacts, opts.token]);
 
   const handleRecipientSelect = (contact: ContactItem) => {
     setSelectedContact(contact);
@@ -180,7 +175,7 @@ export default function SendPage() {
                 ) : contacts.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No contacts. Add one in Settings.</p>
                 ) : (
-                  contacts.slice(0, 5).map((contact) => (
+                  contacts.slice(0, 5).map((contact: ContactItem) => (
                     <button key={contact.id} onClick={() => { handleRecipientSelect(contact); setShowSendDialog(true); }} className="w-full rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-muted">
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0"><p className="font-medium text-foreground truncate">{contact.alias ?? contact.pay_uri ?? contact.id}</p><p className="text-xs text-muted-foreground truncate">{contact.pay_uri ?? ''}</p></div>
@@ -200,7 +195,7 @@ export default function SendPage() {
                 <div className="rounded-lg border border-border bg-card p-6 text-center"><p className="text-sm text-muted-foreground">No transfers yet</p></div>
               ) : (
                 <div className="space-y-2">
-                  {transfers.map((t) => (
+                  {transfers.map((t: TransferItem) => (
                     <Link key={t.transaction_id} href={`/send/${t.transaction_id}`} className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted">
                       <div className="flex-1 min-w-0"><p className="font-medium text-foreground truncate">Transfer</p><p className="text-xs text-muted-foreground">{formatDate(t.created_at)}</p></div>
                       <div className="text-right">
@@ -231,9 +226,9 @@ export default function SendPage() {
                   <TabsTrigger value="contact">From Contacts</TabsTrigger><TabsTrigger value="custom">New Address</TabsTrigger>
                 </TabsList>
                 <TabsContent value="contact" className="mt-3">
-                  <Select value={selectedContact?.id || ''} onValueChange={(id) => { const c = contacts.find((x) => x.id === id); if (c) setSelectedContact(c); }}>
+                  <Select value={selectedContact?.id || ''} onValueChange={(id: string) => { const c = contacts.find((x: ContactItem) => x.id === id); if (c) setSelectedContact(c); }}>
                     <SelectTrigger className="border-border"><SelectValue placeholder="Select a contact" /></SelectTrigger>
-                    <SelectContent>{contacts.map((c) => <SelectItem key={c.id} value={c.id}>{c.alias ?? c.pay_uri ?? c.id}</SelectItem>)}</SelectContent>
+                    <SelectContent>{contacts.map((c: ContactItem) => <SelectItem key={c.id} value={c.id}>{c.alias ?? c.pay_uri ?? c.id}</SelectItem>)}</SelectContent>
                   </Select>
                 </TabsContent>
                 <TabsContent value="custom">
