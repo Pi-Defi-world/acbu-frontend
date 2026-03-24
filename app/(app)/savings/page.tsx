@@ -82,6 +82,7 @@ export default function SavingsPage() {
   const [apiUser, setApiUser] = useState('');
   const [positionsBalance, setPositionsBalance] = useState<string | number | null>(null);
   const [positionsLoading, setPositionsLoading] = useState(false);
+  const [receiveError, setReceiveError] = useState('');
   const [selectedAccount, setSelectedAccount] = useState<SavingsAccount | null>(
     null
   );
@@ -90,10 +91,13 @@ export default function SavingsPage() {
   const [showDepositDialog, setShowDepositDialog] = useState(false);
 
   useEffect(() => {
+    setReceiveError('');
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === 'string') setApiUser(uri);
-    }).catch(() => { });
+    }).catch((e) => {
+      setReceiveError(e instanceof Error ? e.message : 'Failed to load receive address');
+    });
   }, [opts.token]);
   useEffect(() => {
     if (!apiUser) return;
@@ -161,6 +165,9 @@ export default function SavingsPage() {
       {/* Main Content */}
       <PageContainer>
         <div className="space-y-6">
+          {receiveError && (
+            <p className="text-sm text-destructive">{receiveError}</p>
+          )}
           {/* Total Savings - driven by API */}
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
