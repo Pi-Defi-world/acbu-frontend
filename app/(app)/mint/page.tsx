@@ -201,8 +201,8 @@ export default function MintPage() {
               {ratesLoading ? (
                 <div className="animate-pulse h-20 bg-muted rounded-lg" />
               ) : rates?.rates?.length ? (
-                rates.rates.map((r: { currency?: string; rate?: number }, i: number) => (
-                  <Card key={i} className="border-border p-4">
+                rates.rates.map((r: { currency?: string; rate?: number }) => (
+                  <Card key={r.currency ?? r.rate} className="border-border p-4">
                     <div className="flex justify-between">
                       <p className="font-semibold text-foreground">{r.currency ?? 'Rate'}</p>
                       <p className="text-lg font-bold text-primary">{r.rate != null ? String(r.rate) : '—'}</p>

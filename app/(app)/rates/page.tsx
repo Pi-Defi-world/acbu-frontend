@@ -44,8 +44,8 @@ export default function RatesPage() {
           </div>
         ) : rates?.rates?.length ? (
           <div className="space-y-2">
-            {(rates.rates as Array<{ currency?: string; rate?: number }>).map((r, i) => (
-              <Card key={i} className="border-border p-4">
+            {(rates.rates as Array<{ currency?: string; rate?: number }>).map((r) => (
+              <Card key={r.currency ?? r.rate} className="border-border p-4">
                 <div className="flex justify-between items-center">
                   <p className="font-semibold text-foreground">{r.currency ?? 'Rate'}</p>
                   <p className="text-lg font-bold text-primary">{r.rate != null ? String(r.rate) : '—'}</p>
