@@ -112,8 +112,8 @@ export default function SavingsPage() {
   );
   const [showDialog, setShowDialog] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
-  const [showDepositDialog, setShowDepositDialog] = useState(false)
-  const [goals, setGoals] = useState<SavingsGoal[]>(initialGoals);;
+  const [showDepositDialog, setShowDepositDialog] = useState(false);
+  const [goals, setGoals] = useState<SavingsGoal[]>(initialGoals);
 
   useEffect(() => {
     userApi
@@ -327,7 +327,7 @@ export default function SavingsPage() {
               </Button>
             </div>
 
-            {mockGoals.map((goal) => {
+            {goals.map((goal) => {
               const progress = (goal.currentAmount / goal.targetAmount) * 100;
               return (
                 <Card
