@@ -76,6 +76,7 @@ export interface TransfersListResponse {
 export interface CreateTransferBody {
   to: string;
   amount_acbu: string;
+  note?: string;
 }
 
 export interface CreateTransferResponse {

@@ -1,9 +1,8 @@
 'use client';
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
 import * as authApi from '@/lib/api/auth';
 
-const AUTH_STORAGE_KEY = 'acbu_api_key';
 const USER_ID_KEY = 'acbu_user_id';
 
 interface AuthState {
@@ -24,12 +23,12 @@ function getStoredAuth(): AuthState {
   if (typeof window === 'undefined') {
     return { apiKey: null, userId: null, isAuthenticated: false };
   }
-  const apiKey = sessionStorage.getItem(AUTH_STORAGE_KEY);
   const userId = sessionStorage.getItem(USER_ID_KEY);
   return {
-    apiKey,
+    // Keep API key in memory only; do not persist in browser storage.
+    apiKey: null,
     userId,
-    isAuthenticated: !!apiKey && !!userId,
+    isAuthenticated: false,
   };
 }
 
@@ -42,11 +41,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setAuth = useCallback((apiKey: string | null, userId: string | null) => {
     if (typeof window !== 'undefined') {
-      if (apiKey && userId) {
-        sessionStorage.setItem(AUTH_STORAGE_KEY, apiKey);
+      if (userId) {
         sessionStorage.setItem(USER_ID_KEY, userId);
       } else {
-        sessionStorage.removeItem(AUTH_STORAGE_KEY);
         sessionStorage.removeItem(USER_ID_KEY);
       }
     }
@@ -75,12 +72,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuth(null, null);
   }, [setAuth, state.apiKey]);
 
-  const value: AuthContextValue = {
-    ...state,
-    login,
-    logout,
-    setAuth,
-  };
+  const value = useMemo(
+    () => ({
+      ...state,
+      login,
+      logout,
+      setAuth,
+    }),
+    [state, login, logout, setAuth]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

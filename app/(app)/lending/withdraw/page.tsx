@@ -23,7 +23,9 @@ export default function LendingWithdrawPage() {
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === 'string' && uri.length >= 56) setLender(uri);
-    }).catch(() => {});
+    }).catch((e) => {
+      console.error(e instanceof Error ? e.message : 'Failed to load receive address');
+    });
   }, [opts.token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,8 +57,8 @@ export default function LendingWithdrawPage() {
           {success && <p className="text-green-600 text-sm">{success}</p>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Lender (Stellar address or ID)</label>
-              <Input value={lender} onChange={(e) => setLender(e.target.value)} className="border-border font-mono text-sm" placeholder="G... or lender id" />
+              <label className="text-sm font-medium text-foreground mb-2 block">Your account</label>
+              <Input value={lender} readOnly className="border-border font-mono text-sm bg-muted" />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">Amount</label>

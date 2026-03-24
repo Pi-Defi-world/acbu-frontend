@@ -21,7 +21,6 @@ import {
   Target,
   Zap,
   CheckCircle,
-  ArrowRight,
   Plus,
 } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
@@ -41,15 +40,11 @@ interface SavingsAccount {
   color: string;
 }
 
-interface SavingsGoal {
-  id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline: string;
-}
-
-const savingsAccounts: SavingsAccount[] = [
+/**
+ * Savings account type definitions used for display.
+ * APY rates and descriptions are product constants; balance is derived from API.
+ */
+const SAVINGS_ACCOUNT_TYPES: Omit<SavingsAccount, 'balance' | 'icon'>[] = [
   {
     id: "high-yield",
     name: "High-Yield Savings",
@@ -105,13 +100,13 @@ const [newGoalDeadline, setNewGoalDeadline] = useState("");
  * Savings management page.
  */
 export default function SavingsPage() {
-  const router = useRouter();
   const opts = useApiOpts();
   const [apiUser, setApiUser] = useState("");
   const [positionsBalance, setPositionsBalance] = useState<
     string | number | null
   >(null);
   const [positionsLoading, setPositionsLoading] = useState(false);
+  const [receiveError, setReceiveError] = useState('');
   const [selectedAccount, setSelectedAccount] = useState<SavingsAccount | null>(
     null
   );
@@ -140,6 +135,22 @@ export default function SavingsPage() {
       .finally(() => setPositionsLoading(false));
   }, [apiUser, opts.token]);
 
+  // Build savings accounts from product constants + API balance
+  const apiBalance = typeof positionsBalance === 'number'
+    ? positionsBalance
+    : typeof positionsBalance === 'string'
+      ? parseFloat(positionsBalance) || 0
+      : 0;
+
+  const savingsAccounts: SavingsAccount[] = SAVINGS_ACCOUNT_TYPES.map((acct) => ({
+    ...acct,
+    icon: ACCOUNT_ICONS[acct.id] ?? <PiggyBank className="w-6 h-6" />,
+    // Assign the API balance to the high-yield account (primary account)
+    balance: acct.id === 'high-yield' ? apiBalance : 0,
+  }));
+
+  const totalSavings = savingsAccounts.reduce((sum, a) => sum + a.balance, 0);
+
   const handleSelectAccount = (account: SavingsAccount) => {
     setSelectedAccount(account);
     setShowDialog(true);
@@ -163,13 +174,13 @@ export default function SavingsPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/"
             className="p-2 hover:bg-muted rounded transition-colors"
             aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Link>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">Savings</h1>
             <p className="text-xs text-muted-foreground">Grow your wealth</p>
@@ -180,7 +191,10 @@ export default function SavingsPage() {
       {/* Main Content */}
       <PageContainer>
         <div className="space-y-6">
-          {/* API balance */}
+          {receiveError && (
+            <p className="text-sm text-destructive">{receiveError}</p>
+          )}
+          {/* Total Savings - driven by API */}
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-lg font-bold text-foreground">
