@@ -7,6 +7,7 @@ import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, CheckCircle, AlertCircle, Upload, Clock, FileText } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as kycApi from '@/lib/api/kyc';
@@ -57,7 +58,9 @@ export default function KYCPage() {
           <Link href="/me"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
           <h1 className="text-xl font-bold text-foreground">KYC Verification</h1>
         </div>
-        <PageContainer><div className="animate-pulse h-32 bg-muted rounded-lg" /></PageContainer>
+        <PageContainer>
+          <Skeleton className="h-32 w-full" />
+        </PageContainer>
       </>
     );
   }

@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft } from 'lucide-react';
+import { SkeletonList } from '@/components/ui/skeleton-list';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ArrowLeft, FileSpreadsheet } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as smeApi from '@/lib/api/sme';
 import type { TransferItem } from '@/types/api';
@@ -47,15 +49,13 @@ export default function SmeStatementsPage() {
       <PageContainer>
         {error && <p className="text-destructive text-sm mb-3">{error}</p>}
         {loading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
-            ))}
-          </div>
+          <SkeletonList count={3} />
         ) : transfers.length === 0 ? (
-          <Card className="border-border p-6 text-center">
-            <p className="text-sm text-muted-foreground">No statements yet.</p>
-          </Card>
+          <EmptyState
+            icon={<FileSpreadsheet className="w-10 h-10" />}
+            title="No statements yet"
+            description="Your SME statements will appear here once transactions are made."
+          />
         ) : (
           <div className="space-y-2">
             {transfers.map((t) => (
