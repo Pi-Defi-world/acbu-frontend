@@ -129,17 +129,25 @@ export default function BurnPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Bank code
-              </label>
-            </div>
+  <label className="text-sm font-medium text-foreground mb-2 block">
+    Bank code
+  </label>
+  <Input
+    type="text"
+    maxLength={10}
+    placeholder="Enter bank code"
+    value={bankCode}
+    onChange={(e) => setBankCode(e.target.value.slice(0, 10))}
+    className="border-border"
+  />
+</div>
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">
                 Account name
               </label>
               <Input
                 value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
+                  onChange={(e) => setAccountName(e.target.value.slice(0, 50))}
                 className="border-border"
               />
             </div>
