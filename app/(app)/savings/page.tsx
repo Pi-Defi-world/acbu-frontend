@@ -23,7 +23,6 @@ import {
   Plus,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
-import { useRouter } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
 import * as savingsApi from '@/lib/api/savings';
@@ -77,7 +76,6 @@ const ACCOUNT_ICONS: Record<string, React.ReactNode> = {
  * Savings management page.
  */
 export default function SavingsPage() {
-  const router = useRouter();
   const opts = useApiOpts();
   const [apiUser, setApiUser] = useState('');
   const [positionsBalance, setPositionsBalance] = useState<string | number | null>(null);
@@ -148,13 +146,13 @@ export default function SavingsPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/"
             className="p-2 hover:bg-muted rounded transition-colors"
             aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Link>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">Savings</h1>
             <p className="text-xs text-muted-foreground">Grow your wealth</p>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -81,13 +82,13 @@ export default function SMEServices() {
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/"
             className="p-2 hover:bg-muted rounded transition-colors"
             aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Link>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">SME Services</h1>
             <p className="text-xs text-muted-foreground">For your business</p>

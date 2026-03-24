@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
 import * as ratesApi from '@/lib/api/rates';
 import * as mintApi from '@/lib/api/mint';
@@ -33,7 +33,6 @@ const BURN_PROCESSING_FEE_TEXT = 'Estimated at confirmation';
  * Mint and Burn page for ACBU tokens.
  */
 export default function MintPage() {
-  const router = useRouter();
   const opts = useApiOpts();
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
@@ -118,9 +117,9 @@ export default function MintPage() {
     <>
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-4 flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
+          <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Link>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">Mint & Burn</h1>
             <p className="text-xs text-muted-foreground">Create and redeem AFK</p>
