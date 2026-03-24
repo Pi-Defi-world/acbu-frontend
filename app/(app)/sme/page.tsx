@@ -75,6 +75,12 @@ const smeProducts: SMEProduct[] = [
   },
 ];
 
+const productRoutes: Record<string, string> = {
+  "business-account": "/business",
+  payroll: "/business/salary",
+  "api-integration": "/business/enterprise",
+};
+
 export default function SMEServices() {
   const router = useRouter();
   const [selectedProduct, setSelectedProduct] = useState<SMEProduct | null>(
@@ -302,13 +308,9 @@ export default function SMEServices() {
                 </Button>
                 <Button
                   onClick={() => {
-                    setShowDialog(false);
-                    const routes: Record<string, string> = {
-                      "business-account": "/business",
-                      payroll: "/business/salary",
-                      "api-integration": "/business/enterprise",
-                    };
-                    router.push(routes[selectedProduct.id] ?? "/business");
+                    router.push(
+                      productRoutes[selectedProduct.id] ?? "/business"
+                    );
                   }}
                   className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                 >
