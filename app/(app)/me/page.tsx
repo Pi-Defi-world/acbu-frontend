@@ -14,7 +14,7 @@ import Link from 'next/link';
 
 const menuItems = [
   { section: 'Account', items: [{ title: 'Profile', icon: User, href: '/me/profile' }, { title: 'Settings', icon: Settings, href: '/me/settings' }, { title: 'Wallet', icon: Eye, href: '/me/settings/wallet' }] },
-  { section: 'Security', items: [{ title: 'KYC Verification', icon: Shield, href: '/me/kyc', badge: 'Pending' }, { title: 'Two-Factor Auth', icon: Smartphone, href: '/auth/2fa' }, { title: 'Recovery Settings', icon: Lock, href: '/me/recovery' }] },
+  { section: 'Security', items: [{ title: 'KYC Verification', icon: Shield, href: '/me/kyc', badge: 'Pending' }, { title: 'Two-Factor Auth', icon: Smartphone, href: '/me/settings/security' }, { title: 'Recovery Settings', icon: Lock, href: '/me/recovery' }] },
   { section: 'Support', items: [{ title: 'Help & Support', icon: HelpCircle, href: '/me/help' }, { title: 'Activity History', icon: Clock, href: '/activity' }] },
 ];
 
