@@ -74,7 +74,7 @@ const SAVINGS_ACCOUNT_TYPES: Omit<SavingsAccount, "balance" | "icon">[] = [
   },
 ];
 
-const mockGoals: SavingsGoal[] = [
+const initialGoals: SavingsGoal[] = [
   {
     id: "1",
     name: "Emergency Fund",
@@ -112,7 +112,8 @@ export default function SavingsPage() {
   );
   const [showDialog, setShowDialog] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
-  const [showDepositDialog, setShowDepositDialog] = useState(false);
+  const [showDepositDialog, setShowDepositDialog] = useState(false)
+  const [goals, setGoals] = useState<SavingsGoal[]>(initialGoals);;
 
   useEffect(() => {
     userApi
@@ -602,11 +603,15 @@ export default function SavingsPage() {
               <Button
                 disabled={!newGoalName || !newGoalTarget || !newGoalDeadline}
                 onClick={() => {
-                  console.log("[v0] New goal:", {
-                    newGoalName,
-                    newGoalTarget,
-                    newGoalDeadline,
-                  });
+                  const newGoal: SavingsGoal = {
+                    id: crypto.randomUUID(),
+                    name: newGoalName,
+                    targetAmount: parseFloat(newGoalTarget),
+                    currentAmount: 0,
+                    deadline: newGoalDeadline,
+                  };
+                  setGoals((prev) => [...prev, newGoal]);
+                  // TODO: Persist via API when endpoint is available
                   setShowNewGoalDialog(false);
                   setNewGoalName("");
                   setNewGoalTarget("");
