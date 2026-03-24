@@ -20,8 +20,8 @@ export default function RatesPage() {
 
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 6, // Allow up to 6 decimals for very small rates (e.g. crypto)
-      useGrouping: true, // Adds thousand separators
+      maximumFractionDigits: 6,
+      useGrouping: true,
     }).format(rate);
   };
 
