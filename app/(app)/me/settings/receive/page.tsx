@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
@@ -75,7 +76,7 @@ export default function ReceivePage() {
           </div>
         </div>
         <PageContainer>
-          <div className="animate-pulse h-24 bg-muted rounded-lg" />
+          <Skeleton className="h-24 w-full" />
         </PageContainer>
       </>
     );

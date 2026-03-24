@@ -69,18 +69,28 @@ export default function CurrencyPage() {
         setIntlAmount("");
     };
 
-    return (
-        <>
-            <div className="border-b border-border">
-                <div className="px-4 pt-6 pb-6">
-                    <h1 className="text-2xl font-bold text-foreground mb-2">
-                        Currency Operations
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        Convert, mint, and manage your digital assets
-                    </p>
-                </div>
-            </div>
+  return (
+    <>
+      <div className="border-b border-border">
+        <div className="px-4 pt-6 pb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            Currency Operations
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Convert, mint, and manage your digital assets
+          </p>
+        </div>
+      </div>
+
+      <PageContainer>
+        {/* Balance Card */}
+        <div className="mb-6">
+          <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
+             <p className="text-sm font-medium opacity-90">AFK Balance</p>
+            <p className="text-3xl font-bold mb-2">AFK {formatAmount(mockBalance)}</p>
+            <p className="text-xs opacity-75">≈ ₦{formatAmount(mockBalance * mockRate, 0)}</p>
+          </Card>
+        </div>
 
             <PageContainer>
                 {/* Balance Card */}
