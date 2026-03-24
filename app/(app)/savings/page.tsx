@@ -40,6 +40,14 @@ interface SavingsAccount {
   color: string;
 }
 
+interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string;
+}
+
 /**
  * Savings account type definitions used for display.
  * APY rates and descriptions are product constants; balance is derived from API.
@@ -574,6 +582,8 @@ export default function SavingsPage() {
               <Input
                 type="number"
                 placeholder="0.00"
+                min="0"
+                step="0.01"
                 value={newGoalTarget}
                 onChange={(e) => setNewGoalTarget(e.target.value)}
                 className="border-border"
