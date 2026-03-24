@@ -41,8 +41,12 @@ export default function SignInPage() {
       const result = await authApi.signin(identifier.trim(), passcode);
 
       if ('requires_2fa' in result && result.requires_2fa) {
-        const params = new URLSearchParams({ challenge_token: result.challenge_token });
-        router.push(`/auth/2fa?${params.toString()}`);
+        // Store challenge token securely in sessionStorage (not in URL)
+        // This prevents leaks via Referer headers, browser history, and server logs
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('2fa_challenge_token', result.challenge_token);
+        }
+        router.push('/auth/2fa');
         return;
       }
 
