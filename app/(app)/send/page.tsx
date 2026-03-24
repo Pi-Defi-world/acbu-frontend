@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -19,9 +19,20 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { SkeletonList } from '@/components/ui/skeleton-list';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Plus, History, Check, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { useApiOpts } from '@/hooks/use-api';
+import * as transfersApi from '@/lib/api/transfers';
+import * as userApi from '@/lib/api/user';
+import type { TransferItem, ContactItem } from '@/types/api';
+import { formatAmount } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -29,9 +40,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Plus, Check, AlertCircle } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
@@ -72,17 +80,18 @@ export default function SendPage() {
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [submitError, setSubmitError] = useState('');
   const [sending, setSending] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
-  const loadTransfers = () => {
-    transfersApi.getTransfers(opts).then((data) => setTransfers(data.transfers ?? [])).catch(() => {}).finally(() => setLoadingTransfers(false));
-  };
-  const loadContacts = () => {
-    userApi.getContacts(opts).then((data) => setContacts(data.contacts ?? [])).catch(() => {}).finally(() => setLoadingContacts(false));
-  };
+  const loadTransfers = useCallback(() => {
+    transfersApi.getTransfers(opts).then((data) => setTransfers(data.transfers ?? [])).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load transfers')).finally(() => setLoadingTransfers(false));
+  }, [opts]);
+  const loadContacts = useCallback(() => {
+    userApi.getContacts(opts).then((data) => setContacts(data.contacts ?? [])).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
+  }, [opts]);
   useEffect(() => {
     loadTransfers();
     loadContacts();
-  }, [opts.token]);
+  }, [loadTransfers, loadContacts]);
 
   const handleRecipientSelect = (contact: ContactItem) => {
     setSelectedContact(contact);
@@ -97,17 +106,19 @@ export default function SendPage() {
     setSubmitError('');
     setSending(true);
     try {
-      await transfersApi.createTransfer({ to, amount_acbu: amount }, opts);
+      await transfersApi.createTransfer({ to, amount_acbu: amount, note }, opts);
       loadTransfers();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
-      setShowSuccessDialog(true);
       setLastSentAmount(amount);
-      setAmount('');
-      setNote('');
-      setCustomRecipient('');
-      setSelectedContact(null);
-      setTimeout(() => setShowSuccessDialog(false), 2500);
+      setShowSuccessDialog(true);
+      setTimeout(() => {
+        setShowSuccessDialog(false);
+        setAmount('');
+        setNote('');
+        setCustomRecipient('');
+        setSelectedContact(null);
+      }, 2500);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Transfer failed');
     } finally {
@@ -142,6 +153,7 @@ export default function SendPage() {
       </header>
 
       <PageContainer>
+        {loadError && <p className="text-destructive text-sm mb-3">{loadError}</p>}
         <div className="rounded-lg border border-border bg-gradient-to-br from-primary to-secondary p-5 text-primary-foreground mb-5">
           <p className="text-sm font-medium opacity-90 mb-1">Available Balance</p>
           <p className="text-3xl font-bold">ACBU {formatAmount(BALANCE_PLACEHOLDER)}</p>
@@ -154,17 +166,17 @@ export default function SendPage() {
               <Button onClick={() => setShowSendDialog(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4">
                 <Plus className="mb-2 h-5 w-5" /><span>New Transfer</span>
               </Button>
-              <Link href="/me/settings/contacts">
-                <Button variant="outline" className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full">
+              <Button asChild variant="outline" className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full">
+                <Link href="/me/settings/contacts">
                   <Plus className="mb-2 h-5 w-5" /><span>Add Contact</span>
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
             <div>
               <h3 className="mb-3 text-sm font-semibold text-foreground">Frequent Recipients</h3>
               <div className="space-y-2">
                 {loadingContacts ? (
-                  <div className="animate-pulse h-12 bg-muted rounded-lg" />
+                  <Skeleton className="h-12 w-full" />
                 ) : contacts.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No contacts. Add one in Settings.</p>
                 ) : (
@@ -183,7 +195,7 @@ export default function SendPage() {
             <div>
               <h3 className="mb-3 text-sm font-semibold text-foreground">Recent Transfers</h3>
               {loadingTransfers ? (
-                <div className="space-y-2"><div className="h-14 bg-muted rounded-lg animate-pulse" /><div className="h-14 bg-muted rounded-lg animate-pulse" /></div>
+                <SkeletonList count={2} itemHeight="h-14" />
               ) : transfers.length === 0 ? (
                 <div className="rounded-lg border border-border bg-card p-6 text-center"><p className="text-sm text-muted-foreground">No transfers yet</p></div>
               ) : (
@@ -233,7 +245,7 @@ export default function SendPage() {
               <Label className="text-foreground">Amount</Label>
               <div className="flex gap-2">
                 <span className="flex items-center text-muted-foreground font-medium">AFK</span>
-                <Input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="border-border text-lg font-semibold" />
+                <Input type="number" placeholder="0.00" min="0" value={amount} onChange={(e) => { const v = e.target.value; if (v === '' || parseFloat(v) >= 0) setAmount(v); }} onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }} className="border-border text-lg font-semibold" />
               </div>
               {exceedsBalance && <p className="text-xs text-destructive">Insufficient balance.</p>}
               <p className="text-xs text-muted-foreground">Available: AFK {formatAmount(BALANCE_PLACEHOLDER)}</p>

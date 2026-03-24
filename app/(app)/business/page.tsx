@@ -1,12 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Briefcase, Users, PiggyBank, CreditCard, Settings, Zap } from 'lucide-react';
+import { useApiOpts } from '@/hooks/use-api';
+import * as businessApi from '@/lib/api/business';
+import type { BusinessStatsResponse } from '@/lib/api/business';
 
 const businessServices = [
   { id: 'sme', title: 'SME Services', description: 'Business accounts, transfers & statements', icon: Briefcase, badge: 'Pro', href: '/sme' },
@@ -18,9 +21,34 @@ const businessServices = [
 
 /**
  * Business overview and services page.
+ * Fetches dynamic business statistics from the backend.
  */
 export default function BusinessPage() {
   const router = useRouter();
+  const opts = useApiOpts();
+  const [stats, setStats] = useState<BusinessStatsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await businessApi.getBusinessStats(opts);
+        setStats(data);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load business stats';
+        setError(message);
+        // Fallback: show loading state instead of error UI
+        console.error('Business stats error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [opts]);
 
   return (
     <>
@@ -35,11 +63,15 @@ export default function BusinessPage() {
         <div className="grid grid-cols-2 gap-3 mb-6">
           <Card className="border-border p-4">
             <p className="text-xs text-muted-foreground mb-2">Monthly Volume</p>
-            <p className="text-2xl font-bold text-foreground">AFK 145,320</p>
+            <p className="text-2xl font-bold text-foreground">
+              {loading ? '—' : stats?.monthly_volume || '—'}
+            </p>
           </Card>
           <Card className="border-border p-4">
             <p className="text-xs text-muted-foreground mb-2">Employees</p>
-            <p className="text-2xl font-bold text-foreground">24</p>
+            <p className="text-2xl font-bold text-foreground">
+              {loading ? '—' : stats?.employees || '—'}
+            </p>
           </Card>
         </div>
 

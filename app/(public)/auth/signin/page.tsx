@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,12 +12,20 @@ import * as authApi from '@/lib/api/auth';
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [passcode, setPasscode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    if (searchParams.get('created') === '1') {
+      setSuccess('Account created successfully. Please sign in.');
+    }
+  }, [searchParams]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,8 +41,12 @@ export default function SignInPage() {
       const result = await authApi.signin(identifier.trim(), passcode);
 
       if ('requires_2fa' in result && result.requires_2fa) {
-        const params = new URLSearchParams({ challenge_token: result.challenge_token });
-        router.push(`/auth/2fa?${params.toString()}`);
+        // Store challenge token securely in sessionStorage (not in URL)
+        // This prevents leaks via Referer headers, browser history, and server logs
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('2fa_challenge_token', result.challenge_token);
+        }
+        router.push('/auth/2fa');
         return;
       }
 
@@ -69,15 +81,20 @@ export default function SignInPage() {
                 <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
+            {success && (
+              <div className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10">
+                <p className="text-sm text-green-600">{success}</p>
+              </div>
+            )}
 
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">
-                Username
+                Username, email, or phone
               </label>
               <Input
                 type="text"
                 autoComplete="username"
-                placeholder="Username"
+                placeholder="Username, email, or phone"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="border-border"
@@ -102,6 +119,7 @@ export default function SignInPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   disabled={loading}
                 >
                   {showPassword ? (

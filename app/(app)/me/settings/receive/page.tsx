@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
@@ -33,14 +34,35 @@ export default function ReceivePage() {
   }, [opts.token]);
 
   const toCopy = payUri || alias;
+
+  const fallbackCopy = (text: string): boolean => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      return document.execCommand('copy');
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  };
+
   const handleCopy = async () => {
     if (!toCopy) return;
     try {
-      await navigator.clipboard.writeText(toCopy);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(toCopy);
+      } else if (!fallbackCopy(toCopy)) {
+        throw new Error('Copy unsupported');
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setError('Copy failed');
+      setError('Unable to copy — try selecting the address manually');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
@@ -54,7 +76,7 @@ export default function ReceivePage() {
           </div>
         </div>
         <PageContainer>
-          <div className="animate-pulse h-24 bg-muted rounded-lg" />
+          <Skeleton className="h-24 w-full" />
         </PageContainer>
       </>
     );

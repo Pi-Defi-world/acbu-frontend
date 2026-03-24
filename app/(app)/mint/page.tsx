@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,21 +16,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
 import * as ratesApi from '@/lib/api/rates';
 import * as mintApi from '@/lib/api/mint';
+import * as burnApi from '@/lib/api/burn';
 import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
 
 const BALANCE_PLACEHOLDER = '—';
+const MINT_NETWORK_FEE_TEXT = 'Estimated at confirmation';
+const BURN_PROCESSING_FEE_TEXT = 'Estimated at confirmation';
 
 /**
  * Mint and Burn page for ACBU tokens.
  */
 export default function MintPage() {
-  const router = useRouter();
   const opts = useApiOpts();
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
@@ -37,6 +40,8 @@ export default function MintPage() {
   const [walletAddress, setWalletAddress] = useState('');
   const [burnAmount, setBurnAmount] = useState('');
   const [burnDestination, setBurnDestination] = useState('bank');
+  const [burnAccountNumber, setBurnAccountNumber] = useState('');
+  const [burnError, setBurnError] = useState('');
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [ratesLoading, setRatesLoading] = useState(false);
   const [mintError, setMintError] = useState('');
@@ -72,19 +77,39 @@ export default function MintPage() {
       setExecuting(false);
     }
   };
+  const handleExecuteBurn = async () => {
+    setBurnError('');
+    setExecuting(true);
+    try {
+      const res = await burnApi.burnAcbu(
+        burnAmount,
+        'USD',
+        { account_number: burnAccountNumber.trim(), type: burnDestination === 'mobile' ? 'mobile_money' : 'bank' },
+        opts
+      );
+      setTxId(res.transaction_id);
+      setStep('success');
+    } catch (e) {
+      setBurnError(e instanceof Error ? e.message : 'Burn failed');
+      setStep('input');
+    } finally {
+      setExecuting(false);
+    }
+  };
   const handleExecute = async () => {
     if (activeTab === 'mint') {
       await handleExecuteMint();
-      return;
+    } else {
+      await handleExecuteBurn();
     }
-    await new Promise((r) => setTimeout(r, 500));
-    setStep('success');
   };
   const resetForm = () => {
     setStep('input');
     setUsdcAmount('');
     setWalletAddress('');
     setBurnAmount('');
+    setBurnAccountNumber('');
+    setBurnError('');
     setTxId(null);
   };
 
@@ -92,9 +117,9 @@ export default function MintPage() {
     <>
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-4 flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
+          <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Link>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">Mint & Burn</h1>
             <p className="text-xs text-muted-foreground">Create and redeem AFK</p>
@@ -131,7 +156,7 @@ export default function MintPage() {
                 <Input placeholder="G..." value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} className="border-border font-mono text-sm" maxLength={56} />
               </div>
               <Card className="border-border bg-muted p-3 mt-4">
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Network Fee</span><span className="font-medium text-foreground">See quote</span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Network Fee</span><span className="font-medium text-foreground">{MINT_NETWORK_FEE_TEXT}</span></div>
               </Card>
               <Button onClick={handleMintConfirm} disabled={!usdcAmount || parseFloat(usdcAmount) <= 0 || !walletAddress.trim()} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6">
                 <ArrowDown className="w-4 h-4 mr-2" />Mint AFK
@@ -142,11 +167,16 @@ export default function MintPage() {
           <TabsContent value="burn" className="py-6 space-y-4">
             <div>
               <p className="text-sm text-muted-foreground mb-3">Redeem AFK for fiat withdrawal</p>
+              {burnError && <p className="text-sm text-destructive mb-2">{burnError}</p>}
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Destination</label>
                 <select value={burnDestination} onChange={(e) => setBurnDestination(e.target.value)} className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background">
                   <option value="bank">Bank Transfer</option><option value="mobile">Mobile Money</option><option value="wallet">Digital Wallet</option>
                 </select>
+              </div>
+              <div className="mt-4">
+                <label className="text-sm font-medium text-foreground mb-2 block">Account Number</label>
+                <Input placeholder="Account / phone number" value={burnAccountNumber} onChange={(e) => setBurnAccountNumber(e.target.value)} className="border-border" />
               </div>
               <div className="mt-4">
                 <label className="text-sm font-medium text-foreground mb-2 block">Amount to Burn</label>
@@ -158,9 +188,9 @@ export default function MintPage() {
               </div>
               <Card className="border-border bg-muted p-3 mt-4">
                 <div className="flex justify-between text-sm mb-2"><span className="text-muted-foreground">You'll receive</span><span className="font-medium text-foreground">{burnAmount ? `Local currency (see /burn for details)` : '—'}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Processing Fee</span><span className="font-medium text-foreground">AFK 1.00</span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Processing Fee</span><span className="font-medium text-foreground">{BURN_PROCESSING_FEE_TEXT}</span></div>
               </Card>
-              <Button onClick={handleBurnConfirm} disabled={!burnAmount || parseFloat(burnAmount) <= 0} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6">
+              <Button onClick={handleBurnConfirm} disabled={!burnAmount || parseFloat(burnAmount) <= 0 || !burnAccountNumber.trim()} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6">
                 <ArrowUp className="w-4 h-4 mr-2" />Burn & Redeem
               </Button>
             </div>
@@ -169,10 +199,10 @@ export default function MintPage() {
           <TabsContent value="rates" className="py-6 space-y-4">
             <div className="space-y-3">
               {ratesLoading ? (
-                <div className="animate-pulse h-20 bg-muted rounded-lg" />
+                <Skeleton className="h-20 w-full" />
               ) : rates?.rates?.length ? (
-                rates.rates.map((r: { currency?: string; rate?: number }, i: number) => (
-                  <Card key={i} className="border-border p-4">
+                rates.rates.map((r: { currency?: string; rate?: number }) => (
+                  <Card key={r.currency ?? r.rate} className="border-border p-4">
                     <div className="flex justify-between">
                       <p className="font-semibold text-foreground">{r.currency ?? 'Rate'}</p>
                       <p className="text-lg font-bold text-primary">{r.rate != null ? String(r.rate) : '—'}</p>
