@@ -19,14 +19,24 @@ export default function SignUpPage() {
     const [error, setError] = useState("");
 
     const handleSignUp = async (e: React.FormEvent) => {
+        const passwordRegex =
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+
         e.preventDefault();
         setError("");
         if (passcode !== confirmPasscode) {
             setError("Passcodes do not match");
             return;
         }
-        if (passcode.length < 4) {
-            setError("Passcode must be at least 4 characters");
+        if (passcode.length < 8) {
+            setError("Passcode must be at least 8 characters");
+            return;
+        }
+
+        if (!passwordRegex.test(passcode)) {
+            setError(
+                "Passcode must be at least 8 characters and include uppercase, lowercase, number, and special character",
+            );
             return;
         }
         if (!username.trim()) {
@@ -68,7 +78,7 @@ export default function SignUpPage() {
                     <form onSubmit={handleSignUp} className="space-y-4">
                         {error && (
                             <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-                                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                                <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                                 <p className="text-sm text-destructive">
                                     {error}
                                 </p>
@@ -99,7 +109,7 @@ export default function SignUpPage() {
                                 htmlFor="signup-passcode"
                                 className="text-sm font-medium text-foreground mb-2 block"
                             >
-                                Passcode (min 4 characters)
+                                Passcode (min 8 characters)
                             </label>
                             <div className="relative">
                                 <Input
