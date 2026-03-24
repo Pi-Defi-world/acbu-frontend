@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface SMEProduct {
   id: string;
