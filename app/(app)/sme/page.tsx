@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,6 @@ import {
 } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 interface SMEProduct {
   id: string;
