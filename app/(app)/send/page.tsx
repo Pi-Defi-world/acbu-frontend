@@ -19,7 +19,6 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -27,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, History, Check, AlertCircle, ArrowRight } from "lucide-react";
+import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
@@ -90,6 +89,7 @@ export default function SendPage() {
       )
       .finally(() => setLoadingTransfers(false));
   }, [opts]);
+
   const loadContacts = useCallback(() => {
     userApi
       .getContacts(opts)
@@ -101,6 +101,7 @@ export default function SendPage() {
       )
       .finally(() => setLoadingContacts(false));
   }, [opts]);
+
   useEffect(() => {
     loadTransfers();
     loadContacts();
@@ -163,6 +164,7 @@ export default function SendPage() {
     parseFloat(amount) > 0 &&
     ((useContact && selectedContact) ||
       (!useContact && customRecipient.trim()));
+
   const exceedsBalance = false; // no balance endpoint yet
 
   return (
@@ -187,133 +189,121 @@ export default function SendPage() {
         </div>
       </header>
 
-      <PageContainer>
-        {loadError && (
-          <p className="text-destructive text-sm mb-3">{loadError}</p>
-        )}
-        <div className="rounded-lg border border-border bg-gradient-to-br from-primary to-secondary p-5 text-primary-foreground mb-5">
-          <p className="text-sm font-medium opacity-90 mb-1">
-            Available Balance
-          </p>
-          <p className="text-3xl font-bold">
-            ACBU {formatAmount(BALANCE_PLACEHOLDER)}
-          </p>
-          <p className="text-xs opacity-75 mt-2">Native ACBU Currency</p>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsContent value="send" className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                onClick={() => setShowSendDialog(true)}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4"
-              >
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsContent value="send" className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              onClick={() => setShowSendDialog(true)}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4"
+            >
+              <Plus className="mb-2 h-5 w-5" />
+              <span>New Transfer</span>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full"
+            >
+              <Link href="/me/settings/contacts">
                 <Plus className="mb-2 h-5 w-5" />
-                <span>New Transfer</span>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full"
-              >
-                <Link href="/me/settings/contacts">
-                  <Plus className="mb-2 h-5 w-5" />
-                  <span>Add Contact</span>
-                </Link>
-              </Button>
-            </div>
-            <div>
-              <h3 className="mb-3 text-sm font-semibold text-foreground">
-                Frequent Recipients
-              </h3>
-              <div className="space-y-2">
-                {loadingContacts ? (
-                  <Skeleton className="h-12 w-full" />
-                ) : contacts.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No contacts. Add one in Settings.
-                  </p>
-                ) : (
-                  contacts.slice(0, 5).map((contact: ContactItem) => (
-                    <button
-                      key={contact.id}
-                      onClick={() => {
-                        handleRecipientSelect(contact);
-                        setShowSendDialog(true);
-                      }}
-                      className="w-full rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-muted"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate">
-                            {contact.alias ?? contact.pay_uri ?? contact.id}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {contact.pay_uri ?? ""}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="history" className="space-y-3">
-            <div>
-              <h3 className="mb-3 text-sm font-semibold text-foreground">
-                Recent Transfers
-              </h3>
-              {loadingTransfers ? (
-                <SkeletonList count={2} itemHeight="h-14" />
-              ) : transfers.length === 0 ? (
-                <div className="rounded-lg border border-border bg-card p-6 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    No transfers yet
-                  </p>
-                </div>
+                <span>Add Contact</span>
+              </Link>
+            </Button>
+          </div>
+
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">
+              Frequent Recipients
+            </h3>
+            <div className="space-y-2">
+              {loadingContacts ? (
+                <Skeleton className="h-12 w-full" />
+              ) : contacts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No contacts. Add one in Settings.
+                </p>
               ) : (
-                <div className="space-y-2">
-                  {transfers.map((t: TransferItem) => (
-                    <Link
-                      key={t.transaction_id}
-                      href={`/send/${t.transaction_id}`}
-                      className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
-                    >
+                contacts.slice(0, 5).map((contact: ContactItem) => (
+                  <button
+                    key={contact.id}
+                    onClick={() => {
+                      handleRecipientSelect(contact);
+                      setShowSendDialog(true);
+                    }}
+                    className="w-full rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-muted"
+                  >
+                    <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-foreground truncate">
-                          Transfer
+                          {contact.alias ?? contact.pay_uri ?? contact.id}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(t.created_at)}
+                        <p className="text-xs text-muted-foreground truncate">
+                          {contact.pay_uri ?? ""}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-foreground">
-                          AFK {formatAmount(t.amount_acbu)}
-                        </p>
-                        <Badge
-                          variant="outline"
-                          className={`mt-1 text-xs ${getStatusColor(t.status)}`}
-                        >
-                          {t.status === "completed" && (
-                            <Check className="mr-1 h-3 w-3" />
-                          )}
-                          {t.status === "pending" && (
-                            <AlertCircle className="mr-1 h-3 w-3" />
-                          )}
-                          {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
-                        </Badge>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                    </div>
+                  </button>
+                ))
               )}
             </div>
-          </TabsContent>
-        </Tabs>
-      </PageContainer>
+          </div>
+        </TabsContent>
 
+        <TabsContent value="history" className="space-y-3">
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">
+              Recent Transfers
+            </h3>
+            {loadingTransfers ? (
+              <SkeletonList count={2} itemHeight="h-14" />
+            ) : transfers.length === 0 ? (
+              <div className="rounded-lg border border-border bg-card p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No transfers yet
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {transfers.map((t: TransferItem) => (
+                  <Link
+                    key={t.transaction_id}
+                    href={`/send/${t.transaction_id}`}
+                    className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground truncate">
+                        Transfer
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(t.created_at)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-foreground">
+                        AFK {formatAmount(t.amount_acbu)}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className={`mt-1 text-xs ${getStatusColor(t.status)}`}
+                      >
+                        {t.status === "completed" && (
+                          <Check className="mr-1 h-3 w-3" />
+                        )}
+                        {t.status === "pending" && (
+                          <AlertCircle className="mr-1 h-3 w-3" />
+                        )}
+                        {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                      </Badge>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Send Dialog */}
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
         <DialogContent className="max-w-md border-border">
           <DialogHeader>
@@ -359,11 +349,11 @@ export default function SendPage() {
                     value={customRecipient}
                     onChange={(e) => setCustomRecipient(e.target.value)}
                     className="border-border"
-                    maxLength={128}
                   />
                 </TabsContent>
               </Tabs>
             </div>
+
             <div className="space-y-2">
               <Label className="text-foreground">Amount</Label>
               <div className="flex gap-2">
@@ -395,6 +385,7 @@ export default function SendPage() {
                 Available: AFK {formatAmount(BALANCE_PLACEHOLDER)}
               </p>
             </div>
+
             <div className="space-y-2">
               <Label className="text-foreground">Note (Optional)</Label>
               <Input
@@ -402,15 +393,16 @@ export default function SendPage() {
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="border-border"
-                maxLength={100}
               />
             </div>
+
             <Card className="border-border bg-muted p-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Network Fee</span>
                 <span className="font-medium text-foreground">Free</span>
               </div>
             </Card>
+
             <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
@@ -431,6 +423,7 @@ export default function SendPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Confirm Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
@@ -466,6 +459,12 @@ export default function SendPage() {
                 Network Fee: Free
               </p>
             </div>
+            {note && (
+              <div className="rounded-lg border border-border bg-muted p-4">
+                <p className="text-xs text-muted-foreground">Note</p>
+                <p className="text-sm text-foreground break-words">{note}</p>
+              </div>
+            )}
           </div>
           <div className="flex gap-3">
             <AlertDialogCancel
@@ -485,6 +484,7 @@ export default function SendPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Success Dialog */}
       <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <DialogContent className="max-w-md border-border">
           <div className="flex flex-col items-center text-center py-6">
