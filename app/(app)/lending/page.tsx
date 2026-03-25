@@ -164,19 +164,29 @@ export default function LendingPage() {
     );
   };
 
-  const handleSubmitApplication = () => {
-    if (loanAmount && loanTerm && selectedLoanProduct) {
-      console.log('[v0] Loan application submitted:', {
-        product: selectedLoanProduct.name,
-        amount: loanAmount,
-        term: loanTerm,
-      });
-      setShowApplicationDialog(false);
-      setLoanAmount('');
-      setLoanTerm('');
-      setSelectedLoanProduct(null);
-    }
-  };
+ const handleSubmitApplication = async () => {
+  if (!loanAmount || !loanTerm || !selectedLoanProduct) return;
+
+  try {
+
+    await lendingApi.applyForLoan(
+      {
+        productId: selectedLoanProduct.id,
+        amount: parseFloat(loanAmount),
+        term: parseInt(loanTerm),
+      },
+      opts
+    );
+    // reset + close (same behavior, but after success)
+    setShowApplicationDialog(false);
+    setLoanAmount('');
+    setLoanTerm('');
+    setSelectedLoanProduct(null);
+
+  } catch (error) {
+    console.error('Loan application failed:', error);
+  }
+};
 
   const monthlyPayment = estimateMonthlyPayment();
 
