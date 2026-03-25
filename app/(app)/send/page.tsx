@@ -266,6 +266,7 @@ export default function SendPage() {
             <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">To</p><p className="font-semibold text-foreground truncate">{selectedContact?.alias || selectedContact?.pay_uri || customRecipient || '—'}</p></div>
             <div className="flex items-center justify-center"><div className="rounded-full bg-secondary p-2"><ArrowRight className="h-5 w-5 text-secondary-foreground" /></div></div>
             <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">Amount</p><p className="text-2xl font-bold text-foreground">AFK {formatAmount(amount)}</p><p className="mt-2 text-xs text-muted-foreground">Network Fee: Free</p></div>
+            {note && <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">Note</p><p className="text-sm text-foreground break-words">{note}</p></div>}
           </div>
           <div className="flex gap-3">
             <AlertDialogCancel className="flex-1 border-border" disabled={sending}>Cancel</AlertDialogCancel>
