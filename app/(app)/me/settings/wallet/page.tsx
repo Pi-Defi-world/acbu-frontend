@@ -9,8 +9,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
-import type { ReceiveResponse, UserMe } from "@/types/api";
+import type { ReceiveResponse } from "@/types/api";
 
+/**
+ * WalletPage Component
+ * Displays wallet settings and confirmation flow.
+ * Allows users to confirm their Stellar wallet address for transaction enablement.
+ *
+ * Features:
+ * - Fetches and displays user's Stellar wallet address
+ * - Enables confirmation button when wallet is loaded
+ * - Handles wallet confirmation via API
+ * - Shows loading, error, and success states
+ * - Auto-redirects to settings on successful confirmation
+ *
+ * @returns {React.ReactElement} The wallet settings page component
+ */
 export default function WalletPage() {
   const opts = useApiOpts();
   const [loading, setLoading] = useState(true);
@@ -25,6 +39,14 @@ export default function WalletPage() {
     loadWalletInfo();
   }, [opts.token]);
 
+  /**
+   * Loads wallet information from the API
+   * Fetches the user's Stellar wallet address and prepares the confirmation state.
+   * Sets loading states and handles errors gracefully.
+   *
+   * @async
+   * @returns {Promise<void>}
+   */
   const loadWalletInfo = async () => {
     try {
       setLoading(true);
@@ -39,15 +61,8 @@ export default function WalletPage() {
       if (address && address.length >= 56) {
         setWalletAddress(address);
         // Enable button if wallet has a valid Stellar address and is loaded
-        // In production, you'd check for actual balance/funding status
         setHasMinBalance(true);
       }
-
-      // Fetch user info to check wallet status
-      const userData = (await userApi.getMe(opts)) as UserMe;
-      // Check if wallet is already confirmed (could be added to UserMe response)
-      // For now, we assume if we got here successfully, it's not confirmed
-      setIsConfirmed(false);
     } catch (err) {
       setError(
         err instanceof Error
@@ -59,6 +74,15 @@ export default function WalletPage() {
     }
   };
 
+  /**
+   * Handles wallet confirmation submission
+   * Calls the wallet confirm API endpoint with the user's wallet address.
+   * Updates UI states for loading, success, and error scenarios.
+   * Auto-redirects to settings page on successful confirmation.
+   *
+   * @async
+   * @returns {Promise<void>}
+   */
   const handleConfirmWallet = async () => {
     if (!walletAddress || confirming) return;
 
