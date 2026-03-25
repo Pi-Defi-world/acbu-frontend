@@ -79,27 +79,19 @@ export default function SendPage() {
   const [loadError, setLoadError] = useState("");
 
   const loadTransfers = useCallback(() => {
-    transfersApi
-      .getTransfers(opts)
-      .then((data) => setTransfers(data.transfers ?? []))
-      .catch((e) =>
-        setLoadError(
-          e instanceof Error ? e.message : "Failed to load transfers",
-        ),
-      )
-      .finally(() => setLoadingTransfers(false));
+    setLoadError("");
+    transfersApi.getTransfers(opts).then((data) => {
+      setTransfers(data.transfers ?? []);
+      setLoadError("");
+    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load transfers')).finally(() => setLoadingTransfers(false));
   }, [opts]);
 
   const loadContacts = useCallback(() => {
-    userApi
-      .getContacts(opts)
-      .then((data) => setContacts(data.contacts ?? []))
-      .catch((e) =>
-        setLoadError(
-          e instanceof Error ? e.message : "Failed to load contacts",
-        ),
-      )
-      .finally(() => setLoadingContacts(false));
+    setLoadError("");
+    userApi.getContacts(opts).then((data) => {
+      setContacts(data.contacts ?? []);
+      setLoadError("");
+    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
   }, [opts]);
 
   useEffect(() => {
@@ -165,86 +157,48 @@ export default function SendPage() {
     ((useContact && selectedContact) ||
       (!useContact && customRecipient.trim()));
 
-  const exceedsBalance = false; // no balance endpoint yet
-
-  return (
-    <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-foreground mb-3">Send Money</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveTab("send")}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === "send" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-            >
-              Send
-            </button>
-            <button
-              onClick={() => setActiveTab("history")}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === "history" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-            >
-              History
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsContent value="send" className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              onClick={() => setShowSendDialog(true)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4"
-            >
-              <Plus className="mb-2 h-5 w-5" />
-              <span>New Transfer</span>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full"
-            >
-              <Link href="/me/settings/contacts">
-                <Plus className="mb-2 h-5 w-5" />
-                <span>Add Contact</span>
-              </Link>
-            </Button>
-          </div>
-
-          <div>
-            <h3 className="mb-3 text-sm font-semibold text-foreground">
-              Frequent Recipients
-            </h3>
-            <div className="space-y-2">
-              {loadingContacts ? (
-                <Skeleton className="h-12 w-full" />
-              ) : contacts.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No contacts. Add one in Settings.
-                </p>
-              ) : (
-                contacts.slice(0, 5).map((contact: ContactItem) => (
-                  <button
-                    key={contact.id}
-                    onClick={() => {
-                      handleRecipientSelect(contact);
-                      setShowSendDialog(true);
-                    }}
-                    className="w-full rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-muted"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">
-                          {contact.alias ?? contact.pay_uri ?? contact.id}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {contact.pay_uri ?? ""}
-                        </p>
-                      </div>
+    return (
+        <>
+            <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+                <div className="px-4 py-3">
+                    <h1 className="text-lg font-bold text-foreground mb-3">
+                        Send Money
+                    </h1>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setActiveTab("send")}
+                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === "send" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                        >
+                            Send
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("history")}
+                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === "history" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                        >
+                            History
+                        </button>
                     </div>
-                  </button>
-                ))
-              )}
+                </div>
+            </header>
+        <div className="px-4 py-4">
+          {loadError && (
+            <div className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <p className="font-medium">{loadError}</p>
+            </div>
+          )}
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsContent value="send" className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={() => setShowSendDialog(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4">
+                <Plus className="mb-2 h-5 w-5" /><span>New Transfer</span>
+              </Button>
+              <Button asChild variant="outline" className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full">
+                <Link href="/me/settings/contacts">
+                  <Plus className="mb-2 h-5 w-5" /><span>Add Contact</span>
+                </Link>
+              </Button>
             </div>
           </div>
         </TabsContent>
@@ -298,10 +252,36 @@ export default function SendPage() {
                   </Link>
                 ))}
               </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </TabsContent>
+          <TabsContent value="history" className="space-y-3">
+            <div>
+              <h3 className="mb-3 text-sm font-semibold text-foreground">Recent Transfers</h3>
+              {loadingTransfers ? (
+                <SkeletonList count={2} itemHeight="h-14" />
+              ) : transfers.length === 0 ? (
+                <div className="rounded-lg border border-border bg-card p-6 text-center"><p className="text-sm text-muted-foreground">No transfers yet</p></div>
+              ) : (
+                <div className="space-y-2">
+                  {transfers.map((t: TransferItem) => (
+                    <Link key={t.transaction_id} href={`/send/${t.transaction_id}`} className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted">
+                      <div className="flex-1 min-w-0"><p className="font-medium text-foreground truncate">Transfer</p><p className="text-xs text-muted-foreground">{formatDate(t.created_at)}</p></div>
+                      <div className="text-right">
+                        <p className="font-semibold text-foreground">AFK {formatAmount(t.amount_acbu)}</p>
+                        <Badge variant="outline" className={`mt-1 text-xs ${getStatusColor(t.status)}`}>
+                          {t.status === 'completed' && <Check className="mr-1 h-3 w-3" />}
+                          {t.status === 'pending' && <AlertCircle className="mr-1 h-3 w-3" />}
+                          {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                        </Badge>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* Send Dialog */}
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
@@ -484,26 +464,29 @@ export default function SendPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Success Dialog */}
-      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <DialogContent className="max-w-md border-border">
-          <div className="flex flex-col items-center text-center py-6">
-            <div className="rounded-full bg-green-100 p-4 mb-4">
-              <Check className="h-8 w-8 text-green-600" />
-            </div>
-            <h2 className="text-xl font-bold text-foreground mb-2">
-              Transfer Sent!
-            </h2>
-            <p className="text-muted-foreground mb-4">
-              Your transfer for AFK {formatAmount(lastSentAmount)} is being
-              processed.
-            </p>
-            <Badge variant="secondary" className="mb-4">
-              Pending
-            </Badge>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
+
+            <Dialog
+                open={showSuccessDialog}
+                onOpenChange={setShowSuccessDialog}
+            >
+                <DialogContent className="max-w-md border-border">
+                    <div className="flex flex-col items-center text-center py-6">
+                        <div className="rounded-full bg-green-100 p-4 mb-4">
+                            <Check className="h-8 w-8 text-green-600" />
+                        </div>
+                        <h2 className="text-xl font-bold text-foreground mb-2">
+                            Transfer Sent!
+                        </h2>
+                        <p className="text-muted-foreground mb-4">
+                            Your transfer for AFK {formatAmount(lastSentAmount)}{" "}
+                            is being processed.
+                        </p>
+                        <Badge variant="secondary" className="mb-4">
+                            Pending
+                        </Badge>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
+    );
 }
