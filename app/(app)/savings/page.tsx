@@ -239,15 +239,16 @@ export default function SavingsPage() {
               </h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
+            {/* AFTER */}
             <p className="text-3xl font-bold text-foreground mb-1">
-              AFK 2,500.00
+              {positionsLoading ? "—" : `AFK ${formatAmount(totalSavings)}`}
             </p>
             <p className="text-xs text-muted-foreground mb-3">
               Earning 8% APY interest
             </p>
             <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
               <TrendingUp className="w-3 h-3" />
-              <span>+AFK 16.67 this month</span>
+            <span>+AFK {formatAmount((totalSavings * 0.08) / 12)} this month</span>
             </div>
           </Card>
 
