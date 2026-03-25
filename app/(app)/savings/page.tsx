@@ -213,6 +213,28 @@ export default function SavingsPage() {
             </div>
           </Card>
 
+          {/* Overview Card */}
+          <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-bold text-foreground">
+                Total Savings
+              </h2>
+              <PiggyBank className="w-5 h-5 text-green-600" />
+            </div>
+            {/* AFTER */}
+            <p className="text-3xl font-bold text-foreground mb-1">
+              {positionsLoading ? "—" : `AFK ${formatAmount(totalSavings)}`}
+            </p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Earning 8% APY interest
+            </p>
+            <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
+              <TrendingUp className="w-3 h-3" />
+            <span>+AFK {formatAmount((totalSavings * 0.08) / 12)} this month</span>
+            </div>
+          </Card>
+
+          {/* Savings Accounts */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-foreground">Savings Accounts</h3>
             {savingsAccounts.map((account) => (
