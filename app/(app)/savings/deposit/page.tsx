@@ -23,7 +23,7 @@ export default function SavingsDepositPage() {
   useEffect(() => {
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
-      if (uri && typeof uri === 'string' && uri.length >= 56) setUser(uri);
+      if (uri && typeof uri === 'string') setUser(uri);
     }).catch((e) => {
       console.error(e instanceof Error ? e.message : 'Failed to load receive address');
     });

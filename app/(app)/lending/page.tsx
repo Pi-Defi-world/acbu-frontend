@@ -25,7 +25,6 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
-import { useRouter } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
 import * as lendingApi from '@/lib/api/lending';
@@ -113,7 +112,6 @@ const mockActiveLoan: ActiveLoan = {
  * Lending and loan management page.
  */
 export default function LendingPage() {
-  const router = useRouter();
   const opts = useApiOpts();
   const [apiLender, setApiLender] = useState('');
   const [lendingBalance, setLendingBalance] = useState<string | number | null>(null);
@@ -166,19 +164,29 @@ export default function LendingPage() {
     );
   };
 
-  const handleSubmitApplication = () => {
-    if (loanAmount && loanTerm && selectedLoanProduct) {
-      console.log('[v0] Loan application submitted:', {
-        product: selectedLoanProduct.name,
-        amount: loanAmount,
-        term: loanTerm,
-      });
-      setShowApplicationDialog(false);
-      setLoanAmount('');
-      setLoanTerm('');
-      setSelectedLoanProduct(null);
-    }
-  };
+ const handleSubmitApplication = async () => {
+  if (!loanAmount || !loanTerm || !selectedLoanProduct) return;
+
+  try {
+
+    await lendingApi.applyForLoan(
+      {
+        productId: selectedLoanProduct.id,
+        amount: parseFloat(loanAmount),
+        term: parseInt(loanTerm),
+      },
+      opts
+    );
+    // reset + close (same behavior, but after success)
+    setShowApplicationDialog(false);
+    setLoanAmount('');
+    setLoanTerm('');
+    setSelectedLoanProduct(null);
+
+  } catch (error) {
+    console.error('Loan application failed:', error);
+  }
+};
 
   const monthlyPayment = estimateMonthlyPayment();
 
@@ -187,13 +195,13 @@ export default function LendingPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/"
             className="p-2 hover:bg-muted rounded transition-colors"
             aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Link>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">Borrow</h1>
             <p className="text-xs text-muted-foreground">Loans & credit</p>
