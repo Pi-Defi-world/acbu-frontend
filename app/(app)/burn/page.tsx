@@ -33,9 +33,12 @@ export default function BurnPage() {
     acbuAmount &&
     parseFloat(acbuAmount) > 0 &&
     currency.length === 3 &&
-    accountNumber.trim() &&
-    bankCode.trim() &&
-    accountName.trim();
+    accountNumber.trim().length >= 5 &&
+    accountNumber.trim().length <= 20 &&
+    bankCode.trim().length >= 3 &&
+    bankCode.trim().length <= 10 &&
+    accountName.trim().length >= 3 &&
+    accountName.trim().length <= 100;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +66,7 @@ export default function BurnPage() {
         <div className="px-4 py-3 flex items-center gap-3">
           <Link
             href="/mint"
-            aria-label="Go back to Mint page"
+            aria-label="Go back to Mint page" 
             className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2"
           >
             <ArrowLeft className="w-5 h-5 text-primary" />
@@ -122,32 +125,32 @@ export default function BurnPage() {
                 maxLength={20}
                 placeholder="1234567890"
                 value={accountNumber}
-                onChange={(e) =>
-                  setAccountNumber(e.target.value.replace(/\D/g, ""))
-                }
+                onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
                 className="border-border"
               />
             </div>
             <div>
-  <label className="text-sm font-medium text-foreground mb-2 block">
-    Bank code
-  </label>
-  <Input
-    type="text"
-    maxLength={10}
-    placeholder="Enter bank code"
-    value={bankCode}
-    onChange={(e) => setBankCode(e.target.value.slice(0, 10))}
-    className="border-border"
-  />
-</div>
+              <label className="text-sm font-medium text-foreground mb-2 block">
+                Bank code
+              </label>
+              <Input
+                type="text"
+                maxLength={10}
+                placeholder="Enter bank code"
+                value={bankCode}
+                onChange={(e) => setBankCode(e.target.value.slice(0, 10))}
+                className="border-border"
+              />
+            </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">
                 Account name
               </label>
               <Input
+                type="text"
+                maxLength={100}
                 value={accountName}
-                  onChange={(e) => setAccountName(e.target.value.slice(0, 50))}
+                onChange={(e) => setAccountName(e.target.value)}
                 className="border-border"
               />
             </div>
