@@ -270,144 +270,22 @@ export default function SendPage() {
         </DialogContent>
       </Dialog>
 
-            <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
-                <DialogContent className="max-w-md border-border">
-                    <DialogHeader>
-                        <DialogTitle>Send Money</DialogTitle>
-                        <DialogDescription>
-                            Transfer AFK securely to another wallet
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label className="text-foreground">Recipient</Label>
-                            <Tabs
-                                value={useContact ? "contact" : "custom"}
-                                onValueChange={(v) =>
-                                    setUseContact(v === "contact")
-                                }
-                            >
-                                <TabsList className="grid w-full grid-cols-2 bg-muted">
-                                    <TabsTrigger value="contact">
-                                        From Contacts
-                                    </TabsTrigger>
-                                    <TabsTrigger value="custom">
-                                        New Address
-                                    </TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="contact" className="mt-3">
-                                    <Select
-                                        value={selectedContact?.id || ""}
-                                        onValueChange={(id) => {
-                                            const c = contacts.find(
-                                                (x) => x.id === id,
-                                            );
-                                            if (c) setSelectedContact(c);
-                                        }}
-                                    >
-                                        <SelectTrigger className="border-border">
-                                            <SelectValue placeholder="Select a contact" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {contacts.map((c) => (
-                                                <SelectItem
-                                                    key={c.id}
-                                                    value={c.id}
-                                                >
-                                                    {c.alias ??
-                                                        c.pay_uri ??
-                                                        c.id}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </TabsContent>
-                                <TabsContent value="custom">
-                                    <Input
-                                        placeholder="Wallet address or email"
-                                        value={customRecipient}
-                                        onChange={(e) =>
-                                            setCustomRecipient(e.target.value)
-                                        }
-                                        className="border-border"
-                                    />
-                                </TabsContent>
-                            </Tabs>
-                        </div>
-                        <div className="space-y-2">
-                            <Label
-                                htmlFor="transfer-amount"
-                                className="text-foreground"
-                            >
-                                Amount
-                            </Label>
-                            <div className="flex gap-2">
-                                <span className="flex items-center text-muted-foreground font-medium">
-                                    AFK
-                                </span>
-                                <Input
-                                    id="transfer-amount"
-                                    type="number"
-                                    placeholder="0.00"
-                                    value={amount}
-                                    onChange={(e) => setAmount(e.target.value)}
-                                    className="border-border text-lg font-semibold"
-                                />
-                            </div>
-                            {exceedsBalance && (
-                                <p className="text-xs text-destructive">
-                                    Insufficient balance.
-                                </p>
-                            )}
-                            <p className="text-xs text-muted-foreground">
-                                Available: AFK{" "}
-                                {formatAmount(BALANCE_PLACEHOLDER)}
-                            </p>
-                        </div>
-                        <div className="space-y-2">
-                            <Label
-                                htmlFor="optional-note"
-                                className="text-foreground"
-                            >
-                                Note (Optional)
-                            </Label>
-                            <Input
-                                id="optional-note"
-                                placeholder="Add a message..."
-                                value={note}
-                                onChange={(e) => setNote(e.target.value)}
-                                className="border-border"
-                            />
-                        </div>
-                        <Card className="border-border bg-muted p-3">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">
-                                    Network Fee
-                                </span>
-                                <span className="font-medium text-foreground">
-                                    Free
-                                </span>
-                            </div>
-                        </Card>
-                        <div className="flex gap-3 pt-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowSendDialog(false)}
-                                className="flex-1 border-border"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={() => setShowConfirmDialog(true)}
-                                disabled={!isFormValid()}
-                                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-                            >
-                                Continue
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent className="max-w-md border-border">
+          <AlertDialogHeader><AlertDialogTitle>Confirm Transfer</AlertDialogTitle><AlertDialogDescription>Review the details before confirming</AlertDialogDescription></AlertDialogHeader>
+          <div className="space-y-3 py-4">
+            {submitError && <p className="text-sm text-destructive">{submitError}</p>}
+            <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">To</p><p className="font-semibold text-foreground truncate">{selectedContact?.alias || selectedContact?.pay_uri || customRecipient || '—'}</p></div>
+            <div className="flex items-center justify-center"><div className="rounded-full bg-secondary p-2"><ArrowRight className="h-5 w-5 text-secondary-foreground" /></div></div>
+            <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">Amount</p><p className="text-2xl font-bold text-foreground">AFK {formatAmount(amount)}</p><p className="mt-2 text-xs text-muted-foreground">Network Fee: Free</p></div>
+            {note && <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">Note</p><p className="text-sm text-foreground break-words">{note}</p></div>}
+          </div>
+          <div className="flex gap-3">
+            <AlertDialogCancel className="flex-1 border-border" disabled={sending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmTransfer} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={sending}>{sending ? 'Sending...' : `Send AFK ${amount}`}</AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
 
             <AlertDialog
                 open={showConfirmDialog}
