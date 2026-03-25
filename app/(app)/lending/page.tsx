@@ -125,19 +125,27 @@ export default function LendingPage() {
   const [loanTerm, setLoanTerm] = useState('');
   const [selectedLoanProduct, setSelectedLoanProduct] =
     useState<LoanProduct | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === 'string') setApiLender(uri);
-    }).catch(() => {});
+    }).catch((e) => {
+      console.error("Failed to load user info:", e);
+      setLoadError("Failed to load lender information. Please try again later.");
+    });
   }, [opts.token]);
   useEffect(() => {
     if (!apiLender) return;
     setLendingLoading(true);
     lendingApi.getLendingBalance(apiLender, opts).then((res) => {
       setLendingBalance(res.balance);
-    }).catch(() => setLendingBalance(null)).finally(() => setLendingLoading(false));
+    }).catch((e) => {
+      setLendingBalance(null);
+      console.error("Failed to load lending balance:", e);
+      setLoadError("Failed to load lending balance. Please check your connection.");
+    }).finally(() => setLendingLoading(false));
   }, [apiLender, opts.token]);
 
   const handleSelectProduct = (product: LoanProduct) => {
@@ -185,6 +193,7 @@ export default function LendingPage() {
 
   } catch (error) {
     console.error('Loan application failed:', error);
+    setLoadError("Loan application failed. Please check your inputs and try again.");
   }
 };
 
@@ -212,6 +221,20 @@ export default function LendingPage() {
       {/* Main Content */}
       <PageContainer>
         <div className="space-y-6">
+        {loadError && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-3 text-destructive">
+            <AlertCircle className="w-5 h-5" />
+            <p className="text-sm font-medium flex-1">{loadError}</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLoadError(null)}
+              className="hover:bg-destructive/20"
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
         {/* Lending balance (API) */}
         {(lendingLoading || lendingBalance != null) && (
           <Card className="border-border bg-gradient-to-br from-primary/20 to-secondary/10 p-5 mb-4">

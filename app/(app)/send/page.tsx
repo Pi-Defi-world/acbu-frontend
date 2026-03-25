@@ -171,8 +171,15 @@ export default function SendPage() {
                     </div>
                 </div>
             </header>
+        <div className="px-4 py-4">
+          {loadError && (
+            <div className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <p className="font-medium">{loadError}</p>
+            </div>
+          )}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
           <TabsContent value="send" className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <Button onClick={() => setShowSendDialog(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4">
@@ -226,6 +233,11 @@ export default function SendPage() {
                     </Link>
                   ))}
                 </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
 
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
         <DialogContent className="max-w-md border-border">
@@ -287,66 +299,6 @@ export default function SendPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-            <AlertDialog
-                open={showConfirmDialog}
-                onOpenChange={setShowConfirmDialog}
-            >
-                <AlertDialogContent className="max-w-md border-border">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Transfer</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Review the details before confirming
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="space-y-3 py-4">
-                        {submitError && (
-                            <p className="text-sm text-destructive">
-                                {submitError}
-                            </p>
-                        )}
-                        <div className="rounded-lg border border-border bg-muted p-4">
-                            <p className="text-xs text-muted-foreground">To</p>
-                            <p className="font-semibold text-foreground truncate">
-                                {selectedContact?.alias ||
-                                    selectedContact?.pay_uri ||
-                                    customRecipient ||
-                                    "—"}
-                            </p>
-                        </div>
-                        <div className="flex items-center justify-center">
-                            <div className="rounded-full bg-secondary p-2">
-                                <ArrowRight className="h-5 w-5 text-secondary-foreground" />
-                            </div>
-                        </div>
-                        <div className="rounded-lg border border-border bg-muted p-4">
-                            <p className="text-xs text-muted-foreground">
-                                Amount
-                            </p>
-                            <p className="text-2xl font-bold text-foreground">
-                                AFK {formatAmount(amount)}
-                            </p>
-                            <p className="mt-2 text-xs text-muted-foreground">
-                                Network Fee: Free
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex gap-3">
-                        <AlertDialogCancel
-                            className="flex-1 border-border"
-                            disabled={sending}
-                        >
-                            Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleConfirmTransfer}
-                            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-                            disabled={sending}
-                        >
-                            {sending ? "Sending..." : `Send AFK ${amount}`}
-                        </AlertDialogAction>
-                    </div>
-                </AlertDialogContent>
-            </AlertDialog>
 
             <Dialog
                 open={showSuccessDialog}
