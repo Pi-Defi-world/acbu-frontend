@@ -31,13 +31,13 @@ import * as savingsApi from "@/lib/api/savings";
 import { formatAmount } from "@/lib/utils";
 
 interface SavingsAccount {
-  id: string;
-  name: string;
-  apy: number;
-  balance: number;
-  icon: React.ReactNode;
-  description: string;
-  color: string;
+    id: string;
+    name: string;
+    apy: number;
+    balance: number;
+    icon: React.ReactNode;
+    description: string;
+    color: string;
 }
 
 interface SavingsGoal {
@@ -168,10 +168,10 @@ export default function SavingsPage() {
     setShowDialog(true);
   };
 
-  const handleDeposit = (account: SavingsAccount) => {
-    setSelectedAccount(account);
-    setShowDepositDialog(true);
-  };
+    const handleDeposit = (account: SavingsAccount) => {
+        setSelectedAccount(account);
+        setShowDepositDialog(true);
+    };
 
   const handleConfirmDeposit = () => {
     if (depositAmount && parseFloat(depositAmount) > 0) {
@@ -270,53 +270,18 @@ export default function SavingsPage() {
                     <Card
                       className={`border-border bg-gradient-to-br ${account.color} p-4 cursor-pointer hover:border-primary/50 transition-all`}
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="text-primary">{account.icon}</div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-foreground">
-                            {account.apy}%
-                          </p>
-                          <p className="text-xs text-muted-foreground">APY</p>
-                        </div>
-                      </div>
-                      <h4 className="font-semibold text-foreground mb-1">
-                        {account.name}
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        {account.description}
-                      </p>
-                    </Card>
-                  </button>
-                  {account.balance > 0 && (
-                    <div className="px-1 mb-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs font-medium text-muted-foreground">
-                          AFK {formatAmount(account.balance)}
-                        </p>
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div className="flex-1">
+                        <h1 className="text-lg font-bold text-foreground">
+                            Savings
+                        </h1>
                         <p className="text-xs text-muted-foreground">
-                          {percentage.toFixed(0)}%
+                            Grow your wealth
                         </p>
-                      </div>
-                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary transition-all"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
                     </div>
-                  )}
-                  <Button
-                    onClick={() => handleDeposit(account)}
-                    variant="outline"
-                    className="w-full border-border text-xs h-8"
-                  >
-                    <Plus className="w-3 h-3 mr-1" />
-                    Deposit
-                  </Button>
                 </div>
-              );
-            })}
-          </div>
+            </header>
 
           {/* Goals Section */}
           <div className="space-y-4">
@@ -420,83 +385,90 @@ export default function SavingsPage() {
                     Monitor progress toward your goals
                   </p>
                 </div>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </PageContainer>
+            </PageContainer>
 
-      {/* Account Details Dialog */}
-      {selectedAccount && (
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent className="max-w-md border-border">
-            <DialogHeader>
-              <DialogTitle>{selectedAccount.name}</DialogTitle>
-              <DialogDescription>
-                {selectedAccount.description}
-              </DialogDescription>
-            </DialogHeader>
+            {/* Account Details Dialog */}
+            {selectedAccount && (
+                <Dialog open={showDialog} onOpenChange={setShowDialog}>
+                    <DialogContent className="max-w-md border-border">
+                        <DialogHeader>
+                            <DialogTitle>{selectedAccount.name}</DialogTitle>
+                            <DialogDescription>
+                                {selectedAccount.description}
+                            </DialogDescription>
+                        </DialogHeader>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <Card className="border-border bg-muted p-3">
-                  <p className="text-xs text-muted-foreground mb-1">APY</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {selectedAccount.apy}%
-                  </p>
-                </Card>
-                <Card className="border-border bg-muted p-3">
-                  <p className="text-xs text-muted-foreground mb-1">Balance</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    AFK {formatAmount(selectedAccount.balance)}
-                  </p>
-                </Card>
-              </div>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <Card className="border-border bg-muted p-3">
+                                    <p className="text-xs text-muted-foreground mb-1">
+                                        APY
+                                    </p>
+                                    <p className="text-2xl font-bold text-foreground">
+                                        {selectedAccount.apy}%
+                                    </p>
+                                </Card>
+                                <Card className="border-border bg-muted p-3">
+                                    <p className="text-xs text-muted-foreground mb-1">
+                                        Balance
+                                    </p>
+                                    <p className="text-2xl font-bold text-foreground">
+                                        AFK{" "}
+                                        {formatAmount(selectedAccount.balance)}
+                                    </p>
+                                </Card>
+                            </div>
 
-              <Card className="border-border bg-card p-3">
-                <h4 className="text-sm font-semibold text-foreground mb-2">
-                  How It Works
-                </h4>
-                <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Deposit funds into your account</li>
-                  <li>Earn interest daily on your balance</li>
-                  <li>Withdraw anytime without penalties</li>
-                  <li>Interest compounds automatically</li>
-                </ol>
-              </Card>
+                            <Card className="border-border bg-card p-3">
+                                <h4 className="text-sm font-semibold text-foreground mb-2">
+                                    How It Works
+                                </h4>
+                                <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                                    <li>Deposit funds into your account</li>
+                                    <li>Earn interest daily on your balance</li>
+                                    <li>Withdraw anytime without penalties</li>
+                                    <li>Interest compounds automatically</li>
+                                </ol>
+                            </Card>
 
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowDialog(false)}
-                  className="flex-1 border-border"
-                >
-                  Close
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowDialog(false);
-                    handleDeposit(selectedAccount);
-                  }}
-                  className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  Deposit Now
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+                            <div className="flex gap-3">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowDialog(false)}
+                                    className="flex-1 border-border"
+                                >
+                                    Close
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        setShowDialog(false);
+                                        handleDeposit(selectedAccount);
+                                    }}
+                                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                                >
+                                    Deposit Now
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            )}
 
-      {/* Deposit Dialog */}
-      <Dialog open={showDepositDialog} onOpenChange={setShowDepositDialog}>
-        <DialogContent className="max-w-md border-border">
-          <DialogHeader>
-            <DialogTitle>Deposit to {selectedAccount?.name}</DialogTitle>
-            <DialogDescription>
-              Add funds to earn interest at {selectedAccount?.apy}% APY
-            </DialogDescription>
-          </DialogHeader>
+            {/* Deposit Dialog */}
+            <Dialog
+                open={showDepositDialog}
+                onOpenChange={setShowDepositDialog}
+            >
+                <DialogContent className="max-w-md border-border">
+                    <DialogHeader>
+                        <DialogTitle>
+                            Deposit to {selectedAccount?.name}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Add funds to earn interest at {selectedAccount?.apy}
+                            % APY
+                        </DialogDescription>
+                    </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">

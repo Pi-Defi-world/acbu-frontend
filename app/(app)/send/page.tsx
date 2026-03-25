@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
@@ -7,12 +7,12 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,40 +42,42 @@ import {
 } from '@/components/ui/select';
 import { PageContainer } from '@/components/layout/page-container';
 
-const BALANCE_PLACEHOLDER = '—';
+const BALANCE_PLACEHOLDER = "—";
 
 function formatDate(iso: string) {
-  const d = new Date(iso);
-  const today = new Date();
-  if (d.toDateString() === today.toDateString()) return 'Today';
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  return d.toLocaleDateString();
+    const d = new Date(iso);
+    const today = new Date();
+    if (d.toDateString() === today.toDateString()) return "Today";
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return d.toLocaleDateString();
 }
 
 /**
  * Page component for sending AFK tokens.
  */
 export default function SendPage() {
-  const opts = useApiOpts();
-  const [activeTab, setActiveTab] = useState('send');
-  const [showSendDialog, setShowSendDialog] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [selectedContact, setSelectedContact] = useState<ContactItem | null>(null);
-  const [amount, setAmount] = useState('');
-  const [lastSentAmount, setLastSentAmount] = useState('');
-  const [note, setNote] = useState('');
-  const [customRecipient, setCustomRecipient] = useState('');
-  const [useContact, setUseContact] = useState(true);
-  const [transfers, setTransfers] = useState<TransferItem[]>([]);
-  const [contacts, setContacts] = useState<ContactItem[]>([]);
-  const [loadingTransfers, setLoadingTransfers] = useState(true);
-  const [loadingContacts, setLoadingContacts] = useState(true);
-  const [submitError, setSubmitError] = useState('');
-  const [sending, setSending] = useState(false);
-  const [loadError, setLoadError] = useState('');
+    const opts = useApiOpts();
+    const [activeTab, setActiveTab] = useState("send");
+    const [showSendDialog, setShowSendDialog] = useState(false);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+    const [selectedContact, setSelectedContact] = useState<ContactItem | null>(
+        null,
+    );
+    const [amount, setAmount] = useState("");
+    const [lastSentAmount, setLastSentAmount] = useState("");
+    const [note, setNote] = useState("");
+    const [customRecipient, setCustomRecipient] = useState("");
+    const [useContact, setUseContact] = useState(true);
+    const [transfers, setTransfers] = useState<TransferItem[]>([]);
+    const [contacts, setContacts] = useState<ContactItem[]>([]);
+    const [loadingTransfers, setLoadingTransfers] = useState(true);
+    const [loadingContacts, setLoadingContacts] = useState(true);
+    const [submitError, setSubmitError] = useState("");
+    const [sending, setSending] = useState(false);
+    const [loadError, setLoadError] = useState("");
 
   const loadTransfers = useCallback(() => {
     transfersApi.getTransfers(opts).then((data) => setTransfers(data.transfers ?? [])).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load transfers')).finally(() => setLoadingTransfers(false));
@@ -88,12 +90,17 @@ export default function SendPage() {
     loadContacts();
   }, [loadTransfers, loadContacts, opts.token]);
 
-  const handleRecipientSelect = (contact: ContactItem) => {
-    setSelectedContact(contact);
-    setUseContact(true);
-  };
+    const handleRecipientSelect = (contact: ContactItem) => {
+        setSelectedContact(contact);
+        setUseContact(true);
+    };
 
-  const getToValue = () => useContact && selectedContact ? (selectedContact.pay_uri || selectedContact.alias || selectedContact.id) : customRecipient.trim();
+    const getToValue = () =>
+        useContact && selectedContact
+            ? selectedContact.pay_uri ||
+              selectedContact.alias ||
+              selectedContact.id
+            : customRecipient.trim();
 
   const handleConfirmTransfer = async () => {
     const to = getToValue();
@@ -121,39 +128,49 @@ export default function SendPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-700 border-green-200';
-      case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'failed': return 'bg-red-100 text-red-700 border-red-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
-  };
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case "completed":
+                return "bg-green-100 text-green-700 border-green-200";
+            case "pending":
+                return "bg-yellow-100 text-yellow-700 border-yellow-200";
+            case "failed":
+                return "bg-red-100 text-red-700 border-red-200";
+            default:
+                return "bg-gray-100 text-gray-700 border-gray-200";
+        }
+    };
 
-  const isFormValid = () =>
-    amount && parseFloat(amount) > 0 &&
-    ((useContact && selectedContact) || (!useContact && customRecipient.trim()));
-  const exceedsBalance = false; // no balance endpoint yet
+    const isFormValid = () =>
+        amount &&
+        parseFloat(amount) > 0 &&
+        ((useContact && selectedContact) ||
+            (!useContact && customRecipient.trim()));
+    const exceedsBalance = false; // no balance endpoint yet
 
-  return (
-    <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-foreground mb-3">Send Money</h1>
-          <div className="flex gap-2">
-            <button onClick={() => setActiveTab('send')} className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'send' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>Send</button>
-            <button onClick={() => setActiveTab('history')} className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'history' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>History</button>
-          </div>
-        </div>
-      </header>
-
-      <PageContainer>
-        {loadError && <p className="text-destructive text-sm mb-3">{loadError}</p>}
-        <div className="rounded-lg border border-border bg-gradient-to-br from-primary to-secondary p-5 text-primary-foreground mb-5">
-          <p className="text-sm font-medium opacity-90 mb-1">Available Balance</p>
-          <p className="text-3xl font-bold">ACBU {formatAmount(BALANCE_PLACEHOLDER)}</p>
-          <p className="text-xs opacity-75 mt-2">Native ACBU Currency</p>
-        </div>
+    return (
+        <>
+            <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+                <div className="px-4 py-3">
+                    <h1 className="text-lg font-bold text-foreground mb-3">
+                        Send Money
+                    </h1>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setActiveTab("send")}
+                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === "send" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                        >
+                            Send
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("history")}
+                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === "history" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                        >
+                            History
+                        </button>
+                    </div>
+                </div>
+            </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
           <TabsContent value="send" className="space-y-4">
@@ -209,11 +226,6 @@ export default function SendPage() {
                     </Link>
                   ))}
                 </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </PageContainer>
 
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
         <DialogContent className="max-w-md border-border">
@@ -275,16 +287,89 @@ export default function SendPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <DialogContent className="max-w-md border-border">
-          <div className="flex flex-col items-center text-center py-6">
-            <div className="rounded-full bg-green-100 p-4 mb-4"><Check className="h-8 w-8 text-green-600" /></div>
-            <h2 className="text-xl font-bold text-foreground mb-2">Transfer Sent!</h2>
-            <p className="text-muted-foreground mb-4">Your transfer for AFK {formatAmount(lastSentAmount)} is being processed.</p>
-            <Badge variant="secondary" className="mb-4">Pending</Badge>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
+            <AlertDialog
+                open={showConfirmDialog}
+                onOpenChange={setShowConfirmDialog}
+            >
+                <AlertDialogContent className="max-w-md border-border">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Transfer</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Review the details before confirming
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="space-y-3 py-4">
+                        {submitError && (
+                            <p className="text-sm text-destructive">
+                                {submitError}
+                            </p>
+                        )}
+                        <div className="rounded-lg border border-border bg-muted p-4">
+                            <p className="text-xs text-muted-foreground">To</p>
+                            <p className="font-semibold text-foreground truncate">
+                                {selectedContact?.alias ||
+                                    selectedContact?.pay_uri ||
+                                    customRecipient ||
+                                    "—"}
+                            </p>
+                        </div>
+                        <div className="flex items-center justify-center">
+                            <div className="rounded-full bg-secondary p-2">
+                                <ArrowRight className="h-5 w-5 text-secondary-foreground" />
+                            </div>
+                        </div>
+                        <div className="rounded-lg border border-border bg-muted p-4">
+                            <p className="text-xs text-muted-foreground">
+                                Amount
+                            </p>
+                            <p className="text-2xl font-bold text-foreground">
+                                AFK {formatAmount(amount)}
+                            </p>
+                            <p className="mt-2 text-xs text-muted-foreground">
+                                Network Fee: Free
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex gap-3">
+                        <AlertDialogCancel
+                            className="flex-1 border-border"
+                            disabled={sending}
+                        >
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmTransfer}
+                            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                            disabled={sending}
+                        >
+                            {sending ? "Sending..." : `Send AFK ${amount}`}
+                        </AlertDialogAction>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <Dialog
+                open={showSuccessDialog}
+                onOpenChange={setShowSuccessDialog}
+            >
+                <DialogContent className="max-w-md border-border">
+                    <div className="flex flex-col items-center text-center py-6">
+                        <div className="rounded-full bg-green-100 p-4 mb-4">
+                            <Check className="h-8 w-8 text-green-600" />
+                        </div>
+                        <h2 className="text-xl font-bold text-foreground mb-2">
+                            Transfer Sent!
+                        </h2>
+                        <p className="text-muted-foreground mb-4">
+                            Your transfer for AFK {formatAmount(lastSentAmount)}{" "}
+                            is being processed.
+                        </p>
+                        <Badge variant="secondary" className="mb-4">
+                            Pending
+                        </Badge>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
+    );
 }
