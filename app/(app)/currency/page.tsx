@@ -174,10 +174,6 @@ export default function CurrencyPage() {
     setLastTxId('');
   };
     const handleExecute = async () => {
-        console.log("[v0] Operation executed:", {
-            activeTab,
-            amount: mintAmount || burnAmount || intlAmount,
-        });
         await new Promise((resolve) => setTimeout(resolve, 1500));
         setStep("success");
     };
