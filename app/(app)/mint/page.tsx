@@ -138,7 +138,7 @@ export default function MintPage() {
           </Link>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">Mint & Burn</h1>
-            <p className="text-xs text-muted-foreground">Create and redeem AFK</p>
+            <p className="text-xs text-muted-foreground">Create and redeem ACBU</p>
           </div>
         </div>
       </header>
@@ -386,7 +386,7 @@ export default function MintPage() {
               ) : (
                 <Card className="border-border p-4"><p className="text-muted-foreground">No rates available. Use the API to load rates.</p></Card>
               )}
-              <Card className="border-border bg-muted p-4 mt-6"><p className="text-sm font-semibold text-foreground mb-2">How it works</p><ul className="text-xs text-muted-foreground space-y-2"><li>• Mint converts USDC to native AFK</li><li>• Burn redeems AFK for fiat</li><li>• Rates from backend</li></ul></Card>
+              <Card className="border-border bg-muted p-4 mt-6"><p className="text-sm font-semibold text-foreground mb-2">How it works</p><ul className="text-xs text-muted-foreground space-y-2"><li>• Mint converts USDC to native ACBU</li><li>• Burn redeems ACBU for fiat</li><li>• Rates from backend</li></ul></Card>
             </div>
           </TabsContent>
         </Tabs>
