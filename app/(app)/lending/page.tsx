@@ -25,7 +25,6 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
-import { useRouter } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
 import * as lendingApi from '@/lib/api/lending';
@@ -113,7 +112,6 @@ const mockActiveLoan: ActiveLoan = {
  * Lending and loan management page.
  */
 export default function LendingPage() {
-  const router = useRouter();
   const opts = useApiOpts();
   const [apiLender, setApiLender] = useState('');
   const [lendingBalance, setLendingBalance] = useState<string | number | null>(null);
@@ -127,19 +125,29 @@ export default function LendingPage() {
   const [loanTerm, setLoanTerm] = useState('');
   const [selectedLoanProduct, setSelectedLoanProduct] =
     useState<LoanProduct | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoadError(null);
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === 'string') setApiLender(uri);
-    }).catch(() => {});
+    }).catch((e) => {
+      console.error("Failed to load user info:", e);
+      setLoadError("Failed to load lender information. Please try again later.");
+    });
   }, [opts.token]);
   useEffect(() => {
     if (!apiLender) return;
     setLendingLoading(true);
+    setLoadError(null);
     lendingApi.getLendingBalance(apiLender, opts).then((res) => {
       setLendingBalance(res.balance);
-    }).catch(() => setLendingBalance(null)).finally(() => setLendingLoading(false));
+    }).catch((e) => {
+      setLendingBalance(null);
+      console.error("Failed to load lending balance:", e);
+      setLoadError("Failed to load lending balance. Please check your connection.");
+    }).finally(() => setLendingLoading(false));
   }, [apiLender, opts.token]);
 
   const handleSelectProduct = (product: LoanProduct) => {
@@ -166,19 +174,31 @@ export default function LendingPage() {
     );
   };
 
-  const handleSubmitApplication = () => {
-    if (loanAmount && loanTerm && selectedLoanProduct) {
-      console.log('[v0] Loan application submitted:', {
-        product: selectedLoanProduct.name,
-        amount: loanAmount,
-        term: loanTerm,
-      });
-      setShowApplicationDialog(false);
-      setLoanAmount('');
-      setLoanTerm('');
-      setSelectedLoanProduct(null);
-    }
-  };
+ const handleSubmitApplication = async () => {
+  if (!loanAmount || !loanTerm || !selectedLoanProduct) return;
+
+  setLoadError(null);
+  try {
+
+    await lendingApi.applyForLoan(
+      {
+        productId: selectedLoanProduct.id,
+        amount: parseFloat(loanAmount),
+        term: parseInt(loanTerm),
+      },
+      opts
+    );
+    // reset + close (same behavior, but after success)
+    setShowApplicationDialog(false);
+    setLoanAmount('');
+    setLoanTerm('');
+    setSelectedLoanProduct(null);
+
+  } catch (error) {
+    console.error('Loan application failed:', error);
+    setLoadError("Loan application failed. Please check your inputs and try again.");
+  }
+};
 
   const monthlyPayment = estimateMonthlyPayment();
 
@@ -187,13 +207,13 @@ export default function LendingPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/"
             className="p-2 hover:bg-muted rounded transition-colors"
             aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Link>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">Borrow</h1>
             <p className="text-xs text-muted-foreground">Loans & credit</p>
@@ -204,6 +224,20 @@ export default function LendingPage() {
       {/* Main Content */}
       <PageContainer>
         <div className="space-y-6">
+        {loadError && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-3 text-destructive">
+            <AlertCircle className="w-5 h-5" />
+            <p className="text-sm font-medium flex-1">{loadError}</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLoadError(null)}
+              className="hover:bg-destructive/20"
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
         {/* Lending balance (API) */}
         {(lendingLoading || lendingBalance != null) && (
           <Card className="border-border bg-gradient-to-br from-primary/20 to-secondary/10 p-5 mb-4">
