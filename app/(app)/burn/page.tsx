@@ -11,6 +11,20 @@ import { useApiOpts } from "@/hooks/use-api";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
 
+const formatCurrency = (amount: string, currency: string) => {
+  const value = parseFloat(amount);
+  if (isNaN(value)) return "";
+
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+    }).format(value);
+  } catch {
+    return `${value} ${currency}`;
+  }
+};
+
 export default function BurnPage() {
   const opts = useApiOpts();
   const [acbuAmount, setAcbuAmount] = useState("");
@@ -96,7 +110,15 @@ export default function BurnPage() {
                 onChange={(e) => setAcbuAmount(e.target.value)}
                 className="border-border"
               />
+
+              {acbuAmount && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  ≈ {formatCurrency(acbuAmount, currency)}
+                </p>
+              )}
             </div>
+
+
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">
                 Currency (3 letters)
@@ -129,18 +151,18 @@ export default function BurnPage() {
               />
             </div>
             <div>
-  <label className="text-sm font-medium text-foreground mb-2 block">
-    Bank code
-  </label>
-  <Input
-    type="text"
-    maxLength={10}
-    placeholder="Enter bank code"
-    value={bankCode}
-    onChange={(e) => setBankCode(e.target.value.slice(0, 10))}
-    className="border-border"
-  />
-</div>
+              <label className="text-sm font-medium text-foreground mb-2 block">
+                Bank code
+              </label>
+              <Input
+                type="text"
+                maxLength={10}
+                placeholder="Enter bank code"
+                value={bankCode}
+                onChange={(e) => setBankCode(e.target.value.slice(0, 10))}
+                className="border-border"
+              />
+            </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">
                 Account name
