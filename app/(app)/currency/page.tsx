@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -17,56 +18,118 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ArrowDown, ArrowUp, TrendingUp } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
+import { useApiOpts } from "@/hooks/use-api";
+import * as mintApi from "@/lib/api/mint";
+import * as burnApi from "@/lib/api/burn";
+import type { MintResponse, BurnResponse } from "@/types/api";
 
 /**
- * Currency management hub .......
+ * Currency management hub.
  */
 export default function CurrencyPage() {
+  const opts = useApiOpts();
+
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
   );
-  const [showConfirm, setShowConfirm] = useState(false);
   const [step, setStep] = useState<"input" | "confirm" | "success">("input");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [lastTxId, setLastTxId] = useState("");
 
   // Mint state
   const [mintAmount, setMintAmount] = useState("");
   const [mintSource, setMintSource] = useState("usdc");
+  const [mintWalletAddress, setMintWalletAddress] = useState("");
 
   // Burn state
   const [burnAmount, setBurnAmount] = useState("");
   const [burnDestination, setBurnDestination] = useState("bank");
+  const [burnAccountNumber, setBurnAccountNumber] = useState("");
+  const [burnBankCode, setBurnBankCode] = useState("");
+  const [burnAccountName, setBurnAccountName] = useState("");
 
   // International state
   const [intlAmount, setIntlAmount] = useState("");
   const [intlCurrency, setIntlCurrency] = useState("USD");
   const [intlCountry, setIntlCountry] = useState("US");
+  const [intlAccountNumber, setIntlAccountNumber] = useState("");
+  const [intlBankCode, setIntlBankCode] = useState("");
+  const [intlAccountName, setIntlAccountName] = useState("");
 
   const mockBalance = 5280.5;
   const mockRate = 1620;
-  const exchangeRate = 0.82; // Simulated exchange rate
+  const exchangeRate = 0.82;
 
-  const handleMintConfirm = async () => {
-    setStep("confirm");
-  };
-
-  const handleBurnConfirm = async () => {
-    setStep("confirm");
-  };
+  const handleMintConfirm = () => setStep("confirm");
+  const handleBurnConfirm = () => setStep("confirm");
 
   const handleExecute = async () => {
-    console.log("[v0] Operation executed:", {
-      activeTab,
-      amount: mintAmount || burnAmount || intlAmount,
-    });
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setStep("success");
+    setSubmitError("");
+    setSubmitting(true);
+    try {
+      if (activeTab === "mint") {
+        const res: MintResponse = await mintApi.mintFromUsdc(
+          mintAmount,
+          mintWalletAddress.trim(),
+          "auto",
+          opts,
+        );
+        setLastTxId(res.transaction_id);
+      } else if (activeTab === "burn") {
+        const recipientType =
+          burnDestination === "bank"
+            ? "bank"
+            : burnDestination === "mobile"
+              ? "mobile_money"
+              : undefined;
+        const res: BurnResponse = await burnApi.burnAcbu(
+          burnAmount,
+          "NGN",
+          {
+            type: recipientType as "bank" | "mobile_money" | undefined,
+            account_number: burnAccountNumber.trim(),
+            bank_code: burnBankCode.trim(),
+            account_name: burnAccountName.trim(),
+          },
+          opts,
+        );
+        setLastTxId(res.transaction_id);
+      } else {
+        const res: BurnResponse = await burnApi.burnAcbu(
+          intlAmount,
+          intlCurrency,
+          {
+            account_number: intlAccountNumber.trim(),
+            bank_code: intlBankCode.trim(),
+            account_name: intlAccountName.trim(),
+          },
+          opts,
+        );
+        setLastTxId(res.transaction_id);
+      }
+      setStep("success");
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "Operation failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const resetForm = () => {
     setStep("input");
     setMintAmount("");
+    setMintWalletAddress("");
     setBurnAmount("");
+    setBurnAccountNumber("");
+    setBurnBankCode("");
+    setBurnAccountName("");
     setIntlAmount("");
+    setIntlAccountNumber("");
+    setIntlBankCode("");
+    setIntlAccountName("");
+    setSubmitError("");
+    setLastTxId("");
   };
 
   return (
@@ -143,10 +206,10 @@ export default function CurrencyPage() {
                 </select>
               </Card>
 
-              <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">
+              <div className="mb-4">
+                <Label className="text-sm font-medium text-foreground mb-2 block">
                   Amount to Mint
-                </label>
+                </Label>
                 <div className="flex gap-2">
                   <span className="flex items-center text-muted-foreground">
                     $
@@ -167,6 +230,19 @@ export default function CurrencyPage() {
                 </p>
               </div>
 
+              <div>
+                <Label className="text-sm font-medium text-foreground mb-2 block">
+                  Destination Wallet Address
+                </Label>
+                <Input
+                  type="text"
+                  placeholder="GXXXXXXXX... (Stellar address)"
+                  value={mintWalletAddress}
+                  onChange={(e) => setMintWalletAddress(e.target.value)}
+                  className="border-border"
+                />
+              </div>
+
               <Card className="border-border bg-muted p-3 mt-4">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-muted-foreground">Fee</span>
@@ -185,7 +261,11 @@ export default function CurrencyPage() {
 
               <Button
                 onClick={handleMintConfirm}
-                disabled={!mintAmount || parseFloat(mintAmount) <= 0}
+                disabled={
+                  !mintAmount ||
+                  parseFloat(mintAmount) <= 0 ||
+                  !mintWalletAddress.trim()
+                }
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
               >
                 <ArrowDown className="w-4 h-4 mr-2" />
@@ -216,9 +296,9 @@ export default function CurrencyPage() {
               </Card>
 
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="text-sm font-medium text-foreground mb-2 block">
                   Amount to Burn
-                </label>
+                </Label>
                 <div className="flex gap-2">
                   <span className="flex items-center text-muted-foreground">
                     AFK
@@ -241,6 +321,48 @@ export default function CurrencyPage() {
                 )}
               </div>
 
+              <Card className="border-border p-4 mt-4 space-y-3">
+                <p className="text-xs text-muted-foreground font-medium">
+                  Recipient Account
+                </p>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">
+                    Account Number
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="0123456789"
+                    value={burnAccountNumber}
+                    onChange={(e) => setBurnAccountNumber(e.target.value)}
+                    className="border-border"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">
+                    Bank Code
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="044"
+                    value={burnBankCode}
+                    onChange={(e) => setBurnBankCode(e.target.value)}
+                    className="border-border"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">
+                    Account Name
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="John Doe"
+                    value={burnAccountName}
+                    onChange={(e) => setBurnAccountName(e.target.value)}
+                    className="border-border"
+                  />
+                </div>
+              </Card>
+
               <Card className="border-border bg-muted p-3 mt-4">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-muted-foreground">You'll receive</span>
@@ -259,7 +381,13 @@ export default function CurrencyPage() {
 
               <Button
                 onClick={handleBurnConfirm}
-                disabled={!burnAmount || parseFloat(burnAmount) > mockBalance}
+                disabled={
+                  !burnAmount ||
+                  parseFloat(burnAmount) > mockBalance ||
+                  !burnAccountNumber.trim() ||
+                  !burnBankCode.trim() ||
+                  !burnAccountName.trim()
+                }
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
               >
                 <ArrowUp className="w-4 h-4 mr-2" />
@@ -328,6 +456,48 @@ export default function CurrencyPage() {
                   </div>
                 </div>
 
+                <Card className="border-border p-4 space-y-3">
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Recipient Account
+                  </p>
+                  <div>
+                    <Label className="text-sm font-medium text-foreground mb-1 block">
+                      Account Number
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="0123456789"
+                      value={intlAccountNumber}
+                      onChange={(e) => setIntlAccountNumber(e.target.value)}
+                      className="border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-foreground mb-1 block">
+                      Bank Code / SWIFT
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="BOFAUS3N"
+                      value={intlBankCode}
+                      onChange={(e) => setIntlBankCode(e.target.value)}
+                      className="border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-foreground mb-1 block">
+                      Account Name
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="John Doe"
+                      value={intlAccountName}
+                      onChange={(e) => setIntlAccountName(e.target.value)}
+                      className="border-border"
+                    />
+                  </div>
+                </Card>
+
                 <Card className="border-border bg-muted p-3">
                   <div className="flex items-start gap-2 mb-3">
                     <TrendingUp className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
@@ -349,7 +519,13 @@ export default function CurrencyPage() {
 
                 <Button
                   onClick={() => setStep("confirm")}
-                  disabled={!intlAmount || parseFloat(intlAmount) <= 0}
+                  disabled={
+                    !intlAmount ||
+                    parseFloat(intlAmount) <= 0 ||
+                    !intlAccountNumber.trim() ||
+                    !intlBankCode.trim() ||
+                    !intlAccountName.trim()
+                  }
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   Continue
@@ -398,16 +574,23 @@ export default function CurrencyPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <AlertDialogCancel onClick={() => setStep("input")}>
+            <AlertDialogCancel
+              onClick={() => setStep("input")}
+              disabled={submitting}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleExecute}
+              disabled={submitting}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              Confirm
+              {submitting ? "Processing..." : "Confirm"}
             </AlertDialogAction>
           </div>
+          {submitError && (
+            <p className="text-sm text-destructive mt-2">{submitError}</p>
+          )}
         </AlertDialogContent>
       </AlertDialog>
 
@@ -422,7 +605,7 @@ export default function CurrencyPage() {
           </AlertDialogHeader>
           <div className="py-4">
             <p className="text-sm text-muted-foreground">
-              Transaction ID: TXN_{Date.now().toString().slice(-8)}
+              Transaction ID: {lastTxId}
             </p>
           </div>
           <AlertDialogAction
