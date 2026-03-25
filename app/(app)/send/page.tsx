@@ -80,10 +80,18 @@ export default function SendPage() {
     const [loadError, setLoadError] = useState("");
 
   const loadTransfers = useCallback(() => {
-    transfersApi.getTransfers(opts).then((data) => setTransfers(data.transfers ?? [])).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load transfers')).finally(() => setLoadingTransfers(false));
+    setLoadError("");
+    transfersApi.getTransfers(opts).then((data) => {
+      setTransfers(data.transfers ?? []);
+      setLoadError("");
+    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load transfers')).finally(() => setLoadingTransfers(false));
   }, [opts]);
   const loadContacts = useCallback(() => {
-    userApi.getContacts(opts).then((data) => setContacts(data.contacts ?? [])).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
+    setLoadError("");
+    userApi.getContacts(opts).then((data) => {
+      setContacts(data.contacts ?? []);
+      setLoadError("");
+    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
   }, [opts]);
   useEffect(() => {
     loadTransfers();

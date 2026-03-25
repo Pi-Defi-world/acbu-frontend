@@ -128,6 +128,7 @@ export default function LendingPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoadError(null);
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === 'string') setApiLender(uri);
@@ -139,6 +140,7 @@ export default function LendingPage() {
   useEffect(() => {
     if (!apiLender) return;
     setLendingLoading(true);
+    setLoadError(null);
     lendingApi.getLendingBalance(apiLender, opts).then((res) => {
       setLendingBalance(res.balance);
     }).catch((e) => {
@@ -175,6 +177,7 @@ export default function LendingPage() {
  const handleSubmitApplication = async () => {
   if (!loanAmount || !loanTerm || !selectedLoanProduct) return;
 
+  setLoadError(null);
   try {
 
     await lendingApi.applyForLoan(

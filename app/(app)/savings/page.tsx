@@ -94,7 +94,7 @@ const initialGoals: SavingsGoal[] = [
   },
 ];
 
-const [showNewGoalDialog, setShowNewGoalDialog] = useState(false);
+
 /**
  * Savings management page.
  */
@@ -116,17 +116,21 @@ export default function SavingsPage() {
   const [newGoalDeadline, setNewGoalDeadline] = useState("");
 
   useEffect(() => {
+    setReceiveError("");
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === "string") setApiUser(uri);
+      setReceiveError("");
     }).catch((e) => setReceiveError(e instanceof Error ? e.message : "Failed to load user info"));
   }, [opts.token]);
 
   useEffect(() => {
     if (!apiUser) return;
     setPositionsLoading(true);
+    setReceiveError("");
     savingsApi.getSavingsPositions(apiUser, undefined, opts).then((res) => {
       setPositionsBalance(res.balance);
+      setReceiveError("");
     }).catch((e) => {
       setPositionsBalance(null);
       setReceiveError(e instanceof Error ? e.message : "Failed to load savings balance");
@@ -212,21 +216,29 @@ export default function SavingsPage() {
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-foreground">Savings Accounts</h3>
             {savingsAccounts.map((account) => (
-              <Card key={account.id} className={`border-border bg-gradient-to-br ${account.color} p-4 cursor-pointer hover:border-primary/50 transition-all`} onClick={() => handleSelectAccount(account)}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-background/50">{account.icon}</div>
-                    <div>
-                      <h4 className="font-semibold text-foreground">{account.name}</h4>
-                      <p className="text-xs text-muted-foreground">{account.description}</p>
+              <button
+                key={account.id}
+                type="button"
+                onClick={() => handleSelectAccount(account)}
+                className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+                aria-label={`Select ${account.name} account`}
+              >
+                <Card className={`border-border bg-gradient-to-br ${account.color} p-4 cursor-pointer hover:border-primary/50 transition-all`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-background/50">{account.icon}</div>
+                      <div>
+                        <h4 className="font-semibold text-foreground">{account.name}</h4>
+                        <p className="text-xs text-muted-foreground">{account.description}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-foreground">AFK {formatAmount(account.balance)}</p>
+                      <p className="text-[10px] text-green-600 font-medium">{account.apy}% APY</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-foreground">AFK {formatAmount(account.balance)}</p>
-                    <p className="text-[10px] text-green-600 font-medium">{account.apy}% APY</p>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </button>
             ))}
           </div>
 
@@ -334,20 +346,26 @@ export default function SavingsPage() {
             </div>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setShowNewGoalDialog(false)} className="flex-1 border-border">Cancel</Button>
-              <Button disabled={!newGoalName || !newGoalTarget || !newGoalDeadline} onClick={() => {
-                const newGoal: SavingsGoal = {
-                  id: crypto.randomUUID(),
-                  name: newGoalName,
-                  targetAmount: parseFloat(newGoalTarget),
-                  currentAmount: 0,
-                  deadline: newGoalDeadline,
-                };
-                setGoals((prev) => [...prev, newGoal]);
-                setShowNewGoalDialog(false);
-                setNewGoalName("");
-                setNewGoalTarget("");
-                setNewGoalDeadline("");
-              }} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">Create Goal</Button>
+              <Button 
+                disabled={!newGoalName || !newGoalTarget || parseFloat(newGoalTarget) <= 0 || isNaN(parseFloat(newGoalTarget)) || !newGoalDeadline} 
+                onClick={() => {
+                  const parsedAmount = parseFloat(newGoalTarget);
+                  const newGoal: SavingsGoal = {
+                    id: crypto.randomUUID(),
+                    name: newGoalName,
+                    targetAmount: parsedAmount,
+                    currentAmount: 0,
+                    deadline: newGoalDeadline,
+                  };
+                  setGoals((prev) => [...prev, newGoal]);
+                  setShowNewGoalDialog(false);
+                  setNewGoalName("");
+                  setNewGoalTarget("");
+                  setNewGoalDeadline("");
+                }} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Create Goal
+              </Button>
             </div>
           </div>
         </DialogContent>
