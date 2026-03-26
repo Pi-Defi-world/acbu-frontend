@@ -269,7 +269,7 @@ export default function CurrencyPage() {
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
               >
                 <ArrowDown className="w-4 h-4 mr-2" />
-                Mint AFK
+                Mint ACBU
               </Button>
             </div>
           </TabsContent>
@@ -546,22 +546,21 @@ export default function CurrencyPage() {
               {activeTab === "international" && "Confirm Transfer"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {activeTab === "mint" &&
-                `Mint AFK ${formatAmount(parseFloat(mintAmount || "0") * exchangeRate)} from USDC`}
-              {activeTab === "burn" &&
-                `Burn AFK ${formatAmount(burnAmount)} and withdraw to ${burnDestination}`}
-              {activeTab === "international" &&
-                `Send AFK ${formatAmount(intlAmount)} to ${intlCountry} (${intlCurrency})`}
+              {activeTab === 'mint' &&
+                `Mint ACBU ${formatAmount(parseFloat(mintAmount || '0') * exchangeRate)} from USDC`}
+              {activeTab === 'burn' &&
+                `Burn ACBU ${formatAmount(burnAmount)} and withdraw to ${burnDestination}`}
+              {activeTab === 'international' &&
+                `Send ACBU ${formatAmount(intlAmount)} to ${intlCountry} (${intlCurrency})`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Amount:</span>
               <span className="font-medium text-foreground">
-                {activeTab === "mint" && `$${mintAmount}`}
-                {activeTab === "burn" && `AFK ${formatAmount(burnAmount)}`}
-                {activeTab === "international" &&
-                  `AFK ${formatAmount(intlAmount)}`}
+                {activeTab === 'mint' && `$${mintAmount}`}
+                {activeTab === 'burn' && `ACBU ${formatAmount(burnAmount)}`}
+                {activeTab === 'international' && `ACBU ${formatAmount(intlAmount)}`}
               </span>
             </div>
             <div className="flex justify-between text-sm border-t border-border pt-2">

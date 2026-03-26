@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams} from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ const CHALLENGE_TOKEN_KEY = '2fa_challenge_token';
 
 export default function TwoFactorPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,13 +24,20 @@ export default function TwoFactorPage() {
   // Retrieve challenge token from sessionStorage (not from URL)
   // This prevents exposure via Referer headers, browser history, and server logs
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const token = sessionStorage.getItem(CHALLENGE_TOKEN_KEY);
-      if (token) {
-        setChallengeToken(token);
-      }
+    if (typeof window === "undefined") return;
+
+    const urlToken = searchParams.get("challenge_token");
+    const storedToken = sessionStorage.getItem(CHALLENGE_TOKEN_KEY);
+
+    if (urlToken) {
+      sessionStorage.setItem(CHALLENGE_TOKEN_KEY, urlToken);
+      setChallengeToken(urlToken);
+
+      router.replace("/auth/2fa", { scroll: false });
+    } else if (storedToken) {
+      setChallengeToken(storedToken);
     }
-  }, []);
+  }, [searchParams, router]);
 
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();
