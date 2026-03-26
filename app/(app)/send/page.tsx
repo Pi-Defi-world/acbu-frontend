@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -19,65 +19,64 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsTrigger, TabsList } from '@/components/ui/tabs';
-import { SkeletonList } from '@/components/ui/skeleton-list';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, History, Check, AlertCircle, ArrowRight } from 'lucide-react';
-import { useApiOpts } from '@/hooks/use-api';
-import * as transfersApi from '@/lib/api/transfers';
-import * as userApi from '@/lib/api/user';
-import type { TransferItem, ContactItem } from '@/types/api';
-import { formatAmount } from '@/lib/utils';
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
+import { SkeletonList } from "@/components/ui/skeleton-list";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
+import { useApiOpts } from "@/hooks/use-api";
+import * as transfersApi from "@/lib/api/transfers";
+import * as userApi from "@/lib/api/user";
+import type { TransferItem, ContactItem } from "@/types/api";
+import { formatAmount } from "@/lib/utils";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { PageContainer } from '@/components/layout/page-container';
+} from "@/components/ui/select";
+import { PageContainer } from "@/components/layout/page-container";
 
 const BALANCE_PLACEHOLDER = "—";
 
 function formatDate(iso: string) {
-    const d = new Date(iso);
-    const today = new Date();
-    if (d.toDateString() === today.toDateString()) return "Today";
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
-    return d.toLocaleDateString();
+  const d = new Date(iso);
+  const today = new Date();
+  if (d.toDateString() === today.toDateString()) return "Today";
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return d.toLocaleDateString();
 }
 
 /**
  * Page component for sending ACBU tokens.
  */
 export default function SendPage() {
-    const opts = useApiOpts();
-    const [activeTab, setActiveTab] = useState("send");
-    const [showSendDialog, setShowSendDialog] = useState(false);
-    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-    const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-    const [selectedContact, setSelectedContact] = useState<ContactItem | null>(
-        null,
-    );
-    const [amount, setAmount] = useState("");
-    const [lastSentAmount, setLastSentAmount] = useState("");
-    const [note, setNote] = useState("");
-    const [customRecipient, setCustomRecipient] = useState("");
-    const [useContact, setUseContact] = useState(true);
-    const [transfers, setTransfers] = useState<TransferItem[]>([]);
-    const [contacts, setContacts] = useState<ContactItem[]>([]);
-    const [loadingTransfers, setLoadingTransfers] = useState(true);
-    const [loadingContacts, setLoadingContacts] = useState(true);
-    const [submitError, setSubmitError] = useState("");
-    const [sending, setSending] = useState(false);
-    const [loadError, setLoadError] = useState("");
+  const opts = useApiOpts();
+  const [activeTab, setActiveTab] = useState("send");
+  const [showSendDialog, setShowSendDialog] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<ContactItem | null>(
+    null,
+  );
+  const [amount, setAmount] = useState("");
+  const [lastSentAmount, setLastSentAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [customRecipient, setCustomRecipient] = useState("");
+  const [useContact, setUseContact] = useState(true);
+  const [transfers, setTransfers] = useState<TransferItem[]>([]);
+  const [contacts, setContacts] = useState<ContactItem[]>([]);
+  const [loadingTransfers, setLoadingTransfers] = useState(true);
+  const [loadingContacts, setLoadingContacts] = useState(true);
+  const [submitError, setSubmitError] = useState("");
+  const [sending, setSending] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   const loadTransfers = useCallback(() => {
     setLoadError("");
@@ -86,6 +85,7 @@ export default function SendPage() {
       setLoadError("");
     }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load transfers')).finally(() => setLoadingTransfers(false));
   }, [opts]);
+
   const loadContacts = useCallback(() => {
     setLoadError("");
     userApi.getContacts(opts).then((data) => {
@@ -93,30 +93,32 @@ export default function SendPage() {
       setLoadError("");
     }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
   }, [opts]);
+
   useEffect(() => {
     loadTransfers();
     loadContacts();
   }, [loadTransfers, loadContacts, opts.token]);
 
-    const handleRecipientSelect = (contact: ContactItem) => {
-        setSelectedContact(contact);
-        setUseContact(true);
-    };
+  const handleRecipientSelect = (contact: ContactItem) => {
+    setSelectedContact(contact);
+    setUseContact(true);
+  };
 
-    const getToValue = () =>
-        useContact && selectedContact
-            ? selectedContact.pay_uri ||
-              selectedContact.alias ||
-              selectedContact.id
-            : customRecipient.trim();
+  const getToValue = () =>
+    useContact && selectedContact
+      ? selectedContact.pay_uri || selectedContact.alias || selectedContact.id
+      : customRecipient.trim();
 
   const handleConfirmTransfer = async () => {
     const to = getToValue();
     if (!amount || parseFloat(amount) <= 0 || !to) return;
-    setSubmitError('');
+    setSubmitError("");
     setSending(true);
     try {
-      await transfersApi.createTransfer({ to, amount_acbu: amount, note }, opts);
+      await transfersApi.createTransfer(
+        { to, amount_acbu: amount, note },
+        opts,
+      );
       loadTransfers();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
@@ -124,37 +126,36 @@ export default function SendPage() {
       setShowSuccessDialog(true);
       setTimeout(() => {
         setShowSuccessDialog(false);
-        setAmount('');
-        setNote('');
-        setCustomRecipient('');
+        setAmount("");
+        setNote("");
+        setCustomRecipient("");
         setSelectedContact(null);
       }, 2500);
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Transfer failed');
+      setSubmitError(e instanceof Error ? e.message : "Transfer failed");
     } finally {
       setSending(false);
     }
   };
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case "completed":
-                return "bg-green-100 text-green-700 border-green-200";
-            case "pending":
-                return "bg-yellow-100 text-yellow-700 border-yellow-200";
-            case "failed":
-                return "bg-red-100 text-red-700 border-red-200";
-            default:
-                return "bg-gray-100 text-gray-700 border-gray-200";
-        }
-    };
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-100 text-green-700 border-green-200";
+      case "pending":
+        return "bg-yellow-100 text-yellow-700 border-yellow-200";
+      case "failed":
+        return "bg-red-100 text-red-700 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
 
-    const isFormValid = () =>
-        amount &&
-        parseFloat(amount) > 0 &&
-        ((useContact && selectedContact) ||
-            (!useContact && customRecipient.trim()));
-    const exceedsBalance = false; // no balance endpoint yet
+  const isFormValid = () =>
+    amount &&
+    parseFloat(amount) > 0 &&
+    ((useContact && selectedContact) ||
+      (!useContact && customRecipient.trim()));
 
     return (
         <>
@@ -199,22 +200,57 @@ export default function SendPage() {
                 </Link>
               </Button>
             </div>
-            <div>
-              <h3 className="mb-3 text-sm font-semibold text-foreground">Frequent Recipients</h3>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-3">
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">
+              Recent Transfers
+            </h3>
+            {loadingTransfers ? (
+              <SkeletonList count={2} itemHeight="h-14" />
+            ) : transfers.length === 0 ? (
+              <div className="rounded-lg border border-border bg-card p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No transfers yet
+                </p>
+              </div>
+            ) : (
               <div className="space-y-2">
-                {loadingContacts ? (
-                  <Skeleton className="h-12 w-full" />
-                ) : contacts.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No contacts. Add one in Settings.</p>
-                ) : (
-                  contacts.slice(0, 5).map((contact: ContactItem) => (
-                    <button key={contact.id} onClick={() => { handleRecipientSelect(contact); setShowSendDialog(true); }} className="w-full rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-muted">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0"><p className="font-medium text-foreground truncate">{contact.alias ?? contact.pay_uri ?? contact.id}</p><p className="text-xs text-muted-foreground truncate">{contact.pay_uri ?? ''}</p></div>
-                      </div>
-                    </button>
-                  ))
-                )}
+                {transfers.map((t: TransferItem) => (
+                  <Link
+                    key={t.transaction_id}
+                    href={`/send/${t.transaction_id}`}
+                    className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground truncate">
+                        Transfer
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(t.created_at)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-foreground">
+                        AFK {formatAmount(t.amount_acbu)}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className={`mt-1 text-xs ${getStatusColor(t.status)}`}
+                      >
+                        {t.status === "completed" && (
+                          <Check className="mr-1 h-3 w-3" />
+                        )}
+                        {t.status === "pending" && (
+                          <AlertCircle className="mr-1 h-3 w-3" />
+                        )}
+                        {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                      </Badge>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           </TabsContent>
@@ -247,58 +283,157 @@ export default function SendPage() {
         </Tabs>
       </div>
 
+      {/* Send Dialog */}
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
         <DialogContent className="max-w-md border-border">
           <DialogHeader><DialogTitle>Send Money</DialogTitle><DialogDescription>Transfer ACBU securely to another wallet</DialogDescription></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-foreground">Recipient</Label>
-              <Tabs value={useContact ? 'contact' : 'custom'} onValueChange={(v) => setUseContact(v === 'contact')}>
+              <Tabs
+                value={useContact ? "contact" : "custom"}
+                onValueChange={(v) => setUseContact(v === "contact")}
+              >
                 <TabsList className="grid w-full grid-cols-2 bg-muted">
-                  <TabsTrigger value="contact">From Contacts</TabsTrigger><TabsTrigger value="custom">New Address</TabsTrigger>
+                  <TabsTrigger value="contact">From Contacts</TabsTrigger>
+                  <TabsTrigger value="custom">New Address</TabsTrigger>
                 </TabsList>
                 <TabsContent value="contact" className="mt-3">
-                  <Select value={selectedContact?.id || ''} onValueChange={(id: string) => { const c = contacts.find((x: ContactItem) => x.id === id); if (c) setSelectedContact(c); }}>
-                    <SelectTrigger className="border-border"><SelectValue placeholder="Select a contact" /></SelectTrigger>
-                    <SelectContent>{contacts.map((c: ContactItem) => <SelectItem key={c.id} value={c.id}>{c.alias ?? c.pay_uri ?? c.id}</SelectItem>)}</SelectContent>
+                  <Select
+                    value={selectedContact?.id || ""}
+                    onValueChange={(id: string) => {
+                      const c = contacts.find((x: ContactItem) => x.id === id);
+                      if (c) setSelectedContact(c);
+                    }}
+                  >
+                    <SelectTrigger className="border-border">
+                      <SelectValue placeholder="Select a contact" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contacts.map((c: ContactItem) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.alias ?? c.pay_uri ?? c.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </TabsContent>
                 <TabsContent value="custom">
-                  <Input placeholder="Wallet address or email" value={customRecipient} onChange={(e) => setCustomRecipient(e.target.value)} className="border-border" />
+                  <Input
+                    placeholder="Wallet address or email"
+                    value={customRecipient}
+                    onChange={(e) => setCustomRecipient(e.target.value)}
+                    className="border-border"
+                  />
                 </TabsContent>
               </Tabs>
             </div>
+
             <div className="space-y-2">
               <Label className="text-foreground">Amount</Label>
               <div className="flex gap-2">
-                <span className="flex items-center text-muted-foreground font-medium">AFK</span>
-                <Input type="number" placeholder="0.00" min="0" value={amount} onChange={(e) => { const v = e.target.value; if (v === '' || parseFloat(v) >= 0) setAmount(v); }} onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault(); }} className="border-border text-lg font-semibold" />
+                <span className="flex items-center text-muted-foreground font-medium">
+                  AFK
+                </span>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  min="0"
+                  value={amount}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "" || parseFloat(v) >= 0) setAmount(v);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "-" || e.key === "e" || e.key === "E")
+                      e.preventDefault();
+                  }}
+                  className="border-border text-lg font-semibold"
+                />
               </div>
               {exceedsBalance && <p className="text-xs text-destructive">Insufficient balance.</p>}
               <p className="text-xs text-muted-foreground">Available: ACBU {formatAmount(BALANCE_PLACEHOLDER)}</p>
             </div>
+
             <div className="space-y-2">
               <Label className="text-foreground">Note (Optional)</Label>
-              <Input placeholder="Add a message..." value={note} onChange={(e) => setNote(e.target.value)} className="border-border" />
+              <Input
+                placeholder="Add a message..."
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="border-border"
+              />
             </div>
-            <Card className="border-border bg-muted p-3"><div className="flex justify-between text-sm"><span className="text-muted-foreground">Network Fee</span><span className="font-medium text-foreground">Free</span></div></Card>
+
+            <Card className="border-border bg-muted p-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Network Fee</span>
+                <span className="font-medium text-foreground">Free</span>
+              </div>
+            </Card>
+
             <div className="flex gap-3 pt-2">
-              <Button variant="outline" onClick={() => setShowSendDialog(false)} className="flex-1 border-border">Cancel</Button>
-              <Button onClick={() => setShowConfirmDialog(true)} disabled={!isFormValid()} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">Continue</Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowSendDialog(false)}
+                className="flex-1 border-border"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => setShowConfirmDialog(true)}
+                disabled={!isFormValid()}
+                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Continue
+              </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Confirm Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent className="max-w-md border-border">
-          <AlertDialogHeader><AlertDialogTitle>Confirm Transfer</AlertDialogTitle><AlertDialogDescription>Review the details before confirming</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Transfer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Review the details before confirming
+            </AlertDialogDescription>
+          </AlertDialogHeader>
           <div className="space-y-3 py-4">
-            {submitError && <p className="text-sm text-destructive">{submitError}</p>}
-            <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">To</p><p className="font-semibold text-foreground truncate">{selectedContact?.alias || selectedContact?.pay_uri || customRecipient || '—'}</p></div>
-            <div className="flex items-center justify-center"><div className="rounded-full bg-secondary p-2"><ArrowRight className="h-5 w-5 text-secondary-foreground" /></div></div>
-            <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">Amount</p><p className="text-2xl font-bold text-foreground">AFK {formatAmount(amount)}</p><p className="mt-2 text-xs text-muted-foreground">Network Fee: Free</p></div>
-            {note && <div className="rounded-lg border border-border bg-muted p-4"><p className="text-xs text-muted-foreground">Note</p><p className="text-sm text-foreground break-words">{note}</p></div>}
+            {submitError && (
+              <p className="text-sm text-destructive">{submitError}</p>
+            )}
+            <div className="rounded-lg border border-border bg-muted p-4">
+              <p className="text-xs text-muted-foreground">To</p>
+              <p className="font-semibold text-foreground truncate">
+                {selectedContact?.alias ||
+                  selectedContact?.pay_uri ||
+                  customRecipient ||
+                  "—"}
+              </p>
+            </div>
+            <div className="flex items-center justify-center">
+              <div className="rounded-full bg-secondary p-2">
+                <ArrowRight className="h-5 w-5 text-secondary-foreground" />
+              </div>
+            </div>
+            <div className="rounded-lg border border-border bg-muted p-4">
+              <p className="text-xs text-muted-foreground">Amount</p>
+              <p className="text-2xl font-bold text-foreground">
+                AFK {formatAmount(amount)}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Network Fee: Free
+              </p>
+            </div>
+            {note && (
+              <div className="rounded-lg border border-border bg-muted p-4">
+                <p className="text-xs text-muted-foreground">Note</p>
+                <p className="text-sm text-foreground break-words">{note}</p>
+              </div>
+            )}
           </div>
           <div className="flex gap-3">
             <AlertDialogCancel className="flex-1 border-border" disabled={sending}>Cancel</AlertDialogCancel>
