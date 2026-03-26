@@ -91,11 +91,11 @@ export default function MePage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg border border-border bg-card p-4 text-center">
               <p className="text-xs text-muted-foreground mb-2 font-medium">Total Balance</p>
-              <p className="text-2xl font-bold text-foreground">AFK 12,450</p>
+              <p className="text-2xl font-bold text-foreground">ACBU 12,450</p>
             </div>
             <div className="rounded-lg border border-border bg-card p-4 text-center">
               <p className="text-xs text-muted-foreground mb-2 font-medium">This Month</p>
-              <p className="text-2xl font-bold text-accent">+AFK 2,340</p>
+              <p className="text-2xl font-bold text-accent">+ACBU 2,340</p>
             </div>
           </div>
 

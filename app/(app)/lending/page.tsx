@@ -125,19 +125,29 @@ export default function LendingPage() {
   const [loanTerm, setLoanTerm] = useState('');
   const [selectedLoanProduct, setSelectedLoanProduct] =
     useState<LoanProduct | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoadError(null);
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === 'string') setApiLender(uri);
-    }).catch(() => {});
+    }).catch((e) => {
+      console.error("Failed to load user info:", e);
+      setLoadError("Failed to load lender information. Please try again later.");
+    });
   }, [opts.token]);
   useEffect(() => {
     if (!apiLender) return;
     setLendingLoading(true);
+    setLoadError(null);
     lendingApi.getLendingBalance(apiLender, opts).then((res) => {
       setLendingBalance(res.balance);
-    }).catch(() => setLendingBalance(null)).finally(() => setLendingLoading(false));
+    }).catch((e) => {
+      setLendingBalance(null);
+      console.error("Failed to load lending balance:", e);
+      setLoadError("Failed to load lending balance. Please check your connection.");
+    }).finally(() => setLendingLoading(false));
   }, [apiLender, opts.token]);
 
   const handleSelectProduct = (product: LoanProduct) => {
@@ -164,19 +174,31 @@ export default function LendingPage() {
     );
   };
 
-  const handleSubmitApplication = () => {
-    if (loanAmount && loanTerm && selectedLoanProduct) {
-      console.log('[v0] Loan application submitted:', {
-        product: selectedLoanProduct.name,
-        amount: loanAmount,
-        term: loanTerm,
-      });
-      setShowApplicationDialog(false);
-      setLoanAmount('');
-      setLoanTerm('');
-      setSelectedLoanProduct(null);
-    }
-  };
+ const handleSubmitApplication = async () => {
+  if (!loanAmount || !loanTerm || !selectedLoanProduct) return;
+
+  setLoadError(null);
+  try {
+
+    await lendingApi.applyForLoan(
+      {
+        productId: selectedLoanProduct.id,
+        amount: parseFloat(loanAmount),
+        term: parseInt(loanTerm),
+      },
+      opts
+    );
+    // reset + close (same behavior, but after success)
+    setShowApplicationDialog(false);
+    setLoanAmount('');
+    setLoanTerm('');
+    setSelectedLoanProduct(null);
+
+  } catch (error) {
+    console.error('Loan application failed:', error);
+    setLoadError("Loan application failed. Please check your inputs and try again.");
+  }
+};
 
   const monthlyPayment = estimateMonthlyPayment();
 
@@ -202,6 +224,20 @@ export default function LendingPage() {
       {/* Main Content */}
       <PageContainer>
         <div className="space-y-6">
+        {loadError && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-3 text-destructive">
+            <AlertCircle className="w-5 h-5" />
+            <p className="text-sm font-medium flex-1">{loadError}</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLoadError(null)}
+              className="hover:bg-destructive/20"
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
         {/* Lending balance (API) */}
         {(lendingLoading || lendingBalance != null) && (
           <Card className="border-border bg-gradient-to-br from-primary/20 to-secondary/10 p-5 mb-4">
@@ -240,7 +276,7 @@ export default function LendingPage() {
                   Remaining Balance
                 </p>
                 <p className="text-lg font-bold text-foreground">
-                  AFK {formatAmount(mockActiveLoan.balance)}
+                  ACBU {formatAmount(mockActiveLoan.balance)}
                 </p>
               </div>
               <div>
@@ -248,7 +284,7 @@ export default function LendingPage() {
                   Monthly Payment
                 </p>
                 <p className="text-lg font-bold text-foreground">
-                  AFK {formatAmount(mockActiveLoan.monthlyPayment)}
+                  ACBU {formatAmount(mockActiveLoan.monthlyPayment)}
                 </p>
               </div>
             </div>
@@ -315,7 +351,7 @@ export default function LendingPage() {
                     {product.minRate}% - {product.maxRate}% APR
                   </Badge>
                   <Badge variant="outline" className="text-xs">
-                    AFK {formatAmount(product.minAmount)} - AFK
+                    ACBU {formatAmount(product.minAmount)} - ACBU
                     {formatAmount(product.maxAmount)}
                   </Badge>
                 </div>
@@ -434,7 +470,7 @@ export default function LendingPage() {
                     Min Amount
                   </p>
                   <p className="font-bold text-foreground">
-                    AFK {formatAmount(selectedProduct.minAmount)}
+                    ACBU {formatAmount(selectedProduct.minAmount)}
                   </p>
                 </Card>
                 <Card className="border-border bg-muted p-3">
@@ -442,7 +478,7 @@ export default function LendingPage() {
                     Max Amount
                   </p>
                   <p className="font-bold text-foreground">
-                    AFK {formatAmount(selectedProduct.maxAmount)}
+                    ACBU {formatAmount(selectedProduct.maxAmount)}
                   </p>
                 </Card>
               </div>
@@ -515,7 +551,7 @@ export default function LendingPage() {
                 </Label>
                 <div className="flex gap-2">
                   <span className="flex items-center text-muted-foreground">
-                    AFK
+                    ACBU
                   </span>
                   <Input
                     id="loan-amount"
@@ -529,8 +565,8 @@ export default function LendingPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  AFK {formatAmount(selectedLoanProduct.minAmount)} -{' '}
-                  AFK {formatAmount(selectedLoanProduct.maxAmount)}
+                  ACBU {formatAmount(selectedLoanProduct.minAmount)} -{' '}
+                  ACBU {formatAmount(selectedLoanProduct.maxAmount)}
                 </p>
               </div>
 
@@ -561,7 +597,7 @@ export default function LendingPage() {
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-muted-foreground">Est. Monthly Payment</span>
                     <span className="font-bold text-foreground">
-                      AFK {formatAmount(monthlyPayment)}
+                      ACBU {formatAmount(monthlyPayment)}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">

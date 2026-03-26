@@ -197,6 +197,11 @@ export interface LendingWithdrawBody {
   lender: string;
   amount: string | number;
 }
+export interface ApplyLoanBody {
+  productId: string;
+  amount: number;
+  term: number;
+}
 
 // Recipient
 export interface RecipientResponse {

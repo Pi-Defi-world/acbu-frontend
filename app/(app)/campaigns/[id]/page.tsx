@@ -90,8 +90,8 @@ export default function CampaignDetailPage() {
           </div>
           
           <div className="flex items-baseline gap-2 mb-4">
-            <span className="text-3xl font-black text-primary italic">AFK {campaign.raised.toLocaleString()}</span>
-            <span className="text-sm text-muted-foreground font-medium">raised of AFK {campaign.goal.toLocaleString()} goal</span>
+            <span className="text-3xl font-black text-primary italic">ACBU {campaign.raised.toLocaleString()}</span>
+            <span className="text-sm text-muted-foreground font-medium">raised of ACBU {campaign.goal.toLocaleString()} goal</span>
           </div>
 
           <div className="space-y-4">
