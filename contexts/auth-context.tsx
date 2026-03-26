@@ -4,14 +4,6 @@ import React, { createContext, useCallback, useContext, useEffect, useState, use
 import * as authApi from '@/lib/api/auth';
 import { onAuthError } from '@/lib/api/client';
 
-/**
- * SECURITY: API key is now stored in httpOnly cookie (server-set, JS-inaccessible).
- * Only user_id is stored in sessionStorage as it's non-sensitive.
- * Browser automatically includes the httpOnly cookie in all API requests.
- * 
- * 401 Handling: When the httpOnly cookie expires or becomes invalid,
- * the API client detects 401 responses and triggers auth state cleanup.
- */
 const USER_ID_KEY = 'acbu_user_id';
 
 interface AuthState {
@@ -33,8 +25,10 @@ function getStoredAuth(): AuthState {
   }
   const userId = sessionStorage.getItem(USER_ID_KEY);
   return {
+    // Keep API key in memory only; do not persist in browser storage.
+    apiKey: null,
     userId,
-    isAuthenticated: !!userId,
+    isAuthenticated: false,
   };
 }
 

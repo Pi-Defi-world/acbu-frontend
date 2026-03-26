@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
@@ -66,7 +67,9 @@ export default function TransactionDetailPage() {
             <h1 className="text-lg font-bold text-foreground">Transaction</h1>
           </div>
         </div>
-        <PageContainer><div className="animate-pulse h-32 bg-muted rounded-lg" /></PageContainer>
+        <PageContainer>
+          <Skeleton className="h-32 w-full" />
+        </PageContainer>
       </>
     );
   }
@@ -109,7 +112,7 @@ export default function TransactionDetailPage() {
           {data.amount_acbu != null && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Amount (ACBU)</span>
-              <span className="font-semibold">AFK {formatAmount(data.amount_acbu)}</span>
+              <span className="font-semibold">ACBU {formatAmount(data.amount_acbu)}</span>
             </div>
           )}
           {data.usdc_amount != null && (
