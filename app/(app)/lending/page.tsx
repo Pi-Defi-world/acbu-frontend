@@ -276,7 +276,7 @@ export default function LendingPage() {
                   Remaining Balance
                 </p>
                 <p className="text-lg font-bold text-foreground">
-                  AFK {formatAmount(mockActiveLoan.balance)}
+                  ACBU {formatAmount(mockActiveLoan.balance)}
                 </p>
               </div>
               <div>
@@ -284,7 +284,7 @@ export default function LendingPage() {
                   Monthly Payment
                 </p>
                 <p className="text-lg font-bold text-foreground">
-                  AFK {formatAmount(mockActiveLoan.monthlyPayment)}
+                  ACBU {formatAmount(mockActiveLoan.monthlyPayment)}
                 </p>
               </div>
             </div>
@@ -351,7 +351,7 @@ export default function LendingPage() {
                     {product.minRate}% - {product.maxRate}% APR
                   </Badge>
                   <Badge variant="outline" className="text-xs">
-                    AFK {formatAmount(product.minAmount)} - AFK
+                    ACBU {formatAmount(product.minAmount)} - ACBU
                     {formatAmount(product.maxAmount)}
                   </Badge>
                 </div>
@@ -470,7 +470,7 @@ export default function LendingPage() {
                     Min Amount
                   </p>
                   <p className="font-bold text-foreground">
-                    AFK {formatAmount(selectedProduct.minAmount)}
+                    ACBU {formatAmount(selectedProduct.minAmount)}
                   </p>
                 </Card>
                 <Card className="border-border bg-muted p-3">
@@ -478,7 +478,7 @@ export default function LendingPage() {
                     Max Amount
                   </p>
                   <p className="font-bold text-foreground">
-                    AFK {formatAmount(selectedProduct.maxAmount)}
+                    ACBU {formatAmount(selectedProduct.maxAmount)}
                   </p>
                 </Card>
               </div>
@@ -551,7 +551,7 @@ export default function LendingPage() {
                 </Label>
                 <div className="flex gap-2">
                   <span className="flex items-center text-muted-foreground">
-                    AFK
+                    ACBU
                   </span>
                   <Input
                     id="loan-amount"
@@ -565,8 +565,8 @@ export default function LendingPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  AFK {formatAmount(selectedLoanProduct.minAmount)} -{' '}
-                  AFK {formatAmount(selectedLoanProduct.maxAmount)}
+                  ACBU {formatAmount(selectedLoanProduct.minAmount)} -{' '}
+                  ACBU {formatAmount(selectedLoanProduct.maxAmount)}
                 </p>
               </div>
 
@@ -597,7 +597,7 @@ export default function LendingPage() {
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-muted-foreground">Est. Monthly Payment</span>
                     <span className="font-bold text-foreground">
-                      AFK {formatAmount(monthlyPayment)}
+                      ACBU {formatAmount(monthlyPayment)}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
