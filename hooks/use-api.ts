@@ -1,13 +1,12 @@
 import { useMemo } from 'react';
-import { useAuth } from '@/contexts/auth-context';
-import { apiOpts } from '@/lib/api/client';
 import type { RequestOptions } from '@/lib/api/client';
 
 /**
- * Returns RequestOptions with the current auth token for use with API modules.
- * Use with: transfers.getTransfers(useApiOpts()), etc.
+ * Returns RequestOptions for use with API modules.
+ * NOTE: API key is now transmitted via httpOnly cookie (set by backend on login).
+ * Browser automatically includes it in all requests with credentials: 'include'.
+ * This hook is maintained for backward compatibility but returns empty options.
  */
 export function useApiOpts(): RequestOptions {
-  const { apiKey } = useAuth();
-  return useMemo(() => apiOpts(apiKey), [apiKey]);
+  return useMemo(() => ({}), []);
 }

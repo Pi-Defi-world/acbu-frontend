@@ -1,7 +1,20 @@
 /**
  * API client: base URL from env, Bearer token from opts.
  * All backend responses are JSON; errors throw with message/details.
+ * 
+ * 401 Handling: When API returns 401 (Unauthorized), a registered callback is invoked
+ * to handle stale auth state (e.g., expired httpOnly cookie).
  */
+
+let authErrorHandler: ((error: ApiError) => void) | null = null;
+
+/**
+ * Register a callback to be invoked when API returns 401 (Unauthorized).
+ * Used by AuthContext to clear stale session state and redirect to login.
+ */
+export function onAuthError(callback: (error: ApiError) => void): void {
+  authErrorHandler = callback;
+}
 
 const BASE = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL
   ? process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, '')
@@ -45,6 +58,7 @@ async function request<T>(
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
     signal: opts.signal,
+    credentials: 'include', // Include httpOnly cookies in all requests
   });
   let data: { error?: string; message?: string; details?: unknown };
   const ct = res.headers.get('content-type');
@@ -57,6 +71,12 @@ async function request<T>(
     const err: ApiError = new Error(data.message || data.error || `HTTP ${res.status}`) as ApiError;
     err.status = res.status;
     err.details = data.details ?? data;
+    
+    // Invoke 401 handler if registered (e.g., clear auth state and redirect to login)
+    if (res.status === 401 && authErrorHandler) {
+      authErrorHandler(err);
+    }
+    
     throw err;
   }
   return data as T;
