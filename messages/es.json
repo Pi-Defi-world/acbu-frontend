@@ -1,0 +1,12 @@
+{
+  "Settings": "Ajustes",
+  "Receive": "Recibir",
+  "Address & QR": "Dirección & QR",
+  "Wallet": "Cartera",
+  "Confirm wallet": "Confirmar cartera",
+  "Login": "Iniciar sesión",
+  "Email": "Correo electrónico",
+  "Password": "Contraseña",
+  "Invalid email or password": "Correo o contraseña inválidos",
+  "Go to {title} settings": "Ir a la configuración de {title}"
+}
