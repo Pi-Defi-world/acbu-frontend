@@ -12,7 +12,7 @@ export async function signup(
   passcode: string,
   opts?: RequestOptions
 ): Promise<SignupResponse> {
-  return post<SignupResponse>('/auth/signup', { username: username.trim().toLowerCase().replace(/\s/g, ''), passcode }, opts);
+  return post<SignupResponse>('/auth/signup', { username, passcode }, opts);
 }
 
 export async function signin(

@@ -18,7 +18,14 @@ export default function SignUpPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+
+    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setUsername(e.target.value.toLowerCase().trim())
+    }
+
     const handleSignUp = async (e: React.FormEvent) => {
+        e.preventDefault() // to prevent reload
+        // console.log(username)
         const passwordRegex =
             /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
 
@@ -39,7 +46,7 @@ export default function SignUpPage() {
             );
             return;
         }
-        if (!username.trim()) {
+        if (!username) {
             setError("Please enter a username");
             return;
         }
@@ -98,7 +105,7 @@ export default function SignUpPage() {
                                 autoComplete="username"
                                 placeholder="Username"
                                 value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                onChange={handleUsernameChange}
                                 className="border-border"
                                 disabled={loading}
                             />
@@ -162,7 +169,7 @@ export default function SignUpPage() {
 
                         <Button
                             type="submit"
-                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                            className="w-full cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
                             disabled={loading}
                         >
                             {loading ? "Creating..." : "Create account"}
