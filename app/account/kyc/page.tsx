@@ -52,7 +52,7 @@ export default function KYCPage() {
   ]);
 
   const kycStatus = 'verified';
-  const kycLevel = 2;
+  const kycLevel: number = 2;
   const maxLevel = 3;
 
   const statusColor = (status: string) => {

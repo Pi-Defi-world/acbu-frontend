@@ -13,17 +13,21 @@ import {
   ArrowDownLeft,
   TrendingUp,
   Coins,
+  Clock,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
+import { SkeletonList } from '@/components/ui/skeleton-list';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useApiOpts } from '@/hooks/use-api';
 import * as transfersApi from '@/lib/api/transfers';
 import type { TransferItem } from '@/types/api';
+import { cn, formatAmount } from '@/lib/utils';
 
 const BALANCE_PLACEHOLDER = '—'; // TODO: GET /users/me/balance when available
 
 const features = [
   { title: 'Send', description: 'Transfer money', icon: Send, href: '/send', color: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
-  { title: 'Mint', description: 'Create AFK', icon: Coins, href: '/mint', color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
+  { title: 'Mint', description: 'Create ACBU', icon: Coins, href: '/mint', color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
   { title: 'Business', description: 'Business tools', icon: Briefcase, href: '/business', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
   { title: 'Bills', description: 'Pay bills', icon: CreditCard, href: '/bills', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
 ];
@@ -38,6 +42,9 @@ function formatDate(iso: string) {
   return d.toLocaleDateString();
 }
 
+/**
+ * Home dashboard page showing balance and recent activity.
+ */
 export default function Home() {
   const [showBalance, setShowBalance] = useState(true);
   const opts = useApiOpts();
@@ -80,7 +87,7 @@ export default function Home() {
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Total Balance</p>
                 <h2 className="text-3xl font-bold text-foreground">
-                  {showBalance ? `AFK ${BALANCE_PLACEHOLDER}` : '••••••'}
+                  {showBalance ? `ACBU ${BALANCE_PLACEHOLDER}` : '••••••'}
                 </h2>
               </div>
               <button
@@ -120,19 +127,17 @@ export default function Home() {
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             {loading ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="rounded-lg border border-border bg-card p-3 animate-pulse">
-                    <div className="flex gap-3 mb-2"><div className="h-8 w-8 rounded-full bg-muted" /><div className="flex-1 h-4 bg-muted rounded" /></div>
-                    <div className="h-4 w-24 bg-muted rounded ml-11" />
-                  </div>
-                ))}
-              </div>
+              <SkeletonList count={3} itemHeight="h-20" />
             ) : transfers.length === 0 ? (
-              <div className="rounded-lg border border-border bg-card p-6 text-center">
-                <p className="text-sm text-muted-foreground">No recent transfers</p>
-                <Link href="/send" className="text-xs text-primary font-medium mt-2 inline-block">Send money</Link>
-              </div>
+              <EmptyState
+                icon={<Clock className="w-10 h-10" />}
+                title="No recent transfers"
+                action={
+                  <Link href="/send" className="text-xs text-primary font-medium">
+                    Send money
+                  </Link>
+                }
+              />
             ) : (
               <div className="space-y-2">
                 {transfers.slice(0, 5).map((t) => (
@@ -147,7 +152,7 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between pl-11">
-                      <p className="text-sm font-semibold text-foreground">- AFK {t.amount_acbu ?? '—'}</p>
+                      <p className="text-sm font-semibold text-foreground">- ACBU {formatAmount(t.amount_acbu)}</p>
                       <Badge variant="outline" className="text-xs">{t.status}</Badge>
                     </div>
                   </Link>

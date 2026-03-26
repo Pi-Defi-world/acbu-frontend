@@ -76,6 +76,7 @@ export interface TransfersListResponse {
 export interface CreateTransferBody {
   to: string;
   amount_acbu: string;
+  note?: string;
 }
 
 export interface CreateTransferResponse {
@@ -195,6 +196,11 @@ export interface LendingDepositBody {
 export interface LendingWithdrawBody {
   lender: string;
   amount: string | number;
+}
+export interface ApplyLoanBody {
+  productId: string;
+  amount: number;
+  term: number;
 }
 
 // Recipient

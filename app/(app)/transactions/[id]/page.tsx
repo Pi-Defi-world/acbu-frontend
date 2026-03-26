@@ -5,16 +5,21 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useApiOpts } from '@/hooks/use-api';
 import * as transactionsApi from '@/lib/api/transactions';
 import type { TransactionDetail } from '@/types/api';
+import { formatAmount } from '@/lib/utils';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+/**
+ * Detailed view of a specific transaction by ID.
+ */
 export default function TransactionDetailPage() {
   const params = useParams();
   const id = params?.id as string;
@@ -62,7 +67,9 @@ export default function TransactionDetailPage() {
             <h1 className="text-lg font-bold text-foreground">Transaction</h1>
           </div>
         </div>
-        <PageContainer><div className="animate-pulse h-32 bg-muted rounded-lg" /></PageContainer>
+        <PageContainer>
+          <Skeleton className="h-32 w-full" />
+        </PageContainer>
       </>
     );
   }
@@ -105,7 +112,7 @@ export default function TransactionDetailPage() {
           {data.amount_acbu != null && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Amount (ACBU)</span>
-              <span className="font-semibold">AFK {data.amount_acbu}</span>
+              <span className="font-semibold">ACBU {formatAmount(data.amount_acbu)}</span>
             </div>
           )}
           {data.usdc_amount != null && (

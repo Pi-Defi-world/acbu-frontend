@@ -7,6 +7,7 @@ import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as kycApi from '@/lib/api/kyc';
@@ -60,7 +61,9 @@ export default function KycDetailPage() {
             <h1 className="text-lg font-bold text-foreground">Application</h1>
           </div>
         </div>
-        <PageContainer><div className="animate-pulse h-24 bg-muted rounded-lg" /></PageContainer>
+        <PageContainer>
+          <Skeleton className="h-24 w-full" />
+        </PageContainer>
       </>
     );
   }

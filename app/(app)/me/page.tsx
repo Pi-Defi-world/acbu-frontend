@@ -10,13 +10,17 @@ import { useAuth } from '@/contexts/auth-context';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
 import type { UserMe } from '@/types/api';
+import Link from 'next/link';
 
 const menuItems = [
   { section: 'Account', items: [{ title: 'Profile', icon: User, href: '/me/profile' }, { title: 'Settings', icon: Settings, href: '/me/settings' }, { title: 'Wallet', icon: Eye, href: '/me/settings/wallet' }] },
-  { section: 'Security', items: [{ title: 'KYC Verification', icon: Shield, href: '/me/kyc', badge: 'Pending' }, { title: 'Two-Factor Auth', icon: Smartphone, href: '/auth/2fa' }, { title: 'Recovery Settings', icon: Lock, href: '/me/recovery' }] },
+  { section: 'Security', items: [{ title: 'KYC Verification', icon: Shield, href: '/me/kyc', badge: 'Pending' }, { title: 'Two-Factor Auth', icon: Smartphone, href: '/me/settings/security' }, { title: 'Recovery Settings', icon: Lock, href: '/me/recovery' }] },
   { section: 'Support', items: [{ title: 'Help & Support', icon: HelpCircle, href: '/me/help' }, { title: 'Activity History', icon: Clock, href: '/activity' }] },
 ];
 
+/**
+ * User profile and account summary page.
+ */
 export default function MePage() {
   const router = useRouter();
   const { logout } = useAuth();
@@ -87,11 +91,11 @@ export default function MePage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg border border-border bg-card p-4 text-center">
               <p className="text-xs text-muted-foreground mb-2 font-medium">Total Balance</p>
-              <p className="text-2xl font-bold text-foreground">AFK 12,450</p>
+              <p className="text-2xl font-bold text-foreground">ACBU 12,450</p>
             </div>
             <div className="rounded-lg border border-border bg-card p-4 text-center">
               <p className="text-xs text-muted-foreground mb-2 font-medium">This Month</p>
-              <p className="text-2xl font-bold text-accent">+AFK 2,340</p>
+              <p className="text-2xl font-bold text-accent">+ACBU 2,340</p>
             </div>
           </div>
 
@@ -102,7 +106,7 @@ export default function MePage() {
                 {section.items.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <button key={item.href} onClick={() => router.push(item.href)} className="w-full text-left transition-colors active:bg-muted">
+                    <Link key={item.href} href={item.href} className="w-full text-left transition-colors active:bg-muted">
                       <div className="rounded-lg border border-border bg-card p-4 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <Icon className="w-5 h-5 text-primary flex-shrink-0" />
@@ -113,7 +117,7 @@ export default function MePage() {
                           <ArrowRight className="w-4 h-4 text-muted-foreground" />
                         </div>
                       </div>
-                    </button>
+                    </Link>
                   );
                 })}
               </div>
