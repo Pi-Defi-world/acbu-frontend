@@ -47,6 +47,9 @@ export default function MintPage() {
   const [mintError, setMintError] = useState('');
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
+  const burnReceiveText = burnAmount
+    ? `Local currency payout to ${BURN_DESTINATION_LABELS[burnDestination] ?? 'selected destination'}`
+    : '—';
 
     useEffect(() => {
         if (activeTab !== "rates") return;
