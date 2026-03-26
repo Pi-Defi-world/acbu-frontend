@@ -14,9 +14,19 @@ import Link from 'next/link';
 
 const menuItems = [
   { section: 'Account', items: [{ title: 'Profile', icon: User, href: '/me/profile' }, { title: 'Settings', icon: Settings, href: '/me/settings' }, { title: 'Wallet', icon: Eye, href: '/me/settings/wallet' }] },
-  { section: 'Security', items: [{ title: 'KYC Verification', icon: Shield, href: '/me/kyc', badge: 'Pending' }, { title: 'Two-Factor Auth', icon: Smartphone, href: '/me/settings/security' }, { title: 'Recovery Settings', icon: Lock, href: '/me/recovery' }] },
+  { section: 'Security', items: [{ title: 'KYC Verification', icon: Shield, href: '/me/kyc' }, { title: 'Two-Factor Auth', icon: Smartphone, href: '/me/settings/security' }, { title: 'Recovery Settings', icon: Lock, href: '/me/recovery' }] },
   { section: 'Support', items: [{ title: 'Help & Support', icon: HelpCircle, href: '/me/help' }, { title: 'Activity History', icon: Clock, href: '/activity' }] },
 ];
+
+/**
+ * Helper to get user-friendly KYC status labels.
+ */
+function getKycDisplay(status?: string): string {
+  const s = (status || 'pending').toLowerCase();
+  if (s === 'verified' || s === 'approved') return 'Verified';
+  if (s === 'rejected') return 'Rejected';
+  return 'Pending';
+}
 
 /**
  * User profile and account summary page.
@@ -82,7 +92,7 @@ export default function MePage() {
               <p className="text-xs text-muted-foreground truncate">{user?.email || user?.phone_e164 || '—'}</p>
             </div>
           </div>
-          {user?.kyc_status && <Badge variant="secondary" className="w-fit text-xs">{user.kyc_status}</Badge>}
+          {user && <Badge variant="secondary" className="w-fit text-xs">{getKycDisplay(user.kyc_status)}</Badge>}
         </div>
       </div>
 
@@ -105,6 +115,8 @@ export default function MePage() {
               <div className="space-y-2">
                 {section.items.map((item) => {
                   const Icon = item.icon;
+                  // Handle dynamic KYC badge, fallback to hardcoded badge if any
+                  const badgeText = item.title === 'KYC Verification' ? getKycDisplay(user?.kyc_status) : item.badge;
                   return (
                     <Link key={item.href} href={item.href} className="w-full text-left transition-colors active:bg-muted">
                       <div className="rounded-lg border border-border bg-card p-4 flex items-center justify-between gap-3">
@@ -113,7 +125,7 @@ export default function MePage() {
                           <span className="font-medium text-foreground text-sm truncate">{item.title}</span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          {item.badge && <Badge variant="secondary" className="text-xs">{item.badge}</Badge>}
+                          {badgeText && <Badge variant="secondary" className="text-xs">{badgeText}</Badge>}
                           <ArrowRight className="w-4 h-4 text-muted-foreground" />
                         </div>
                       </div>
