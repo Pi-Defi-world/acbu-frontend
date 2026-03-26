@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { PageContainer } from '@/components/layout/page-container';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState } from "react";
+import { PageContainer } from "@/components/layout/page-container";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,56 +15,121 @@ import {
   AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { ArrowDown, ArrowUp, TrendingUp } from 'lucide-react';
-import { formatAmount } from '@/lib/utils';
+} from "@/components/ui/alert-dialog";
+import { ArrowDown, ArrowUp, TrendingUp } from "lucide-react";
+import { formatAmount } from "@/lib/utils";
+import { useApiOpts } from "@/hooks/use-api";
+import * as mintApi from "@/lib/api/mint";
+import * as burnApi from "@/lib/api/burn";
+import type { MintResponse, BurnResponse } from "@/types/api";
 
 /**
  * Currency management hub.
  */
 export default function CurrencyPage() {
-  const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'international'>(
-    'mint'
+  const opts = useApiOpts();
+
+  const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
+    "mint",
   );
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
+  const [step, setStep] = useState<"input" | "confirm" | "success">("input");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [lastTxId, setLastTxId] = useState("");
 
   // Mint state
-  const [mintAmount, setMintAmount] = useState('');
-  const [mintSource, setMintSource] = useState('usdc');
+  const [mintAmount, setMintAmount] = useState("");
+  const [mintSource, setMintSource] = useState("usdc");
+  const [mintWalletAddress, setMintWalletAddress] = useState("");
 
   // Burn state
-  const [burnAmount, setBurnAmount] = useState('');
-  const [burnDestination, setBurnDestination] = useState('bank');
+  const [burnAmount, setBurnAmount] = useState("");
+  const [burnDestination, setBurnDestination] = useState("bank");
+  const [burnAccountNumber, setBurnAccountNumber] = useState("");
+  const [burnBankCode, setBurnBankCode] = useState("");
+  const [burnAccountName, setBurnAccountName] = useState("");
 
   // International state
-  const [intlAmount, setIntlAmount] = useState('');
-  const [intlCurrency, setIntlCurrency] = useState('USD');
-  const [intlCountry, setIntlCountry] = useState('US');
+  const [intlAmount, setIntlAmount] = useState("");
+  const [intlCurrency, setIntlCurrency] = useState("USD");
+  const [intlCountry, setIntlCountry] = useState("US");
+  const [intlAccountNumber, setIntlAccountNumber] = useState("");
+  const [intlBankCode, setIntlBankCode] = useState("");
+  const [intlAccountName, setIntlAccountName] = useState("");
 
   const mockBalance = 5280.5;
   const mockRate = 1620;
-  const exchangeRate = 0.82; // Simulated exchange rate
+  const exchangeRate = 0.82;
 
-  const handleMintConfirm = async () => {
-    setStep('confirm');
-  };
-
-  const handleBurnConfirm = async () => {
-    setStep('confirm');
-  };
+  const handleMintConfirm = () => setStep("confirm");
+  const handleBurnConfirm = () => setStep("confirm");
 
   const handleExecute = async () => {
-    console.log('[v0] Operation executed:', { activeTab, amount: mintAmount || burnAmount || intlAmount });
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setStep('success');
+    setSubmitError("");
+    setSubmitting(true);
+    try {
+      if (activeTab === "mint") {
+        const res: MintResponse = await mintApi.mintFromUsdc(
+          mintAmount,
+          mintWalletAddress.trim(),
+          "auto",
+          opts,
+        );
+        setLastTxId(res.transaction_id);
+      } else if (activeTab === "burn") {
+        const recipientType =
+          burnDestination === "bank"
+            ? "bank"
+            : burnDestination === "mobile"
+              ? "mobile_money"
+              : undefined;
+        const res: BurnResponse = await burnApi.burnAcbu(
+          burnAmount,
+          "NGN",
+          {
+            type: recipientType as "bank" | "mobile_money" | undefined,
+            account_number: burnAccountNumber.trim(),
+            bank_code: burnBankCode.trim(),
+            account_name: burnAccountName.trim(),
+          },
+          opts,
+        );
+        setLastTxId(res.transaction_id);
+      } else {
+        const res: BurnResponse = await burnApi.burnAcbu(
+          intlAmount,
+          intlCurrency,
+          {
+            account_number: intlAccountNumber.trim(),
+            bank_code: intlBankCode.trim(),
+            account_name: intlAccountName.trim(),
+          },
+          opts,
+        );
+        setLastTxId(res.transaction_id);
+      }
+      setStep("success");
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "Operation failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const resetForm = () => {
-    setStep('input');
-    setMintAmount('');
-    setBurnAmount('');
-    setIntlAmount('');
+    setStep("input");
+    setMintAmount("");
+    setMintWalletAddress("");
+    setBurnAmount("");
+    setBurnAccountNumber("");
+    setBurnBankCode("");
+    setBurnAccountName("");
+    setIntlAmount("");
+    setIntlAccountNumber("");
+    setIntlBankCode("");
+    setIntlAccountName("");
+    setSubmitError("");
+    setLastTxId("");
   };
 
   return (
@@ -83,22 +149,41 @@ export default function CurrencyPage() {
         {/* Balance Card */}
         <div className="mb-6">
           <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
-             <p className="text-sm font-medium opacity-90">AFK Balance</p>
-            <p className="text-3xl font-bold mb-2">AFK {formatAmount(mockBalance)}</p>
-            <p className="text-xs opacity-75">≈ ₦{formatAmount(mockBalance * mockRate, 0)}</p>
+            <p className="text-sm font-medium opacity-90">AFK Balance</p>
+            <p className="text-3xl font-bold mb-2">
+              AFK {formatAmount(mockBalance)}
+            </p>
+            <p className="text-xs opacity-75">
+              ≈ ₦{formatAmount(mockBalance * mockRate, 0)}
+            </p>
           </Card>
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="mint" className="w-full" onValueChange={(v) => setActiveTab(v as 'mint' | 'burn' | 'international')}>
+        <Tabs
+          defaultValue="mint"
+          className="w-full"
+          onValueChange={(v) =>
+            setActiveTab(v as "mint" | "burn" | "international")
+          }
+        >
           <TabsList className="grid w-full grid-cols-3 px-4 gap-2 bg-transparent border-b border-border rounded-none">
-            <TabsTrigger value="mint" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+            <TabsTrigger
+              value="mint"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
               Mint
             </TabsTrigger>
-            <TabsTrigger value="burn" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+            <TabsTrigger
+              value="burn"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
               Burn
             </TabsTrigger>
-            <TabsTrigger value="international" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+            <TabsTrigger
+              value="international"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
               International
             </TabsTrigger>
           </TabsList>
@@ -121,10 +206,10 @@ export default function CurrencyPage() {
                 </select>
               </Card>
 
-              <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">
+              <div className="mb-4">
+                <Label className="text-sm font-medium text-foreground mb-2 block">
                   Amount to Mint
-                </label>
+                </Label>
                 <div className="flex gap-2">
                   <span className="flex items-center text-muted-foreground">
                     $
@@ -138,11 +223,24 @@ export default function CurrencyPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  You'll receive: AFK{' '}
+                  You'll receive: AFK{" "}
                   {mintAmount
                     ? formatAmount(parseFloat(mintAmount) * exchangeRate)
-                    : '0.00'}
+                    : "0.00"}
                 </p>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium text-foreground mb-2 block">
+                  Destination Wallet Address
+                </Label>
+                <Input
+                  type="text"
+                  placeholder="GXXXXXXXX... (Stellar address)"
+                  value={mintWalletAddress}
+                  onChange={(e) => setMintWalletAddress(e.target.value)}
+                  className="border-border"
+                />
               </div>
 
               <Card className="border-border bg-muted p-3 mt-4">
@@ -153,18 +251,25 @@ export default function CurrencyPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Total</span>
                   <span className="font-bold text-foreground">
-                    ${mintAmount ? (parseFloat(mintAmount) + 2.5).toFixed(2) : '2.50'}
+                    $
+                    {mintAmount
+                      ? (parseFloat(mintAmount) + 2.5).toFixed(2)
+                      : "2.50"}
                   </span>
                 </div>
               </Card>
 
               <Button
                 onClick={handleMintConfirm}
-                disabled={!mintAmount || parseFloat(mintAmount) <= 0}
+                disabled={
+                  !mintAmount ||
+                  parseFloat(mintAmount) <= 0 ||
+                  !mintWalletAddress.trim()
+                }
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
               >
                 <ArrowDown className="w-4 h-4 mr-2" />
-                Mint AFK
+                Mint ACBU
               </Button>
             </div>
           </TabsContent>
@@ -176,7 +281,9 @@ export default function CurrencyPage() {
                 Convert AFK to fiat and withdraw
               </p>
               <Card className="border-border p-4 mb-4">
-                <p className="text-xs text-muted-foreground mb-1">Destination</p>
+                <p className="text-xs text-muted-foreground mb-1">
+                  Destination
+                </p>
                 <select
                   value={burnDestination}
                   onChange={(e) => setBurnDestination(e.target.value)}
@@ -189,9 +296,9 @@ export default function CurrencyPage() {
               </Card>
 
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="text-sm font-medium text-foreground mb-2 block">
                   Amount to Burn
-                </label>
+                </Label>
                 <div className="flex gap-2">
                   <span className="flex items-center text-muted-foreground">
                     AFK
@@ -207,18 +314,63 @@ export default function CurrencyPage() {
                 <p className="text-xs text-muted-foreground mt-2">
                   Available: AFK {formatAmount(mockBalance)}
                 </p>
-                {parseFloat(burnAmount || '0') > mockBalance && (
+                {parseFloat(burnAmount || "0") > mockBalance && (
                   <p className="text-xs text-destructive mt-1">
                     Insufficient balance
                   </p>
                 )}
               </div>
 
+              <Card className="border-border p-4 mt-4 space-y-3">
+                <p className="text-xs text-muted-foreground font-medium">
+                  Recipient Account
+                </p>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">
+                    Account Number
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="0123456789"
+                    value={burnAccountNumber}
+                    onChange={(e) => setBurnAccountNumber(e.target.value)}
+                    className="border-border"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">
+                    Bank Code
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="044"
+                    value={burnBankCode}
+                    onChange={(e) => setBurnBankCode(e.target.value)}
+                    className="border-border"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">
+                    Account Name
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="John Doe"
+                    value={burnAccountName}
+                    onChange={(e) => setBurnAccountName(e.target.value)}
+                    className="border-border"
+                  />
+                </div>
+              </Card>
+
               <Card className="border-border bg-muted p-3 mt-4">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-muted-foreground">You'll receive</span>
                   <span className="font-medium text-foreground">
-                    ${burnAmount ? (parseFloat(burnAmount) / exchangeRate).toFixed(2) : '0.00'}
+                    $
+                    {burnAmount
+                      ? (parseFloat(burnAmount) / exchangeRate).toFixed(2)
+                      : "0.00"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -229,7 +381,13 @@ export default function CurrencyPage() {
 
               <Button
                 onClick={handleBurnConfirm}
-                disabled={!burnAmount || parseFloat(burnAmount) > mockBalance}
+                disabled={
+                  !burnAmount ||
+                  parseFloat(burnAmount) > mockBalance ||
+                  !burnAccountNumber.trim() ||
+                  !burnBankCode.trim() ||
+                  !burnAccountName.trim()
+                }
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
               >
                 <ArrowUp className="w-4 h-4 mr-2" />
@@ -298,6 +456,48 @@ export default function CurrencyPage() {
                   </div>
                 </div>
 
+                <Card className="border-border p-4 space-y-3">
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Recipient Account
+                  </p>
+                  <div>
+                    <Label className="text-sm font-medium text-foreground mb-1 block">
+                      Account Number
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="0123456789"
+                      value={intlAccountNumber}
+                      onChange={(e) => setIntlAccountNumber(e.target.value)}
+                      className="border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-foreground mb-1 block">
+                      Bank Code / SWIFT
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="BOFAUS3N"
+                      value={intlBankCode}
+                      onChange={(e) => setIntlBankCode(e.target.value)}
+                      className="border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-foreground mb-1 block">
+                      Account Name
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="John Doe"
+                      value={intlAccountName}
+                      onChange={(e) => setIntlAccountName(e.target.value)}
+                      className="border-border"
+                    />
+                  </div>
+                </Card>
+
                 <Card className="border-border bg-muted p-3">
                   <div className="flex items-start gap-2 mb-3">
                     <TrendingUp className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
@@ -318,8 +518,14 @@ export default function CurrencyPage() {
                 </Card>
 
                 <Button
-                  onClick={() => setStep('confirm')}
-                  disabled={!intlAmount || parseFloat(intlAmount) <= 0}
+                  onClick={() => setStep("confirm")}
+                  disabled={
+                    !intlAmount ||
+                    parseFloat(intlAmount) <= 0 ||
+                    !intlAccountNumber.trim() ||
+                    !intlBankCode.trim() ||
+                    !intlAccountName.trim()
+                  }
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   Continue
@@ -331,21 +537,21 @@ export default function CurrencyPage() {
       </PageContainer>
 
       {/* Confirmation Dialog */}
-      <AlertDialog open={step === 'confirm'}>
+      <AlertDialog open={step === "confirm"}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {activeTab === 'mint' && 'Confirm Mint'}
-              {activeTab === 'burn' && 'Confirm Burn & Withdrawal'}
-              {activeTab === 'international' && 'Confirm Transfer'}
+              {activeTab === "mint" && "Confirm Mint"}
+              {activeTab === "burn" && "Confirm Burn & Withdrawal"}
+              {activeTab === "international" && "Confirm Transfer"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {activeTab === 'mint' &&
-                `Mint AFK ${formatAmount(parseFloat(mintAmount || '0') * exchangeRate)} from USDC`}
+                `Mint ACBU ${formatAmount(parseFloat(mintAmount || '0') * exchangeRate)} from USDC`}
               {activeTab === 'burn' &&
-                `Burn AFK ${formatAmount(burnAmount)} and withdraw to ${burnDestination}`}
+                `Burn ACBU ${formatAmount(burnAmount)} and withdraw to ${burnDestination}`}
               {activeTab === 'international' &&
-                `Send AFK ${formatAmount(intlAmount)} to ${intlCountry} (${intlCurrency})`}
+                `Send ACBU ${formatAmount(intlAmount)} to ${intlCountry} (${intlCurrency})`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-2">
@@ -353,35 +559,42 @@ export default function CurrencyPage() {
               <span className="text-muted-foreground">Amount:</span>
               <span className="font-medium text-foreground">
                 {activeTab === 'mint' && `$${mintAmount}`}
-                {activeTab === 'burn' && `AFK ${formatAmount(burnAmount)}`}
-                {activeTab === 'international' && `AFK ${formatAmount(intlAmount)}`}
+                {activeTab === 'burn' && `ACBU ${formatAmount(burnAmount)}`}
+                {activeTab === 'international' && `ACBU ${formatAmount(intlAmount)}`}
               </span>
             </div>
             <div className="flex justify-between text-sm border-t border-border pt-2">
               <span className="text-muted-foreground">Processing fee:</span>
               <span className="font-medium text-foreground">
-                {activeTab === 'mint' && '$2.50'}
-                {activeTab === 'burn' && '$1.00'}
-                {activeTab === 'international' && `${intlCurrency} 0.50`}
+                {activeTab === "mint" && "$2.50"}
+                {activeTab === "burn" && "$1.00"}
+                {activeTab === "international" && `${intlCurrency} 0.50`}
               </span>
             </div>
           </div>
           <div className="flex gap-2">
-            <AlertDialogCancel onClick={() => setStep('input')}>
+            <AlertDialogCancel
+              onClick={() => setStep("input")}
+              disabled={submitting}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleExecute}
+              disabled={submitting}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              Confirm
+              {submitting ? "Processing..." : "Confirm"}
             </AlertDialogAction>
           </div>
+          {submitError && (
+            <p className="text-sm text-destructive mt-2">{submitError}</p>
+          )}
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Success Dialog */}
-      <AlertDialog open={step === 'success'}>
+      <AlertDialog open={step === "success"}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Operation Complete</AlertDialogTitle>
@@ -391,7 +604,7 @@ export default function CurrencyPage() {
           </AlertDialogHeader>
           <div className="py-4">
             <p className="text-sm text-muted-foreground">
-              Transaction ID: TXN_{Date.now().toString().slice(-8)}
+              Transaction ID: {lastTxId}
             </p>
           </div>
           <AlertDialogAction
