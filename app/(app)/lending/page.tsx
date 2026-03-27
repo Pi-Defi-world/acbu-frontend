@@ -1,111 +1,111 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  ArrowLeft,
-  CreditCard,
-  TrendingDown,
-  Zap,
-  CheckCircle,
-  AlertCircle,
-  ArrowRight,
-  CalendarDays,
-} from 'lucide-react';
-import { PageContainer } from '@/components/layout/page-container';
-import { useApiOpts } from '@/hooks/use-api';
-import * as userApi from '@/lib/api/user';
-import * as lendingApi from '@/lib/api/lending';
-import { formatAmount } from '@/lib/utils';
+    ArrowLeft,
+    CreditCard,
+    TrendingDown,
+    Zap,
+    CheckCircle,
+    AlertCircle,
+    ArrowRight,
+    CalendarDays,
+} from "lucide-react";
+import { PageContainer } from "@/components/layout/page-container";
+import { useApiOpts } from "@/hooks/use-api";
+import * as userApi from "@/lib/api/user";
+import * as lendingApi from "@/lib/api/lending";
+import { formatAmount } from "@/lib/utils";
 
 interface LoanProduct {
-  id: string;
-  name: string;
-  description: string;
-  icon: React.ReactNode;
-  minRate: number;
-  maxRate: number;
-  minAmount: number;
-  maxAmount: number;
-  minTerm: number;
-  maxTerm: number;
-  color: string;
+    id: string;
+    name: string;
+    description: string;
+    icon: React.ReactNode;
+    minRate: number;
+    maxRate: number;
+    minAmount: number;
+    maxAmount: number;
+    minTerm: number;
+    maxTerm: number;
+    color: string;
 }
 
 interface ActiveLoan {
-  id: string;
-  name: string;
-  amount: number;
-  rate: number;
-  balance: number;
-  monthlyPayment: number;
-  nextPaymentDate: string;
-  remainingTerm: number;
+    id: string;
+    name: string;
+    amount: number;
+    rate: number;
+    balance: number;
+    monthlyPayment: number;
+    nextPaymentDate: string;
+    remainingTerm: number;
 }
 
 const loanProducts: LoanProduct[] = [
-  {
-    id: 'personal',
-    name: 'Personal Loan',
-    description: 'Flexible loans for any purpose',
-    icon: <CreditCard className="w-6 h-6" />,
-    minRate: 5.5,
-    maxRate: 12.0,
-    minAmount: 500,
-    maxAmount: 50000,
-    minTerm: 6,
-    maxTerm: 60,
-    color: 'from-blue-500/10 to-blue-600/10',
-  },
-  {
-    id: 'business',
-    name: 'Business Loan',
-    description: 'Grow your business with capital',
-    icon: <TrendingDown className="w-6 h-6" />,
-    minRate: 4.5,
-    maxRate: 10.0,
-    minAmount: 1000,
-    maxAmount: 100000,
-    minTerm: 12,
-    maxTerm: 84,
-    color: 'from-purple-500/10 to-purple-600/10',
-  },
-  {
-    id: 'emergency',
-    name: 'Emergency Loan',
-    description: 'Quick funds when you need them',
-    icon: <Zap className="w-6 h-6" />,
-    minRate: 8.0,
-    maxRate: 15.0,
-    minAmount: 100,
-    maxAmount: 5000,
-    minTerm: 3,
-    maxTerm: 24,
-    color: 'from-amber-500/10 to-amber-600/10',
-  },
+    {
+        id: "personal",
+        name: "Personal Loan",
+        description: "Flexible loans for any purpose",
+        icon: <CreditCard className="w-6 h-6" />,
+        minRate: 5.5,
+        maxRate: 12.0,
+        minAmount: 500,
+        maxAmount: 50000,
+        minTerm: 6,
+        maxTerm: 60,
+        color: "from-blue-500/10 to-blue-600/10",
+    },
+    {
+        id: "business",
+        name: "Business Loan",
+        description: "Grow your business with capital",
+        icon: <TrendingDown className="w-6 h-6" />,
+        minRate: 4.5,
+        maxRate: 10.0,
+        minAmount: 1000,
+        maxAmount: 100000,
+        minTerm: 12,
+        maxTerm: 84,
+        color: "from-purple-500/10 to-purple-600/10",
+    },
+    {
+        id: "emergency",
+        name: "Emergency Loan",
+        description: "Quick funds when you need them",
+        icon: <Zap className="w-6 h-6" />,
+        minRate: 8.0,
+        maxRate: 15.0,
+        minAmount: 100,
+        maxAmount: 5000,
+        minTerm: 3,
+        maxTerm: 24,
+        color: "from-amber-500/10 to-amber-600/10",
+    },
 ];
 
 const mockActiveLoan: ActiveLoan = {
-  id: '1',
-  name: 'Personal Loan',
-  amount: 5000,
-  rate: 7.5,
-  balance: 3200,
-  monthlyPayment: 120,
-  nextPaymentDate: 'Feb 15, 2026',
-  remainingTerm: 18,
+    id: "1",
+    name: "Personal Loan",
+    amount: 5000,
+    rate: 7.5,
+    balance: 3200,
+    monthlyPayment: 120,
+    nextPaymentDate: "Feb 15, 2026",
+    remainingTerm: 18,
 };
 
 /**
@@ -621,20 +621,238 @@ export default function LendingPage() {
                   onClick={() => setShowApplicationDialog(false)}
                   className="flex-1 border-border"
                 >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSubmitApplication}
-                  disabled={!loanAmount || !loanTerm}
-                  className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                    <DialogContent className="max-w-md border-border">
+                        <DialogHeader>
+                            <DialogTitle>{selectedProduct.name}</DialogTitle>
+                            <DialogDescription>
+                                {selectedProduct.description}
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-4">
+                            {/* Key Terms */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <Card className="border-border bg-muted p-3">
+                                    <p className="text-xs text-muted-foreground mb-1">
+                                        Interest Rate
+                                    </p>
+                                    <p className="font-bold text-foreground">
+                                        {selectedProduct.minRate}%{" "}
+                                        <span className="text-xs">-</span>{" "}
+                                        {selectedProduct.maxRate}%
+                                    </p>
+                                </Card>
+                                <Card className="border-border bg-muted p-3">
+                                    <p className="text-xs text-muted-foreground mb-1">
+                                        Loan Term
+                                    </p>
+                                    <p className="font-bold text-foreground">
+                                        {selectedProduct.minTerm}{" "}
+                                        <span className="text-xs">-</span>{" "}
+                                        {selectedProduct.maxTerm} mo
+                                    </p>
+                                </Card>
+                                <Card className="border-border bg-muted p-3">
+                                    <p className="text-xs text-muted-foreground mb-1">
+                                        Min Amount
+                                    </p>
+                                    <p className="font-bold text-foreground">
+                                        AFK{" "}
+                                        {formatAmount(
+                                            selectedProduct.minAmount,
+                                        )}
+                                    </p>
+                                </Card>
+                                <Card className="border-border bg-muted p-3">
+                                    <p className="text-xs text-muted-foreground mb-1">
+                                        Max Amount
+                                    </p>
+                                    <p className="font-bold text-foreground">
+                                        AFK{" "}
+                                        {formatAmount(
+                                            selectedProduct.maxAmount,
+                                        )}
+                                    </p>
+                                </Card>
+                            </div>
+
+                            {/* Requirements */}
+                            <div>
+                                <h4 className="text-sm font-semibold text-foreground mb-2">
+                                    Requirements
+                                </h4>
+                                <ul className="space-y-1">
+                                    <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                                        <CheckCircle className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
+                                        <span>Minimum 18 years old</span>
+                                    </li>
+                                    <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                                        <CheckCircle className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
+                                        <span>Valid ID required</span>
+                                    </li>
+                                    <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                                        <CheckCircle className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
+                                        <span>Income verification</span>
+                                    </li>
+                                    <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                                        <CheckCircle className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
+                                        <span>Credit check</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-3 pt-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowProductDialog(false)}
+                                    className="flex-1 border-border"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={() =>
+                                        handleApplyForLoan(selectedProduct)
+                                    }
+                                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                                >
+                                    Apply Now
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            )}
+
+            {/* Loan Application Dialog */}
+            {selectedLoanProduct && (
+                <Dialog
+                    open={showApplicationDialog}
+                    onOpenChange={setShowApplicationDialog}
                 >
-                  Continue
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </>
-  );
+                    <DialogContent className="max-w-md border-border">
+                        <DialogHeader>
+                            <DialogTitle>
+                                Apply for {selectedLoanProduct.name}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Quick application - takes about 5 minutes
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-4">
+                            {/* Loan Amount */}
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="loan-amount"
+                                    className="text-foreground"
+                                >
+                                    Loan Amount
+                                </Label>
+                                <div className="flex gap-2">
+                                    <span className="flex items-center text-muted-foreground">
+                                        AFK
+                                    </span>
+                                    <Input
+                                        id="loan-amount"
+                                        type="number"
+                                        placeholder="Enter amount"
+                                        value={loanAmount}
+                                        onChange={(e) =>
+                                            setLoanAmount(e.target.value)
+                                        }
+                                        className="border-border text-lg font-semibold"
+                                        min={selectedLoanProduct.minAmount}
+                                        max={selectedLoanProduct.maxAmount}
+                                    />
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    AFK{" "}
+                                    {formatAmount(
+                                        selectedLoanProduct.minAmount,
+                                    )}{" "}
+                                    - AFK{" "}
+                                    {formatAmount(
+                                        selectedLoanProduct.maxAmount,
+                                    )}
+                                </p>
+                            </div>
+
+                            {/* Loan Term */}
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="loan-term"
+                                    className="text-foreground"
+                                >
+                                    Loan Term (months)
+                                </Label>
+                                <Input
+                                    id="loan-term"
+                                    type="number"
+                                    placeholder="Enter term"
+                                    value={loanTerm}
+                                    onChange={(e) =>
+                                        setLoanTerm(e.target.value)
+                                    }
+                                    className="border-border"
+                                    min={selectedLoanProduct.minTerm}
+                                    max={selectedLoanProduct.maxTerm}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    {selectedLoanProduct.minTerm} -{" "}
+                                    {selectedLoanProduct.maxTerm} months
+                                </p>
+                            </div>
+
+                            {/* Payment Estimate */}
+                            {monthlyPayment > 0 && (
+                                <Card className="border-border bg-muted p-3">
+                                    <div className="flex justify-between text-sm mb-2">
+                                        <span className="text-muted-foreground">
+                                            Est. Monthly Payment
+                                        </span>
+                                        <span className="font-bold text-foreground">
+                                            AFK {formatAmount(monthlyPayment)}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        At {selectedLoanProduct.minRate}% APR
+                                    </p>
+                                </Card>
+                            )}
+
+                            {/* Info Alert */}
+                            <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-blue-700 dark:text-blue-300">
+                                    You'll need to provide income verification
+                                    and consent to a credit check.
+                                </p>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-3 pt-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() =>
+                                        setShowApplicationDialog(false)
+                                    }
+                                    className="flex-1 border-border"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleSubmitApplication}
+                                    disabled={!loanAmount || !loanTerm}
+                                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                                >
+                                    Continue
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            )}
+        </>
+    );
 }
