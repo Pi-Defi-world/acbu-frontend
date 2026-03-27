@@ -139,11 +139,6 @@ export default function BillsPage() {
     };
 
     const handlePaymentExecute = async () => {
-        console.log("[v0] Bill payment:", {
-            provider: selectedProvider?.id,
-            amount,
-            reference,
-        });
         await new Promise((resolve) => setTimeout(resolve, 1500));
         setPaymentStep("success");
     };

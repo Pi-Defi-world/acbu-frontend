@@ -166,7 +166,6 @@ export default function SavingsPage() {
 
   const handleConfirmDeposit = () => {
     if (depositAmount && parseFloat(depositAmount) > 0) {
-      console.log(`[v0] Deposit ${depositAmount} to ${selectedAccount?.name}`);
       setShowDepositDialog(false);
       setDepositAmount("");
     }
