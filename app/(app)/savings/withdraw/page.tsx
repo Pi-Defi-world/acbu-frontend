@@ -25,7 +25,7 @@ export default function SavingsWithdrawPage() {
             .getReceive(opts)
             .then((data) => {
                 const uri = (data.pay_uri ?? data.alias) as string | undefined;
-                if (uri && typeof uri === "string" && uri.length >= 56)
+                if (uri && typeof uri === "string")
                     setUser(uri);
             })
             .catch((e) => {
