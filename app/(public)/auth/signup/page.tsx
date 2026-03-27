@@ -18,6 +18,11 @@ export default function SignUpPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+
+    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setUsername(e.target.value.toLowerCase().trim())
+    }
+
     const handleSignUp = async (e: React.FormEvent) => {
         const passwordRegex =
             /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
@@ -39,13 +44,13 @@ export default function SignUpPage() {
             );
             return;
         }
-        if (!username.trim()) {
+        if (!username) {
             setError("Please enter a username");
             return;
         }
         setLoading(true);
         try {
-            await authApi.signup(username.trim(), passcode);
+            await authApi.signup(username, passcode);
             router.push("/auth/signin?created=1");
         } catch (err) {
             setError(
@@ -98,7 +103,7 @@ export default function SignUpPage() {
                                 autoComplete="username"
                                 placeholder="Username"
                                 value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                onChange={handleUsernameChange}
                                 className="border-border"
                                 disabled={loading}
                             />

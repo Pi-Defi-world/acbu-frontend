@@ -28,3 +28,8 @@ export function formatAmount(
     maximumFractionDigits: decimals,
   }).format(num);
 }
+
+
+export const normalizeUsername = (input: string) => {
+  return input.toLowerCase().trim();
+}

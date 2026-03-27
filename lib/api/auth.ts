@@ -1,3 +1,4 @@
+import { normalizeUsername } from '../utils';
 import { post } from './client';
 import type { RequestOptions } from './client';
 import type { SigninResponse, SigninRequires2FA } from '@/types/api';
@@ -12,7 +13,13 @@ export async function signup(
   passcode: string,
   opts?: RequestOptions
 ): Promise<SignupResponse> {
-  return post<SignupResponse>('/auth/signup', { username: username.trim().toLowerCase().replace(/\s/g, ''), passcode }, opts);
+  const normalizedUsername = normalizeUsername(username);
+
+  return post<SignupResponse>(
+    '/auth/signup',
+    { username: normalizedUsername, passcode },
+    opts
+  );
 }
 
 export async function signin(
