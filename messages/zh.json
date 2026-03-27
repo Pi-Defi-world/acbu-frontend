@@ -1,0 +1,12 @@
+{
+  "Settings": "设置",
+  "Receive": "接收",
+  "Address & QR": "地址 & 二维码",
+  "Wallet": "钱包",
+  "Confirm wallet": "确认钱包",
+  "Login": "登录",
+  "Email": "邮箱",
+  "Password": "密码",
+  "Invalid email or password": "邮箱或密码无效",
+  "Go to {title} settings": "前往 {title} 设置"
+}
