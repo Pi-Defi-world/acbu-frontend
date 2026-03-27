@@ -52,7 +52,7 @@ export default function SignUpPage() {
         }
         setLoading(true);
         try {
-            await authApi.signup(username.trim(), passcode);
+            await authApi.signup(username, passcode);
             router.push("/auth/signin?created=1");
         } catch (err) {
             setError(
@@ -169,7 +169,7 @@ export default function SignUpPage() {
 
                         <Button
                             type="submit"
-                            className="w-full cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                             disabled={loading}
                         >
                             {loading ? "Creating..." : "Create account"}
