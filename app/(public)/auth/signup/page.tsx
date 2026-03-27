@@ -24,8 +24,6 @@ export default function SignUpPage() {
     }
 
     const handleSignUp = async (e: React.FormEvent) => {
-        e.preventDefault() // to prevent reload
-        // console.log(username)
         const passwordRegex =
             /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
 
