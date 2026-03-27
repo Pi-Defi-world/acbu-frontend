@@ -53,13 +53,27 @@ async function request<T>(
   if (opts.token) {
     headers['Authorization'] = `Bearer ${opts.token}`;
   }
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-    signal: opts.signal,
-    credentials: 'include', // Include httpOnly cookies in all requests
-  });
+  let signal = opts.signal;
+  if (!signal) {
+    const controller = new AbortController();
+    signal = controller.signal;
+    setTimeout(() => controller.abort(), 30000); // 30 second timeout
+  }
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal,
+      credentials: 'include', // Include httpOnly cookies in all requests
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError' && !opts.signal) {
+      throw new Error('Request timed out after 30 seconds');
+    }
+    throw error;
+  }
   let data: { error?: string; message?: string; details?: unknown };
   const ct = res.headers.get('content-type');
   if (ct?.includes('application/json')) {
