@@ -138,18 +138,18 @@ export default function SendPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "pending":
-        return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      case "failed":
-        return "bg-red-100 text-red-700 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-    }
-  };
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "completed":
+      return "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800";
+    case "pending":
+      return "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
+    case "failed":
+      return "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800";
+    default:
+      return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700";
+  }
+};
 
   const isFormValid = () =>
     amount &&
@@ -449,9 +449,9 @@ export default function SendPage() {
             >
                 <DialogContent className="max-w-md border-border">
                     <div className="flex flex-col items-center text-center py-6">
-                        <div className="rounded-full bg-green-100 p-4 mb-4">
-                            <Check className="h-8 w-8 text-green-600" />
-                        </div>
+                       <div className="rounded-full bg-green-100 dark:bg-green-900 p-4 mb-4">
+                           <Check className="h-8 w-8 text-green-600 dark:text-green-300" />
+                       </div>
                         <h2 className="text-xl font-bold text-foreground mb-2">
                             Transfer Sent!
                         </h2>
