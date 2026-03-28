@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
@@ -28,6 +28,15 @@ export default function KycUploadPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
 
     const handleFile = async (kind: KycDocumentKind, file: File | null) => {
         if (!applicationId || !file) return;
@@ -71,7 +80,10 @@ export default function KycUploadPage() {
                 opts,
             );
             setSuccess(true);
-            setTimeout(() => router.push(`/me/kyc/${applicationId}`), 1500);
+            timeoutRef.current = setTimeout(
+                () => router.push(`/me/kyc/${applicationId}`),
+                1500,
+            );
         } catch (e) {
             setError(e instanceof Error ? e.message : "Submit failed");
         } finally {
