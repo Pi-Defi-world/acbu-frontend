@@ -24,6 +24,7 @@ import {
   Plus,
   AlertCircle,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { useRouter } from "next/navigation";
 import { useApiOpts } from "@/hooks/use-api";
@@ -36,7 +37,7 @@ interface SavingsAccount {
     name: string;
     apy: number;
     balance: number;
-    icon: React.ReactNode;
+    icon: LucideIcon;
     description: string;
     color: string;
 }
@@ -53,11 +54,12 @@ interface SavingsGoal {
  * Savings account type definitions used for display.
  * APY rates and descriptions are product constants; balance is derived from API.
  */
-const SAVINGS_ACCOUNT_TYPES: Omit<SavingsAccount, "balance" | "icon">[] = [
+const SAVINGS_ACCOUNT_TYPES: Omit<SavingsAccount, "balance">[] = [
   {
     id: "high-yield",
     name: "High-Yield Savings",
     apy: 8.0,
+    icon: TrendingUp,
     description: "Best rates with instant access",
     color: "from-green-500/10 to-green-600/10",
   },
@@ -65,6 +67,7 @@ const SAVINGS_ACCOUNT_TYPES: Omit<SavingsAccount, "balance" | "icon">[] = [
     id: "goal-saver",
     name: "Goal Saver",
     apy: 5.5,
+    icon: Target,
     description: "Save for specific goals",
     color: "from-blue-500/10 to-blue-600/10",
   },
@@ -72,6 +75,7 @@ const SAVINGS_ACCOUNT_TYPES: Omit<SavingsAccount, "balance" | "icon">[] = [
     id: "flex-saver",
     name: "Flex Saver",
     apy: 4.2,
+    icon: Zap,
     description: "Flexible with quick withdrawals",
     color: "from-amber-500/10 to-amber-600/10",
   },
@@ -138,19 +142,10 @@ export default function SavingsPage() {
   }, [apiUser, opts.token]);
 
   const apiBalance = typeof positionsBalance === "number" ? positionsBalance : typeof positionsBalance === "string" ? parseFloat(positionsBalance) || 0 : 0;
-
-  const getAccountIcon = (id: string) => {
-    switch (id) {
-      case "high-yield": return <TrendingUp className="w-6 h-6" />;
-      case "goal-saver": return <Target className="w-6 h-6" />;
-      case "flex-saver": return <Zap className="w-6 h-6" />;
-      default: return <PiggyBank className="w-6 h-6" />;
-    }
-  };
+  const totalSavings = apiBalance;
 
   const savingsAccounts: SavingsAccount[] = SAVINGS_ACCOUNT_TYPES.map((acct) => ({
     ...acct,
-    icon: getAccountIcon(acct.id),
     balance: acct.id === "high-yield" ? apiBalance : 0,
   }));
 
@@ -236,31 +231,37 @@ export default function SavingsPage() {
           {/* Savings Accounts */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-foreground">Savings Accounts</h3>
-            {savingsAccounts.map((account) => (
-              <button
-                key={account.id}
-                type="button"
-                onClick={() => handleSelectAccount(account)}
-                className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
-                aria-label={`Select ${account.name} account`}
-              >
-                <Card className={`border-border bg-gradient-to-br ${account.color} p-4 cursor-pointer hover:border-primary/50 transition-all`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-background/50">{account.icon}</div>
-                      <div>
-                        <h4 className="font-semibold text-foreground">{account.name}</h4>
-                        <p className="text-xs text-muted-foreground">{account.description}</p>
+            {savingsAccounts.map((account) => {
+              const AccountIcon = account.icon;
+
+              return (
+                <button
+                  key={account.id}
+                  type="button"
+                  onClick={() => handleSelectAccount(account)}
+                  className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+                  aria-label={`Select ${account.name} account`}
+                >
+                  <Card className={`border-border bg-gradient-to-br ${account.color} p-4 cursor-pointer hover:border-primary/50 transition-all`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-background/50">
+                          <AccountIcon className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-foreground">{account.name}</h4>
+                          <p className="text-xs text-muted-foreground">{account.description}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-foreground">AFK {formatAmount(account.balance)}</p>
+                        <p className="text-[10px] text-green-600 font-medium">{account.apy}% APY</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-foreground">AFK {formatAmount(account.balance)}</p>
-                      <p className="text-[10px] text-green-600 font-medium">{account.apy}% APY</p>
-                    </div>
-                  </div>
-                </Card>
-              </button>
-            ))}
+                  </Card>
+                </button>
+              );
+            })}
           </div>
 
           <div className="space-y-4">
