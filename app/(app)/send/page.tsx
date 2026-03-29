@@ -25,9 +25,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
+import { useBalance } from "@/hooks/use-balance";
 import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
 import type { TransferItem, ContactItem } from "@/types/api";
@@ -39,10 +39,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PageContainer } from "@/components/layout/page-container";
-
-const BALANCE_PLACEHOLDER = "—";
-
 function formatDate(iso: string) {
   const d = new Date(iso);
   const today = new Date();
@@ -58,6 +54,7 @@ function formatDate(iso: string) {
  */
 export default function SendPage() {
   const opts = useApiOpts();
+  const { balance, loading: balanceLoading, refetch: refetchBalance } = useBalance();
   const [activeTab, setActiveTab] = useState("send");
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -120,6 +117,7 @@ export default function SendPage() {
         opts,
       );
       loadTransfers();
+      refetchBalance();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
       setLastSentAmount(amount);
@@ -151,9 +149,13 @@ const getStatusColor = (status: string) => {
   }
 };
 
+  const exceedsBalance =
+    balance !== null && amount !== "" && parseFloat(amount) > balance;
+
   const isFormValid = () =>
     amount &&
     parseFloat(amount) > 0 &&
+    !exceedsBalance &&
     ((useContact && selectedContact) ||
       (!useContact && customRecipient.trim()));
 
@@ -200,77 +202,51 @@ const getStatusColor = (status: string) => {
                 </Link>
               </Button>
             </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="history" className="space-y-3">
-          <div>
-            <h3 className="mb-3 text-sm font-semibold text-foreground">
-              Recent Transfers
-            </h3>
-            {loadingTransfers ? (
-              <SkeletonList count={2} itemHeight="h-14" />
-            ) : transfers.length === 0 ? (
-              <div className="rounded-lg border border-border bg-card p-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  No transfers yet
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {transfers.map((t: TransferItem) => (
-                  <Link
-                    key={t.transaction_id}
-                    href={`/send/${t.transaction_id}`}
-                    className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground truncate">
-                        Transfer
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(t.created_at)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-foreground">
-                        AFK {formatAmount(t.amount_acbu)}
-                      </p>
-                      <Badge
-                        variant="outline"
-                        className={`mt-1 text-xs ${getStatusColor(t.status)}`}
-                      >
-                        {t.status === "completed" && (
-                          <Check className="mr-1 h-3 w-3" />
-                        )}
-                        {t.status === "pending" && (
-                          <AlertCircle className="mr-1 h-3 w-3" />
-                        )}
-                        {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
-                      </Badge>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
           </TabsContent>
+
           <TabsContent value="history" className="space-y-3">
             <div>
-              <h3 className="mb-3 text-sm font-semibold text-foreground">Recent Transfers</h3>
+              <h3 className="mb-3 text-sm font-semibold text-foreground">
+                Recent Transfers
+              </h3>
               {loadingTransfers ? (
                 <SkeletonList count={2} itemHeight="h-14" />
               ) : transfers.length === 0 ? (
-                <div className="rounded-lg border border-border bg-card p-6 text-center"><p className="text-sm text-muted-foreground">No transfers yet</p></div>
+                <div className="rounded-lg border border-border bg-card p-6 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No transfers yet
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-2">
                   {transfers.map((t: TransferItem) => (
-                    <Link key={t.transaction_id} href={`/send/${t.transaction_id}`} className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted">
-                      <div className="flex-1 min-w-0"><p className="font-medium text-foreground truncate">Transfer</p><p className="text-xs text-muted-foreground">{formatDate(t.created_at)}</p></div>
+                    <Link
+                      key={t.transaction_id}
+                      href={`/send/${t.transaction_id}`}
+                      className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate">
+                          Transfer
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(t.created_at)}
+                        </p>
+                      </div>
                       <div className="text-right">
-                        <p className="font-semibold text-foreground">ACBU {formatAmount(t.amount_acbu)}</p>
-                        <Badge variant="outline" className={`mt-1 text-xs ${getStatusColor(t.status)}`}>
-                          {t.status === 'completed' && <Check className="mr-1 h-3 w-3" />}
-                          {t.status === 'pending' && <AlertCircle className="mr-1 h-3 w-3" />}
+                        <p className="font-semibold text-foreground">
+                          ACBU {formatAmount(t.amount_acbu)}
+                        </p>
+                        <Badge
+                          variant="outline"
+                          className={`mt-1 text-xs ${getStatusColor(t.status)}`}
+                        >
+                          {t.status === "completed" && (
+                            <Check className="mr-1 h-3 w-3" />
+                          )}
+                          {t.status === "pending" && (
+                            <AlertCircle className="mr-1 h-3 w-3" />
+                          )}
                           {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
                         </Badge>
                       </div>
@@ -352,7 +328,9 @@ const getStatusColor = (status: string) => {
                 />
               </div>
               {exceedsBalance && <p className="text-xs text-destructive">Insufficient balance.</p>}
-              <p className="text-xs text-muted-foreground">Available: ACBU {formatAmount(BALANCE_PLACEHOLDER)}</p>
+              <p className="text-xs text-muted-foreground">
+                Available: ACBU {balanceLoading ? '...' : formatAmount(balance)}
+              </p>
             </div>
 
             <div className="space-y-2">

@@ -19,13 +19,12 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
+import { useBalance } from '@/hooks/use-balance';
 import * as ratesApi from '@/lib/api/rates';
 import * as mintApi from '@/lib/api/mint';
 import * as burnApi from '@/lib/api/burn';
 import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
-
-const BALANCE_PLACEHOLDER = "—";
 const MINT_NETWORK_FEE_TEXT = "Estimated at confirmation";
 const BURN_PROCESSING_FEE_TEXT = "Estimated at confirmation";
 
@@ -34,6 +33,7 @@ const BURN_PROCESSING_FEE_TEXT = "Estimated at confirmation";
  */
 export default function MintPage() {
   const opts = useApiOpts();
+  const { balance, loading: balanceLoading } = useBalance();
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [usdcAmount, setUsdcAmount] = useState('');
@@ -47,9 +47,6 @@ export default function MintPage() {
   const [mintError, setMintError] = useState('');
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
-  const burnReceiveText = burnAmount
-    ? `Local currency payout to ${BURN_DESTINATION_LABELS[burnDestination] ?? 'selected destination'}`
-    : '—';
 
     useEffect(() => {
         if (activeTab !== "rates") return;
@@ -153,7 +150,7 @@ export default function MintPage() {
                             AFK Balance
                         </p>
                         <p className="text-3xl font-bold mb-2">
-                            AFK {formatAmount(BALANCE_PLACEHOLDER)}
+                            {balanceLoading ? '...' : `AFK ${formatAmount(balance)}`}
                         </p>
                         <p className="text-xs opacity-75">
                             Native ACBU Currency
@@ -335,7 +332,7 @@ export default function MintPage() {
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-2">
                                     Available: AFK{" "}
-                                    {formatAmount(BALANCE_PLACEHOLDER)}
+                                    {balanceLoading ? '...' : formatAmount(balance)}
                                 </p>
                             </div>
                             <Card className="border-border bg-muted p-3 mt-4">
