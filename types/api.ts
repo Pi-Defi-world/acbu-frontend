@@ -44,6 +44,12 @@ export interface ReceiveResponse {
   [key: string]: unknown;
 }
 
+// Balance
+export interface BalanceResponse {
+  balance: string | number;
+  currency?: string;
+}
+
 // Contacts & guardians
 export interface ContactItem {
   id: string;

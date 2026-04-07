@@ -19,11 +19,10 @@ import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useApiOpts } from '@/hooks/use-api';
+import { useBalance } from '@/hooks/use-balance';
 import * as transfersApi from '@/lib/api/transfers';
 import type { TransferItem } from '@/types/api';
 import { cn, formatAmount } from '@/lib/utils';
-
-const BALANCE_PLACEHOLDER = '—'; // TODO: GET /users/me/balance when available
 
 const features = [
   { title: 'Send', description: 'Transfer money', icon: Send, href: '/send', color: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
@@ -47,6 +46,7 @@ function formatDate(iso: string) {
  */
 export default function Home() {
   const [showBalance, setShowBalance] = useState(true);
+  const { balance, loading: balanceLoading, error: balanceError } = useBalance();
   const opts = useApiOpts();
   const [transfers, setTransfers] = useState<TransferItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +87,11 @@ export default function Home() {
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Total Balance</p>
                 <h2 className="text-3xl font-bold text-foreground">
-                  {showBalance ? `ACBU ${BALANCE_PLACEHOLDER}` : '••••••'}
+                  {!showBalance
+                    ? '••••••'
+                    : balanceLoading
+                      ? '...'
+                      : `ACBU ${formatAmount(balance)}`}
                 </h2>
               </div>
               <button
@@ -98,9 +102,9 @@ export default function Home() {
                 {showBalance ? <Eye className="w-4 h-4 text-muted-foreground" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
               </button>
             </div>
-            {showBalance && BALANCE_PLACEHOLDER === '—' && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <span>Balance from backend when available</span>
+            {showBalance && balanceError && (
+              <div className="flex items-center gap-1 text-xs text-destructive">
+                <span>{balanceError}</span>
               </div>
             )}
           </div>

@@ -1,6 +1,6 @@
 import { get, post, patch, del } from './client';
 import type { RequestOptions } from './client';
-import type { UserMe, PatchMeBody, ReceiveResponse, ContactItem, GuardianItem } from '@/types/api';
+import type { UserMe, PatchMeBody, ReceiveResponse, BalanceResponse, ContactItem, GuardianItem } from '@/types/api';
 
 export async function getMe(opts?: RequestOptions): Promise<UserMe> {
   return get<UserMe>('/users/me', opts);
@@ -8,6 +8,10 @@ export async function getMe(opts?: RequestOptions): Promise<UserMe> {
 
 export async function patchMe(data: PatchMeBody, opts?: RequestOptions): Promise<UserMe> {
   return patch<UserMe>('/users/me', data, opts);
+}
+
+export async function getBalance(opts?: RequestOptions): Promise<BalanceResponse> {
+  return get<BalanceResponse>('/users/me/balance', opts);
 }
 
 export async function getReceive(opts?: RequestOptions): Promise<ReceiveResponse> {
