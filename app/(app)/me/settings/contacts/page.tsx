@@ -13,6 +13,9 @@ import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
 import type { ContactItem } from '@/types/api';
 
+const ALIAS_MAX_LENGTH = 64;
+const PAY_URI_MAX_LENGTH = 256;
+
 export default function ContactsPage() {
   const opts = useApiOpts();
   const [contacts, setContacts] = useState<ContactItem[]>([]);
@@ -89,8 +92,20 @@ export default function ContactsPage() {
       <PageContainer>
         {error && <p className="text-destructive text-sm mb-3">{error}</p>}
         <form onSubmit={handleAdd} className="space-y-2 mb-6">
-          <Input placeholder="Alias" value={addAlias} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddAlias(e.target.value)} className="border-border" />
-          <Input placeholder="Pay URI or address" value={addPayUri} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddPayUri(e.target.value)} className="border-border" />
+          <Input
+            placeholder="Alias"
+            value={addAlias}
+            maxLength={ALIAS_MAX_LENGTH}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddAlias(e.target.value)}
+            className="border-border"
+          />
+          <Input
+            placeholder="Pay URI or address"
+            value={addPayUri}
+            maxLength={PAY_URI_MAX_LENGTH}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddPayUri(e.target.value)}
+            className="border-border"
+          />
           <Button type="submit" disabled={adding || (!addAlias.trim() && !addPayUri.trim())}>Add contact</Button>
         </form>
         <div className="space-y-2">
