@@ -31,8 +31,8 @@ export function onAuthError(callback: (error: ApiError) => void): void {
   authErrorHandler = callback;
 }
 
-const BASE = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL
-  ? process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, '')
+const BASE = typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL)
+  ? (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL)!.replace(/\/$/, '')
   : '';
 
 function getCsrfToken(): string | undefined {

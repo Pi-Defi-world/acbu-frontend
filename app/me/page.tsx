@@ -15,7 +15,7 @@ import type { UserMe } from '@/types/api';
 import Link from 'next/link';
 
 const menuItems = [
-  { section: 'Account', items: [{ title: 'Profile', icon: User, href: '/me/profile' }, { title: 'Settings', icon: Settings, href: '/me/settings' }, { title: 'Wallet', icon: Eye, href: '/me/settings/wallet' }, { title: 'Simulated Bank', icon: Building2, href: '/fiat' }] },
+  { section: 'Account', items: [{ title: 'Profile', icon: User, href: '/me/profile' }, { title: 'Settings', icon: Settings, href: '/me/settings' }, { title: 'Wallet', icon: Eye, href: '/wallet' }, { title: 'Simulated Bank', icon: Building2, href: '/fiat' }] },
   { section: 'Support', items: [{ title: 'Activity History', icon: Clock, href: '/activity' }] },
 ];
 

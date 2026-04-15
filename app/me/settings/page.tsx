@@ -9,7 +9,7 @@ import { ArrowLeft, CreditCard, Wallet, Users, Shield, Key } from 'lucide-react'
 
 const items = [
   { title: 'Receive', description: 'Address & QR', href: '/me/settings/receive', icon: CreditCard },
-  { title: 'Wallet', description: 'Confirm wallet', href: '/me/settings/wallet', icon: Wallet },
+  { title: 'Wallet', description: 'Manage wallet', href: '/wallet', icon: Wallet },
   { title: 'Contacts', description: 'Manage contacts', href: '/me/settings/contacts', icon: Users },
   { title: 'Guardians', description: 'Recovery guardians', href: '/me/settings/guardians', icon: Shield },
   { title: 'Security', description: '2FA & delete account', href: '/me/settings/security', icon: Key },
