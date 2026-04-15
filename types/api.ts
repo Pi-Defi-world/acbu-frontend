@@ -6,6 +6,7 @@
 export interface SigninResponse {
   api_key?: string;  // Deprecated: now returned via httpOnly cookie only
   user_id: string;
+  stellar_address?: string | null;
   wallet_created?: boolean;
   passphrase?: string;
   encryption_method_required?: boolean;

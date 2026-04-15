@@ -5,8 +5,8 @@ import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { ErrorBoundary } from '@/components/error-boundary'
 import './globals.css'
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { AuthGuard } from '@/components/layout/auth-guard';
+import { AppLayout } from '@/components/app-layout';
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -41,22 +41,19 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-  params,
 }: Readonly<{
   children: React.ReactNode
-  params: {lang: string}
 }>) {
-  const messages = await getMessages();
-  const lang = params.lang || "en";
+  const lang = "en";
 
   return (
     <html lang={lang}>
       <body className={`font-sans antialiased`}>
         <ErrorBoundary>
           <AuthProvider>
-            <NextIntlClientProvider messages={messages}>
-            {children}
-            </NextIntlClientProvider>
+            <AuthGuard>
+              <AppLayout>{children}</AppLayout>
+            </AuthGuard>
             <Analytics />
           </AuthProvider>
         </ErrorBoundary>

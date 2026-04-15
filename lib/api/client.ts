@@ -7,6 +7,21 @@
  */
 
 let authErrorHandler: ((error: ApiError) => void) | null = null;
+let currentToken: string | null = null;
+
+/**
+ * Set the global API key to be used for all requests.
+ */
+export function setToken(token: string | null): void {
+  currentToken = token;
+}
+
+/**
+ * Get the global API key.
+ */
+export function getToken(): string | null {
+  return currentToken;
+}
 
 /**
  * Register a callback to be invoked when API returns 401 (Unauthorized).
@@ -50,9 +65,13 @@ async function request<T>(
   if (csrfToken) {
     headers['X-XSRF-TOKEN'] = csrfToken;
   }
-  if (opts.token) {
-    headers['Authorization'] = `Bearer ${opts.token}`;
+  
+  const token = opts.token !== undefined ? opts.token : currentToken;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    headers['x-api-key'] = token; // Also send as x-api-key for compatibility
   }
+
   let signal = opts.signal;
   if (!signal) {
     const controller = new AbortController();
@@ -106,6 +125,10 @@ export function post<T>(path: string, body?: unknown, opts?: RequestOptions): Pr
 
 export function patch<T>(path: string, body?: unknown, opts?: RequestOptions): Promise<T> {
   return request<T>('PATCH', path, body, opts);
+}
+
+export function put<T>(path: string, body?: unknown, opts?: RequestOptions): Promise<T> {
+  return request<T>('PUT', path, body, opts);
 }
 
 export function del<T>(path: string, opts?: RequestOptions): Promise<T> {

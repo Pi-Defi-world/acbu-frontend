@@ -1,4 +1,4 @@
-import { get, post, patch, del } from './client';
+import { get, post, patch, put, del, getToken } from './client';
 import type { RequestOptions } from './client';
 import type { UserMe, PatchMeBody, ReceiveResponse, BalanceResponse, ContactItem, GuardianItem } from '@/types/api';
 
@@ -22,9 +22,14 @@ export async function getReceiveQrcode(opts?: RequestOptions): Promise<Blob | { 
   const base = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL
     ? process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, '')
     : '';
-  const token = opts?.token;
+  const token = opts?.token || getToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    headers['x-api-key'] = token;
+  }
   const res = await fetch(`${base}/users/me/receive/qrcode`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers,
     signal: opts?.signal,
   });
   if (!res.ok) {
@@ -38,6 +43,10 @@ export async function getReceiveQrcode(opts?: RequestOptions): Promise<Blob | { 
 
 export async function postWalletConfirm(body: { wallet_address?: string; [key: string]: unknown }, opts?: RequestOptions): Promise<unknown> {
   return post('/users/me/wallet/confirm', body, opts);
+}
+
+export async function putWalletAddress(stellar_address: string, opts?: RequestOptions): Promise<unknown> {
+  return put('/users/me/wallet', { stellar_address }, opts);
 }
 
 export async function getContacts(opts?: RequestOptions): Promise<{ contacts?: ContactItem[] }> {

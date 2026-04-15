@@ -8,12 +8,12 @@ interface UseBalanceReturn {
   balance: number | null;
   loading: boolean;
   error: string;
-  refetch: () => void;
+  refresh: () => void;
 }
 
 /**
  * Fetches the authenticated user's ACBU wallet balance from GET /users/me/balance.
- * Returns a numeric balance (null while unknown), loading flag, error string, and refetch fn.
+ * Returns a numeric balance (null while unknown), loading flag, error string, and refresh fn.
  */
 export function useBalance(): UseBalanceReturn {
   const opts = useApiOpts();
@@ -22,7 +22,7 @@ export function useBalance(): UseBalanceReturn {
   const [error, setError] = useState('');
   const [tick, setTick] = useState(0);
 
-  const refetch = useCallback(() => setTick((t) => t + 1), []);
+  const refresh = useCallback(() => setTick((t) => t + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,5 +51,5 @@ export function useBalance(): UseBalanceReturn {
     };
   }, [opts.token, tick]);
 
-  return { balance, loading, error, refetch };
+  return { balance, loading, error, refresh };
 }

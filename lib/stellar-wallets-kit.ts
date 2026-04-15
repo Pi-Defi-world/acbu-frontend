@@ -1,0 +1,41 @@
+'use client';
+
+import {
+  StellarWalletsKit,
+  WalletNetwork,
+  allowAllModules,
+} from '@creit.tech/stellar-wallets-kit';
+import { useEffect, useState } from 'react';
+
+// Create a singleton instance if we are in the browser
+let swkInstance: StellarWalletsKit | null = null;
+
+export function getStellarWalletsKit(): StellarWalletsKit {
+  if (typeof window === 'undefined') {
+    throw new Error('StellarWalletsKit can only be used in the browser');
+  }
+
+  if (!swkInstance) {
+    swkInstance = new StellarWalletsKit({
+      network: WalletNetwork.TESTNET,
+      selectedWalletId: 'freighter',
+      modules: allowAllModules(),
+    });
+  }
+
+  return swkInstance;
+}
+
+export function useStellarWalletsKit() {
+  const [kit, setKit] = useState<StellarWalletsKit | null>(null);
+
+  useEffect(() => {
+    try {
+      setKit(getStellarWalletsKit());
+    } catch (e) {
+      console.warn(e);
+    }
+  }, []);
+
+  return kit;
+}

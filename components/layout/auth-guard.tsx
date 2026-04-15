@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/auth-context';
 const PUBLIC_PATHS = ['/auth/signin', '/auth/signup', '/auth/2fa', '/recovery'];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, ...state } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -15,8 +15,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const isPublic = PUBLIC_PATHS.some((p) => pathname?.startsWith(p) || pathname === p);
     if (!isPublic && !isAuthenticated) {
       router.replace('/auth/signin');
+      return;
     }
-  }, [isAuthenticated, pathname, router]);
+    
+    // Enforce wallet setup if authenticated but no stellar address linked
+    if (!isPublic && isAuthenticated && !state.stellarAddress && pathname !== '/auth/wallet-setup') {
+      router.replace('/auth/wallet-setup');
+    }
+  }, [isAuthenticated, state.stellarAddress, pathname, router]);
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname?.startsWith(p) || pathname === p);
   if (!isPublic && !isAuthenticated) {
