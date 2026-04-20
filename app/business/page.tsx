@@ -28,18 +28,14 @@ export default function BusinessPage() {
   const opts = useApiOpts();
   const [stats, setStats] = useState<BusinessStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        setError(null);
         const data = await businessApi.getBusinessStats(opts);
         setStats(data);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to load business stats';
-        setError(message);
         // Fallback: show loading state instead of error UI
         console.error('Business stats error:', err);
       } finally {

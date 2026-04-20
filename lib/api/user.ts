@@ -45,8 +45,33 @@ export async function postWalletConfirm(body: { wallet_address?: string; [key: s
   return post('/users/me/wallet/confirm', body, opts);
 }
 
-export async function putWalletAddress(stellar_address: string, opts?: RequestOptions): Promise<unknown> {
-  return put('/users/me/wallet', { stellar_address }, opts);
+export interface PutWalletAddressResponse {
+  ok: boolean;
+  stellar_address?: string;
+  changed?: boolean;
+  previous_stellar_address?: string | null;
+}
+
+export async function putWalletAddress(
+  stellar_address: string,
+  opts?: RequestOptions,
+): Promise<PutWalletAddressResponse> {
+  return put<PutWalletAddressResponse>(
+    "/users/me/wallet",
+    { stellar_address },
+    opts,
+  );
+}
+
+export interface DeleteWalletResponse {
+  ok: boolean;
+  previous_stellar_address?: string | null;
+}
+
+export async function deleteWallet(
+  opts?: RequestOptions,
+): Promise<DeleteWalletResponse> {
+  return del<DeleteWalletResponse>("/users/me/wallet", opts);
 }
 
 export async function getContacts(opts?: RequestOptions): Promise<{ contacts?: ContactItem[] }> {

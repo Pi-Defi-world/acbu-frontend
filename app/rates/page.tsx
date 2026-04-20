@@ -63,22 +63,36 @@ export default function RatesPage() {
         {error && <p className="text-destructive text-sm mb-3">{error}</p>}
         {loading ? (
           <SkeletonList count={2} itemHeight="h-20" />
-        ) : rates?.rates?.length ? (
+        ) : rates ? (
           <div className="space-y-2">
-            {(rates.rates as Array<{ currency?: string; rate?: number }>).map(
-              (r, i) => (
+            {[
+              { currency: "USD", rate: rates.acbu_usd },
+              { currency: "EUR", rate: rates.acbu_eur },
+              { currency: "GBP", rate: rates.acbu_gbp },
+              { currency: "NGN", rate: rates.acbu_ngn },
+              { currency: "KES", rate: rates.acbu_kes },
+              { currency: "ZAR", rate: rates.acbu_zar },
+              { currency: "RWF", rate: rates.acbu_rwf },
+              { currency: "GHS", rate: rates.acbu_ghs },
+              { currency: "EGP", rate: rates.acbu_egp },
+              { currency: "MAD", rate: rates.acbu_mad },
+              { currency: "TZS", rate: rates.acbu_tzs },
+              { currency: "UGX", rate: rates.acbu_ugx },
+              { currency: "XOF", rate: rates.acbu_xof },
+            ]
+              .filter(r => r.rate != null)
+              .map((r, i) => (
                 <Card key={i} className="border-border p-4">
                   <div className="flex justify-between items-center">
                     <p className="font-semibold text-foreground">
-                      {r.currency ?? "Rate"}
+                      ACBU/{r.currency}
                     </p>
                     <p className="text-lg font-bold text-primary">
-                      {formatRate(r.rate)}
+                      {formatRate(Number(r.rate))}
                     </p>
                   </div>
                 </Card>
-              ),
-            )}
+              ))}
           </div>
         ) : (
           <Card className="border-border p-4">

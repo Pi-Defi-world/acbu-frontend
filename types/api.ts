@@ -49,6 +49,13 @@ export interface ReceiveResponse {
 export interface BalanceResponse {
   balance: string | number;
   currency?: string;
+  stellar_address?: string | null;
+  /** On-chain ACBU (Horizon). */
+  balance_stellar?: string;
+  /** Completed mints minus burns in app DB (MVP when Soroban mint fails). */
+  balance_app_ledger?: string;
+  /** "stellar" | "app_ledger" | "none" — which source drives `balance` when chain is zero. */
+  balance_source?: string;
 }
 
 // Contacts & guardians
@@ -68,8 +75,11 @@ export interface GuardianItem {
 // Transfers
 export interface TransferItem {
   transaction_id: string;
+  type?: string;
   status: string;
   amount_acbu: string | null;
+  local_currency?: string | null;
+  local_amount?: string | null;
   recipient_address: string | null;
   blockchain_tx_hash?: string;
   created_at: string;
@@ -152,7 +162,21 @@ export interface BurnResponse {
 
 // Rates
 export interface RatesResponse {
-  rates?: Array<{ currency: string; rate?: number; [key: string]: unknown }>;
+  acbu_usd?: string | null;
+  acbu_eur?: string | null;
+  acbu_gbp?: string | null;
+  acbu_ngn?: string | null;
+  acbu_kes?: string | null;
+  acbu_zar?: string | null;
+  acbu_rwf?: string | null;
+  acbu_ghs?: string | null;
+  acbu_egp?: string | null;
+  acbu_mad?: string | null;
+  acbu_tzs?: string | null;
+  acbu_ugx?: string | null;
+  acbu_xof?: string | null;
+  change_24h_usd?: string | null;
+  timestamp?: string;
   [key: string]: unknown;
 }
 
@@ -165,8 +189,36 @@ export interface QuoteResponse {
 
 // Reserves
 export interface ReservesResponse {
-  reserve_ratio?: number;
+  source?: string;
+  total_acbu_supply?: string;
+  total_reserve_value_usd?: string;
+  acbu_usd_rate?: string;
+  min_ratio?: number;
+  target_ratio?: number;
+  effective_ratio?: number | null;
   health?: string;
+  weight_law_mode?: "warn_only" | string;
+  weight_compliance?: {
+    ok: boolean;
+    drift_threshold_bps: number;
+    warnings: Array<{
+      currency: string;
+      drift_bps: number;
+      target_weight_bps: number;
+      actual_weight_bps: number;
+    }>;
+  };
+  currencies?: Array<{
+    currency: string;
+    amount: string;
+    value_usd: string;
+    rate_usd: string;
+    target_weight_bps: number;
+    actual_weight_bps: number;
+    drift_bps: number;
+    in_range?: boolean;
+    drift_warning?: boolean;
+  }>;
   [key: string]: unknown;
 }
 

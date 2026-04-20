@@ -7,28 +7,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApiOpts } from '@/hooks/use-api';
 import * as fiatApi from '@/lib/api/fiat';
-import { AlertCircle, Building2, Wallet, ArrowRightLeft, Plus } from 'lucide-react';
-import { formatAmount } from '@/lib/utils';
-import { useBalance } from '@/hooks/use-balance';
-
+import { getApiErrorMessage } from '@/lib/api/client';
+import { useAuth } from '@/contexts/auth-context';
+import { getWalletSecretLocalPlaintext } from '@/lib/wallet-storage';
+import { ensureDemoFiatTrustlineClient } from '@/lib/stellar/trustlines';
+import { AlertCircle, Building2, Plus } from 'lucide-react';
+import { Keypair } from '@stellar/stellar-sdk';
 export default function FiatSimPage() {
   const opts = useApiOpts();
-  const { refresh: refreshAcbuBalance } = useBalance();
+  const { userId } = useAuth();
   const [accounts, setAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [lastFaucetTx, setLastFaucetTx] = useState<string | null>(null);
 
-  // On-ramp state
-  const [rampAmount, setRampAmount] = useState('');
-  const [rampCurrency, setRampCurrency] = useState('NGN');
+  const [faucetAmount, setFaucetAmount] = useState('');
+  const [faucetCurrency, setFaucetCurrency] = useState('NGN');
 
   const fetchAccounts = async () => {
     try {
       const data = await fiatApi.getFiatAccounts(opts);
       setAccounts(data.accounts || []);
-    } catch (e: any) {
-      setError(e.message || 'Failed to load accounts');
+    } catch (e: unknown) {
+      setError(getApiErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -38,32 +40,28 @@ export default function FiatSimPage() {
     fetchAccounts();
   }, [opts.token]);
 
-  const handleFaucet = async (currency: string) => {
-    setActionLoading(`faucet-${currency}`);
-    setError('');
-    try {
-      await fiatApi.postFaucet(currency, opts);
-      await fetchAccounts();
-    } catch (e: any) {
-      setError(e.message || 'Faucet failed');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleOnRamp = async (e: React.FormEvent) => {
+  const handleFaucet = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!rampAmount || parseFloat(rampAmount) <= 0) return;
-    
-    setActionLoading('on-ramp');
+    if (!faucetAmount || parseFloat(faucetAmount) <= 0) return;
+
+    setActionLoading('faucet');
     setError('');
+    setLastFaucetTx(null);
     try {
-      await fiatApi.postOnRamp(rampAmount, rampCurrency, opts);
-      setRampAmount('');
-      await fetchAccounts();
-      await refreshAcbuBalance();
-    } catch (e: any) {
-      setError(e.message || 'On-ramp failed');
+      if (!userId) throw new Error('Not logged in');
+      const secret = await getWalletSecretLocalPlaintext(userId);
+      if (!secret) {
+        throw new Error(
+          'No local wallet secret found. Open wallet setup and generate/import a wallet first.',
+        );
+      }
+      const recipient = Keypair.fromSecret(secret).publicKey();
+      await ensureDemoFiatTrustlineClient({ userSecret: secret, currency: faucetCurrency });
+      const res = await fiatApi.postFaucet(faucetCurrency, faucetAmount, recipient, opts);
+      setLastFaucetTx(res.transaction_hash);
+      setFaucetAmount('');
+    } catch (e: unknown) {
+      setError(getApiErrorMessage(e));
     } finally {
       setActionLoading(null);
     }
@@ -73,9 +71,10 @@ export default function FiatSimPage() {
     <PageContainer>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Simulated Banking</h1>
+          <h1 className="text-2xl font-bold">Demo fiat</h1>
           <p className="text-sm text-muted-foreground">
-            This is a simulated environment. None of the funds here are real.
+            Request test basket tokens to your linked wallet, then use Mint to convert them to
+            ACBU. Balances come from the network, not this app.
           </p>
         </div>
 
@@ -86,79 +85,63 @@ export default function FiatSimPage() {
           </div>
         )}
 
+        {lastFaucetTx && (
+          <Card className="p-4 text-sm border-primary/30 bg-primary/5">
+            <p className="font-medium text-foreground">Last faucet transaction</p>
+            <p className="text-xs text-muted-foreground break-all mt-1">{lastFaucetTx}</p>
+          </Card>
+        )}
+
         <div className="grid gap-4 md:grid-cols-2">
-          {/* Faucet Section */}
           <Card className="p-5 space-y-4">
             <div className="flex items-center gap-2 font-semibold">
               <Plus className="w-5 h-5 text-primary" />
-              <h2>Request Test Funds (Faucet)</h2>
+              <h2>Request test tokens (faucet)</h2>
             </div>
             <p className="text-xs text-muted-foreground">
-              Add 10,000 units of local currency to your simulated bank account.
+              Amount is in whole units of the selected currency (e.g. 100 = one hundred).
             </p>
-            <div className="flex flex-wrap gap-2">
-              {['NGN', 'GHS', 'KES', 'EGP', 'ZAR'].map((cur) => (
-                <Button 
-                  key={cur}
-                  size="sm" 
-                  variant="outline"
-                  disabled={!!actionLoading}
-                  onClick={() => handleFaucet(cur)}
-                >
-                  {actionLoading === `faucet-${cur}` ? '...' : `Get ${cur}`}
-                </Button>
-              ))}
-            </div>
-          </Card>
-
-          {/* On-Ramp Section */}
-          <Card className="p-5 space-y-4">
-            <div className="flex items-center gap-2 font-semibold">
-              <ArrowRightLeft className="w-5 h-5 text-primary" />
-              <h2>On-Ramp to ACBU</h2>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Exchange your simulated fiat for ACBU tokens.
-            </p>
-            <form onSubmit={handleOnRamp} className="flex gap-2">
-              <select 
+            <form onSubmit={handleFaucet} className="flex flex-wrap gap-2">
+              <select
                 className="bg-background border rounded px-2 text-sm"
-                value={rampCurrency}
-                onChange={(e) => setRampCurrency(e.target.value)}
+                value={faucetCurrency}
+                onChange={(e) => setFaucetCurrency(e.target.value)}
               >
-                {['NGN', 'GHS', 'KES', 'EGP', 'ZAR'].map(c => <option key={c} value={c}>{c}</option>)}
+                {['NGN', 'GHS', 'KES', 'EGP', 'ZAR', 'RWF', 'XOF', 'MAD', 'TZS', 'UGX'].map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </select>
-              <Input 
-                type="number" 
-                placeholder="Amount" 
-                value={rampAmount}
-                onChange={(e) => setRampAmount(e.target.value)}
-                className="flex-1"
+              <Input
+                type="number"
+                placeholder="Amount"
+                value={faucetAmount}
+                onChange={(e) => setFaucetAmount(e.target.value)}
+                className="flex-1 min-w-[120px]"
               />
               <Button type="submit" disabled={!!actionLoading}>
-                {actionLoading === 'on-ramp' ? '...' : 'Ramp'}
+                {actionLoading === 'faucet' ? '...' : 'Get tokens'}
               </Button>
             </form>
           </Card>
         </div>
 
-        {/* Accounts List */}
         <div className="space-y-3">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Building2 className="w-5 h-5" />
-            Your Simulated Bank Accounts
+            Basket currencies
           </h2>
-          
+
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading accounts...</p>
-          ) : accounts.length === 0 ? (
-            <Card className="p-8 text-center text-muted-foreground">
-              No simulated accounts found. Request test funds to get started.
-            </Card>
+            <p className="text-sm text-muted-foreground">Loading…</p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {accounts.map((acc) => (
-                <Card key={acc.id} className="p-4 flex flex-col justify-between border-l-4 border-l-primary">
+                <Card
+                  key={acc.id}
+                  className="p-4 flex flex-col justify-between border-l-4 border-l-primary"
+                >
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <p className="text-xs font-bold text-primary">{acc.bank_name}</p>
@@ -166,10 +149,22 @@ export default function FiatSimPage() {
                     </div>
                     <Badge variant="secondary">{acc.currency}</Badge>
                   </div>
-                  <div className="mt-4">
-                    <p className="text-2xl font-bold">{acc.currency} {formatAmount(acc.balance)}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase">{acc.account_name}</p>
+                  <div className="mt-1 space-y-1">
+                    <p className="text-sm font-semibold text-foreground">
+                      {acc.currency} {Number(acc.balance || 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      ≈ USD{' '}
+                      {acc.usd_equivalent != null
+                        ? Number(acc.usd_equivalent).toLocaleString(undefined, {
+                            maximumFractionDigits: 2,
+                          })
+                        : '—'}
+                    </p>
                   </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Use the faucet for test {acc.currency}, then Mint to receive ACBU.
+                  </p>
                 </Card>
               ))}
             </div>
@@ -180,7 +175,18 @@ export default function FiatSimPage() {
   );
 }
 
-function Badge({ children, variant = 'default' }: { children: React.ReactNode, variant?: string }) {
-  const styles = variant === 'secondary' ? 'bg-secondary text-secondary-foreground' : 'bg-primary text-primary-foreground';
-  return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${styles}`}>{children}</span>;
+function Badge({
+  children,
+  variant = 'default',
+}: {
+  children: React.ReactNode;
+  variant?: string;
+}) {
+  const styles =
+    variant === 'secondary'
+      ? 'bg-secondary text-secondary-foreground'
+      : 'bg-primary text-primary-foreground';
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${styles}`}>{children}</span>
+  );
 }

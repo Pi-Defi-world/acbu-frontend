@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';

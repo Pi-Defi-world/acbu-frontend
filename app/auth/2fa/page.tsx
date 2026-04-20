@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams} from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,20 @@ import * as authApi from '@/lib/api/auth';
 const CHALLENGE_TOKEN_KEY = '2fa_challenge_token';
 
 export default function TwoFactorPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-border p-8 text-center">
+          <div className="animate-pulse text-muted-foreground">Loading...</div>
+        </Card>
+      </div>
+    }>
+      <TwoFactorForm />
+    </Suspense>
+  );
+}
+
+function TwoFactorForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();

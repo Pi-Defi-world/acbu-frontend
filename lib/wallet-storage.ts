@@ -6,6 +6,7 @@ localforage.config({
 });
 
 const KEY_STORE_PREFIX = 'stellar_secret_';
+const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
 
 /**
  * Simulates AES encryption for the local storage.
@@ -43,11 +44,35 @@ export async function getWalletSecret(userId: string, passcode: string): Promise
   return decryptSecret(encrypted, passcode);
 }
 
+/**
+ * Store wallet secret in IndexedDB without passcode.
+ * This matches the "decrypt without passcode" requirement, but is NOT secure.
+ * Only use for dev/test flows.
+ */
+export async function storeWalletSecretLocalPlaintext(
+  userId: string,
+  secret: string,
+): Promise<void> {
+  await localforage.setItem(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`, secret);
+}
+
+/**
+ * Read wallet secret from IndexedDB without passcode.
+ */
+export async function getWalletSecretLocalPlaintext(
+  userId: string,
+): Promise<string | null> {
+  const secret = await localforage.getItem<string>(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`);
+  return secret ?? null;
+}
+
 export async function hasStoredWallet(userId: string): Promise<boolean> {
   const encrypted = await localforage.getItem<string>(`${KEY_STORE_PREFIX}${userId}`);
-  return !!encrypted;
+  const plaintext = await localforage.getItem<string>(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`);
+  return !!encrypted || !!plaintext;
 }
 
 export async function removeStoredWallet(userId: string): Promise<void> {
   await localforage.removeItem(`${KEY_STORE_PREFIX}${userId}`);
+  await localforage.removeItem(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`);
 }

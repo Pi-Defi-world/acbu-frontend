@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,20 @@ import { useAuth } from "@/contexts/auth-context";
 import * as authApi from "@/lib/api/auth";
 
 export default function SignInPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <Card className="w-full max-w-md border-border p-8 text-center">
+                    <div className="animate-pulse text-muted-foreground">Loading...</div>
+                </Card>
+            </div>
+        }>
+            <SignInForm />
+        </Suspense>
+    );
+}
+
+function SignInForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { login } = useAuth();
@@ -51,6 +65,10 @@ export default function SignInPage() {
       }
 
       if ("api_key" in result) {
+        if (typeof window !== "undefined") {
+          // Reuse for wallet ops that need local-seed decryption (e.g. trustline setup).
+          sessionStorage.setItem("acbu_passcode", passcode);
+        }
         login(result.api_key!, result.user_id, result.stellar_address);
         
         if (result.wallet_created && result.passphrase) {

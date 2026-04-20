@@ -108,9 +108,14 @@ export default function TransferDetailPage() {
   }
 
   const status = (data.status as string) ?? "—";
+  const type = (data.type as string) ?? "transfer";
   const createdAt = (data.created_at as string) ?? "";
   const completedAt = (data.completed_at as string) ?? "";
   const txHash = (data.blockchain_tx_hash as string) ?? "";
+  const localCurrency = (data.local_currency as string) ?? "";
+  const localAmount = (data.local_amount as string) ?? "";
+  const amountAcbu = (data.amount_acbu as string) ?? "";
+  const isFiatRecord = type === "mint" && !!localCurrency && !!localAmount;
 
   return (
     <>
@@ -120,7 +125,7 @@ export default function TransferDetailPage() {
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
           <h1 className="text-lg font-bold text-foreground truncate">
-            Transfer
+            {isFiatRecord ? "Faucet" : "Transfer"}
           </h1>
         </div>
       </div>
@@ -133,7 +138,9 @@ export default function TransferDetailPage() {
           <div className="flex justify-between">
             <span className="text-muted-foreground">Amount</span>
             <span className="font-semibold">
-              ACBU {formatAmount(data.amount_acbu as string)}
+              {isFiatRecord
+                ? `${localCurrency} ${formatAmount(localAmount)}`
+                : `ACBU ${formatAmount(amountAcbu)}`}
             </span>
           </div>
           {createdAt && (

@@ -62,11 +62,17 @@ export default function ActivityPage() {
               <Link key={t.transaction_id} href={`/transactions/${t.transaction_id}`} className="block">
                 <Card className="border-border p-4 flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground">Transfer</p>
+                    <p className="font-medium text-foreground">
+                      {t.type === 'mint' ? 'Faucet' : 'Transfer'}
+                    </p>
                     <p className="text-xs text-muted-foreground">{formatDate(t.created_at)}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="font-semibold text-foreground">ACBU {formatAmount(t.amount_acbu)}</p>
+                    <p className="font-semibold text-foreground">
+                      {t.type === 'mint' && t.local_currency && t.local_amount
+                        ? `${t.local_currency} ${formatAmount(t.local_amount)}`
+                        : `ACBU ${formatAmount(t.amount_acbu)}`}
+                    </p>
                     <Badge variant="outline" className="text-xs mt-1">{t.status}</Badge>
                   </div>
                 </Card>

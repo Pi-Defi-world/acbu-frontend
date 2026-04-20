@@ -6,62 +6,27 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertCircle, Key, Trash2 } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
+import { useAuth } from "@/contexts/auth-context";
+import { removeStoredWallet, hasStoredWallet } from "@/lib/wallet-storage";
 import * as userApi from "@/lib/api/user";
-import type { ReceiveResponse } from "@/types/api";
 
-/**
- * WalletPage Component
- * Displays wallet settings and confirmation flow.
- * Allows users to confirm their Stellar wallet address for transaction enablement.
- *
- * Features:
- * - Fetches and displays user's Stellar wallet address
- * - Enables confirmation button when wallet is loaded
- * - Handles wallet confirmation via API
- * - Shows loading, error, and success states
- * - Auto-redirects to settings on successful confirmation
- *
- * @returns {React.ReactElement} The wallet settings page component
- */
 export default function WalletPage() {
   const opts = useApiOpts();
+  const { userId, stellarAddress } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
-  const [walletAddress, setWalletAddress] = useState("");
-  const [hasMinBalance, setHasMinBalance] = useState(false);
-  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [hasLocalSecret, setHasLocalSecret] = useState(false);
 
-  useEffect(() => {
-    loadWalletInfo();
-  }, [opts.token]);
-
-  /**
-   * Loads wallet information from the API
-   * Fetches the user's Stellar wallet address and prepares the confirmation state.
-   * Sets loading states and handles errors gracefully.
-   *
-   * @async
-   * @returns {Promise<void>}
-   */
   const loadWalletInfo = async () => {
     try {
       setLoading(true);
       setError("");
-
-      // Fetch wallet receive address (Stellar address)
-      const receiveData = (await userApi.getReceive(opts)) as ReceiveResponse;
-      const address = (receiveData.pay_uri ?? receiveData.alias) as
-        | string
-        | undefined;
-
-      if (address && address.length >= 56) {
-        setWalletAddress(address);
-        // Enable button if wallet has a valid Stellar address and is loaded
-        setHasMinBalance(true);
+      if (userId) {
+        const hasSecret = await hasStoredWallet(userId);
+        setHasLocalSecret(hasSecret);
       }
     } catch (err) {
       setError(
@@ -74,43 +39,44 @@ export default function WalletPage() {
     }
   };
 
-  /**
-   * Handles wallet confirmation submission
-   * Calls the wallet confirm API endpoint with the user's wallet address.
-   * Updates UI states for loading, success, and error scenarios.
-   * Auto-redirects to settings page on successful confirmation.
-   *
-   * @async
-   * @returns {Promise<void>}
-   */
-  const handleConfirmWallet = async () => {
-    if (!walletAddress || confirming) return;
+  useEffect(() => {
+    loadWalletInfo();
+  }, [opts.token, userId]);
+
+  const handleRemoveWallet = async () => {
+    if (
+      !window.confirm(
+        "Remove this wallet from your account? Your local secret will be deleted and the backend will forget the address. You'll be prompted to set up a new wallet on next use.",
+      )
+    ) {
+      return;
+    }
 
     try {
-      setConfirming(true);
+      setLoading(true);
       setError("");
 
-      // Call the wallet confirm API
-      await userApi.postWalletConfirm(
-        { wallet_address: walletAddress.trim() },
-        opts,
+      // Clear the backend's stellar address first so signin/modal logic can
+      // cleanly re-issue or accept a new wallet. Doing this BEFORE wiping the
+      // local seed means a failure here leaves the user in a consistent state
+      // (seed still present, mint still works with the old address).
+      await userApi.deleteWallet();
+
+      if (userId) {
+        await removeStoredWallet(userId);
+      }
+
+      setSuccess(
+        "Wallet removed. Reloading so you can set up a fresh wallet…",
       );
+      setHasLocalSecret(false);
 
-      setSuccess(true);
-      setIsConfirmed(true);
+      localStorage.setItem("force_wallet_setup", "true");
 
-      // Show success message for 2 seconds then redirect
-      setTimeout(() => {
-        window.location.href = "/me/settings";
-      }, 2000);
+      window.location.reload();
     } catch (err) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Failed to confirm wallet. Please try again.";
-      setError(errorMessage);
-    } finally {
-      setConfirming(false);
+      setError(err instanceof Error ? err.message : "Failed to remove wallet");
+      setLoading(false);
     }
   };
 
@@ -124,71 +90,71 @@ export default function WalletPage() {
           >
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
-          <h1 className="text-lg font-bold text-foreground">Wallet</h1>
+          <h1 className="text-lg font-bold text-foreground">Wallet Settings</h1>
         </div>
       </div>
       <PageContainer>
-        <Card className="border-border p-6 space-y-4">
+        <Card className="border-border p-6 space-y-6">
           {loading ? (
             <div className="space-y-4">
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-12 w-full" />
             </div>
-          ) : success ? (
-            <div className="flex flex-col items-center justify-center space-y-3 py-6">
-              <CheckCircle className="w-12 h-12 text-green-600" />
-              <p className="text-center font-medium text-foreground">
-                Wallet confirmed successfully!
-              </p>
-              <p className="text-xs text-muted-foreground">Redirecting...</p>
-            </div>
           ) : (
             <>
-              <div>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Confirm your wallet to enable transactions. Your Stellar
-                  wallet address will be verified and confirmed.
-                </p>
-              </div>
-
               {error && (
                 <div className="flex gap-2 rounded-lg bg-destructive/10 p-3 border border-destructive/20">
                   <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-destructive">{error}</p>
                 </div>
               )}
-
-              {walletAddress && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    Wallet Address
-                  </label>
-                  <div className="p-3 rounded-lg bg-muted border border-border">
-                    <p className="text-xs font-mono text-muted-foreground break-all">
-                      {walletAddress}
-                    </p>
-                  </div>
+              {success && (
+                <div className="flex gap-2 rounded-lg bg-green-500/10 p-3 border border-green-500/20">
+                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-green-600">{success}</p>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Button
-                  onClick={handleConfirmWallet}
-                  disabled={!hasMinBalance || isConfirmed || confirming}
-                  className="w-full bg-primary text-primary-foreground"
-                >
-                  {confirming
-                    ? "Confirming..."
-                    : isConfirmed
-                      ? "Wallet Confirmed"
-                      : "Confirm Wallet"}
-                </Button>
-
-                {!hasMinBalance && (
-                  <p className="text-xs text-muted-foreground">
-                    Wallet address is required to confirm your wallet.
-                  </p>
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Key className="w-4 h-4" /> Connected Stellar Address
+                </label>
+                {stellarAddress ? (
+                  <div className="p-3 rounded-lg bg-muted border border-border">
+                    <p className="text-xs font-mono text-muted-foreground break-all">
+                      {stellarAddress}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No wallet connected.</p>
                 )}
+              </div>
+
+              <div className="space-y-2 pt-4 border-t border-border">
+                <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                  Local Keystore
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {hasLocalSecret 
+                    ? "Your secret key is stored on this device (IndexedDB)."
+                    : "No secret key is stored on this device. You may be using an external wallet."}
+                </p>
+              </div>
+
+              <div className="pt-6">
+                <Button
+                  variant="destructive"
+                  className="w-full flex items-center gap-2"
+                  onClick={handleRemoveWallet}
+                  disabled={loading}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {hasLocalSecret ? "Remove Local Wallet" : "Reset Wallet Connection"}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-3 text-center">
+                  Removing your wallet will disconnect it from this device. 
+                  You will need your secret phrase or external wallet to reconnect.
+                </p>
               </div>
             </>
           )}

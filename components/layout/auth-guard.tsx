@@ -17,11 +17,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       router.replace('/auth/signin');
       return;
     }
-    
-    // Enforce wallet setup if authenticated but no stellar address linked
-    if (!isPublic && isAuthenticated && !state.stellarAddress && pathname !== '/auth/wallet-setup') {
-      router.replace('/auth/wallet-setup');
-    }
   }, [isAuthenticated, state.stellarAddress, pathname, router]);
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname?.startsWith(p) || pathname === p);

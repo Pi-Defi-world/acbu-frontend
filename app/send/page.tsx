@@ -70,7 +70,6 @@ export default function SendPage() {
   const [transfers, setTransfers] = useState<TransferItem[]>([]);
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingTransfers, setLoadingTransfers] = useState(true);
-  const [loadingContacts, setLoadingContacts] = useState(true);
   const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -95,11 +94,6 @@ export default function SendPage() {
     loadTransfers();
     loadContacts();
   }, [loadTransfers, loadContacts, opts.token]);
-
-  const handleRecipientSelect = (contact: ContactItem) => {
-    setSelectedContact(contact);
-    setUseContact(true);
-  };
 
   const getToValue = () =>
     useContact && selectedContact

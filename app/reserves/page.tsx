@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Database } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as reservesApi from '@/lib/api/reserves';
 import type { ReservesResponse } from '@/types/api';
+import { formatAmount } from '@/lib/utils';
 
 export default function ReservesPage() {
   const opts = useApiOpts();
@@ -16,10 +17,22 @@ export default function ReservesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const formatReserveRatio = (value: ReservesResponse['reserve_ratio']) => {
-    if (value == null) return '';
-    if (typeof value === 'number') return `${value.toFixed(2)}×`;
-    return `${value}×`;
+  const fixed7ToNumber = (v?: string | null) => {
+    if (!v) return 0;
+    try {
+      return Number(BigInt(v)) / 1e7;
+    } catch {
+      return Number(v) / 1e7;
+    }
+  };
+  const formatPct = (bps?: number | null) => {
+    if (bps == null) return '—';
+    return `${(bps / 100).toFixed(2)}%`;
+  };
+  const formatBps = (bps?: number | null) => {
+    if (bps == null) return '—';
+    const sign = bps > 0 ? '+' : '';
+    return `${sign}${(bps / 100).toFixed(2)}%`;
   };
 
   useEffect(() => {
@@ -47,38 +60,128 @@ export default function ReservesPage() {
         {loading ? (
           <Skeleton className="h-24 w-full" />
         ) : data ? (
-          <Card className="border-border p-4 space-y-3">
-            {data.reserve_ratio != null && (
+          <div className="space-y-4">
+            <Card className="border-border p-4 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col">
-                  <span className="text-muted-foreground">Reserve ratio</span>
-                  <span className="text-xs text-muted-foreground">Reserves ÷ liabilities (ratio, 1.0 means fully backed).</span>
+                  <span className="text-muted-foreground">Total reserves</span>
+                  <span className="text-xs text-muted-foreground">On-chain USD value (7-dec fixed).</span>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="font-medium">{formatReserveRatio(data.reserve_ratio)}</span>
-                  <span className="text-xs text-muted-foreground">ratio</span>
+                  <span className="font-medium">
+                    USD {formatAmount(fixed7ToNumber(data.total_reserve_value_usd), 2)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{data.source || '—'}</span>
                 </div>
               </div>
-            )}
-            {data.health != null && (
+
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground">Total ACBU supply</span>
+                  <span className="text-xs text-muted-foreground">Minting contract tracked supply.</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="font-medium">
+                    ACBU {formatAmount(fixed7ToNumber(data.total_acbu_supply), 2)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground">Collateral ratio</span>
+                  <span className="text-xs text-muted-foreground">Reserves ÷ supply (USD terms).</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="font-medium">
+                    {data.effective_ratio == null ? '—' : `${data.effective_ratio.toFixed(3)}×`}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    min {data.min_ratio?.toFixed(2)}× · target {data.target_ratio?.toFixed(2)}×
+                  </span>
+                </div>
+              </div>
+
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col">
                   <span className="text-muted-foreground">Health</span>
-                  <span className="text-xs text-muted-foreground">Overall system status reported by the issuer.</span>
+                  <span className="text-xs text-muted-foreground">Issuer-reported status.</span>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="font-medium">{data.health}</span>
-                  <span className="text-xs text-muted-foreground">status</span>
+                  <span className="font-medium">{data.health || '—'}</span>
+                  <span className="text-xs text-muted-foreground">
+                    weight law: {data.weight_law_mode || '—'}
+                  </span>
                 </div>
               </div>
-            )}
-            {Object.keys(data).filter((k) => !['reserve_ratio', 'health'].includes(k)).length > 0 && (
-              <pre className="text-xs text-muted-foreground mt-2 overflow-auto">{JSON.stringify(data, null, 2)}</pre>
-            )}
-            {data.reserve_ratio == null && data.health == null && Object.keys(data).length === 0 && (
-              <p className="text-muted-foreground">No reserve data available.</p>
-            )}
-          </Card>
+
+              {data.weight_compliance?.warnings?.length ? (
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
+                  <p className="text-sm font-medium text-foreground">Weight drift warnings</p>
+                  <p className="text-xs text-muted-foreground">
+                    Warn-only. Threshold: ±{formatPct(data.weight_compliance.drift_threshold_bps)}.
+                  </p>
+                </div>
+              ) : null}
+            </Card>
+
+            <Card className="border-border p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-foreground">Reserve composition</h2>
+                <span className="text-xs text-muted-foreground">
+                  {data.currencies?.length ?? 0} currencies
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {(data.currencies || []).map((c) => (
+                  <div key={c.currency} className="rounded-lg border border-border p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-foreground">{c.currency}</span>
+                        <span className="text-xs text-muted-foreground">
+                          rate: USD {formatAmount(fixed7ToNumber(c.rate_usd), 6)} / 1 {c.currency}
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="font-medium text-foreground">
+                          {c.drift_warning ? 'Drift' : 'In range'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{formatBps(c.drift_bps)}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                      <div className="flex flex-col">
+                        <span className="text-muted-foreground text-xs">Balance</span>
+                        <span className="text-foreground">
+                          {formatAmount(fixed7ToNumber(c.amount), 2)} {c.currency}
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-muted-foreground text-xs">USD value</span>
+                        <span className="text-foreground">
+                          USD {formatAmount(fixed7ToNumber(c.value_usd), 2)}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-muted-foreground text-xs">Target</span>
+                        <span className="text-foreground">{formatPct(c.target_weight_bps)}</span>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-muted-foreground text-xs">Actual</span>
+                        <span className="text-foreground">{formatPct(c.actual_weight_bps)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {!data.currencies?.length ? (
+                  <p className="text-muted-foreground text-sm">No on-chain reserve entries yet.</p>
+                ) : null}
+              </div>
+            </Card>
+          </div>
         ) : (
           <Card className="border-border p-4">
             <p className="text-muted-foreground">No reserves data.</p>

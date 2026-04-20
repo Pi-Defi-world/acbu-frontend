@@ -7,6 +7,7 @@ import { onAuthError, setToken } from '@/lib/api/client';
 const USER_ID_KEY = 'acbu_user_id';
 const API_KEY_KEY = 'acbu_api_key';
 const STELLAR_ADDRESS_KEY = 'acbu_stellar_address';
+const PASSCODE_KEY = "acbu_passcode";
 
 interface AuthState {
   userId: string | null;
@@ -71,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         sessionStorage.removeItem(USER_ID_KEY);
         sessionStorage.removeItem(API_KEY_KEY);
         sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+        sessionStorage.removeItem(PASSCODE_KEY);
       }
     }
     
@@ -88,8 +90,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshStellarAddress = useCallback(async () => {
     if (!state.isAuthenticated) return;
     try {
-      const { getMe } = await import('@/lib/api/user');
-      const user = await getMe();
       // We need to update stellarAddress in state. getMe currently doesn't return it based on controller logic, 
       // but let's check if we can get it from balance endpoint or if we should update getMe.
       const { getBalance } = await import('@/lib/api/user');

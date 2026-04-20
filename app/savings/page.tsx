@@ -20,13 +20,11 @@ import {
   TrendingUp,
   Target,
   Zap,
-  CheckCircle,
   Plus,
   AlertCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
-import { useRouter } from "next/navigation";
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";

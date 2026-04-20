@@ -90,6 +90,7 @@ export default function TransactionDetailPage() {
 
   const type = data.type ?? '—';
   const status = data.status ?? '—';
+  const isFiat = type === 'mint' && data.currency && data.local_amount != null;
 
   return (
     <>
@@ -109,12 +110,19 @@ export default function TransactionDetailPage() {
             <span className="text-muted-foreground">Status</span>
             <Badge variant="outline">{status}</Badge>
           </div>
-          {data.amount_acbu != null && (
+          {isFiat ? (
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Amount (ACBU)</span>
+              <span className="text-muted-foreground">Amount</span>
+              <span className="font-semibold">
+                {data.currency} {formatAmount(data.local_amount)}
+              </span>
+            </div>
+          ) : data.amount_acbu != null ? (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Amount</span>
               <span className="font-semibold">ACBU {formatAmount(data.amount_acbu)}</span>
             </div>
-          )}
+          ) : null}
           {data.usdc_amount != null && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">USDC</span>

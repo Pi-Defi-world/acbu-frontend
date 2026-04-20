@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,12 +14,10 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-    Zap,
+import { Zap,
     Droplet,
     Wifi,
     Phone,
-    Clock,
     CheckCircle,
     AlertCircle,
 } from "lucide-react";
@@ -79,9 +76,6 @@ const billProviders: BillProvider[] = [
  * Bill payment and history page.
  */
 export default function BillsPage() {
-    const [activeTab, setActiveTab] = useState<"catalog" | "history">(
-        "catalog",
-    );
     const [selectedProvider, setSelectedProvider] =
         useState<BillProvider | null>(null);
     const [showPayment, setShowPayment] = useState(false);

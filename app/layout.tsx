@@ -1,25 +1,17 @@
 import React from "react"
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { ErrorBoundary } from '@/components/error-boundary'
 import './globals.css'
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
-
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+import { WalletSetupModal } from '@/components/wallet-setup-modal';
 
 export const metadata: Metadata = {
   title: 'ACBU - P2P Transfers',
   description: 'Send and receive money securely with ACBU',
   generator: 'v0.app',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
   icons: {
     icon: [
       {
@@ -39,6 +31,12 @@ export const metadata: Metadata = {
   },
 }
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -54,6 +52,7 @@ export default async function RootLayout({
             <AuthGuard>
               <AppLayout>{children}</AppLayout>
             </AuthGuard>
+            <WalletSetupModal />
             <Analytics />
           </AuthProvider>
         </ErrorBoundary>

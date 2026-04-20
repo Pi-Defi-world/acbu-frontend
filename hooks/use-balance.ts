@@ -6,6 +6,8 @@ import * as userApi from '@/lib/api/user';
 
 interface UseBalanceReturn {
   balance: number | null;
+  /** When Soroban mint fails, backend may surface DB ledger while Horizon is 0. */
+  balanceSource?: string;
   loading: boolean;
   error: string;
   refresh: () => void;
@@ -18,6 +20,7 @@ interface UseBalanceReturn {
 export function useBalance(): UseBalanceReturn {
   const opts = useApiOpts();
   const [balance, setBalance] = useState<number | null>(null);
+  const [balanceSource, setBalanceSource] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tick, setTick] = useState(0);
@@ -36,10 +39,12 @@ export function useBalance(): UseBalanceReturn {
         const raw = data.balance;
         const num = typeof raw === 'number' ? raw : parseFloat(raw);
         setBalance(Number.isNaN(num) ? null : num);
+        setBalanceSource(data.balance_source);
       })
       .catch((e) => {
         if (cancelled) return;
         setBalance(null);
+        setBalanceSource(undefined);
         setError(e instanceof Error ? e.message : 'Failed to load balance');
       })
       .finally(() => {
@@ -51,5 +56,5 @@ export function useBalance(): UseBalanceReturn {
     };
   }, [opts.token, tick]);
 
-  return { balance, loading, error, refresh };
+  return { balance, balanceSource, loading, error, refresh };
 }
