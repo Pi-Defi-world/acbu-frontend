@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Send, Coins, Briefcase, User } from "lucide-react";
+import { Home, Send, Coins, Briefcase, User, Wallet } from "lucide-react";
 
 interface NavItem {
   name: string;
@@ -20,6 +20,7 @@ const navItems: NavItem[] = [
     href: "/business",
     icon: <Briefcase className="w-5 h-5" />,
   },
+  { name: "Wallet", href: "/wallet", icon: <Wallet className="w-5 h-5" /> },
   { name: "Me", href: "/me", icon: <User className="w-5 h-5" /> },
 ];
 
