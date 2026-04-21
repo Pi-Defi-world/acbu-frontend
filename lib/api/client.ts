@@ -83,6 +83,13 @@ async function request<T>(
   body?: unknown,
   opts: RequestOptions = {}
 ): Promise<T> {
+  if (!path.startsWith('http') && !BASE.trim()) {
+    throw new Error(
+      "API base URL is not configured. Set NEXT_PUBLIC_API_BASE_URL (or NEXT_PUBLIC_API_URL) " +
+        "to your backend root, including the API prefix — e.g. https://acbu-backend.onrender.com/api/v1 " +
+        "(no trailing slash). Without this, requests hit the Next.js app and return 405 for POST /auth/*.",
+    );
+  }
   const url = path.startsWith('http') ? path : `${BASE}${path.startsWith('/') ? path : `/${path}`}`;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
