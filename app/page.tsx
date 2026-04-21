@@ -18,10 +18,10 @@ import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
-import * as transfersApi from '@/lib/api/transfers';
+import * as transactionsApi from '@/lib/api/transactions';
 import * as fiatApi from '@/lib/api/fiat';
 import * as ratesApi from '@/lib/api/rates';
-import type { TransferItem, RatesResponse } from '@/types/api';
+import type { TransactionListItem, RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
 
 function parsePositiveNumber(v: string | number | null | undefined): number | null {
@@ -109,7 +109,7 @@ export default function Home() {
   const [showBalance, setShowBalance] = useState(true);
   const { balance, loading: balanceLoading, error: balanceError } = useBalance();
   const opts = useApiOpts();
-  const [transfers, setTransfers] = useState<TransferItem[]>([]);
+  const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
@@ -157,8 +157,8 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
-    transfersApi.getTransfers(opts).then((data) => {
-      if (!cancelled) setTransfers(data.transfers ?? []);
+    transactionsApi.listTransactions({ limit: 20 }, opts).then((data) => {
+      if (!cancelled) setTransactions(data.transactions ?? []);
     }).catch((e) => {
       if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load activity');
     }).finally(() => {
@@ -290,10 +290,10 @@ export default function Home() {
             {error && <p className="text-sm text-destructive">{error}</p>}
             {loading ? (
               <SkeletonList count={3} itemHeight="h-20" />
-            ) : transfers.length === 0 ? (
+            ) : transactions.length === 0 ? (
               <EmptyState
                 icon={<Clock className="w-10 h-10" />}
-                title="No recent transfers"
+                title="No recent activity"
                 action={
                   <Link href="/send" className="text-xs text-primary font-medium">
                     Send money
@@ -302,13 +302,15 @@ export default function Home() {
               />
             ) : (
               <div className="space-y-2">
-                {transfers.slice(0, 5).map((t) => (
-                  <Link key={t.transaction_id} href={`/send/${t.transaction_id}`} className="block rounded-lg border border-border bg-card p-3 transition-colors active:bg-muted">
+                {transactions.slice(0, 5).map((t) => (
+                  <Link key={t.transaction_id} href={`/transactions/${t.transaction_id}`} className="block rounded-lg border border-border bg-card p-3 transition-colors active:bg-muted">
                     <div className="flex items-center gap-3 mb-2">
                       <div
                         className={`p-2 rounded-full flex-shrink-0 ${
                           t.type === 'mint'
                             ? 'bg-green-100 dark:bg-green-900/30'
+                            : t.type === 'burn'
+                              ? 'bg-red-100 dark:bg-red-900/30'
                             : 'bg-blue-100 dark:bg-blue-900/30'
                         }`}
                       >
@@ -316,22 +318,30 @@ export default function Home() {
                           className={`w-4 h-4 ${
                             t.type === 'mint'
                               ? 'text-green-600 dark:text-green-400'
+                              : t.type === 'burn'
+                                ? 'text-red-600 dark:text-red-400'
                               : 'text-blue-600 dark:text-blue-400'
                           }`}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">
-                          {t.type === 'mint' ? 'Faucet' : 'Transfer'}
+                          {t.type === 'mint' ? 'Mint' : t.type === 'burn' ? 'Burn' : 'Transfer'}
                         </p>
                         <p className="text-xs text-muted-foreground">{formatDate(t.created_at)}</p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between pl-11">
                       <p className="text-sm font-semibold text-foreground">
-                        {t.type === 'mint' && t.local_currency && t.local_amount
-                          ? `+ ${t.local_currency} ${formatAmount(t.local_amount)}`
-                          : `- ACBU ${formatAmount(t.amount_acbu)}`}
+                        {t.type === 'burn'
+                          ? `- ACBU ${formatAmount(t.acbu_amount_burned ?? t.amount_acbu)}`
+                          : t.type === 'mint'
+                            ? t.amount_acbu != null
+                              ? `+ ACBU ${formatAmount(t.amount_acbu)}`
+                              : t.local_currency && t.local_amount
+                                ? `+ ${t.local_currency} ${formatAmount(t.local_amount)}`
+                                : '—'
+                            : `ACBU ${formatAmount(t.amount_acbu)}`}
                       </p>
                       <Badge variant="outline" className="text-xs">{t.status}</Badge>
                     </div>

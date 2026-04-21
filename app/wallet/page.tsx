@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
-import { storeWalletSecret } from "@/lib/wallet-storage";
+import { storeWalletSecretLocalPlaintext } from "@/lib/wallet-storage";
 import { AlertCircle, Wallet, Key, Link as LinkIcon, CheckCircle } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 import { useApiOpts } from "@/hooks/use-api";
@@ -29,8 +29,6 @@ export default function WalletPage() {
 
   // For importing seed
   const [importSeed, setImportSeed] = useState("");
-  // User's passcode to encrypt the seed locally
-  const [userPasscode, setUserPasscode] = useState("");
 
   useEffect(() => {
     if (option === 1 && !passphrase) {
@@ -44,7 +42,6 @@ export default function WalletPage() {
     await refreshStellarAddress();
     setSuccessMsg(msg);
     setOption(null);
-    setUserPasscode("");
     setImportSeed("");
     setPassphrase("");
     setTimeout(() => {
@@ -56,27 +53,18 @@ export default function WalletPage() {
     e.preventDefault();
     setError("");
 
-    if (!userPasscode) {
-      setError("Please enter your passcode to securely store the wallet.");
-      return;
-    }
-
     setLoading(true);
     try {
       if (!userId) throw new Error("Not logged in");
 
-      // Securely store in IndexedDB
-      await storeWalletSecret(userId, passphrase, userPasscode);
+      const kp = Keypair.fromSecret(passphrase);
+      const newAddress = kp.publicKey();
 
-      // We also update the backend that we are handling it locally
-      await userApi.postWalletConfirm(
-        {
-          encryption_method: "passcode",
-          passcode: userPasscode,
-          passphrase,
-        },
-        opts
-      );
+      // Store locally (plaintext). This is not meant as a security measure.
+      await storeWalletSecretLocalPlaintext(userId, passphrase);
+
+      // Sync public key to backend.
+      await userApi.putWalletAddress(newAddress, opts);
 
       handleFinish("New wallet created successfully!");
     } catch (err: any) {
@@ -90,8 +78,8 @@ export default function WalletPage() {
     e.preventDefault();
     setError("");
 
-    if (!importSeed || !userPasscode) {
-      setError("Seed and passcode are required.");
+    if (!importSeed) {
+      setError("Seed is required.");
       return;
     }
 
@@ -103,8 +91,8 @@ export default function WalletPage() {
       const kp = Keypair.fromSecret(importSeed);
       const newAddress = kp.publicKey();
 
-      // Store securely in IndexedDB
-      await storeWalletSecret(userId, importSeed, userPasscode);
+      // Store locally (plaintext). This is not meant as a security measure.
+      await storeWalletSecretLocalPlaintext(userId, importSeed);
 
       // Tell backend to update stellarAddress and not track the secret
       // This might require a PUT /users/me/wallet endpoint or similar if it exists
@@ -273,19 +261,6 @@ export default function WalletPage() {
                     {passphrase}
                   </div>
 
-                  <div className="pt-4 border-t border-border mt-6">
-                    <label className="text-sm font-medium mb-2 block">
-                      Enter your Passcode to encrypt it locally
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="Your account passcode"
-                      value={userPasscode}
-                      onChange={(e) => setUserPasscode(e.target.value)}
-                      disabled={loading}
-                    />
-                  </div>
-
                   <Button type="submit" disabled={loading} className="w-full mt-4">
                     {loading ? "Saving..." : "I have saved my key"}
                   </Button>
@@ -306,19 +281,6 @@ export default function WalletPage() {
                       placeholder="S..."
                       value={importSeed}
                       onChange={(e) => setImportSeed(e.target.value)}
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <div className="pt-4 border-t border-border mt-6">
-                    <label className="text-sm font-medium mb-2 block">
-                      Enter your Passcode to encrypt it locally
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="Your account passcode"
-                      value={userPasscode}
-                      onChange={(e) => setUserPasscode(e.target.value)}
                       disabled={loading}
                     />
                   </div>

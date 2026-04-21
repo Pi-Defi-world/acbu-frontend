@@ -21,8 +21,9 @@ import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
 import { useAuth } from '@/contexts/auth-context';
-import { getWalletSecretLocalPlaintext } from '@/lib/wallet-storage';
+import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureAcbuTrustlineClient } from '@/lib/stellar/trustlines';
+import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
 import { Keypair } from '@stellar/stellar-sdk';
 import * as ratesApi from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
@@ -55,6 +56,7 @@ export default function MintPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const kit = useStellarWalletsKit();
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
@@ -135,34 +137,65 @@ export default function MintPage() {
                     "Not signed in — refresh and try again.",
                 );
             }
-            const secret = await getWalletSecretLocalPlaintext(userId);
-            if (!secret) {
+            const secret = await getWalletSecretAnyLocal(userId);
+
+            let accountId: string;
+            let trust:
+              | Awaited<ReturnType<typeof ensureAcbuTrustlineClient>>
+              | null = null;
+
+            if (secret) {
+              // Guard: the locally stored seed MUST derive to the public key the
+              // backend treats as this user's Stellar account, otherwise we'd
+              // keep adding trustlines to the wrong account forever while the
+              // mint contract tries to deposit into the real recipient.
+              accountId = Keypair.fromSecret(secret).publicKey();
+              if (stellarAddress && accountId !== stellarAddress) {
+                  throw new Error(
+                      `Local wallet (${accountId.slice(0, 6)}…${accountId.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+                  );
+              }
+              trust = await ensureAcbuTrustlineClient({ userSecret: secret });
+            } else {
+              if (!kit) {
                 throw new Error(
-                    "Your wallet secret isn't available on this device. Re-import your wallet seed from Settings, then retry the mint.",
+                  "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
                 );
+              }
+              accountId = await new Promise<string>((resolve, reject) => {
+                kit
+                  .openModal({
+                    onWalletSelected: async (selectedOption: { id: string }) => {
+                      try {
+                        kit.setWallet(selectedOption.id);
+                        const { address } = await kit.getAddress();
+                        resolve(address);
+                      } catch (err) {
+                        reject(err);
+                      }
+                    },
+                  })
+                  .catch(reject);
+              });
+
+              if (stellarAddress && accountId !== stellarAddress) {
+                throw new Error(
+                  `Connected wallet (${accountId.slice(0, 6)}…${accountId.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+                );
+              }
+
+              trust = await ensureAcbuTrustlineClient({
+                external: { kit, address: accountId },
+              });
             }
 
-            // Guard: the locally stored seed MUST derive to the public key the
-            // backend treats as this user's Stellar account, otherwise we'd
-            // keep adding trustlines to the wrong account forever while the
-            // mint contract tries to deposit into the real recipient.
-            const localPubKey = Keypair.fromSecret(secret).publicKey();
-            if (stellarAddress && localPubKey !== stellarAddress) {
-                throw new Error(
-                    `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
-                );
-            }
-
-            const trust = await ensureAcbuTrustlineClient({
-                userSecret: secret,
-            });
             console.info("[mint] ACBU trustline ensured", {
-                account: localPubKey,
-                added: trust.added,
-                visible: trust.visible,
-                txHash: trust.txHash,
+                account: accountId,
+                added: trust?.added,
+                visible: trust?.visible,
+                txHash: trust?.txHash,
             });
-            if (trust.added && !trust.visible) {
+            if (trust?.added && !trust.visible) {
                 throw new Error(
                     "ACBU trustline was submitted but hasn't appeared on Horizon yet. Please retry the mint in a few seconds.",
                 );

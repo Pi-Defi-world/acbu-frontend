@@ -14,6 +14,7 @@ interface AuthState {
   apiKey: string | null;
   stellarAddress: string | null;
   isAuthenticated: boolean;
+  isHydrated: boolean;
 }
 
 interface AuthContextValue extends AuthState {
@@ -27,7 +28,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getStoredAuth(): AuthState {
   if (typeof window === 'undefined') {
-    return { userId: null, apiKey: null, stellarAddress: null, isAuthenticated: false };
+    return { userId: null, apiKey: null, stellarAddress: null, isAuthenticated: false, isHydrated: false };
   }
   const userId = sessionStorage.getItem(USER_ID_KEY);
   const apiKey = sessionStorage.getItem(API_KEY_KEY);
@@ -42,6 +43,7 @@ function getStoredAuth(): AuthState {
     userId,
     stellarAddress,
     isAuthenticated: !!(userId && apiKey),
+    isHydrated: true,
   };
 }
 
@@ -50,7 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userId: null, 
     apiKey: null, 
     stellarAddress: null, 
-    isAuthenticated: false 
+    isAuthenticated: false,
+    isHydrated: false,
   });
 
   useEffect(() => {
@@ -84,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       apiKey,
       stellarAddress,
       isAuthenticated: !!(userId && apiKey),
+      isHydrated: true,
     });
   }, []);
 

@@ -116,6 +116,28 @@ export interface TransactionDetail {
   [key: string]: unknown;
 }
 
+export interface TransactionListItem {
+  transaction_id: string;
+  type: string;
+  status: string;
+  usdc_amount?: string | null;
+  amount_acbu?: string | null;
+  acbu_amount_burned?: string | null;
+  local_currency?: string | null;
+  local_amount?: string | null;
+  recipient_address?: string | null;
+  fee?: string | null;
+  blockchain_tx_hash?: string;
+  confirmations?: number | null;
+  created_at: string;
+  completed_at?: string;
+}
+
+export interface TransactionsListResponse {
+  transactions: TransactionListItem[];
+  next_cursor?: string | null;
+}
+
 // Mint
 export interface MintFromUsdcBody {
   usdc_amount: string;
