@@ -4,7 +4,6 @@ import {
   Keypair,
   Operation,
   TransactionBuilder,
-  TransactionBuilder,
 } from "@stellar/stellar-sdk";
 import { acbuAsset, demoFiatAsset } from "./demo-fiat";
 import { getAssetsConfig } from "../api/config";
