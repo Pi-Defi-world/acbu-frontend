@@ -4,9 +4,11 @@ import {
   Keypair,
   Operation,
   TransactionBuilder,
+  TransactionBuilder,
 } from "@stellar/stellar-sdk";
 import { acbuAsset, demoFiatAsset } from "./demo-fiat";
 import { getAssetsConfig } from "../api/config";
+import type { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit";
 
 const TESTNET_HORIZON_URL =
   process.env.NEXT_PUBLIC_STELLAR_HORIZON_URL ??
@@ -112,7 +114,8 @@ async function waitForTrustlineVisible(params: {
 }
 
 async function addTrustlineForAsset(params: {
-  userSecret: string;
+  userSecret?: string;
+  external?: { kit: StellarWalletsKit; address: string };
   asset: Asset;
   waitForVisibility?: boolean;
 }): Promise<{ added: boolean; txHash?: string; visible: boolean }> {
@@ -120,8 +123,14 @@ async function addTrustlineForAsset(params: {
   const networkPassphrase = await resolveNetworkPassphrase();
 
   const server = new Horizon.Server(horizonUrl);
-  const kp = Keypair.fromSecret(params.userSecret);
-  const accountId = kp.publicKey();
+  const accountId = params.external?.address
+    ? params.external.address
+    : params.userSecret
+      ? Keypair.fromSecret(params.userSecret).publicKey()
+      : null;
+  if (!accountId) {
+    throw new Error("Missing wallet credentials (secret or external address).");
+  }
 
   await ensureTestnetAccountExists(accountId, horizonUrl);
 
@@ -138,8 +147,20 @@ async function addTrustlineForAsset(params: {
     .addOperation(op)
     .setTimeout(0)
     .build();
-  tx.sign(kp);
-  const res = await server.submitTransaction(tx);
+  let res: Horizon.HorizonApi.SubmitTransactionResponse;
+  if (params.external?.kit) {
+    const { signedTxXdr } = await params.external.kit.signTransaction(tx.toXDR(), {
+      address: accountId,
+      networkPassphrase,
+    });
+    const signed = TransactionBuilder.fromXDR(signedTxXdr, networkPassphrase);
+    res = await server.submitTransaction(signed);
+  } else {
+    if (!params.userSecret) throw new Error("Missing wallet secret.");
+    const kp = Keypair.fromSecret(params.userSecret);
+    tx.sign(kp);
+    res = await server.submitTransaction(tx);
+  }
 
   const visible =
     params.waitForVisibility === false
@@ -154,7 +175,8 @@ async function addTrustlineForAsset(params: {
 }
 
 export async function ensureDemoFiatTrustlineClient(params: {
-  userSecret: string;
+  userSecret?: string;
+  external?: { kit: StellarWalletsKit; address: string };
   currency: string;
 }): Promise<{ added: boolean; txHash?: string; visible: boolean }> {
   // Demo fiat issuer comes from the backend config so we always match whatever
@@ -171,7 +193,7 @@ export async function ensureDemoFiatTrustlineClient(params: {
   } catch {
     asset = demoFiatAsset(params.currency);
   }
-  return addTrustlineForAsset({ userSecret: params.userSecret, asset });
+  return addTrustlineForAsset({ userSecret: params.userSecret, external: params.external, asset });
 }
 
 /**
@@ -182,7 +204,8 @@ export async function ensureDemoFiatTrustlineClient(params: {
  * whatever code/issuer the backend minting contract is bound to.
  */
 export async function ensureAcbuTrustlineClient(params: {
-  userSecret: string;
+  userSecret?: string;
+  external?: { kit: StellarWalletsKit; address: string };
 }): Promise<{ added: boolean; txHash?: string; visible: boolean }> {
   let asset: Asset;
   try {
@@ -201,5 +224,5 @@ export async function ensureAcbuTrustlineClient(params: {
       issuer: asset.getIssuer(),
     });
   }
-  return addTrustlineForAsset({ userSecret: params.userSecret, asset });
+  return addTrustlineForAsset({ userSecret: params.userSecret, external: params.external, asset });
 }

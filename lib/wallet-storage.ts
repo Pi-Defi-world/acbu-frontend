@@ -7,6 +7,7 @@ localforage.config({
 
 const KEY_STORE_PREFIX = 'stellar_secret_';
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
+const KEY_STORE_PASSPHRASE = 'acbu_passcode';
 
 /**
  * Simulates AES encryption for the local storage.
@@ -54,6 +55,15 @@ export async function storeWalletSecretLocalPlaintext(
   secret: string,
 ): Promise<void> {
   await localforage.setItem(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`, secret);
+  // Fallback: IndexedDB can be unavailable in some browser modes; keep a copy in localStorage.
+  // (Still per-origin; this is not meant as a security measure.)
+  try {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`, secret);
+    }
+  } catch {
+    // ignore
+  }
 }
 
 /**
@@ -62,8 +72,42 @@ export async function storeWalletSecretLocalPlaintext(
 export async function getWalletSecretLocalPlaintext(
   userId: string,
 ): Promise<string | null> {
-  const secret = await localforage.getItem<string>(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`);
-  return secret ?? null;
+  const key = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
+  const secret = await localforage.getItem<string>(key);
+  if (secret) return secret;
+  try {
+    if (typeof window !== 'undefined') {
+      return window.localStorage.getItem(key);
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+/**
+ * Best-effort wallet secret lookup:
+ * - plaintext slot (dev/test flows and wallet-setup modal)
+ * - encrypted slot decrypted with passcode from sessionStorage (wallet page flow)
+ */
+export async function getWalletSecretAnyLocal(
+  userId: string,
+): Promise<string | null> {
+  const plaintext = await getWalletSecretLocalPlaintext(userId);
+  if (plaintext) return plaintext;
+
+  try {
+    if (typeof window !== 'undefined') {
+      const passcode = window.sessionStorage.getItem(KEY_STORE_PASSPHRASE) || '';
+      if (passcode) {
+        const decrypted = await getWalletSecret(userId, passcode);
+        if (decrypted) return decrypted;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null;
 }
 
 export async function hasStoredWallet(userId: string): Promise<boolean> {
