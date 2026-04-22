@@ -28,10 +28,18 @@ import { SkeletonList } from "@/components/ui/skeleton-list";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import { useBalance } from "@/hooks/use-balance";
+import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
 import type { TransferItem, ContactItem } from "@/types/api";
 import { formatAmount } from "@/lib/utils";
+import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
+import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
+import {
+  looksLikeStellarAddress,
+  submitAcbuPaymentClient,
+} from "@/lib/stellar/payments";
+import { Keypair } from "@stellar/stellar-sdk";
 import {
   Select,
   SelectContent,
@@ -54,7 +62,9 @@ function formatDate(iso: string) {
  */
 export default function SendPage() {
   const opts = useApiOpts();
-  const { balance, loading: balanceLoading, refetch: refetchBalance } = useBalance();
+  const { userId, stellarAddress } = useAuth();
+  const kit = useStellarWalletsKit();
+  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const [activeTab, setActiveTab] = useState("send");
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -70,6 +80,7 @@ export default function SendPage() {
   const [transfers, setTransfers] = useState<TransferItem[]>([]);
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingTransfers, setLoadingTransfers] = useState(true);
+  const [loadingContacts, setLoadingContacts] = useState(true);
   const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -106,12 +117,66 @@ export default function SendPage() {
     setSubmitError("");
     setSending(true);
     try {
+      let blockchainTxHash: string | undefined;
+
+      // Client-signed path for direct Stellar addresses.
+      if (looksLikeStellarAddress(to)) {
+        if (!userId) throw new Error("Not logged in");
+        const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+        if (secret) {
+          const sourceAddress = Keypair.fromSecret(secret).publicKey();
+          if (stellarAddress && sourceAddress !== stellarAddress) {
+            throw new Error(
+              `Local wallet (${sourceAddress.slice(0, 6)}…${sourceAddress.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+            );
+          }
+          const submit = await submitAcbuPaymentClient({
+            destination: to,
+            amount,
+            userSecret: secret,
+          });
+          blockchainTxHash = submit.transactionHash;
+        } else {
+          if (!kit) {
+            throw new Error(
+              "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+            );
+          }
+          const address = await new Promise<string>((resolve, reject) => {
+            kit
+              .openModal({
+                onWalletSelected: async (selectedOption: { id: string }) => {
+                  try {
+                    kit.setWallet(selectedOption.id);
+                    const { address } = await kit.getAddress();
+                    resolve(address);
+                  } catch (err) {
+                    reject(err);
+                  }
+                },
+              })
+              .catch(reject);
+          });
+          if (stellarAddress && address !== stellarAddress) {
+            throw new Error(
+              `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+            );
+          }
+          const submit = await submitAcbuPaymentClient({
+            destination: to,
+            amount,
+            external: { kit, address },
+          });
+          blockchainTxHash = submit.transactionHash;
+        }
+      }
+
       await transfersApi.createTransfer(
-        { to, amount_acbu: amount, note },
+        { to, amount_acbu: amount, note, ...(blockchainTxHash ? { blockchain_tx_hash: blockchainTxHash } : {}) },
         opts,
       );
       loadTransfers();
-      refetchBalance();
+      refreshBalance();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
       setLastSentAmount(amount);

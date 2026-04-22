@@ -11,6 +11,10 @@ export interface PublicAssetsConfig {
   stellar: {
     network_passphrase: string;
     horizon_url: string | null;
+    soroban_rpc_url?: string | null;
+  };
+  contracts?: {
+    burning?: string | null;
   };
 }
 

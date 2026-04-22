@@ -24,6 +24,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureAcbuTrustlineClient } from '@/lib/stellar/trustlines';
 import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
+import { submitBurnRedeemSingleClient } from '@/lib/stellar/burning';
 import { Keypair } from '@stellar/stellar-sdk';
 import * as ratesApi from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
@@ -71,6 +72,9 @@ export default function MintPage() {
   const [fiatAmount, setFiatAmount] = useState('');
   const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
+  const rateRows = Array.isArray((rates as { rates?: Array<{ currency?: string; rate?: number }> } | null)?.rates)
+    ? ((rates as { rates?: Array<{ currency?: string; rate?: number }> }).rates ?? [])
+    : [];
 
   const estimatedMintAcbu = useMemo(
     () => estimateAcbuFromFiat(fiatAmount, selectedFiatCurrency, mintQuoteRates),
@@ -137,7 +141,7 @@ export default function MintPage() {
                     "Not signed in — refresh and try again.",
                 );
             }
-            const secret = await getWalletSecretAnyLocal(userId);
+            const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
 
             let accountId: string;
             let trust:
@@ -232,9 +236,66 @@ export default function MintPage() {
         setBurnError("");
         setExecuting(true);
         try {
+            if (!userId) {
+                throw new Error("Not signed in — refresh and try again.");
+            }
+            if (!stellarAddress) {
+                throw new Error("No linked Stellar wallet address.");
+            }
+            const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+            let burnTxHash: string;
+            if (secret) {
+                const localPubKey = Keypair.fromSecret(secret).publicKey();
+                if (stellarAddress && localPubKey !== stellarAddress) {
+                    throw new Error(
+                        `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+                    );
+                }
+                const submit = await submitBurnRedeemSingleClient({
+                    userAddress: stellarAddress,
+                    amountAcbu: burnAmount,
+                    currency: selectedFiatCurrency,
+                    userSecret: secret,
+                });
+                burnTxHash = submit.transactionHash;
+            } else {
+                if (!kit) {
+                    throw new Error(
+                        "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+                    );
+                }
+                const address = await new Promise<string>((resolve, reject) => {
+                    kit
+                        .openModal({
+                            onWalletSelected: async (selectedOption: { id: string }) => {
+                                try {
+                                    kit.setWallet(selectedOption.id);
+                                    const { address } = await kit.getAddress();
+                                    resolve(address);
+                                } catch (err) {
+                                    reject(err);
+                                }
+                            },
+                        })
+                        .catch(reject);
+                });
+                if (stellarAddress && address !== stellarAddress) {
+                    throw new Error(
+                        `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+                    );
+                }
+                const submit = await submitBurnRedeemSingleClient({
+                    userAddress: stellarAddress,
+                    amountAcbu: burnAmount,
+                    currency: selectedFiatCurrency,
+                    external: { kit, address },
+                });
+                burnTxHash = submit.transactionHash;
+            }
             const res = await fiatApi.postOffRamp(
                 burnAmount,
                 selectedFiatCurrency,
+                burnTxHash,
                 opts,
             );
             setTxId(res.transaction_id || res.transactionId || null);
@@ -516,8 +577,8 @@ export default function MintPage() {
             <div className="space-y-3">
               {ratesLoading ? (
                 <Skeleton className="h-20 w-full" />
-              ) : rates?.rates?.length ? (
-                rates.rates.map((r: { currency?: string; rate?: number }) => (
+              ) : rateRows.length ? (
+                rateRows.map((r: { currency?: string; rate?: number }) => (
                   <Card key={r.currency ?? r.rate} className="border-border p-4">
                     <div className="flex justify-between">
                       <p className="font-semibold text-foreground">ACBU/{r.currency ?? 'Rate'}</p>

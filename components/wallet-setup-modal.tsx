@@ -88,7 +88,7 @@ export function WalletSetupModal() {
       );
     }
 
-    await storeWalletSecretLocalPlaintext(userId, secret);
+    await storeWalletSecretLocalPlaintext(userId, secret, publicKey);
   };
 
   const handleGenerateConfirm = async (e: React.FormEvent) => {

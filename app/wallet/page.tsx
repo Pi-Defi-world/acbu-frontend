@@ -61,7 +61,7 @@ export default function WalletPage() {
       const newAddress = kp.publicKey();
 
       // Store locally (plaintext). This is not meant as a security measure.
-      await storeWalletSecretLocalPlaintext(userId, passphrase);
+      await storeWalletSecretLocalPlaintext(userId, passphrase, newAddress);
 
       // Sync public key to backend.
       await userApi.putWalletAddress(newAddress, opts);
@@ -92,7 +92,7 @@ export default function WalletPage() {
       const newAddress = kp.publicKey();
 
       // Store locally (plaintext). This is not meant as a security measure.
-      await storeWalletSecretLocalPlaintext(userId, importSeed);
+      await storeWalletSecretLocalPlaintext(userId, importSeed, newAddress);
 
       // Tell backend to update stellarAddress and not track the secret
       // This might require a PUT /users/me/wallet endpoint or similar if it exists
@@ -125,7 +125,7 @@ export default function WalletPage() {
         onWalletSelected: async (selectedOption: any) => {
           try {
             kit.setWallet(selectedOption.id);
-            const pubKey = await kit.getPublicKey();
+            const { address: pubKey } = await kit.getAddress();
 
             await userApi.putWalletAddress(pubKey, opts);
             handleFinish("External wallet connected successfully!");

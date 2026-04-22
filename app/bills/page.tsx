@@ -76,6 +76,9 @@ const billProviders: BillProvider[] = [
  * Bill payment and history page.
  */
 export default function BillsPage() {
+    const [activeTab, setActiveTab] = useState<"catalog" | "history">(
+        "catalog",
+    );
     const [selectedProvider, setSelectedProvider] =
         useState<BillProvider | null>(null);
     const [showPayment, setShowPayment] = useState(false);
@@ -174,6 +177,7 @@ export default function BillsPage() {
                     {/* Tabs */}
                     <Tabs
                         defaultValue="catalog"
+                        value={activeTab}
                         onValueChange={(v) =>
                             setActiveTab(v as "catalog" | "history")
                         }

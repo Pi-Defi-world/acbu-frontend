@@ -16,7 +16,7 @@ import { AlertCircle, Building2, Plus } from 'lucide-react';
 import { Keypair } from '@stellar/stellar-sdk';
 export default function FiatSimPage() {
   const opts = useApiOpts();
-  const { userId } = useAuth();
+  const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
   const [accounts, setAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +51,7 @@ export default function FiatSimPage() {
     setLastFaucetTx(null);
     try {
       if (!userId) throw new Error('Not logged in');
-      const secret = await getWalletSecretAnyLocal(userId);
+      const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
 
       let recipient: string;
       if (secret) {

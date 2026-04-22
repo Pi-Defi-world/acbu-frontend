@@ -53,13 +53,9 @@ export async function postOnRamp(
   currency: string,
   opts?: RequestOptions,
 ): Promise<OnRampResponse> {
-  const passcode =
-    typeof window !== "undefined"
-      ? window.sessionStorage.getItem("acbu_passcode") || undefined
-      : undefined;
   return post(
     '/fiat/onramp',
-    { amount: Number(amount), currency, ...(passcode ? { passcode } : {}) },
+    { amount: Number(amount), currency },
     opts,
   );
 }
@@ -67,7 +63,16 @@ export async function postOnRamp(
 export async function postOffRamp(
   amount_acbu: string,
   currency: string,
+  blockchainTxHash?: string,
   opts?: RequestOptions,
 ): Promise<{ transactionId?: string; transaction_id?: string; message?: string }> {
-  return post('/fiat/offramp', { amount: Number(amount_acbu), currency }, opts);
+  return post(
+    '/fiat/offramp',
+    {
+      amount: Number(amount_acbu),
+      currency,
+      ...(blockchainTxHash ? { blockchain_tx_hash: blockchainTxHash } : {}),
+    },
+    opts,
+  );
 }

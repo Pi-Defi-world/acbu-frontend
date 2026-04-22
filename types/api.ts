@@ -94,6 +94,7 @@ export interface CreateTransferBody {
   to: string;
   amount_acbu: string;
   note?: string;
+  blockchain_tx_hash?: string;
 }
 
 export interface CreateTransferResponse {
@@ -156,6 +157,15 @@ export interface MintResponse {
   blockchain_tx_hash?: string;
 }
 
+// Onramp
+export interface OnRampRegisterBody {
+  [key: string]: unknown;
+}
+
+export interface OnRampRegisterResponse {
+  [key: string]: unknown;
+}
+
 // Burn
 export interface BurnRecipientAccount {
   type?: 'bank' | 'mobile_money';
@@ -168,6 +178,7 @@ export interface BurnAcbuBody {
   acbu_amount: string;
   currency: string;
   recipient_account: BurnRecipientAccount;
+  blockchain_tx_hash?: string;
 }
 
 export interface BurnResponse {

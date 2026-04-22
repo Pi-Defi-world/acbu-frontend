@@ -7,6 +7,7 @@ localforage.config({
 
 const KEY_STORE_PREFIX = 'stellar_secret_';
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
+const KEY_STORE_PLAINTEXT_ADDRESS_PREFIX = 'stellar_secret_plain_addr_';
 const KEY_STORE_PASSPHRASE = 'acbu_passcode';
 
 /**
@@ -53,13 +54,27 @@ export async function getWalletSecret(userId: string, passcode: string): Promise
 export async function storeWalletSecretLocalPlaintext(
   userId: string,
   secret: string,
+  stellarAddress?: string,
 ): Promise<void> {
-  await localforage.setItem(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`, secret);
+  const userKey = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
+  await localforage.setItem(userKey, secret);
+  if (stellarAddress) {
+    await localforage.setItem(
+      `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`,
+      secret,
+    );
+  }
   // Fallback: IndexedDB can be unavailable in some browser modes; keep a copy in localStorage.
   // (Still per-origin; this is not meant as a security measure.)
   try {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`, secret);
+      window.localStorage.setItem(userKey, secret);
+      if (stellarAddress) {
+        window.localStorage.setItem(
+          `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`,
+          secret,
+        );
+      }
     }
   } catch {
     // ignore
@@ -71,13 +86,24 @@ export async function storeWalletSecretLocalPlaintext(
  */
 export async function getWalletSecretLocalPlaintext(
   userId: string,
+  stellarAddress?: string | null,
 ): Promise<string | null> {
-  const key = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
-  const secret = await localforage.getItem<string>(key);
-  if (secret) return secret;
+  const userKey = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
+  const addressKey = stellarAddress
+    ? `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`
+    : null;
+
+  const byUser = await localforage.getItem<string>(userKey);
+  if (byUser) return byUser;
+  if (addressKey) {
+    const byAddress = await localforage.getItem<string>(addressKey);
+    if (byAddress) return byAddress;
+  }
   try {
     if (typeof window !== 'undefined') {
-      return window.localStorage.getItem(key);
+      const lsByUser = window.localStorage.getItem(userKey);
+      if (lsByUser) return lsByUser;
+      if (addressKey) return window.localStorage.getItem(addressKey);
     }
   } catch {
     // ignore
@@ -92,8 +118,9 @@ export async function getWalletSecretLocalPlaintext(
  */
 export async function getWalletSecretAnyLocal(
   userId: string,
+  stellarAddress?: string | null,
 ): Promise<string | null> {
-  const plaintext = await getWalletSecretLocalPlaintext(userId);
+  const plaintext = await getWalletSecretLocalPlaintext(userId, stellarAddress);
   if (plaintext) return plaintext;
 
   try {
