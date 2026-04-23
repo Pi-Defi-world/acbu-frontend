@@ -217,6 +217,14 @@ export interface QuoteResponse {
   amount?: number;
   currency?: string;
   acbu_amount?: string;
+  fee?: string | number;
+  fee_amount?: string | number;
+  total_fee?: string | number;
+  network_fee?: string | number;
+  processing_fee?: string | number;
+  local_amount?: string | number;
+  receive_amount?: string | number;
+  payout_amount?: string | number;
   [key: string]: unknown;
 }
 
