@@ -382,10 +382,10 @@ export default function MintPage() {
                 contract).
               </p>
               {mintError && (
-                <p className="text-sm text-destructive mb-2">
-                  {mintError}
-                </p>
-              )}
+                  <p className="text-sm text-destructive mb-2" role="alert">
+                    {mintError}
+                  </p>
+                )}
               <div>
                 <label
                   htmlFor="fiat-account-select"
@@ -486,10 +486,10 @@ export default function MintPage() {
                 credit).
               </p>
               {burnError && (
-                <p className="text-sm text-destructive mb-2">
-                  {burnError}
-                </p>
-              )}
+                  <p className="text-sm text-destructive mb-2" role="alert">
+                    {burnError}
+                  </p>
+                )}
               <div>
                 <label
                   htmlFor="burn-fiat-account-select"
@@ -613,7 +613,7 @@ export default function MintPage() {
         </Tabs>
       </PageContainer>
 
-      <AlertDialog open={step === "confirm"}>
+      <AlertDialog open={step === "confirm"} onOpenChange={(open) => !open && setStep("input")}>
         <AlertDialogContent 
           className="max-w-md border-border"
           aria-labelledby="confirm-dialog-title"
@@ -666,7 +666,7 @@ export default function MintPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={step === "success"}>
+      <AlertDialog open={step === "success"} onOpenChange={(open) => !open && resetForm()}>
         <AlertDialogContent 
           className="max-w-md border-border"
           aria-labelledby="success-dialog-title"

@@ -12,12 +12,22 @@ import { useApiOpts } from "@/hooks/use-api";
 import * as transfersApi from "@/lib/api/transfers";
 import { formatAmount } from "@/lib/utils";
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+// Add safe date formatter
+function safeFormatDate(iso: string | undefined) {
+  if (!iso) return '';
+  try {
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  } catch {
+    return '';
+  }
 }
+
+
 
 /**
  * Detailed view of a specific transfer by ID.
@@ -214,7 +224,7 @@ export default function TransferDetailPage() {
                   dateTime={new Date(createdAt).toISOString()}
                   aria-labelledby="created-label"
                 >
-                  {formatDate(createdAt)}
+                  {safeFormatDate(createdAt)}
                 </time>
               </div>
             )}
@@ -229,7 +239,7 @@ export default function TransferDetailPage() {
                   dateTime={new Date(completedAt).toISOString()}
                   aria-labelledby="completed-label"
                 >
-                  {formatDate(completedAt)}
+                  {safeFormatDate(completedAt)}
                 </time>
               </div>
             )}
@@ -243,7 +253,6 @@ export default function TransferDetailPage() {
                 <p 
                   className="text-xs font-mono break-all"
                   aria-labelledby="tx-hash-label"
-                  role="text"
                 >
                   {txHash}
                 </p>

@@ -11,7 +11,7 @@
     "test:a11y": "playwright test accessibility.spec.ts",
     "test:a11y:ci": "playwright test accessibility.spec.ts --reporter=github",
     "test:a11y:report": "playwright show-report",
-    "a11y": "npx playwright test"
+    "a11y": "playwright test"
   },
   "dependencies": {
     "@creit.tech/stellar-wallets-kit": "^1.2.1",

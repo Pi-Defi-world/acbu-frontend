@@ -66,9 +66,10 @@ export default function SavingsWithdrawPage() {
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
-          <Link 
+          <Link
             href="/savings"
             aria-label="Go back to Savings page"
+            className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
           </Link>
@@ -109,7 +110,7 @@ export default function SavingsWithdrawPage() {
                 Your registered account address (read-only)
               </p>
             </div>
-            
+
             <div>
               <label
                 htmlFor="withdraw-term-input"
@@ -131,7 +132,7 @@ export default function SavingsWithdrawPage() {
                 Withdrawal term in seconds (0 for immediate withdrawal)
               </p>
             </div>
-            
+
             <div>
               <label
                 htmlFor="withdraw-amount-input"
@@ -154,7 +155,7 @@ export default function SavingsWithdrawPage() {
                 Amount to withdraw from savings
               </p>
             </div>
-            
+
             <Button
               type="submit"
               disabled={loading || !user.trim() || !amount || parseFloat(amount) <= 0}
