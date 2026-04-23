@@ -59,7 +59,7 @@ export default function ActivityPage() {
         ) : (
           <div className="space-y-2">
             {transactions.map((t) => (
-              <Link key={t.transaction_id} href={`/transactions/${t.transaction_id}`} className="block">
+             <Link key={t.transaction_id} href={`/transactions/${t.transaction_id}`} className="block">
                 <Card className="border-border p-4 flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-foreground">
