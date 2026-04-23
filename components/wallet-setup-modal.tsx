@@ -25,7 +25,7 @@ export function WalletSetupModal() {
 
   // For importing seed
   const [importSeed, setImportSeed] = useState("");
-  // Plaintext local storage mode: no passcode prompt
+  // Wallet secret is encrypted with the account passcode via storeWalletSecret
 
   useEffect(() => {
     if (!isAuthenticated) {

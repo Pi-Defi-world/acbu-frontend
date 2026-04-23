@@ -17,7 +17,7 @@ import { useApiOpts } from "@/hooks/use-api";
 
 export default function WalletPage() {
   const router = useRouter();
-  const { userId, stellarAddress, refreshStellarAddress } = useAuth();
+  const { userId, stellarAddress, refreshStellarAddress, logout } = useAuth();
   const opts = useApiOpts();
   const kit = useStellarWalletsKit();
   const [passphrase, setPassphrase] = useState("");
@@ -60,7 +60,10 @@ export default function WalletPage() {
 
       const passcode = getPasscode();
       if (!passcode) {
-        throw new Error("Passcode not available. Please log in again to set up your wallet.");
+        // Passcode missing - redirect to signin for re-authentication
+        await logout();
+        router.push("/auth/signin");
+        return;
       }
 
       const kp = Keypair.fromSecret(passphrase);
@@ -105,7 +108,10 @@ export default function WalletPage() {
 
       const passcode = getPasscode();
       if (!passcode) {
-        throw new Error("Passcode not available. Please log in again to import your wallet.");
+        // Passcode missing - redirect to signin for re-authentication
+        await logout();
+        router.push("/auth/signin");
+        return;
       }
 
       // Validate seed

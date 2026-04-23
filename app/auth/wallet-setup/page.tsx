@@ -41,6 +41,15 @@ export default function WalletSetupPage() {
       return;
     }
 
+    // Guard: Check if passcode is available in memory
+    const passcode = getPasscode();
+    if (!passcode) {
+      // Passcode lost on refresh, clear temp data and redirect to signin
+      sessionStorage.removeItem("temp_passphrase");
+      router.push("/auth/signin");
+      return;
+    }
+
     // If user already has a wallet address, skip setup and go home
     if (stellarAddress && !sessionStorage.getItem("temp_passphrase")) {
       router.push("/");

@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isAuthenticated: true,
           isHydrated: true,
         });
-      } catch (error) {
+      } catch {
         // Cookie is invalid or expired, clear stored auth
         if (typeof window !== 'undefined') {
           sessionStorage.removeItem(USER_ID_KEY);
@@ -148,10 +148,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Register 401 error handler: when API returns 401, clear stale auth state
   useEffect(() => {
-    onAuthError(() => {
+    const handler = () => {
       clearPasscode(); // Clear passcode from memory on auth error
       setAuth(null, null);
-    });
+    };
+    
+    onAuthError(handler);
+    
+    // Cleanup: unregister handler on unmount
+    return () => {
+      onAuthError(() => {}); // Reset to no-op
+    };
   }, [setAuth]);
 
   const value = useMemo(
