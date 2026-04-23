@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import * as authApi from "@/lib/api/auth";
+import { setPasscode as storePasscode } from "@/lib/passcode-manager";
 
 export default function SignInPage() {
     return (
@@ -55,6 +56,9 @@ function SignInForm() {
             const result = await authApi.signin(identifier.trim(), passcode);
 
       if ('requires_2fa' in result && result.requires_2fa) {
+        // Store passcode in memory BEFORE redirecting to 2FA
+        storePasscode(passcode);
+        
         // Store challenge token securely in sessionStorage (not in URL)
         // This prevents leaks via Referer headers, browser history, and server logs
         if (typeof window !== 'undefined') {
@@ -64,12 +68,11 @@ function SignInForm() {
         return;
       }
 
-      if ("api_key" in result) {
-        if (typeof window !== "undefined") {
-          // Reuse for wallet ops that need local-seed decryption (e.g. trustline setup).
-          sessionStorage.setItem("acbu_passcode", passcode);
-        }
-        login(result.api_key!, result.user_id, result.stellar_address);
+      if ("user_id" in result) {
+        // Store passcode in memory for wallet operations
+        storePasscode(passcode);
+        
+        login(result.user_id, result.stellar_address || null);
         
         if (result.wallet_created && result.passphrase) {
           sessionStorage.setItem('temp_passphrase', result.passphrase);
