@@ -195,16 +195,16 @@ export default function SendPage() {
     }
   };
 
-const getStatusColor = (status: string) => {
+const getStatusBadgeClassName = (status: string) => {
   switch (status) {
     case "completed":
-      return "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800";
+      return "border-[var(--color-status-success-border)] bg-[var(--color-status-success)] text-[var(--color-status-success-foreground)]";
     case "pending":
-      return "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
+      return "border-[var(--color-status-warning-border)] bg-[var(--color-status-warning)] text-[var(--color-status-warning-foreground)]";
     case "failed":
-      return "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800";
+      return "border-destructive/40 bg-destructive/15 text-destructive";
     default:
-      return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700";
+      return "border-[var(--color-status-neutral-border)] bg-[var(--color-status-neutral)] text-[var(--color-status-neutral-foreground)]";
   }
 };
 
@@ -298,7 +298,7 @@ const getStatusColor = (status: string) => {
                         </p>
                         <Badge
                           variant="outline"
-                          className={`mt-1 text-xs ${getStatusColor(t.status)}`}
+                          className={`mt-1 text-xs ${getStatusBadgeClassName(t.status)}`}
                         >
                           {t.status === "completed" && (
                             <Check className="mr-1 h-3 w-3" />
@@ -496,7 +496,10 @@ const getStatusColor = (status: string) => {
                             Your transfer for ACBU {formatAmount(lastSentAmount)}{" "}
                             is being processed.
                         </p>
-                        <Badge variant="secondary" className="mb-4">
+                        <Badge
+                          variant="outline"
+                          className={`mb-4 ${getStatusBadgeClassName("pending")}`}
+                        >
                             Pending
                         </Badge>
                     </div>
