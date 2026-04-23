@@ -8,11 +8,20 @@ import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
 
+const apiBaseUrl =
+  typeof process !== 'undefined'
+    ? process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
+    : ''
+const apiUrl =
+  typeof process !== 'undefined'
+    ? process.env.NEXT_PUBLIC_API_URL?.trim()
+    : ''
+
 if (
   typeof process !== 'undefined' &&
-  process.env.NODE_ENV !== 'production' &&
-  !process.env.NEXT_PUBLIC_API_BASE_URL && 
-  !process.env.NEXT_PUBLIC_API_URL
+  process.env.NODE_ENV === 'development' &&
+  !apiBaseUrl &&
+  !apiUrl
 ) {
   console.error(
     "\n=================================================================\n" +
