@@ -30,7 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const burnSchema = z.object({
-  acbuAmount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
+  acbuAmount: z.string().refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
     message: "Amount must be greater than 0",
   }),
   currency: z.string().length(3, "Currency must be exactly 3 uppercase letters"),
@@ -218,7 +218,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="acbuAmount"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>ACBU amount</FormLabel>
                     <FormControl>
@@ -244,14 +244,14 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="currency"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>Currency (3 letters)</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="NGN"
                         {...field}
-                        onChange={(e) => {
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           const val = e.target.value.toUpperCase().slice(0, 3);
                           field.onChange(val);
                         }}
@@ -270,7 +270,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="accountNumber"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>Account number</FormLabel>
                     <FormControl>
@@ -279,7 +279,7 @@ export default function BurnPage() {
                         inputMode="numeric"
                         placeholder="1234567890"
                         {...field}
-                        onChange={(e) => {
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           const val = e.target.value.replace(/\D/g, "");
                           field.onChange(val);
                         }}
@@ -298,7 +298,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="bankCode"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>Bank code</FormLabel>
                     <FormControl>
@@ -306,7 +306,7 @@ export default function BurnPage() {
                         type="text"
                         placeholder="Enter bank code"
                         {...field}
-                        onChange={(e) => {
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           const val = e.target.value.toUpperCase().slice(0, 10);
                           field.onChange(val);
                         }}
@@ -325,7 +325,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="accountName"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>Account name</FormLabel>
                     <FormControl>
