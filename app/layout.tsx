@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { GlobalErrorHandler } from '@/components/global-error-handler'
 import './globals.css'
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
@@ -47,13 +48,18 @@ export default async function RootLayout({
   return (
     <html lang={lang}>
       <body className={`font-sans antialiased`}>
-        <ErrorBoundary>
+        <GlobalErrorHandler />
+        <ErrorBoundary level="app">
           <AuthProvider>
-            <AuthGuard>
-              <AppLayout>{children}</AppLayout>
-            </AuthGuard>
-            <WalletSetupModal />
-            <Analytics />
+            <ErrorBoundary level="component">
+              <AuthGuard>
+                <ErrorBoundary level="component">
+                  <AppLayout>{children}</AppLayout>
+                </ErrorBoundary>
+              </AuthGuard>
+              <WalletSetupModal />
+              <Analytics />
+            </ErrorBoundary>
           </AuthProvider>
         </ErrorBoundary>
       </body>
