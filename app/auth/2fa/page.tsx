@@ -69,7 +69,7 @@ function TwoFactorForm() {
             }
 
       const result = await authApi.verify2fa(challengeToken, code);
-      login(result.api_key!, result.user_id, result.stellar_address);
+      login(result.user_id, result.stellar_address);
       // Clear challenge token from sessionStorage
       sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
       router.push('/');
