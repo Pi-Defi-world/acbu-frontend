@@ -6,7 +6,6 @@ import {
   xdr,
   rpc,
 } from "@stellar/stellar-sdk";
-import type { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit";
 import { getAssetsConfig } from "@/lib/api/config";
 import { Keypair } from "@stellar/stellar-sdk";
 
@@ -18,15 +17,27 @@ const TESTNET_RPC_URL =
   "https://soroban-testnet.stellar.org";
 const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
 
-function i128ScVal(value: bigint): xdr.ScVal {
-  const lo = value & BigInt("0xFFFFFFFFFFFFFFFF");
-  const hi = value >> BigInt(64);
-  return xdr.ScVal.scvI128(
-    new xdr.Int128Parts({
-      lo: xdr.Uint64.fromString(lo.toString()),
-      hi: xdr.Int64.fromString(hi.toString()),
-    }),
-  );
+function decodeSorobanError(errorResultXdr: string): string {
+  try {
+    const txResult = xdr.TransactionResult.fromXDR(errorResultXdr, 'base64');
+    const results = txResult.result().results();
+    if (results.length > 0) {
+      const opResult = results[0];
+      if (opResult.switch() === xdr.OperationResultCode.opINNER) {
+        const inner = opResult.innerResult();
+        if (inner.switch() === xdr.OperationResultTr.trInvokeHostFunctionResult) {
+          const invokeResult = inner.invokeHostFunctionResult();
+          if (invokeResult.switch() === xdr.InvokeHostFunctionResultCode.ihfFAILED) {
+            const error = invokeResult.error();
+            return `Soroban contract error (type: ${error.type()}, code: ${error.code()})`;
+          }
+        }
+      }
+    }
+    return `Transaction failed with XDR: ${errorResultXdr}`;
+  } catch (e) {
+    return `Failed to decode Soroban error: ${errorResultXdr}`;
+  }
 }
 
 async function resolveNetworkConfig(): Promise<{
@@ -53,18 +64,20 @@ async function submitAndWaitSuccess(params: {
   tx: any;
   timeoutMs?: number;
 }): Promise<{ txHash: string }> {
-  const sendRes = await params.rpcServer.sendTransaction(params.tx);
-  if ((sendRes as any).errorResultXdr) {
-    throw new Error("Soroban send failed.");
+  const sendRes = await params.rpcServer.sendTransaction(params.tx) as rpc.Api.SendTransactionResponse;
+  if (sendRes.errorResultXdr) {
+    const errorMessage = decodeSorobanError(sendRes.errorResultXdr);
+    throw new Error(`Soroban send failed: ${errorMessage}`);
   }
-  const txHash = (sendRes as any).hash as string;
+  const txHash = sendRes.hash;
   const timeoutMs = params.timeoutMs ?? 120000;
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
-    const status = await params.rpcServer.getTransaction(txHash);
+    const status = await params.rpcServer.getTransaction(txHash) as rpc.Api.GetTransactionResponse;
     if (status.status === "SUCCESS") return { txHash };
     if (status.status === "FAILED") {
-      throw new Error("Burn transaction failed on-chain.");
+      const errorMessage = status.errorResultXdr ? decodeSorobanError(status.errorResultXdr) : "Burn transaction failed on-chain.";
+      throw new Error(errorMessage);
     }
     await new Promise((r) => setTimeout(r, 1500));
   }
