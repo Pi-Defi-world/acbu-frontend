@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import * as authApi from '@/lib/api/auth';
+import { getPasscode } from '@/lib/passcode-manager';
 
 const CHALLENGE_TOKEN_KEY = '2fa_challenge_token';
 
@@ -67,6 +68,15 @@ function TwoFactorForm() {
                 setError("Missing challenge. Please sign in again.");
                 return;
             }
+
+      // Guard: If passcode is missing after page refresh, require re-authentication
+      const passcode = getPasscode();
+      if (!passcode) {
+        setError("Session expired. Please sign in again.");
+        sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
+        setTimeout(() => router.push('/auth/signin'), 2000);
+        return;
+      }
 
       const result = await authApi.verify2fa(challengeToken, code);
       login(result.user_id, result.stellar_address);

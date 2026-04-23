@@ -48,8 +48,10 @@ sessionStorage.getItem('acbu_api_key')
 // Should return null (no passcode in sessionStorage)
 sessionStorage.getItem('acbu_passcode')
 
-// Check cookies (should see httpOnly session cookie)
-document.cookie
+// Check cookies in DevTools:
+// - Open DevTools > Application > Cookies
+// - Or check Network tab > Headers > Set-Cookie
+// - Look for httpOnly session cookie (cannot be read via document.cookie)
 ```
 
 ## Files Changed
