@@ -8,6 +8,22 @@ import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
 
+if (
+  typeof process !== 'undefined' &&
+  process.env.NODE_ENV !== 'production' &&
+  !process.env.NEXT_PUBLIC_API_BASE_URL && 
+  !process.env.NEXT_PUBLIC_API_URL
+) {
+  console.error(
+    "\n=================================================================\n" +
+    "🚨 CRITICAL MISSING CONFIGURATION 🚨\n" +
+    "NEXT_PUBLIC_API_BASE_URL (or NEXT_PUBLIC_API_URL) is not set.\n" +
+    "Without this, POST/auth requests will hit Next.js and return 405 errors.\n" +
+    "Please update your .env.local file with your backend API root.\n" +
+    "=================================================================\n"
+  );
+}
+
 export const metadata: Metadata = {
   title: 'ACBU - P2P Transfers',
   description: 'Send and receive money securely with ACBU',
