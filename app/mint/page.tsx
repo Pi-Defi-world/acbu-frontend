@@ -50,6 +50,16 @@ function estimateAcbuFromFiat(
   return n / localPerAcbu;
 }
 
+function formatRate(rate: string | number | null | undefined): string {
+  if (rate == null || rate === '') return '—';
+
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 6,
+    useGrouping: true,
+  }).format(Number(rate));
+}
+
 /**
  * Mint and Burn page for ACBU tokens.
  */
@@ -72,9 +82,27 @@ export default function MintPage() {
   const [fiatAmount, setFiatAmount] = useState('');
   const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
-  const rateRows = Array.isArray((rates as { rates?: Array<{ currency?: string; rate?: number }> } | null)?.rates)
-    ? ((rates as { rates?: Array<{ currency?: string; rate?: number }> }).rates ?? [])
-    : [];
+  const rateRows = useMemo(
+    () =>
+      rates
+        ? [
+            { currency: 'USD', rate: rates.acbu_usd },
+            { currency: 'EUR', rate: rates.acbu_eur },
+            { currency: 'GBP', rate: rates.acbu_gbp },
+            { currency: 'NGN', rate: rates.acbu_ngn },
+            { currency: 'KES', rate: rates.acbu_kes },
+            { currency: 'ZAR', rate: rates.acbu_zar },
+            { currency: 'RWF', rate: rates.acbu_rwf },
+            { currency: 'GHS', rate: rates.acbu_ghs },
+            { currency: 'EGP', rate: rates.acbu_egp },
+            { currency: 'MAD', rate: rates.acbu_mad },
+            { currency: 'TZS', rate: rates.acbu_tzs },
+            { currency: 'UGX', rate: rates.acbu_ugx },
+            { currency: 'XOF', rate: rates.acbu_xof },
+          ].filter((row) => row.rate != null)
+        : [],
+    [rates],
+  );
 
   const estimatedMintAcbu = useMemo(
     () => estimateAcbuFromFiat(fiatAmount, selectedFiatCurrency, mintQuoteRates),
@@ -578,11 +606,11 @@ export default function MintPage() {
               {ratesLoading ? (
                 <Skeleton className="h-20 w-full" />
               ) : rateRows.length ? (
-                rateRows.map((r: { currency?: string; rate?: number }) => (
-                  <Card key={r.currency ?? r.rate} className="border-border p-4">
+                rateRows.map((r) => (
+                  <Card key={r.currency} className="border-border p-4">
                     <div className="flex justify-between">
-                      <p className="font-semibold text-foreground">ACBU/{r.currency ?? 'Rate'}</p>
-                      <p className="text-lg font-bold text-primary">{r.rate != null ? String(r.rate) : '—'}</p>
+                      <p className="font-semibold text-foreground">ACBU/{r.currency}</p>
+                      <p className="text-lg font-bold text-primary">{formatRate(r.rate)}</p>
                     </div>
                   </Card>
                 ))
