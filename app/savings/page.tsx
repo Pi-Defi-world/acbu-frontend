@@ -265,9 +265,11 @@ export default function SavingsPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground">Savings Goals</h3>
+              {/* TODO: Implement goal model and uncomment button
               <Button size="sm" variant="outline" className="h-7 border-border bg-transparent" onClick={() => setShowNewGoalDialog(true)}>
                 <Plus className="w-3 h-3 mr-1" /> New Goal
               </Button>
+              */}
             </div>
             {goals.map((goal) => {
               const progress = (goal.currentAmount / goal.targetAmount) * 100;
