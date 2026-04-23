@@ -30,6 +30,7 @@ import * as ratesApi from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
 import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 const MINT_NETWORK_FEE_TEXT = "Estimated at confirmation";
 const BURN_PROCESSING_FEE_TEXT = "Estimated at confirmation";
 
@@ -105,7 +106,7 @@ export default function MintPage() {
           setSelectedFiatCurrency(res.accounts[0].currency);
         }
       })
-      .catch(console.error);
+      .catch((e) => logger.error('Failed to get fiat accounts', e));
   }, [opts.token]);
 
     useEffect(() => {
@@ -193,7 +194,7 @@ export default function MintPage() {
               });
             }
 
-            console.info("[mint] ACBU trustline ensured", {
+            logger.info("[mint] ACBU trustline ensured", {
                 account: accountId,
                 added: trust?.added,
                 visible: trust?.visible,

@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
+import { logger } from "@/lib/logger";
 
 export default function SavingsWithdrawPage() {
     const opts = useApiOpts();
@@ -29,7 +30,7 @@ export default function SavingsWithdrawPage() {
                     setUser(uri);
             })
             .catch((e) => {
-                console.error(
+                logger.error(
                     e instanceof Error
                         ? e.message
                         : "Failed to load receive address",
