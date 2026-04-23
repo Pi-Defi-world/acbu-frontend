@@ -32,7 +32,7 @@ import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
 import type { TransferItem, ContactItem } from "@/types/api";
-import { formatAmount } from "@/lib/utils";
+import { formatAcbu, formatAmount } from "@/lib/utils";
 import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import {
@@ -294,7 +294,7 @@ const getStatusColor = (status: string) => {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-foreground">
-                          ACBU {formatAmount(t.amount_acbu)}
+                          ACBU {formatAcbu(t.amount_acbu)}
                         </p>
                         <Badge
                           variant="outline"
