@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -34,12 +36,12 @@ export default function BurnPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [acbuAmount, setAcbuAmount] = useState("");
   const [currency, setCurrency] = useState("NGN");
   const [accountNumber, setAccountNumber] = useState("");
   const [bankCode, setBankCode] = useState("");
   const [accountName, setAccountName] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
 
@@ -64,7 +66,7 @@ export default function BurnPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
-    setError("");
+    clearError();
     setLoading(true);
     try {
       if (!userId) throw new Error("Not signed in");
@@ -128,7 +130,7 @@ export default function BurnPage() {
       );
       setTxId(res.transaction_id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Burn failed");
+      setApiError(e);
     } finally {
       setLoading(false);
     }
@@ -153,7 +155,9 @@ export default function BurnPage() {
           <p className="text-muted-foreground text-sm">
             Burn ACBU and withdraw to your bank or mobile money account.
           </p>
-          {error && <p className="text-destructive text-sm">{error}</p>}
+          {uiError && (
+            <ApiErrorDisplay error={uiError} onDismiss={clearError} />
+          )}
           {txId && (
             <p className="text-green-600 text-sm">
               Transaction submitted: {txId}
@@ -238,7 +242,7 @@ export default function BurnPage() {
             </div>
             <Button
               type="submit"
-              disabled={!isValid || loading}
+              disabled={!isValid || loading || isSubmitDisabled}
               className="w-full"
             >
               {loading ? "Submitting..." : "Burn & Withdraw"}

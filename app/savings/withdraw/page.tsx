@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
 
@@ -17,7 +19,7 @@ export default function SavingsWithdrawPage() {
     const [termSeconds, setTermSeconds] = useState("0");
     const [amount, setAmount] = useState("");
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
     const [success, setSuccess] = useState("");
 
     useEffect(() => {
@@ -40,7 +42,7 @@ export default function SavingsWithdrawPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user.trim() || !amount || parseFloat(amount) <= 0) return;
-        setError("");
+        clearError();
         setLoading(true);
         try {
             await savingsApi.savingsWithdraw(
@@ -53,7 +55,7 @@ export default function SavingsWithdrawPage() {
             );
             setSuccess("Withdrawal submitted.");
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Withdraw failed");
+            setApiError(e);
         } finally {
             setLoading(false);
         }
@@ -73,8 +75,8 @@ export default function SavingsWithdrawPage() {
             </div>
             <PageContainer>
                 <Card className="border-border p-4 space-y-4">
-                    {error && (
-                        <p className="text-destructive text-sm">{error}</p>
+                    {uiError && (
+                        <ApiErrorDisplay error={uiError} onDismiss={clearError} />
                     )}
                     {success && (
                         <p className="text-green-600 text-sm">{success}</p>
@@ -129,7 +131,7 @@ export default function SavingsWithdrawPage() {
                         </div>
                         <Button
                             type="submit"
-                            disabled={loading || !user.trim() || !amount}
+                            disabled={loading || isSubmitDisabled || !user.trim() || !amount}
                         >
                             Withdraw
                         </Button>

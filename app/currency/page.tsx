@@ -19,6 +19,8 @@ import {
 import { ArrowDown, ArrowUp, TrendingUp } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
 import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
 import type { MintResponse, BurnResponse } from "@/types/api";
@@ -28,13 +30,13 @@ import type { MintResponse, BurnResponse } from "@/types/api";
  */
 export default function CurrencyPage() {
   const opts = useApiOpts();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
   );
   const [step, setStep] = useState<"input" | "confirm" | "success">("input");
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
   const [lastTxId, setLastTxId] = useState("");
 
   // Mint state
@@ -65,7 +67,7 @@ export default function CurrencyPage() {
   const handleBurnConfirm = () => setStep("confirm");
 
   const handleExecute = async () => {
-    setSubmitError("");
+    clearError();
     setSubmitting(true);
     try {
       if (activeTab === "mint") {
@@ -110,7 +112,7 @@ export default function CurrencyPage() {
       }
       setStep("success");
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Operation failed");
+      setApiError(e);
     } finally {
       setSubmitting(false);
     }
@@ -128,7 +130,7 @@ export default function CurrencyPage() {
     setIntlAccountNumber("");
     setIntlBankCode("");
     setIntlAccountName("");
-    setSubmitError("");
+    clearError();
     setLastTxId("");
   };
 
@@ -581,14 +583,14 @@ export default function CurrencyPage() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleExecute}
-              disabled={submitting}
+              disabled={submitting || isSubmitDisabled}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {submitting ? "Processing..." : "Confirm"}
             </AlertDialogAction>
           </div>
-          {submitError && (
-            <p className="text-sm text-destructive mt-2">{submitError}</p>
+          {uiError && (
+            <ApiErrorDisplay error={uiError} onDismiss={clearError} className="mt-2" />
           )}
         </AlertDialogContent>
       </AlertDialog>
