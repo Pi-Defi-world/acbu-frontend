@@ -31,10 +31,12 @@ export const metadata: Metadata = {
   },
 }
 
+// FIXED: Removed maximumScale to allow zooming
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  // Remove maximumScale to allow users to zoom
+  userScalable: true,
 }
 
 export default async function RootLayout({

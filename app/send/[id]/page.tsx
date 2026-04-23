@@ -58,14 +58,20 @@ export default function TransferDetailPage() {
       <>
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
-            <Link href="/send" aria-label="Back to transfers">
-              <ArrowLeft className="w-5 h-5 text-primary" />
+            <Link 
+              href="/send" 
+              aria-label="Back to transfers"
+              className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            >
+              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
             </Link>
             <h1 className="text-lg font-bold text-foreground">Transfer</h1>
           </div>
         </div>
         <PageContainer>
-          <p className="text-muted-foreground">Invalid transfer ID.</p>
+          <div role="alert" aria-live="polite">
+            <p className="text-muted-foreground">Invalid transfer ID.</p>
+          </div>
         </PageContainer>
       </>
     );
@@ -76,14 +82,21 @@ export default function TransferDetailPage() {
       <>
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
-            <Link href="/send" aria-label="Back to transfers">
-              <ArrowLeft className="w-5 h-5 text-primary" />
+            <Link 
+              href="/send" 
+              aria-label="Back to transfers"
+              className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            >
+              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
             </Link>
             <h1 className="text-lg font-bold text-foreground">Transfer</h1>
           </div>
         </div>
         <PageContainer>
-          <Skeleton className="h-32 w-full" />
+          <div aria-label="Loading transfer details" aria-live="polite">
+            <Skeleton className="h-32 w-full" />
+            <span className="sr-only">Loading transfer information...</span>
+          </div>
         </PageContainer>
       </>
     );
@@ -94,14 +107,20 @@ export default function TransferDetailPage() {
       <>
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
-            <Link href="/send" aria-label="Back to transfers">
-              <ArrowLeft className="w-5 h-5 text-primary" />
+            <Link 
+              href="/send" 
+              aria-label="Back to transfers"
+              className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            >
+              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
             </Link>
             <h1 className="text-lg font-bold text-foreground">Transfer</h1>
           </div>
         </div>
         <PageContainer>
-          <p className="text-destructive">{error || "Not found"}</p>
+          <div role="alert" aria-live="assertive">
+            <p className="text-destructive">{error || "Not found"}</p>
+          </div>
         </PageContainer>
       </>
     );
@@ -117,53 +136,128 @@ export default function TransferDetailPage() {
   const amountAcbu = (data.amount_acbu as string) ?? "";
   const isFiatRecord = type === "mint" && !!localCurrency && !!localAmount;
 
+  // Format status for better screen reader announcement
+  const getStatusDescription = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "completed":
+        return "Transaction completed successfully";
+      case "pending":
+        return "Transaction is pending processing";
+      case "failed":
+        return "Transaction failed";
+      default:
+        return `Transaction status: ${status}`;
+    }
+  };
+
   return (
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
-          <Link href="/send" aria-label="Back to transfers">
-            <ArrowLeft className="w-5 h-5 text-primary" />
+          <Link 
+            href="/send" 
+            aria-label="Back to transfers list"
+            className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          >
+            <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
           </Link>
           <h1 className="text-lg font-bold text-foreground truncate">
-            {isFiatRecord ? "Faucet" : "Transfer"}
+            {isFiatRecord ? "Faucet" : "Transfer"} Details
           </h1>
         </div>
       </div>
+      
       <PageContainer>
-        <Card className="border-border p-4 space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Status</span>
-            <Badge variant="outline">{status}</Badge>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Amount</span>
-            <span className="font-semibold">
-              {isFiatRecord
-                ? `${localCurrency} ${formatAmount(localAmount)}`
-                : `ACBU ${formatAmount(amountAcbu)}`}
-            </span>
-          </div>
-          {createdAt && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Created</span>
-              <span>{formatDate(createdAt)}</span>
+        <main id="main-content" className="focus:outline-none" tabIndex={-1}>
+          <Card 
+            className="border-border p-4 space-y-4"
+            aria-label={`${isFiatRecord ? "Faucet" : "Transfer"} details for transaction ${id}`}
+          >
+            {/* Status Section */}
+            <div className="flex justify-between items-center">
+              <span id="status-label" className="text-muted-foreground font-medium">
+                Status
+              </span>
+              <Badge 
+                variant="outline"
+                aria-label={getStatusDescription(status)}
+              >
+                {status}
+              </Badge>
             </div>
-          )}
-          {completedAt && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Completed</span>
-              <span>{formatDate(completedAt)}</span>
+
+            {/* Amount Section */}
+            <div className="flex justify-between items-center">
+              <span id="amount-label" className="text-muted-foreground font-medium">
+                Amount
+              </span>
+              <span 
+                className="font-semibold"
+                aria-labelledby="amount-label"
+                aria-describedby="amount-value"
+              >
+                <span id="amount-value">
+                  {isFiatRecord
+                    ? `${localCurrency} ${formatAmount(localAmount)}`
+                    : `ACBU ${formatAmount(amountAcbu)}`}
+                </span>
+              </span>
             </div>
-          )}
-          {txHash && (
-            <div className="pt-2 border-t border-border">
-              <p className="text-xs text-muted-foreground mb-1">
-                Transaction hash
-              </p>
-              <p className="text-xs font-mono break-all">{txHash}</p>
+
+            {/* Created Date */}
+            {createdAt && (
+              <div className="flex justify-between text-sm">
+                <span id="created-label" className="text-muted-foreground font-medium">
+                  Created
+                </span>
+                <time 
+                  dateTime={new Date(createdAt).toISOString()}
+                  aria-labelledby="created-label"
+                >
+                  {formatDate(createdAt)}
+                </time>
+              </div>
+            )}
+
+            {/* Completed Date */}
+            {completedAt && (
+              <div className="flex justify-between text-sm">
+                <span id="completed-label" className="text-muted-foreground font-medium">
+                  Completed
+                </span>
+                <time 
+                  dateTime={new Date(completedAt).toISOString()}
+                  aria-labelledby="completed-label"
+                >
+                  {formatDate(completedAt)}
+                </time>
+              </div>
+            )}
+
+            {/* Transaction Hash */}
+            {txHash && (
+              <div className="pt-2 border-t border-border">
+                <p id="tx-hash-label" className="text-xs text-muted-foreground mb-1 font-medium">
+                  Transaction hash
+                </p>
+                <p 
+                  className="text-xs font-mono break-all"
+                  aria-labelledby="tx-hash-label"
+                  role="text"
+                >
+                  {txHash}
+                </p>
+              </div>
+            )}
+
+            {/* Live region for dynamic updates */}
+            <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+              {status === "completed" && "Transfer has been completed successfully."}
+              {status === "pending" && "Transfer is pending processing."}
+              {status === "failed" && "Transfer failed to process."}
             </div>
-          )}
-        </Card>
+          </Card>
+        </main>
       </PageContainer>
     </>
   );

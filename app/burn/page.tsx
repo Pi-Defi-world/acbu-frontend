@@ -143,7 +143,7 @@ export default function BurnPage() {
             aria-label="Go back to Mint page" 
             className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2"
           >
-            <ArrowLeft className="w-5 h-5 text-primary" />
+            <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
           </Link>
           <h1 className="text-lg font-bold text-foreground">Withdraw (Burn)</h1>
         </div>
@@ -153,18 +153,27 @@ export default function BurnPage() {
           <p className="text-muted-foreground text-sm">
             Burn ACBU and withdraw to your bank or mobile money account.
           </p>
-          {error && <p className="text-destructive text-sm">{error}</p>}
+          {error && (
+            <p className="text-destructive text-sm" role="alert">
+              {error}
+            </p>
+          )}
           {txId && (
-            <p className="text-green-600 text-sm">
+            <p className="text-green-600 text-sm" role="status">
               Transaction submitted: {txId}
             </p>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
+              <label 
+                htmlFor="acbu-amount-input"
+                className="text-sm font-medium text-foreground mb-2 block"
+              >
                 ACBU amount
               </label>
               <Input
+                id="acbu-amount-input"
+                name="acbu-amount"
                 type="number"
                 placeholder="0.00"
                 min="0"
@@ -172,8 +181,11 @@ export default function BurnPage() {
                 value={acbuAmount}
                 onChange={(e) => setAcbuAmount(e.target.value)}
                 className="border-border"
+                aria-describedby="acbu-amount-hint"
               />
-
+              <p id="acbu-amount-hint" className="text-xs text-muted-foreground mt-1">
+                Enter the amount of ACBU to burn
+              </p>
               {acbuAmount && (
                 <p className="text-sm text-muted-foreground mt-1">
                   ≈ {formatCurrency(acbuAmount, currency)}
@@ -181,12 +193,16 @@ export default function BurnPage() {
               )}
             </div>
 
-
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
+              <label 
+                htmlFor="currency-input"
+                className="text-sm font-medium text-foreground mb-2 block"
+              >
                 Currency (3 letters)
               </label>
               <Input
+                id="currency-input"
+                name="currency"
                 placeholder="NGN"
                 value={currency}
                 onChange={(e) =>
@@ -194,13 +210,23 @@ export default function BurnPage() {
                 }
                 className="border-border"
                 maxLength={3}
+                aria-describedby="currency-hint"
               />
+              <p id="currency-hint" className="text-xs text-muted-foreground mt-1">
+                3-letter currency code (e.g., NGN, USD, EUR)
+              </p>
             </div>
+            
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
+              <label 
+                htmlFor="account-number-input"
+                className="text-sm font-medium text-foreground mb-2 block"
+              >
                 Account number
               </label>
               <Input
+                id="account-number-input"
+                name="account-number"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -209,37 +235,63 @@ export default function BurnPage() {
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
                 className="border-border"
+                aria-describedby="account-number-hint"
               />
+              <p id="account-number-hint" className="text-xs text-muted-foreground mt-1">
+                Your bank account number (5-20 digits)
+              </p>
             </div>
+            
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
+              <label 
+                htmlFor="bank-code-input"
+                className="text-sm font-medium text-foreground mb-2 block"
+              >
                 Bank code
               </label>
               <Input
+                id="bank-code-input"
+                name="bank-code"
                 type="text"
                 maxLength={10}
                 placeholder="Enter bank code"
                 value={bankCode}
                 onChange={(e) => setBankCode(e.target.value.slice(0, 10))}
                 className="border-border"
+                aria-describedby="bank-code-hint"
               />
+              <p id="bank-code-hint" className="text-xs text-muted-foreground mt-1">
+                Your bank's identification code (3-10 characters)
+              </p>
             </div>
+            
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
+              <label 
+                htmlFor="account-name-input"
+                className="text-sm font-medium text-foreground mb-2 block"
+              >
                 Account name
               </label>
               <Input
+                id="account-name-input"
+                name="account-name"
                 type="text"
                 maxLength={100}
                 value={accountName}
                 onChange={(e) => setAccountName(e.target.value)}
                 className="border-border"
+                aria-describedby="account-name-hint"
               />
+              <p id="account-name-hint" className="text-xs text-muted-foreground mt-1">
+                Full name on the bank account (3-100 characters)
+              </p>
             </div>
+            
             <Button
               type="submit"
               disabled={!isValid || loading}
               className="w-full"
+              aria-label="Burn ACBU and withdraw funds"
             >
               {loading ? "Submitting..." : "Burn & Withdraw"}
             </Button>

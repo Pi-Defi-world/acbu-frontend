@@ -30,6 +30,7 @@ import * as ratesApi from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
 import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
+
 const MINT_NETWORK_FEE_TEXT = "Estimated at confirmation";
 const BURN_PROCESSING_FEE_TEXT = "Estimated at confirmation";
 
@@ -72,6 +73,7 @@ export default function MintPage() {
   const [fiatAmount, setFiatAmount] = useState('');
   const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
+  
   const rateRows = Array.isArray((rates as { rates?: Array<{ currency?: string; rate?: number }> } | null)?.rates)
     ? ((rates as { rates?: Array<{ currency?: string; rate?: number }> }).rates ?? [])
     : [];
@@ -108,219 +110,211 @@ export default function MintPage() {
       .catch(console.error);
   }, [opts.token]);
 
-    useEffect(() => {
-        if (activeTab !== "rates") return;
-        setRatesLoading(true);
-        ratesApi
-            .getRates(opts)
-            .then(setRates)
-            .catch(() => setRates(null))
-            .finally(() => setRatesLoading(false));
-    }, [activeTab, opts.token]);
+  useEffect(() => {
+    if (activeTab !== "rates") return;
+    setRatesLoading(true);
+    ratesApi
+      .getRates(opts)
+      .then(setRates)
+      .catch(() => setRates(null))
+      .finally(() => setRatesLoading(false));
+  }, [activeTab, opts.token]);
 
-    const handleMintConfirm = () => {
-        setMintError("");
-        setStep("confirm");
-    };
-    const handleBurnConfirm = () => setStep("confirm");
-    const handleExecuteMint = async () => {
-        if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
-            return;
-        setMintError("");
-        setExecuting(true);
-        try {
-            // Default setup: make sure the recipient trusts the ACBU asset
-            // before the backend tries to mint. Without this the minting
-            // contract fails with "trustline entry is missing for account".
-            // We add it client-side using the local wallet seed and then
-            // wait for Horizon to confirm the trustline before calling the
-            // backend — Soroban simulation reads the ledger's current state,
-            // so an unconfirmed trustline would still fail the mint.
-            if (!userId) {
-                throw new Error(
-                    "Not signed in — refresh and try again.",
-                );
-            }
-            const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+  const handleMintConfirm = () => {
+    setMintError("");
+    setStep("confirm");
+  };
+  
+  const handleBurnConfirm = () => setStep("confirm");
+  
+  const handleExecuteMint = async () => {
+    if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
+      return;
+    setMintError("");
+    setExecuting(true);
+    try {
+      if (!userId) {
+        throw new Error(
+          "Not signed in — refresh and try again.",
+        );
+      }
+      const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
 
-            let accountId: string;
-            let trust:
-              | Awaited<ReturnType<typeof ensureAcbuTrustlineClient>>
-              | null = null;
+      let accountId: string;
+      let trust: Awaited<ReturnType<typeof ensureAcbuTrustlineClient>> | null = null;
 
-            if (secret) {
-              // Guard: the locally stored seed MUST derive to the public key the
-              // backend treats as this user's Stellar account, otherwise we'd
-              // keep adding trustlines to the wrong account forever while the
-              // mint contract tries to deposit into the real recipient.
-              accountId = Keypair.fromSecret(secret).publicKey();
-              if (stellarAddress && accountId !== stellarAddress) {
-                  throw new Error(
-                      `Local wallet (${accountId.slice(0, 6)}…${accountId.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
-                  );
-              }
-              trust = await ensureAcbuTrustlineClient({ userSecret: secret });
-            } else {
-              if (!kit) {
-                throw new Error(
-                  "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
-                );
-              }
-              accountId = await new Promise<string>((resolve, reject) => {
-                kit
-                  .openModal({
-                    onWalletSelected: async (selectedOption: { id: string }) => {
-                      try {
-                        kit.setWallet(selectedOption.id);
-                        const { address } = await kit.getAddress();
-                        resolve(address);
-                      } catch (err) {
-                        reject(err);
-                      }
-                    },
-                  })
-                  .catch(reject);
-              });
-
-              if (stellarAddress && accountId !== stellarAddress) {
-                throw new Error(
-                  `Connected wallet (${accountId.slice(0, 6)}…${accountId.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
-                );
-              }
-
-              trust = await ensureAcbuTrustlineClient({
-                external: { kit, address: accountId },
-              });
-            }
-
-            console.info("[mint] ACBU trustline ensured", {
-                account: accountId,
-                added: trust?.added,
-                visible: trust?.visible,
-                txHash: trust?.txHash,
-            });
-            if (trust?.added && !trust.visible) {
-                throw new Error(
-                    "ACBU trustline was submitted but hasn't appeared on Horizon yet. Please retry the mint in a few seconds.",
-                );
-            }
-
-            const res = await fiatApi.postOnRamp(
-                fiatAmount,
-                selectedFiatCurrency,
-                opts,
-            );
-            setTxId(
-                res.blockchain_tx_hash ||
-                    res.transaction_id ||
-                    res.transactionId ||
-                    null,
-            );
-            const acbu =
-                res.acbuAmount ??
-                (typeof res.acbu_amount === "number" ? res.acbu_amount : undefined);
-            setMintAcbuReceived(
-                typeof acbu === "number" && Number.isFinite(acbu) ? acbu : null,
-            );
-            refreshBalance();
-            setStep("success");
-        } catch (e) {
-            setMintError(e instanceof Error ? e.message : "Mint failed");
-        } finally {
-            setExecuting(false);
+      if (secret) {
+        accountId = Keypair.fromSecret(secret).publicKey();
+        if (stellarAddress && accountId !== stellarAddress) {
+          throw new Error(
+            `Local wallet (${accountId.slice(0, 6)}…${accountId.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+          );
         }
-    };
-    const handleExecuteBurn = async () => {
-        if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency)
-            return;
-        setBurnError("");
-        setExecuting(true);
-        try {
-            if (!userId) {
-                throw new Error("Not signed in — refresh and try again.");
-            }
-            if (!stellarAddress) {
-                throw new Error("No linked Stellar wallet address.");
-            }
-            const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
-            let burnTxHash: string;
-            if (secret) {
-                const localPubKey = Keypair.fromSecret(secret).publicKey();
-                if (stellarAddress && localPubKey !== stellarAddress) {
-                    throw new Error(
-                        `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
-                    );
-                }
-                const submit = await submitBurnRedeemSingleClient({
-                    userAddress: stellarAddress,
-                    amountAcbu: burnAmount,
-                    currency: selectedFiatCurrency,
-                    userSecret: secret,
-                });
-                burnTxHash = submit.transactionHash;
-            } else {
-                if (!kit) {
-                    throw new Error(
-                        "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
-                    );
-                }
-                const address = await new Promise<string>((resolve, reject) => {
-                    kit
-                        .openModal({
-                            onWalletSelected: async (selectedOption: { id: string }) => {
-                                try {
-                                    kit.setWallet(selectedOption.id);
-                                    const { address } = await kit.getAddress();
-                                    resolve(address);
-                                } catch (err) {
-                                    reject(err);
-                                }
-                            },
-                        })
-                        .catch(reject);
-                });
-                if (stellarAddress && address !== stellarAddress) {
-                    throw new Error(
-                        `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
-                    );
-                }
-                const submit = await submitBurnRedeemSingleClient({
-                    userAddress: stellarAddress,
-                    amountAcbu: burnAmount,
-                    currency: selectedFiatCurrency,
-                    external: { kit, address },
-                });
-                burnTxHash = submit.transactionHash;
-            }
-            const res = await fiatApi.postOffRamp(
-                burnAmount,
-                selectedFiatCurrency,
-                burnTxHash,
-                opts,
-            );
-            setTxId(res.transaction_id || res.transactionId || null);
-            setStep("success");
-        } catch (e) {
-            setBurnError(e instanceof Error ? e.message : "Burn failed");
-        } finally {
-            setExecuting(false);
+        trust = await ensureAcbuTrustlineClient({ userSecret: secret });
+      } else {
+        if (!kit) {
+          throw new Error(
+            "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+          );
         }
-    };
-    const handleExecute = async () => {
-        if (activeTab === "mint") {
-            await handleExecuteMint();
-        } else {
-            await handleExecuteBurn();
+        accountId = await new Promise<string>((resolve, reject) => {
+          kit
+            .openModal({
+              onWalletSelected: async (selectedOption: { id: string }) => {
+                try {
+                  kit.setWallet(selectedOption.id);
+                  const { address } = await kit.getAddress();
+                  resolve(address);
+                } catch (err) {
+                  reject(err);
+                }
+              },
+            })
+            .catch(reject);
+        });
+
+        if (stellarAddress && accountId !== stellarAddress) {
+          throw new Error(
+            `Connected wallet (${accountId.slice(0, 6)}…${accountId.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+          );
         }
-    };
-    const resetForm = () => {
-        setStep("input");
-        setFiatAmount("");
-        setBurnAmount("");
-        setBurnError("");
-        setTxId(null);
-        setMintAcbuReceived(null);
-    };
+
+        trust = await ensureAcbuTrustlineClient({
+          external: { kit, address: accountId },
+        });
+      }
+
+      console.info("[mint] ACBU trustline ensured", {
+        account: accountId,
+        added: trust?.added,
+        visible: trust?.visible,
+        txHash: trust?.txHash,
+      });
+      if (trust?.added && !trust.visible) {
+        throw new Error(
+          "ACBU trustline was submitted but hasn't appeared on Horizon yet. Please retry the mint in a few seconds.",
+        );
+      }
+
+      const res = await fiatApi.postOnRamp(
+        fiatAmount,
+        selectedFiatCurrency,
+        opts,
+      );
+      setTxId(
+        res.blockchain_tx_hash ||
+          res.transaction_id ||
+          res.transactionId ||
+          null,
+      );
+      const acbu =
+        res.acbuAmount ??
+        (typeof res.acbu_amount === "number" ? res.acbu_amount : undefined);
+      setMintAcbuReceived(
+        typeof acbu === "number" && Number.isFinite(acbu) ? acbu : null,
+      );
+      refreshBalance();
+      setStep("success");
+    } catch (e) {
+      setMintError(e instanceof Error ? e.message : "Mint failed");
+    } finally {
+      setExecuting(false);
+    }
+  };
+  
+  const handleExecuteBurn = async () => {
+    if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency)
+      return;
+    setBurnError("");
+    setExecuting(true);
+    try {
+      if (!userId) {
+        throw new Error("Not signed in — refresh and try again.");
+      }
+      if (!stellarAddress) {
+        throw new Error("No linked Stellar wallet address.");
+      }
+      const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+      let burnTxHash: string;
+      if (secret) {
+        const localPubKey = Keypair.fromSecret(secret).publicKey();
+        if (stellarAddress && localPubKey !== stellarAddress) {
+          throw new Error(
+            `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+          );
+        }
+        const submit = await submitBurnRedeemSingleClient({
+          userAddress: stellarAddress,
+          amountAcbu: burnAmount,
+          currency: selectedFiatCurrency,
+          userSecret: secret,
+        });
+        burnTxHash = submit.transactionHash;
+      } else {
+        if (!kit) {
+          throw new Error(
+            "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+          );
+        }
+        const address = await new Promise<string>((resolve, reject) => {
+          kit
+            .openModal({
+              onWalletSelected: async (selectedOption: { id: string }) => {
+                try {
+                  kit.setWallet(selectedOption.id);
+                  const { address } = await kit.getAddress();
+                  resolve(address);
+                } catch (err) {
+                  reject(err);
+                }
+              },
+            })
+            .catch(reject);
+        });
+        if (stellarAddress && address !== stellarAddress) {
+          throw new Error(
+            `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+          );
+        }
+        const submit = await submitBurnRedeemSingleClient({
+          userAddress: stellarAddress,
+          amountAcbu: burnAmount,
+          currency: selectedFiatCurrency,
+          external: { kit, address },
+        });
+        burnTxHash = submit.transactionHash;
+      }
+      const res = await fiatApi.postOffRamp(
+        burnAmount,
+        selectedFiatCurrency,
+        burnTxHash,
+        opts,
+      );
+      setTxId(res.transaction_id || res.transactionId || null);
+      setStep("success");
+    } catch (e) {
+      setBurnError(e instanceof Error ? e.message : "Burn failed");
+    } finally {
+      setExecuting(false);
+    }
+  };
+  
+  const handleExecute = async () => {
+    if (activeTab === "mint") {
+      await handleExecuteMint();
+    } else {
+      await handleExecuteBurn();
+    }
+  };
+  
+  const resetForm = () => {
+    setStep("input");
+    setFiatAmount("");
+    setBurnAmount("");
+    setBurnError("");
+    setTxId(null);
+    setMintAcbuReceived(null);
+  };
 
   return (
     <>
@@ -336,242 +330,257 @@ export default function MintPage() {
         </div>
       </header>
 
-            <PageContainer>
-                <div className="mb-6">
-                    <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
-                        <p className="text-sm font-medium opacity-90">
-                            ACBU Balance
-                        </p>
-                        <p className="text-3xl font-bold mb-2">
-                            {balanceLoading ? '...' : `ACBU ${formatAmount(balance)}`}
-                        </p>
-                        <p className="text-xs opacity-75">
-                            {balanceSource === "stellar"
-                                ? "ACBU balance from Stellar Horizon."
-                                : "Link a wallet to see your on-chain ACBU balance."}
-                        </p>
-                    </Card>
-                </div>
+      <PageContainer>
+        <div className="mb-6">
+          <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
+            <p className="text-sm font-medium opacity-90">
+              ACBU Balance
+            </p>
+            <p className="text-3xl font-bold mb-2">
+              {balanceLoading ? '...' : `ACBU ${formatAmount(balance)}`}
+            </p>
+            <p className="text-xs opacity-75">
+              {balanceSource === "stellar"
+                ? "ACBU balance from Stellar Horizon."
+                : "Link a wallet to see your on-chain ACBU balance."}
+            </p>
+          </Card>
+        </div>
 
-                <Tabs
-                    defaultValue="mint"
-                    className="w-full"
-                    onValueChange={(v) =>
-                        setActiveTab(v as "mint" | "burn" | "rates")
-                    }
+        <Tabs
+          defaultValue="mint"
+          className="w-full"
+          onValueChange={(v) =>
+            setActiveTab(v as "mint" | "burn" | "rates")
+          }
+        >
+          <TabsList className="grid w-full grid-cols-3 gap-2 bg-transparent border-b border-border rounded-none">
+            <TabsTrigger
+              value="mint"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
+              Mint
+            </TabsTrigger>
+            <TabsTrigger
+              value="burn"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
+              Burn
+            </TabsTrigger>
+            <TabsTrigger
+              value="rates"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
+              Rates
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="mint" className="py-6 space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Mint ACBU via custodial on-ramp (demo basket fiat held on the minting
+                contract).
+              </p>
+              {mintError && (
+                <p className="text-sm text-destructive mb-2">
+                  {mintError}
+                </p>
+              )}
+              <div>
+                <label
+                  htmlFor="fiat-account-select"
+                  className="text-sm font-medium text-foreground mb-2 block"
                 >
-                    <TabsList className="grid w-full grid-cols-3 gap-2 bg-transparent border-b border-border rounded-none">
-                        <TabsTrigger
-                            value="mint"
-                            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-                        >
-                            Mint
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="burn"
-                            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-                        >
-                            Burn
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="rates"
-                            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-                        >
-                            Rates
-                        </TabsTrigger>
-                    </TabsList>
+                  Basket currency (demo fiat path)
+                </label>
+                <select
+                  id="fiat-account-select"
+                  name="fiat-account"
+                  value={selectedFiatCurrency}
+                  onChange={(e) => setSelectedFiatCurrency(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
+                  aria-describedby="fiat-account-hint"
+                >
+                  {fiatAccounts.length === 0 ? (
+                    <option value="" disabled>Loading currencies…</option>
+                  ) : (
+                    fiatAccounts.map(acc => (
+                      <option key={acc.id} value={acc.currency}>
+                        {acc.currency} — {acc.bank_name}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <p id="fiat-account-hint" className="text-xs text-muted-foreground mt-1">
+                  Select which fiat currency to use for minting
+                </p>
+              </div>
+              <div className="mt-4">
+                <label
+                  htmlFor="fiat-amount-input"
+                  className="text-sm font-medium text-foreground mb-2 block"
+                >
+                  Amount to Exchange
+                </label>
+                <div className="flex gap-2">
+                  <span className="flex items-center text-muted-foreground font-medium">
+                    {selectedFiatCurrency || "FIAT"}
+                  </span>
+                  <Input
+                    id="fiat-amount-input"
+                    name="fiat-amount"
+                    type="number"
+                    placeholder="0.00"
+                    min="0"
+                    step="any"
+                    value={fiatAmount}
+                    onChange={(e) => setFiatAmount(e.target.value)}
+                    className="border-border text-lg font-semibold"
+                    aria-describedby="fiat-amount-hint"
+                  />
+                </div>
+                <p id="fiat-amount-hint" className="text-xs text-muted-foreground mt-1">
+                  Enter the amount of fiat currency to exchange for ACBU
+                </p>
+              </div>
+              {estimatedMintAcbu != null && (
+                <Card className="border-border bg-muted/80 p-3 mt-3">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Estimated ACBU (from latest rates)
+                  </p>
+                  <p className="text-lg font-semibold text-foreground">
+                    ≈ {formatAmount(estimatedMintAcbu)} ACBU
+                  </p>
+                </Card>
+              )}
+              <Card className="border-border bg-muted p-3 mt-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Network Fee
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {MINT_NETWORK_FEE_TEXT}
+                  </span>
+                </div>
+              </Card>
+              <Button
+                onClick={handleMintConfirm}
+                disabled={
+                  !fiatAmount ||
+                  parseFloat(fiatAmount) <= 0 ||
+                  !selectedFiatCurrency
+                }
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
+                aria-label="Mint ACBU tokens"
+              >
+                <ArrowDown className="w-4 h-4 mr-2" aria-hidden="true" />
+                Mint ACBU
+              </Button>
+            </div>
+          </TabsContent>
 
-                    <TabsContent value="mint" className="py-6 space-y-4">
-                        <div>
-                            <p className="text-sm text-muted-foreground mb-3">
-                                Mint ACBU via custodial on-ramp (demo basket fiat held on the minting
-                                contract).
-                            </p>
-                            {mintError && (
-                                <p className="text-sm text-destructive mb-2">
-                                    {mintError}
-                                </p>
-                            )}
-                            <div>
-                                <label
-                                    htmlFor="fiat-account"
-                                    className="text-sm font-medium text-foreground mb-2 block"
-                                >
-                                    Basket currency (demo fiat path)
-                                </label>
-                                <select
-                                    id="fiat-account"
-                                    value={selectedFiatCurrency}
-                                    onChange={(e) => setSelectedFiatCurrency(e.target.value)}
-                                    className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
-                                >
-                                    {fiatAccounts.length === 0 ? (
-                                        <option value="" disabled>Loading currencies…</option>
-                                    ) : (
-                                        fiatAccounts.map(acc => (
-                                            <option key={acc.id} value={acc.currency}>
-                                                {acc.currency} — {acc.bank_name}
-                                            </option>
-                                        ))
-                                    )}
-                                </select>
-                            </div>
-                            <div className="mt-4">
-                                <label
-                                    htmlFor="fiat-amount"
-                                    className="text-sm font-medium text-foreground mb-2 block"
-                                >
-                                    Amount to Exchange
-                                </label>
-                                <div className="flex gap-2">
-                                    <span className="flex items-center text-muted-foreground font-medium">
-                                        {selectedFiatCurrency || "FIAT"}
-                                    </span>
-                                    <Input
-                                        id="fiat-amount"
-                                        type="number"
-                                        placeholder="0.00"
-                                        min="0"
-                                        step="any"
-                                        value={fiatAmount}
-                                        onChange={(e) =>
-                                            setFiatAmount(e.target.value)
-                                        }
-                                        className="border-border text-lg font-semibold"
-                                    />
-                                </div>
-                            </div>
-                            {estimatedMintAcbu != null && (
-                                <Card className="border-border bg-muted/80 p-3 mt-3">
-                                    <p className="text-xs text-muted-foreground mb-1">
-                                        Estimated ACBU (from latest rates)
-                                    </p>
-                                    <p className="text-lg font-semibold text-foreground">
-                                        ≈ {formatAmount(estimatedMintAcbu)} ACBU
-                                    </p>
-                                </Card>
-                            )}
-                            <Card className="border-border bg-muted p-3 mt-4">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">
-                                        Network Fee
-                                    </span>
-                                    <span className="font-medium text-foreground">
-                                        {MINT_NETWORK_FEE_TEXT}
-                                    </span>
-                                </div>
-                            </Card>
-                            <Button
-                                onClick={handleMintConfirm}
-                                disabled={
-                                    !fiatAmount ||
-                                    parseFloat(fiatAmount) <= 0 ||
-                                    !selectedFiatCurrency
-                                }
-                                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
-                            >
-                                <ArrowDown className="w-4 h-4 mr-2" />
-                                Mint ACBU
-                            </Button>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="burn" className="py-6 space-y-4">
-                        <div>
-                            <p className="text-sm text-muted-foreground mb-3">
-                                Burn ACBU on-chain for the selected basket slice (no simulated bank
-                                credit).
-                            </p>
-                            {burnError && (
-                                <p className="text-sm text-destructive mb-2">
-                                    {burnError}
-                                </p>
-                            )}
-                            <div>
-                                <label
-                                    htmlFor="burn-fiat-account"
-                                    className="text-sm font-medium text-foreground mb-2 block"
-                                >
-                                    Basket currency (burn slice)
-                                </label>
-                                <select
-                                    id="burn-fiat-account"
-                                    value={selectedFiatCurrency}
-                                    onChange={(e) => setSelectedFiatCurrency(e.target.value)}
-                                    className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
-                                >
-                                    {fiatAccounts.length === 0 ? (
-                                        <option value="" disabled>Loading currencies…</option>
-                                    ) : (
-                                        fiatAccounts.map(acc => (
-                                            <option key={acc.id} value={acc.currency}>
-                                                {acc.currency} — {acc.bank_name}
-                                            </option>
-                                        ))
-                                    )}
-                                </select>
-                            </div>
-                            <div className="mt-4">
-                                <label
-                                    htmlFor="burn-amount"
-                                    className="text-sm font-medium text-foreground mb-2 block"
-                                >
-                                    Amount to Burn
-                                </label>
-                                <div className="flex gap-2">
-                                    <span className="flex items-center text-muted-foreground font-medium">
-                                        ACBU
-                                    </span>
-                                    <Input
-                                        id="burn-amount"
-                                        type="number"
-                                        placeholder="0.00"
-                                        value={burnAmount}
-                                        onChange={(e) =>
-                                            setBurnAmount(e.target.value)
-                                        }
-                                        className="border-border text-lg font-semibold"
-                                    />
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-2">
-                                    Available: ACBU{" "}
-                                    {balanceLoading ? '...' : formatAmount(balance)}
-                                </p>
-                            </div>
-                            <Card className="border-border bg-muted p-3 mt-4">
-                                <div className="flex justify-between text-sm mb-2">
-                                    <span className="text-muted-foreground">
-                                        You'll receive
-                                    </span>
-                                    <span className="font-medium text-foreground">
-                                        {burnAmount && selectedFiatCurrency
-                                            ? `~ ${selectedFiatCurrency} (based on current rate)`
-                                            : "—"}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">
-                                        Processing Fee
-                                    </span>
-                                    <span className="font-medium text-foreground">
-                                        {BURN_PROCESSING_FEE_TEXT}
-                                    </span>
-                                </div>
-                            </Card>
-                            <Button
-                                onClick={handleBurnConfirm}
-                                disabled={
-                                    !burnAmount ||
-                                    parseFloat(burnAmount) <= 0 ||
-                                    !selectedFiatCurrency
-                                }
-                                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
-                            >
-                                <ArrowUp className="w-4 h-4 mr-2" />
-                                Burn & Redeem
-                            </Button>
-                        </div>
-                    </TabsContent>
+          <TabsContent value="burn" className="py-6 space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Burn ACBU on-chain for the selected basket slice (no simulated bank
+                credit).
+              </p>
+              {burnError && (
+                <p className="text-sm text-destructive mb-2">
+                  {burnError}
+                </p>
+              )}
+              <div>
+                <label
+                  htmlFor="burn-fiat-account-select"
+                  className="text-sm font-medium text-foreground mb-2 block"
+                >
+                  Basket currency (burn slice)
+                </label>
+                <select
+                  id="burn-fiat-account-select"
+                  name="burn-fiat-account"
+                  value={selectedFiatCurrency}
+                  onChange={(e) => setSelectedFiatCurrency(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
+                  aria-describedby="burn-fiat-account-hint"
+                >
+                  {fiatAccounts.length === 0 ? (
+                    <option value="" disabled>Loading currencies…</option>
+                  ) : (
+                    fiatAccounts.map(acc => (
+                      <option key={acc.id} value={acc.currency}>
+                        {acc.currency} — {acc.bank_name}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <p id="burn-fiat-account-hint" className="text-xs text-muted-foreground mt-1">
+                  Select which fiat currency to receive when burning
+                </p>
+              </div>
+              <div className="mt-4">
+                <label
+                  htmlFor="burn-amount-input"
+                  className="text-sm font-medium text-foreground mb-2 block"
+                >
+                  Amount to Burn
+                </label>
+                <div className="flex gap-2">
+                  <span className="flex items-center text-muted-foreground font-medium">
+                    ACBU
+                  </span>
+                  <Input
+                    id="burn-amount-input"
+                    name="burn-amount"
+                    type="number"
+                    placeholder="0.00"
+                    value={burnAmount}
+                    onChange={(e) => setBurnAmount(e.target.value)}
+                    className="border-border text-lg font-semibold"
+                    aria-describedby="burn-amount-hint"
+                  />
+                </div>
+                <p id="burn-amount-hint" className="text-xs text-muted-foreground mt-2">
+                  Available: ACBU{" "}
+                  {balanceLoading ? '...' : formatAmount(balance)}
+                </p>
+              </div>
+              <Card className="border-border bg-muted p-3 mt-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-muted-foreground">
+                    You'll receive
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {burnAmount && selectedFiatCurrency
+                      ? `~ ${selectedFiatCurrency} (based on current rate)`
+                      : "—"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Processing Fee
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {BURN_PROCESSING_FEE_TEXT}
+                  </span>
+                </div>
+              </Card>
+              <Button
+                onClick={handleBurnConfirm}
+                disabled={
+                  !burnAmount ||
+                  parseFloat(burnAmount) <= 0 ||
+                  !selectedFiatCurrency
+                }
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
+                aria-label="Burn ACBU tokens and redeem for fiat"
+              >
+                <ArrowUp className="w-4 h-4 mr-2" aria-hidden="true" />
+                Burn & Redeem
+              </Button>
+            </div>
+          </TabsContent>
 
           <TabsContent value="rates" className="py-6 space-y-4">
             <div className="space-y-3">
@@ -587,98 +596,115 @@ export default function MintPage() {
                   </Card>
                 ))
               ) : (
-                <Card className="border-border p-4"><p className="text-muted-foreground">No rates available. Use the API to load rates.</p></Card>
+                <Card className="border-border p-4">
+                  <p className="text-muted-foreground">No rates available. Use the API to load rates.</p>
+                </Card>
               )}
-              <Card className="border-border bg-muted p-4 mt-6"><p className="text-sm font-semibold text-foreground mb-2">How it works</p><ul className="text-xs text-muted-foreground space-y-2"><li>• Mint converts local fiat to native ACBU</li><li>• Burn redeems ACBU for fiat</li><li>• Rates from backend</li></ul></Card>
+              <Card className="border-border bg-muted p-4 mt-6">
+                <h2 className="text-sm font-semibold text-foreground mb-2">How it works</h2>
+                <ul className="text-xs text-muted-foreground space-y-2">
+                  <li>• Mint converts local fiat to native ACBU</li>
+                  <li>• Burn redeems ACBU for fiat</li>
+                  <li>• Rates from backend</li>
+                </ul>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
       </PageContainer>
 
-            <AlertDialog open={step === "confirm"}>
-                <AlertDialogContent className="max-w-md border-border">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            {activeTab === "mint"
-                                ? "Confirm Mint"
-                                : "Confirm Burn"}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {activeTab === "mint" &&
-                                `Mint ACBU by exchanging ${selectedFiatCurrency} ${formatAmount(fiatAmount)}${
-                                    estimatedMintAcbu != null
-                                        ? ` (≈ ${formatAmount(estimatedMintAcbu)} ACBU at current rates)`
-                                        : ""
-                                }`}
-                            {activeTab === "burn" &&
-                                `Burn ACBU ${formatAmount(burnAmount)} and withdraw to bank account`}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="py-4 space-y-2">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">
-                                Amount:
-                            </span>
-                            <span className="font-medium text-foreground">
-                                {activeTab === "mint"
-                                    ? `${selectedFiatCurrency} ${fiatAmount}`
-                                    : `ACBU ${formatAmount(burnAmount)}`}
-                            </span>
-                        </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <AlertDialogCancel
-                            onClick={() => setStep("input")}
-                            disabled={executing}
-                        >
-                            Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleExecute}
-                            className="bg-primary text-primary-foreground hover:bg-primary/90"
-                            disabled={executing}
-                        >
-                            {executing ? "Processing..." : "Confirm"}
-                        </AlertDialogAction>
-                    </div>
-                </AlertDialogContent>
-            </AlertDialog>
+      <AlertDialog open={step === "confirm"}>
+        <AlertDialogContent 
+          className="max-w-md border-border"
+          aria-labelledby="confirm-dialog-title"
+          aria-describedby="confirm-dialog-description"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle id="confirm-dialog-title">
+              {activeTab === "mint"
+                ? "Confirm Mint"
+                : "Confirm Burn"}
+            </AlertDialogTitle>
+            <AlertDialogDescription id="confirm-dialog-description">
+              {activeTab === "mint" &&
+                `Mint ACBU by exchanging ${selectedFiatCurrency} ${formatAmount(fiatAmount)}${
+                  estimatedMintAcbu != null
+                    ? ` (≈ ${formatAmount(estimatedMintAcbu)} ACBU at current rates)`
+                    : ""
+                }`}
+              {activeTab === "burn" &&
+                `Burn ACBU ${formatAmount(burnAmount)} and withdraw to bank account`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                Amount:
+              </span>
+              <span className="font-medium text-foreground">
+                {activeTab === "mint"
+                  ? `${selectedFiatCurrency} ${fiatAmount}`
+                  : `ACBU ${formatAmount(burnAmount)}`}
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <AlertDialogCancel
+              onClick={() => setStep("input")}
+              disabled={executing}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleExecute}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={executing}
+            >
+              {executing ? "Processing..." : "Confirm"}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
 
-            <AlertDialog open={step === "success"}>
-                <AlertDialogContent className="max-w-md border-border">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Operation Complete</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Your {activeTab} operation has been submitted
-                            successfully.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="py-4 space-y-2">
-                        <p className="text-sm text-muted-foreground">
-                            Transaction ID: {txId ?? "—"}
-                        </p>
-                        {activeTab === "mint" && mintAcbuReceived != null && (
-                            <p className="text-sm font-medium text-foreground">
-                                ACBU credited (app ledger):{" "}
-                                {formatAmount(mintAcbuReceived)} ACBU
-                            </p>
-                        )}
-                        {activeTab === "mint" && (
-                            <p className="text-xs text-muted-foreground">
-                                If the Stellar mint contract errors, tokens are still
-                                recorded in the app; your balance may show
-                                &quot;app ledger&quot; until on-chain mint works.
-                            </p>
-                        )}
-                    </div>
-                    <AlertDialogAction
-                        onClick={resetForm}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90"
-                    >
-                        Done
-                    </AlertDialogAction>
-                </AlertDialogContent>
-            </AlertDialog>
-        </>
-    );
+      <AlertDialog open={step === "success"}>
+        <AlertDialogContent 
+          className="max-w-md border-border"
+          aria-labelledby="success-dialog-title"
+          aria-describedby="success-dialog-description"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle id="success-dialog-title">Operation Complete</AlertDialogTitle>
+            <AlertDialogDescription id="success-dialog-description">
+              Your {activeTab} operation has been submitted
+              successfully.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4 space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Transaction ID: {txId ?? "—"}
+            </p>
+            {activeTab === "mint" && mintAcbuReceived != null && (
+              <p className="text-sm font-medium text-foreground">
+                ACBU credited (app ledger):{" "}
+                {formatAmount(mintAcbuReceived)} ACBU
+              </p>
+            )}
+            {activeTab === "mint" && (
+              <p className="text-xs text-muted-foreground">
+                If the Stellar mint contract errors, tokens are still
+                recorded in the app; your balance may show
+                &quot;app ledger&quot; until on-chain mint works.
+              </p>
+            )}
+          </div>
+          <AlertDialogAction
+            onClick={resetForm}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            Done
+          </AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
 }
