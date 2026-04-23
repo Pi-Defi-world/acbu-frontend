@@ -56,7 +56,6 @@ function getCsrfToken(): string | undefined {
 }
 
 export interface RequestOptions {
-  token?: string | null;
   signal?: AbortSignal;
 }
 

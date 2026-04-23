@@ -24,9 +24,9 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function getStoredAuth(): AuthState {
+function getStoredAuth(): { userId: string | null; stellarAddress: string | null } {
   if (typeof window === 'undefined') {
-    return { userId: null, stellarAddress: null, isAuthenticated: false, isHydrated: false };
+    return { userId: null, stellarAddress: null };
   }
   const userId = sessionStorage.getItem(USER_ID_KEY);
   const stellarAddress = sessionStorage.getItem(STELLAR_ADDRESS_KEY);
@@ -34,8 +34,6 @@ function getStoredAuth(): AuthState {
   return {
     userId,
     stellarAddress,
-    isAuthenticated: !!userId,
-    isHydrated: true,
   };
 }
 
@@ -47,9 +45,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isHydrated: false,
   });
 
+  // Validate session on mount by checking if the httpOnly cookie is still valid
   useEffect(() => {
-    const auth = getStoredAuth();
-    setState(auth);
+    const validateSession = async () => {
+      const storedAuth = getStoredAuth();
+      
+      // If no userId in storage, definitely not authenticated
+      if (!storedAuth.userId) {
+        setState({ 
+          userId: null,
+          stellarAddress: null,
+          isAuthenticated: false,
+          isHydrated: true 
+        });
+        return;
+      }
+
+      // Validate the httpOnly cookie by making an API call
+      try {
+        const { getMe } = await import('@/lib/api/user');
+        await getMe(); // If this succeeds, the cookie is valid
+        
+        // Cookie is valid, mark as authenticated
+        setState({
+          userId: storedAuth.userId,
+          stellarAddress: storedAuth.stellarAddress,
+          isAuthenticated: true,
+          isHydrated: true,
+        });
+      } catch (error) {
+        // Cookie is invalid or expired, clear stored auth
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem(USER_ID_KEY);
+          sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+        }
+        clearPasscode();
+        setState({
+          userId: null,
+          stellarAddress: null,
+          isAuthenticated: false,
+          isHydrated: true,
+        });
+      }
+    };
+
+    validateSession();
   }, []);
 
   const setAuth = useCallback((userId: string | null, stellarAddress: string | null = null) => {

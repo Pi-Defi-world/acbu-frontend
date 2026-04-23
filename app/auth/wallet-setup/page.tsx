@@ -10,8 +10,9 @@ import { PageContainer } from "@/components/layout/page-container";
 import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
-import { storeWalletSecretLocalPlaintext } from "@/lib/wallet-storage";
-import { AlertCircle, CheckCircle, ChevronLeft } from "lucide-react";
+import { storeWalletSecret } from "@/lib/wallet-storage";
+import { getPasscode } from "@/lib/passcode-manager";
+import { AlertCircle, CheckCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 
 /**
@@ -57,11 +58,16 @@ export default function WalletSetupPage() {
   /**
    * Sync wallet to backend: 
    * 1. Put wallet address to backend
-   * 2. Store secret locally
+   * 2. Store secret encrypted with passcode
    * 3. Call postWalletConfirm to complete activation
    */
   const syncWalletToBackend = async (secret: string): Promise<void> => {
     if (!userId) throw new Error("Not logged in");
+    
+    const passcode = getPasscode();
+    if (!passcode) {
+      throw new Error("Passcode not available. Please log in again to set up your wallet.");
+    }
     
     const kp = Keypair.fromSecret(secret);
     const publicKey = kp.publicKey();
@@ -74,8 +80,8 @@ export default function WalletSetupPage() {
       );
     }
 
-    // Step 2: Store secret locally
-    await storeWalletSecretLocalPlaintext(userId, secret, publicKey);
+    // Step 2: Store secret encrypted with passcode
+    await storeWalletSecret(userId, secret, passcode);
 
     // Step 3: Confirm wallet activation on backend
     try {
@@ -285,6 +291,14 @@ export default function WalletSetupPage() {
                 <form onSubmit={handleGenerateConfirm} className="space-y-4">
                   <div>
                     <h2 className="text-lg font-semibold mb-2">Your New Wallet</h2>
+                    
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-3">
+                      <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-blue-800 dark:text-blue-300">
+                        Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                      </p>
+                    </div>
+
                     <p className="text-sm text-muted-foreground">
                       Please save this secret key somewhere safe. It is required to
                       recover your wallet if you switch devices.
@@ -305,9 +319,17 @@ export default function WalletSetupPage() {
                 <form onSubmit={handleImportSeed} className="space-y-4">
                   <div>
                     <h2 className="text-lg font-semibold mb-2">Import Seed</h2>
+                    
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-3">
+                      <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-blue-800 dark:text-blue-300">
+                        Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                      </p>
+                    </div>
+
                     <p className="text-sm text-muted-foreground">
                       Enter your Stellar secret key (starts with 'S'). It will be stored
-                      securely on this device.
+                      encrypted on this device.
                     </p>
                   </div>
 

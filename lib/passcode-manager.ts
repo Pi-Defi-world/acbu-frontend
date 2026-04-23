@@ -12,7 +12,8 @@ let inMemoryPasscode: string | null = null;
 
 /**
  * Store passcode in memory for the current session.
- * This is more secure than sessionStorage as it's not accessible via XSS.
+ * This reduces XSS attack surface by avoiding persistent storage,
+ * though active XSS can still access it while in memory.
  */
 export function setPasscode(passcode: string): void {
   inMemoryPasscode = passcode;
