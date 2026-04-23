@@ -80,7 +80,6 @@ export default function SendPage() {
   const [transfers, setTransfers] = useState<TransferItem[]>([]);
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingTransfers, setLoadingTransfers] = useState(true);
-  const [loadingContacts, setLoadingContacts] = useState(true);
   const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -98,7 +97,7 @@ export default function SendPage() {
     userApi.getContacts(opts).then((data) => {
       setContacts(data.contacts ?? []);
       setLoadError("");
-    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
+    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts'));
   }, [opts]);
 
   useEffect(() => {
