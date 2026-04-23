@@ -73,19 +73,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isAuthenticated: true,
           isHydrated: true,
         });
-      } catch {
-        // Cookie is invalid or expired, clear stored auth
-        if (typeof window !== 'undefined') {
-          sessionStorage.removeItem(USER_ID_KEY);
-          sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+      } catch (error) {
+        const status = (error as { status?: number })?.status;
+        
+        if (status === 401) {
+          // Cookie is invalid or expired - clear stored auth
+          // The onAuthError handler will also be triggered
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem(USER_ID_KEY);
+            sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+          }
+          clearPasscode();
+          setState({
+            userId: null,
+            stellarAddress: null,
+            isAuthenticated: false,
+            isHydrated: true,
+          });
+        } else {
+          // Network error or other transient failure
+          // Keep stored data but mark as not authenticated until retry succeeds
+          setState({
+            userId: storedAuth.userId,
+            stellarAddress: storedAuth.stellarAddress,
+            isAuthenticated: false,
+            isHydrated: true,
+          });
         }
-        clearPasscode();
-        setState({
-          userId: null,
-          stellarAddress: null,
-          isAuthenticated: false,
-          isHydrated: true,
-        });
       }
     };
 
