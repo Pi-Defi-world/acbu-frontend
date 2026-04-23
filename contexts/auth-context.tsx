@@ -3,6 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
 import * as authApi from '@/lib/api/auth';
 import { onAuthError, setToken } from '@/lib/api/client';
+import { logger } from '@/lib/logger';
 
 const USER_ID_KEY = 'acbu_user_id';
 const API_KEY_KEY = 'acbu_api_key';
@@ -103,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuth(state.apiKey, state.userId, balance.stellar_address);
       }
     } catch (e) {
-      console.error('Failed to refresh stellar address', e);
+      logger.error('Failed to refresh stellar address', e);
     }
   }, [state.isAuthenticated, state.apiKey, state.userId, setAuth]);
 

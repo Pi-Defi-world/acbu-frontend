@@ -10,6 +10,7 @@ import { ArrowRight, Briefcase, Users, PiggyBank, CreditCard, Settings, Zap } fr
 import { useApiOpts } from '@/hooks/use-api';
 import * as businessApi from '@/lib/api/business';
 import type { BusinessStatsResponse } from '@/lib/api/business';
+import { logger } from '@/lib/logger';
 
 const businessServices = [
   { id: 'sme', title: 'SME Services', description: 'Business accounts, transfers & statements', icon: Briefcase, badge: 'Pro', href: '/sme' },
@@ -37,7 +38,7 @@ export default function BusinessPage() {
         setStats(data);
       } catch (err) {
         // Fallback: show loading state instead of error UI
-        console.error('Business stats error:', err);
+        logger.error('Business stats error:', err);
       } finally {
         setLoading(false);
       }
