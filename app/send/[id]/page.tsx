@@ -112,6 +112,7 @@ export default function TransferDetailPage() {
   const createdAt = (data.created_at as string) ?? "";
   const completedAt = (data.completed_at as string) ?? "";
   const txHash = (data.blockchain_tx_hash as string) ?? "";
+  const note = (data.note as string) ?? "";
   const localCurrency = (data.local_currency as string) ?? "";
   const localAmount = (data.local_amount as string) ?? "";
   const amountAcbu = (data.amount_acbu as string) ?? "";
@@ -153,6 +154,12 @@ export default function TransferDetailPage() {
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Completed</span>
               <span>{formatDate(completedAt)}</span>
+            </div>
+          )}
+          {note && (
+            <div className="pt-2 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-1">Note</p>
+              <p className="text-sm text-foreground break-words">{note}</p>
             </div>
           )}
           {txHash && (
