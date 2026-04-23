@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2 } from 'lucide-react';
+import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useBalance } from '@/hooks/use-balance';
 import { useApiOpts } from '@/hooks/use-api';
@@ -14,7 +14,16 @@ import type { UserMe } from '@/types/api';
 import Link from 'next/link';
 
 const menuItems = [
-  { section: 'Account', items: [{ title: 'Profile', icon: User, href: '/me/profile' }, { title: 'Settings', icon: Settings, href: '/me/settings' }, { title: 'Wallet', icon: Eye, href: '/wallet' }, { title: 'Simulated Bank', icon: Building2, href: '/fiat' }] },
+  { 
+    section: 'Account', 
+    items: [
+      { title: 'Profile', icon: User, href: '/me/profile' }, 
+      { title: 'Settings', icon: Settings, href: '/me/settings' }, 
+      { title: 'Two-Factor Auth', icon: Shield, href: '/me/settings/security' }, 
+      { title: 'Wallet', icon: Eye, href: '/wallet' }, 
+      { title: 'Simulated Bank', icon: Building2, href: '/fiat' }
+    ] 
+  },
   { section: 'Support', items: [{ title: 'Activity History', icon: Clock, href: '/activity' }] },
 ];
 
