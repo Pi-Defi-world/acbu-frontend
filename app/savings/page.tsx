@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
+import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
@@ -193,7 +194,7 @@ export default function SavingsPage() {
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-3xl font-bold text-foreground mb-1">
-              {positionsLoading ? "—" : `ACBU ${formatAmount(positionsBalance)}`}
+              {positionsLoading ? <BalanceSkeleton variant="compact" /> : `ACBU ${formatAmount(positionsBalance)}`}
             </p>
             <div className="flex gap-2 mt-3">
               <Link href="/savings/deposit">
@@ -213,9 +214,9 @@ export default function SavingsPage() {
               </h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
-            {/* AFTER */}
+            {/* Total Savings */}
             <p className="text-3xl font-bold text-foreground mb-1">
-              {positionsLoading ? "—" : `ACBU ${formatAmount(totalSavings)}`}
+              {positionsLoading ? <BalanceSkeleton variant="compact" /> : `ACBU ${formatAmount(totalSavings)}`}
             </p>
             <p className="text-xs text-muted-foreground mb-3">
               Earning 8% APY interest
