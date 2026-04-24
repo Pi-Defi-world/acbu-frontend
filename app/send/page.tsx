@@ -125,7 +125,7 @@ export default function SendPage() {
   useEffect(() => {
     loadTransfers();
     loadContacts();
-  }, [loadTransfers, loadContacts, opts.token]);
+  }, [loadTransfers, loadContacts]);
 
   const getToValue = () =>
     useContact && selectedContact
