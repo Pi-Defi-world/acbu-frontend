@@ -19,7 +19,7 @@ export default function RatesPage() {
   const formatRate = (rate: number | undefined): string => {
     if (rate == null) return "—";
 
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(navigator.language || 'en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 6,
       useGrouping: true,

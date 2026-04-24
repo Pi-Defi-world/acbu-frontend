@@ -4,7 +4,7 @@
 
 // Auth
 export interface SigninResponse {
-  api_key?: string;  // Deprecated: now returned via httpOnly cookie only
+  api_key?: string; // Deprecated: now returned via httpOnly cookie only
   user_id: string;
   stellar_address?: string | null;
   wallet_created?: boolean;
@@ -82,6 +82,7 @@ export interface TransferItem {
   local_amount?: string | null;
   recipient_address: string | null;
   blockchain_tx_hash?: string;
+  note?: string;
   created_at: string;
   completed_at?: string;
 }
@@ -111,6 +112,7 @@ export interface TransactionDetail {
   usdc_amount?: string | null;
   local_amount?: string | null;
   currency?: string;
+  note?: string;
   created_at: string;
   completed_at?: string;
   blockchain_tx_hash?: string;
@@ -143,7 +145,7 @@ export interface TransactionsListResponse {
 export interface MintFromUsdcBody {
   usdc_amount: string;
   wallet_address: string;
-  currency_preference?: 'auto';
+  currency_preference?: "auto";
 }
 
 export interface MintResponse {
@@ -168,7 +170,7 @@ export interface OnRampRegisterResponse {
 
 // Burn
 export interface BurnRecipientAccount {
-  type?: 'bank' | 'mobile_money';
+  type?: "bank" | "mobile_money";
   account_number: string;
   bank_code: string;
   account_name: string;
@@ -217,6 +219,14 @@ export interface QuoteResponse {
   amount?: number;
   currency?: string;
   acbu_amount?: string;
+  fee?: string | number;
+  fee_amount?: string | number;
+  total_fee?: string | number;
+  network_fee?: string | number;
+  processing_fee?: string | number;
+  local_amount?: string | number;
+  receive_amount?: string | number;
+  payout_amount?: string | number;
   [key: string]: unknown;
 }
 
