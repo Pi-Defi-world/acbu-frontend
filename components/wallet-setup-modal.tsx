@@ -75,12 +75,15 @@ export function WalletSetupModal() {
    * fails, we don't end up with a local seed whose public key doesn't match
    * the server's record (which is what caused the mint to keep targeting the
    * wrong recipient and erroring with "trustline entry is missing").
+   * 
+   * After syncing, we call postWalletConfirm to complete the activation flow.
    */
   const syncWalletToBackend = async (secret: string): Promise<void> => {
     if (!userId) throw new Error("Not logged in");
     const kp = Keypair.fromSecret(secret);
     const publicKey = kp.publicKey();
 
+    // Step 1: Update wallet address on backend
     const result = await userApi.putWalletAddress(publicKey);
     if (!result?.ok || (result.stellar_address && result.stellar_address !== publicKey)) {
       throw new Error(
@@ -88,7 +91,16 @@ export function WalletSetupModal() {
       );
     }
 
+    // Step 2: Store secret locally
     await storeWalletSecretLocalPlaintext(userId, secret, publicKey);
+
+    // Step 3: Confirm wallet activation on backend
+    try {
+      await userApi.postWalletConfirm({ wallet_address: publicKey });
+    } catch (err) {
+      console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+      // Don't throw - the address is set, confirmation can retry later if needed
+    }
   };
 
   const handleGenerateConfirm = async (e: React.FormEvent) => {
@@ -145,7 +157,19 @@ export function WalletSetupModal() {
             kit.setWallet(selectedOption.id);
             const { address: pubKey } = await kit.getAddress();
 
-            await userApi.putWalletAddress(pubKey);
+            // Update wallet address on backend
+            const result = await userApi.putWalletAddress(pubKey);
+            if (!result?.ok || (result.stellar_address && result.stellar_address !== pubKey)) {
+              throw new Error("Backend did not accept the wallet address. Please retry.");
+            }
+
+            // Confirm wallet activation on backend
+            try {
+              await userApi.postWalletConfirm({ wallet_address: pubKey });
+            } catch (err) {
+              console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+            }
+
             handleFinish();
           } catch (e: unknown) {
             setError((e as Error).message || "Failed to connect wallet");
