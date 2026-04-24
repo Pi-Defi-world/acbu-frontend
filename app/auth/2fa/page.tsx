@@ -33,6 +33,7 @@ function TwoFactorForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [challengeToken, setChallengeToken] = useState('');
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -40,6 +41,7 @@ function TwoFactorForm() {
     if (storedToken) {
       setChallengeToken(storedToken);
     }
+    setChecked(true);
   }, []);
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -120,7 +122,7 @@ function TwoFactorForm() {
             </Button>
           </form>
 
-          {!challengeToken && (
+          {checked && !challengeToken && (
             <p className="mt-4 text-sm text-destructive">
               Missing challenge token.{" "}
               <Link href="/auth/signin" className="underline">
