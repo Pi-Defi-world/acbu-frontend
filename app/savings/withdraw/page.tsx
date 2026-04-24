@@ -29,8 +29,9 @@ export default function SavingsWithdrawPage() {
     const [confirmDifferentRecipient, setConfirmDifferentRecipient] = useState(false);
 
     const isRecipientChanged = recipient.trim() !== homeRecipient.trim();
+    const resolvedRecipientIdentifier = resolvedRecipient?.pay_uri || resolvedRecipient?.alias || '';
     const isRecipientResolved = Boolean(
-        resolvedRecipient?.resolved || resolvedRecipient?.pay_uri || resolvedRecipient?.alias,
+        resolvedRecipient?.resolved || resolvedRecipientIdentifier,
     );
 
     useEffect(() => {
@@ -76,7 +77,9 @@ export default function SavingsWithdrawPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const targetRecipient = recipient.trim();
+        const targetRecipient = isRecipientChanged
+            ? resolvedRecipientIdentifier || recipient.trim()
+            : homeRecipient.trim();
 
         if (!targetRecipient || !amount || parseFloat(amount) <= 0) return;
 
@@ -191,7 +194,7 @@ export default function SavingsWithdrawPage() {
                             )}
                             {isRecipientChanged && isRecipientResolved && (
                                 <p className="text-xs text-foreground mt-2">
-                                    Resolved recipient: {resolvedRecipient?.alias || resolvedRecipient?.pay_uri}
+                                    Resolved recipient: {resolvedRecipientIdentifier || recipient.trim()}
                                 </p>
                             )}
                         </div>
