@@ -32,7 +32,7 @@ import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
 import type { TransferItem, ContactItem } from "@/types/api";
-import { formatAmount } from "@/lib/utils";
+import { formatAcbu, formatAmount } from "@/lib/utils";
 import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import {
@@ -47,6 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 function formatDate(iso: string) {
   const d = new Date(iso);
   const today = new Date();
@@ -64,6 +65,7 @@ export default function SendPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
+  const { toast } = useToast();
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const [activeTab, setActiveTab] = useState("send");
   const [showSendDialog, setShowSendDialog] = useState(false);
@@ -81,25 +83,44 @@ export default function SendPage() {
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingTransfers, setLoadingTransfers] = useState(true);
   const [loadingContacts, setLoadingContacts] = useState(true);
+  const [transfersError, setTransfersError] = useState("");
+  const [contactsError, setContactsError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
-  const [loadError, setLoadError] = useState("");
 
   const loadTransfers = useCallback(() => {
-    setLoadError("");
+    setLoadingTransfers(true);
+    setTransfersError("");
     transfersApi.getTransfers(opts).then((data) => {
       setTransfers(data.transfers ?? []);
-      setLoadError("");
-    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load transfers')).finally(() => setLoadingTransfers(false));
-  }, [opts]);
+      setTransfersError("");
+    }).catch((e) => {
+      const message = e instanceof Error ? e.message : "Failed to load transfers";
+      setTransfersError(message);
+      toast({
+        title: "Could not load transfers",
+        description: message,
+        variant: "destructive",
+      });
+    }).finally(() => setLoadingTransfers(false));
+  }, [opts, toast]);
 
   const loadContacts = useCallback(() => {
-    setLoadError("");
+    setLoadingContacts(true);
+    setContactsError("");
     userApi.getContacts(opts).then((data) => {
       setContacts(data.contacts ?? []);
-      setLoadError("");
-    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
-  }, [opts]);
+      setContactsError("");
+    }).catch((e) => {
+      const message = e instanceof Error ? e.message : "Failed to load contacts";
+      setContactsError(message);
+      toast({
+        title: "Could not load contacts",
+        description: message,
+        variant: "destructive",
+      });
+    }).finally(() => setLoadingContacts(false));
+  }, [opts, toast]);
 
   useEffect(() => {
     loadTransfers();
@@ -242,10 +263,15 @@ const getStatusColor = (status: string) => {
                 </div>
             </header>
         <div className="px-4 py-4">
-          {loadError && (
+                  {(transfersError || contactsError) && (
             <div className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300">
               <AlertCircle className="h-5 w-5 shrink-0" />
-              <p className="font-medium">{loadError}</p>
+                      <div className="flex-1">
+                        <p className="font-medium">Some send data could not be loaded.</p>
+                        <p className="text-xs text-destructive/80">
+                          Retry the affected section to continue.
+                        </p>
+                      </div>
             </div>
           )}
 
@@ -270,6 +296,18 @@ const getStatusColor = (status: string) => {
               </h3>
               {loadingTransfers ? (
                 <SkeletonList count={2} itemHeight="h-14" />
+              ) : transfersError ? (
+                <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
+                  <p className="font-medium">{transfersError}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-3 border-destructive/30 text-destructive hover:bg-destructive/10"
+                    onClick={loadTransfers}
+                  >
+                    Retry transfers
+                  </Button>
+                </div>
               ) : transfers.length === 0 ? (
                 <div className="rounded-lg border border-border bg-card p-6 text-center">
                   <p className="text-sm text-muted-foreground">
@@ -294,7 +332,7 @@ const getStatusColor = (status: string) => {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-foreground">
-                          ACBU {formatAmount(t.amount_acbu)}
+                          ACBU {formatAcbu(t.amount_acbu)}
                         </p>
                         <Badge
                           variant="outline"
@@ -334,24 +372,40 @@ const getStatusColor = (status: string) => {
                   <TabsTrigger value="custom">New Address</TabsTrigger>
                 </TabsList>
                 <TabsContent value="contact" className="mt-3">
-                  <Select
-                    value={selectedContact?.id || ""}
-                    onValueChange={(id: string) => {
-                      const c = contacts.find((x: ContactItem) => x.id === id);
-                      if (c) setSelectedContact(c);
-                    }}
-                  >
-                    <SelectTrigger className="border-border">
-                      <SelectValue placeholder="Select a contact" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contacts.map((c: ContactItem) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.alias ?? c.pay_uri ?? c.id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {loadingContacts ? (
+                    <SkeletonList count={1} itemHeight="h-10" />
+                  ) : contactsError ? (
+                    <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+                      <p className="font-medium">{contactsError}</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-3 border-destructive/30 text-destructive hover:bg-destructive/10"
+                        onClick={loadContacts}
+                      >
+                        Retry contacts
+                      </Button>
+                    </div>
+                  ) : (
+                    <Select
+                      value={selectedContact?.id || ""}
+                      onValueChange={(id: string) => {
+                        const c = contacts.find((x: ContactItem) => x.id === id);
+                        if (c) setSelectedContact(c);
+                      }}
+                    >
+                      <SelectTrigger className="border-border">
+                        <SelectValue placeholder="Select a contact" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contacts.map((c: ContactItem) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.alias ?? c.pay_uri ?? c.id}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </TabsContent>
                 <TabsContent value="custom">
                   <Input
