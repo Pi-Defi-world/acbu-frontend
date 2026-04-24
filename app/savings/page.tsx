@@ -110,6 +110,10 @@ export default function SavingsPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
   const [showDepositDialog, setShowDepositDialog] = useState(false);
+  const [depositLoading, setDepositLoading] = useState(false);
+  const [depositError, setDepositError] = useState("");
+  const [depositStatus, setDepositStatus] = useState<'idle' | 'pending' | 'completed'>('idle');
+  const [depositTxHash, setDepositTxHash] = useState<string | null>(null);
   const [goals, setGoals] = useState<SavingsGoal[]>(initialGoals);
 
   const [showNewGoalDialog, setShowNewGoalDialog] = useState(false);
@@ -154,13 +158,52 @@ export default function SavingsPage() {
 
   const handleDeposit = (account: SavingsAccount) => {
     setSelectedAccount(account);
+    setDepositAmount("");
+    setDepositError("");
+    setDepositStatus('idle');
+    setDepositTxHash(null);
     setShowDepositDialog(true);
   };
 
-  const handleConfirmDeposit = () => {
-    if (depositAmount && parseFloat(depositAmount) > 0) {
-      setShowDepositDialog(false);
+  const handleConfirmDeposit = async () => {
+    if (!depositAmount || parseFloat(depositAmount) <= 0) return;
+    if (!apiUser) {
+      setDepositError('Unable to identify account for deposit');
+      return;
+    }
+
+    setDepositError("");
+    setDepositStatus('pending');
+    setDepositLoading(true);
+
+    try {
+      const result = await savingsApi.savingsDeposit(
+        {
+          user: apiUser,
+          amount: depositAmount,
+          term_seconds: 0,
+        },
+        opts,
+      );
+
+      const balance = typeof result.new_balance === 'number'
+        ? result.new_balance
+        : typeof result.new_balance === 'string'
+        ? parseFloat(result.new_balance)
+        : null;
+
+      if (balance !== null && !Number.isNaN(balance)) {
+        setPositionsBalance(balance);
+      }
+
+      setDepositTxHash(result.transaction_hash);
+      setDepositStatus('completed');
       setDepositAmount("");
+    } catch (e) {
+      setDepositError(e instanceof Error ? e.message : 'Deposit failed');
+      setDepositStatus('idle');
+    } finally {
+      setDepositLoading(false);
     }
   };
 
@@ -330,6 +373,21 @@ export default function SavingsPage() {
             <DialogDescription>Add funds to earn interest at {selectedAccount?.apy}% APY</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {depositError ? (
+              <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+                {depositError}
+              </div>
+            ) : null}
+            {depositStatus === 'pending' ? (
+              <div className="rounded-xl border border-border bg-muted p-3 text-sm text-foreground">
+                Deposit is being submitted...
+              </div>
+            ) : null}
+            {depositStatus === 'completed' && depositTxHash ? (
+              <div className="rounded-xl border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                Deposit completed successfully. Transaction hash: {depositTxHash}
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="deposit-amount" className="text-foreground">Amount to Deposit</Label>
               <div className="flex gap-2">
@@ -339,7 +397,9 @@ export default function SavingsPage() {
             </div>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setShowDepositDialog(false)} className="flex-1 border-border">Cancel</Button>
-              <Button onClick={handleConfirmDeposit} disabled={!depositAmount || parseFloat(depositAmount) <= 0} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">Confirm Deposit</Button>
+              <Button onClick={handleConfirmDeposit} disabled={depositLoading || !depositAmount || parseFloat(depositAmount) <= 0} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
+                {depositLoading ? 'Submitting...' : 'Confirm Deposit'}
+              </Button>
             </div>
           </div>
         </DialogContent>
