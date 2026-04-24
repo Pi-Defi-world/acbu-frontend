@@ -25,6 +25,7 @@ import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
 import * as ratesApi from "@/lib/api/rates";
 import type { MintResponse, BurnResponse, RatesResponse } from "@/types/api";
+import { featureFlags } from "@/lib/features";
 
 /** Local currency units per 1 ACBU from the `/rates` oracle, or null if missing. */
 function localPerAcbu(currency: string, rates: RatesResponse | null): number | null {
@@ -272,12 +273,14 @@ export default function CurrencyPage() {
             >
               Burn
             </TabsTrigger>
-            <TabsTrigger
-              value="international"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-            >
-              International
-            </TabsTrigger>
+            {featureFlags.internationalTransfers && (
+              <TabsTrigger
+                value="international"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+              >
+                International
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Mint Tab */}
@@ -501,6 +504,7 @@ export default function CurrencyPage() {
           </TabsContent>
 
           {/* International Tab */}
+          {featureFlags.internationalTransfers && (
           <TabsContent value="international" className="px-4 py-6 space-y-4">
             <div>
               <p className="text-sm text-muted-foreground mb-3">
@@ -641,6 +645,7 @@ export default function CurrencyPage() {
               </div>
             </div>
           </TabsContent>
+          )}
         </Tabs>
       </PageContainer>
 
@@ -655,7 +660,9 @@ export default function CurrencyPage() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {activeTab === 'mint' &&
-                `Mint ACBU ${formatAmount(parseFloat(mintAmount || '0') * exchangeRate)} from USDC`}
+                (estimatedMintAcbu != null
+                  ? `Mint ACBU ${formatAmount(estimatedMintAcbu)} from USDC`
+                  : `Mint from $${mintAmount || '0'} USDC (ACBU amount calculated by backend)`)}
               {activeTab === 'burn' &&
                 `Burn ACBU ${formatAmount(burnAmount)} and withdraw to ${burnDestination}`}
               {activeTab === 'international' &&
