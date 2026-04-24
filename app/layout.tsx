@@ -1,23 +1,18 @@
 import React from "react"
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { ErrorBoundary } from '@/components/error-boundary'
 import './globals.css'
-
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+import { AuthGuard } from '@/components/layout/auth-guard';
+import { AppLayout } from '@/components/app-layout';
+import { WalletSetupModal } from '@/components/wallet-setup-modal';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
   title: 'ACBU - P2P Transfers',
   description: 'Send and receive money securely with ACBU',
   generator: 'v0.app',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
   icons: {
     icon: [
       {
@@ -37,17 +32,29 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const lang = "en";
+
   return (
-    <html lang="en">
+    <html lang={lang}>
       <body className={`font-sans antialiased`}>
         <ErrorBoundary>
           <AuthProvider>
-            {children}
+            <AuthGuard>
+              <AppLayout>{children}</AppLayout>
+            </AuthGuard>
+            <WalletSetupModal />
+            <Toaster />
             <Analytics />
           </AuthProvider>
         </ErrorBoundary>

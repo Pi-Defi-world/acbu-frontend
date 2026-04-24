@@ -4,6 +4,7 @@ import type {
   LendingBalanceResponse,
   LendingDepositBody,
   LendingWithdrawBody,
+  ApplyLoanBody
 } from '@/types/api';
 
 export async function getLendingBalance(
@@ -25,4 +26,11 @@ export async function lendingWithdraw(
   opts?: RequestOptions
 ): Promise<{ transaction_hash: string }> {
   return post('/lending/withdraw', body, opts);
+}
+
+export async function applyForLoan(
+  body: ApplyLoanBody,
+  opts?: RequestOptions
+): Promise<{ success: boolean; loanId?: string }> {
+  return post('/lending/apply', body, opts);
 }

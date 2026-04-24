@@ -1,6 +1,6 @@
-import { get, post, patch, del } from './client';
+import { get, post, patch, put, del, getToken } from './client';
 import type { RequestOptions } from './client';
-import type { UserMe, PatchMeBody, ReceiveResponse, ContactItem, GuardianItem } from '@/types/api';
+import type { UserMe, PatchMeBody, ReceiveResponse, BalanceResponse, ContactItem, GuardianItem } from '@/types/api';
 
 export async function getMe(opts?: RequestOptions): Promise<UserMe> {
   return get<UserMe>('/users/me', opts);
@@ -8,6 +8,10 @@ export async function getMe(opts?: RequestOptions): Promise<UserMe> {
 
 export async function patchMe(data: PatchMeBody, opts?: RequestOptions): Promise<UserMe> {
   return patch<UserMe>('/users/me', data, opts);
+}
+
+export async function getBalance(opts?: RequestOptions): Promise<BalanceResponse> {
+  return get<BalanceResponse>('/users/me/balance', opts);
 }
 
 export async function getReceive(opts?: RequestOptions): Promise<ReceiveResponse> {
@@ -18,9 +22,14 @@ export async function getReceiveQrcode(opts?: RequestOptions): Promise<Blob | { 
   const base = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL
     ? process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, '')
     : '';
-  const token = opts?.token;
+  const token = opts?.token || getToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    headers['x-api-key'] = token;
+  }
   const res = await fetch(`${base}/users/me/receive/qrcode`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers,
     signal: opts?.signal,
   });
   if (!res.ok) {
@@ -34,6 +43,35 @@ export async function getReceiveQrcode(opts?: RequestOptions): Promise<Blob | { 
 
 export async function postWalletConfirm(body: { wallet_address?: string; [key: string]: unknown }, opts?: RequestOptions): Promise<unknown> {
   return post('/users/me/wallet/confirm', body, opts);
+}
+
+export interface PutWalletAddressResponse {
+  ok: boolean;
+  stellar_address?: string;
+  changed?: boolean;
+  previous_stellar_address?: string | null;
+}
+
+export async function putWalletAddress(
+  stellar_address: string,
+  opts?: RequestOptions,
+): Promise<PutWalletAddressResponse> {
+  return put<PutWalletAddressResponse>(
+    "/users/me/wallet",
+    { stellar_address },
+    opts,
+  );
+}
+
+export interface DeleteWalletResponse {
+  ok: boolean;
+  previous_stellar_address?: string | null;
+}
+
+export async function deleteWallet(
+  opts?: RequestOptions,
+): Promise<DeleteWalletResponse> {
+  return del<DeleteWalletResponse>("/users/me/wallet", opts);
 }
 
 export async function getContacts(opts?: RequestOptions): Promise<{ contacts?: ContactItem[] }> {
