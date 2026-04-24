@@ -28,10 +28,8 @@ import { submitBurnRedeemSingleClient } from '@/lib/stellar/burning';
 import { Keypair } from '@stellar/stellar-sdk';
 import * as ratesApi from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
-import type { RatesResponse } from '@/types/api';
+import type { QuoteResponse, RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
-const MINT_NETWORK_FEE_TEXT = "Estimated at confirmation";
-const BURN_PROCESSING_FEE_TEXT = "Estimated at confirmation";
 
 /** `acbu_*` from API = local currency units per 1 ACBU → ACBU = fiat / localPerAcbu. */
 function estimateAcbuFromFiat(
@@ -50,14 +48,46 @@ function estimateAcbuFromFiat(
   return n / localPerAcbu;
 }
 
-function formatRate(rate: string | number | null | undefined): string {
-  if (rate == null || rate === '') return '—';
+function getNumericValue(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string' && value.trim()) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+}
 
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 6,
-    useGrouping: true,
-  }).format(Number(rate));
+function getQuoteFee(quote: QuoteResponse | null): number | null {
+    if (!quote) return null;
+
+    return (
+        getNumericValue(quote.network_fee) ??
+        getNumericValue(quote.processing_fee) ??
+        getNumericValue(quote.fee_amount) ??
+        getNumericValue(quote.fee) ??
+        getNumericValue(quote.total_fee)
+    );
+}
+
+function getQuoteReceiveAmount(quote: QuoteResponse | null): number | null {
+    if (!quote) return null;
+
+    return (
+        getNumericValue(quote.receive_amount) ??
+        getNumericValue(quote.payout_amount) ??
+        getNumericValue(quote.local_amount) ??
+        getNumericValue(quote.amount)
+    );
+}
+
+function formatQuotedFee(
+    quote: QuoteResponse | null,
+    currency: string,
+    fallback: string,
+): string {
+    const fee = getQuoteFee(quote);
+    if (fee === null) return fallback;
+    return `${currency} ${formatAmount(fee)}`;
 }
 
 /**
@@ -82,27 +112,11 @@ export default function MintPage() {
   const [fiatAmount, setFiatAmount] = useState('');
   const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
-  const rateRows = useMemo(
-    () =>
-      rates
-        ? [
-            { currency: 'USD', rate: rates.acbu_usd },
-            { currency: 'EUR', rate: rates.acbu_eur },
-            { currency: 'GBP', rate: rates.acbu_gbp },
-            { currency: 'NGN', rate: rates.acbu_ngn },
-            { currency: 'KES', rate: rates.acbu_kes },
-            { currency: 'ZAR', rate: rates.acbu_zar },
-            { currency: 'RWF', rate: rates.acbu_rwf },
-            { currency: 'GHS', rate: rates.acbu_ghs },
-            { currency: 'EGP', rate: rates.acbu_egp },
-            { currency: 'MAD', rate: rates.acbu_mad },
-            { currency: 'TZS', rate: rates.acbu_tzs },
-            { currency: 'UGX', rate: rates.acbu_ugx },
-            { currency: 'XOF', rate: rates.acbu_xof },
-          ].filter((row) => row.rate != null)
-        : [],
-    [rates],
-  );
+    const [mintQuote, setMintQuote] = useState<QuoteResponse | null>(null);
+    const [burnQuote, setBurnQuote] = useState<QuoteResponse | null>(null);
+  const rateRows = Array.isArray((rates as { rates?: Array<{ currency?: string; rate?: number }> } | null)?.rates)
+    ? ((rates as { rates?: Array<{ currency?: string; rate?: number }> }).rates ?? [])
+    : [];
 
   const estimatedMintAcbu = useMemo(
     () => estimateAcbuFromFiat(fiatAmount, selectedFiatCurrency, mintQuoteRates),
@@ -123,6 +137,48 @@ export default function MintPage() {
       cancelled = true;
     };
   }, [opts.token]);
+
+    useEffect(() => {
+        if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency) {
+            setMintQuote(null);
+            return;
+        }
+
+        let cancelled = false;
+        ratesApi
+            .getQuote(fiatAmount, selectedFiatCurrency, opts)
+            .then((quote) => {
+                if (!cancelled) setMintQuote(quote);
+            })
+            .catch(() => {
+                if (!cancelled) setMintQuote(null);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [fiatAmount, selectedFiatCurrency, opts]);
+
+    useEffect(() => {
+        if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency) {
+            setBurnQuote(null);
+            return;
+        }
+
+        let cancelled = false;
+        ratesApi
+            .getQuote(burnAmount, selectedFiatCurrency, opts)
+            .then((quote) => {
+                if (!cancelled) setBurnQuote(quote);
+            })
+            .catch(() => {
+                if (!cancelled) setBurnQuote(null);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [burnAmount, selectedFiatCurrency, opts]);
 
   useEffect(() => {
     fiatApi
@@ -350,6 +406,18 @@ export default function MintPage() {
         setMintAcbuReceived(null);
     };
 
+    const mintFeeText = formatQuotedFee(
+        mintQuote,
+        mintQuote?.currency || selectedFiatCurrency || 'FIAT',
+        'Unavailable until quote loads',
+    );
+    const burnFeeText = formatQuotedFee(
+        burnQuote,
+        burnQuote?.currency || selectedFiatCurrency || 'FIAT',
+        'Unavailable until quote loads',
+    );
+    const quotedBurnReceiveAmount = getQuoteReceiveAmount(burnQuote);
+
   return (
     <>
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
@@ -485,7 +553,7 @@ export default function MintPage() {
                                         Network Fee
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {MINT_NETWORK_FEE_TEXT}
+                                        {mintFeeText}
                                     </span>
                                 </div>
                             </Card>
@@ -572,8 +640,8 @@ export default function MintPage() {
                                         You'll receive
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {burnAmount && selectedFiatCurrency
-                                            ? `~ ${selectedFiatCurrency} (based on current rate)`
+                                        {quotedBurnReceiveAmount !== null && selectedFiatCurrency
+                                            ? `~ ${selectedFiatCurrency} ${formatAmount(quotedBurnReceiveAmount)}`
                                             : "—"}
                                     </span>
                                 </div>
@@ -582,7 +650,7 @@ export default function MintPage() {
                                         Processing Fee
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {BURN_PROCESSING_FEE_TEXT}
+                                        {burnFeeText}
                                     </span>
                                 </div>
                             </Card>

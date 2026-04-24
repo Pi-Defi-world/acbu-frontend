@@ -22,6 +22,7 @@ import { useApiOpts } from "@/hooks/use-api";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
 import type { MintResponse, BurnResponse } from "@/types/api";
+import { featureFlags } from "@/lib/features";
 
 /**
  * Currency management hub.
@@ -180,12 +181,14 @@ export default function CurrencyPage() {
             >
               Burn
             </TabsTrigger>
-            <TabsTrigger
-              value="international"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-            >
-              International
-            </TabsTrigger>
+            {featureFlags.internationalTransfers && (
+              <TabsTrigger
+                value="international"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+              >
+                International
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Mint Tab */}
@@ -397,6 +400,7 @@ export default function CurrencyPage() {
           </TabsContent>
 
           {/* International Tab */}
+          {featureFlags.internationalTransfers && (
           <TabsContent value="international" className="px-4 py-6 space-y-4">
             <div>
               <p className="text-sm text-muted-foreground mb-3">
@@ -533,6 +537,7 @@ export default function CurrencyPage() {
               </div>
             </div>
           </TabsContent>
+          )}
         </Tabs>
       </PageContainer>
 
