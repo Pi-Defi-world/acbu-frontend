@@ -24,15 +24,25 @@ import * as burnApi from "@/lib/api/burn";
 import type { MintResponse, BurnResponse } from "@/types/api";
 import { featureFlags } from "@/lib/features";
 
+type CurrencyTab = "mint" | "burn" | "international";
+
+const CURRENCY_TABS: readonly CurrencyTab[] = ["mint", "burn", "international"];
+
+function isCurrencyTab(v: string): v is CurrencyTab {
+  return (CURRENCY_TABS as readonly string[]).includes(v);
+}
+
 /**
  * Currency management hub.
  */
 export default function CurrencyPage() {
   const opts = useApiOpts();
 
-  const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
-    "mint",
-  );
+  const [activeTab, setActiveTab] = useState<CurrencyTab>("mint");
+
+  const handleTabChange = (v: string) => {
+    if (isCurrencyTab(v)) setActiveTab(v);
+  };
   const [step, setStep] = useState<"input" | "confirm" | "success">("input");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -164,9 +174,7 @@ export default function CurrencyPage() {
         <Tabs
           defaultValue="mint"
           className="w-full"
-          onValueChange={(v) =>
-            setActiveTab(v as "mint" | "burn" | "international")
-          }
+          onValueChange={handleTabChange}
         >
           <TabsList className="grid w-full grid-cols-3 px-4 gap-2 bg-transparent border-b border-border rounded-none">
             <TabsTrigger
