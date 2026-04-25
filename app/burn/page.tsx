@@ -7,7 +7,7 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
+import { ArrowLeft, CircleAlert as AlertCircle, CircleCheck as CheckCircle } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
@@ -103,17 +103,16 @@ export default function BurnPage() {
     accountName.trim().length >= 3 &&
     accountName.trim().length <= 100;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isValid) return;
+  const handleSubmit = async (data: BurnFormValues) => {
     clearError();
     setLoading(true);
     setTxId(null);
-    
+
+    const values = data;
     try {
       if (!userId) throw new Error("Not signed in");
       if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
-      
+
       const recipientAccount: BurnRecipientAccount = {
         account_number: values.accountNumber.trim(),
         bank_code: values.bankCode.trim(),
@@ -123,7 +122,7 @@ export default function BurnPage() {
 
       const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
       let burnTxHash: string;
-      
+
       if (secret) {
         const localPubKey = Keypair.fromSecret(secret).publicKey();
         if (stellarAddress && localPubKey !== stellarAddress) {
@@ -181,7 +180,7 @@ export default function BurnPage() {
         burnTxHash,
       );
       setTxId(res.transaction_id);
-      form.reset({ ...values, acbuAmount: "" }); // Reset amount but keep details for convenience? Or full reset?
+      form.reset({ ...values, acbuAmount: "" });
     } catch (e) {
       setApiError(e);
     } finally {
@@ -227,7 +226,7 @@ export default function BurnPage() {
           )}
 
           <Form {...form}>
-            <form onSubmit={formHandleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handleSubmit as any)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="acbuAmount"
@@ -357,15 +356,15 @@ export default function BurnPage() {
                   </FormItem>
                 )}
               />
-            </div>
-            <Button
-              type="submit"
-              disabled={!isValid || loading || isSubmitDisabled}
-              className="w-full"
-            >
-              {loading ? "Submitting..." : "Burn & Withdraw"}
-            </Button>
-          </form>
+              <Button
+                type="submit"
+                disabled={!isValid || loading || isSubmitDisabled}
+                className="w-full"
+              >
+                {loading ? "Submitting..." : "Burn & Withdraw"}
+              </Button>
+            </form>
+          </Form>
         </Card>
       </PageContainer>
     </>
