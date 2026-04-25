@@ -1,20 +1,23 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { PageContainer } from '@/components/layout/page-container';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft } from 'lucide-react';
-import { useParams } from 'next/navigation';
-import { useApiOpts } from '@/hooks/use-api';
-import * as transactionsApi from '@/lib/api/transactions';
-import type { TransactionDetail } from '@/types/api';
-import { formatAmount } from '@/lib/utils';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { PageContainer } from "@/components/layout/page-container";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useApiOpts } from "@/hooks/use-api";
+import * as transactionsApi from "@/lib/api/transactions";
+import type { TransactionDetail } from "@/types/api";
+import { formatAmount } from "@/lib/utils";
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  return new Date(iso).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 /**
@@ -26,7 +29,7 @@ export default function TransactionDetailPage() {
   const opts = useApiOpts();
   const [data, setData] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!id) {
@@ -34,14 +37,21 @@ export default function TransactionDetailPage() {
       return;
     }
     let cancelled = false;
-    transactionsApi.getTransaction(id, opts).then((res) => {
-      if (!cancelled) setData(res);
-    }).catch((e) => {
-      if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load');
-    }).finally(() => {
-      if (!cancelled) setLoading(false);
-    });
-    return () => { cancelled = true; };
+    transactionsApi
+      .getTransaction(id, opts)
+      .then((res) => {
+        if (!cancelled) setData(res);
+      })
+      .catch((e) => {
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : "Failed to load");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id, opts.token]);
 
   if (!id) {
@@ -49,11 +59,15 @@ export default function TransactionDetailPage() {
       <>
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
-            <Link href="/activity"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+            <Link href="/activity">
+              <ArrowLeft className="w-5 h-5 text-primary" />
+            </Link>
             <h1 className="text-lg font-bold text-foreground">Transaction</h1>
           </div>
         </div>
-        <PageContainer><p className="text-muted-foreground">Invalid transaction ID.</p></PageContainer>
+        <PageContainer>
+          <p className="text-muted-foreground">Invalid transaction ID.</p>
+        </PageContainer>
       </>
     );
   }
@@ -63,7 +77,9 @@ export default function TransactionDetailPage() {
       <>
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
-            <Link href="/activity"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+            <Link href="/activity">
+              <ArrowLeft className="w-5 h-5 text-primary" />
+            </Link>
             <h1 className="text-lg font-bold text-foreground">Transaction</h1>
           </div>
         </div>
@@ -79,25 +95,33 @@ export default function TransactionDetailPage() {
       <>
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
-            <Link href="/activity"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+            <Link href="/activity">
+              <ArrowLeft className="w-5 h-5 text-primary" />
+            </Link>
             <h1 className="text-lg font-bold text-foreground">Transaction</h1>
           </div>
         </div>
-        <PageContainer><p className="text-destructive">{error || 'Not found'}</p></PageContainer>
+        <PageContainer>
+          <p className="text-destructive">{error || "Not found"}</p>
+        </PageContainer>
       </>
     );
   }
 
-  const type = data.type ?? '—';
-  const status = data.status ?? '—';
-  const isFiat = type === 'mint' && data.currency && data.local_amount != null;
+  const type = data.type ?? "—";
+  const status = data.status ?? "—";
+  const isFiat = type === "mint" && data.currency && data.local_amount != null;
 
   return (
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
-          <Link href="/activity"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
-          <h1 className="text-lg font-bold text-foreground truncate">Transaction</h1>
+          <Link href="/activity">
+            <ArrowLeft className="w-5 h-5 text-primary" />
+          </Link>
+          <h1 className="text-lg font-bold text-foreground truncate">
+            Transaction
+          </h1>
         </div>
       </div>
       <PageContainer>
@@ -120,7 +144,9 @@ export default function TransactionDetailPage() {
           ) : data.amount_acbu != null ? (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Amount</span>
-              <span className="font-semibold">ACBU {formatAmount(data.amount_acbu)}</span>
+              <span className="font-semibold">
+                ACBU {formatAmount(data.amount_acbu)}
+              </span>
             </div>
           ) : null}
           {data.usdc_amount != null && (
@@ -141,10 +167,20 @@ export default function TransactionDetailPage() {
               <span>{formatDate(data.completed_at)}</span>
             </div>
           )}
+          {data.note && (
+            <div className="pt-2 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-1">Note</p>
+              <p className="text-sm text-foreground break-words">{data.note}</p>
+            </div>
+          )}
           {data.blockchain_tx_hash && (
             <div className="pt-2 border-t border-border">
-              <p className="text-xs text-muted-foreground mb-1">Transaction hash</p>
-              <p className="text-xs font-mono break-all">{data.blockchain_tx_hash}</p>
+              <p className="text-xs text-muted-foreground mb-1">
+                Transaction hash
+              </p>
+              <p className="text-xs font-mono break-all">
+                {data.blockchain_tx_hash}
+              </p>
             </div>
           )}
         </Card>

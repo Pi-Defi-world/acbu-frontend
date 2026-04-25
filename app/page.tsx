@@ -12,6 +12,7 @@ import {
   Clock,
   Building2,
   ArrowUpRight,
+  HandCoins,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';
@@ -22,7 +23,7 @@ import * as transactionsApi from '@/lib/api/transactions';
 import * as fiatApi from '@/lib/api/fiat';
 import * as ratesApi from '@/lib/api/rates';
 import type { TransactionListItem, RatesResponse } from '@/types/api';
-import { formatAmount } from '@/lib/utils';
+import { formatAcbu, formatAmount } from '@/lib/utils';
 
 function parsePositiveNumber(v: string | number | null | undefined): number | null {
   if (v === null || v === undefined) return null;
@@ -90,6 +91,7 @@ const features = [
   { title: 'Mint', description: 'Create ACBU', icon: Coins, href: '/mint', color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
   { title: 'Simulated Bank', description: 'Demo Fiat', icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
   { title: 'Rates', description: 'Market rates', icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
+  { title: 'Lending', description: 'Apply for a loan', icon: HandCoins, href: '/lending', color: 'bg-orange-100 dark:bg-orange-900/30', iconColor: 'text-orange-600 dark:text-orange-400' },
 ];
 
 function formatDate(iso: string) {
@@ -334,14 +336,14 @@ export default function Home() {
                     <div className="flex items-center justify-between pl-11">
                       <p className="text-sm font-semibold text-foreground">
                         {t.type === 'burn'
-                          ? `- ACBU ${formatAmount(t.acbu_amount_burned ?? t.amount_acbu)}`
+                          ? `- ACBU ${formatAcbu(t.acbu_amount_burned ?? t.amount_acbu)}`
                           : t.type === 'mint'
                             ? t.amount_acbu != null
-                              ? `+ ACBU ${formatAmount(t.amount_acbu)}`
+                              ? `+ ACBU ${formatAcbu(t.amount_acbu)}`
                               : t.local_currency && t.local_amount
                                 ? `+ ${t.local_currency} ${formatAmount(t.local_amount)}`
                                 : '—'
-                            : `ACBU ${formatAmount(t.amount_acbu)}`}
+                            : `ACBU ${formatAcbu(t.amount_acbu)}`}
                       </p>
                       <Badge variant="outline" className="text-xs">{t.status}</Badge>
                     </div>
