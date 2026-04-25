@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,37 @@ import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
-import type { MintResponse, BurnResponse } from "@/types/api";
+import * as ratesApi from "@/lib/api/rates";
+import type { MintResponse, BurnResponse, RatesResponse } from "@/types/api";
 import { featureFlags } from "@/lib/features";
+
+/** Local currency units per 1 ACBU from the `/rates` oracle, or null if missing. */
+function localPerAcbu(currency: string, rates: RatesResponse | null): number | null {
+  if (!rates || !currency) return null;
+  const key = `acbu_${currency.trim().toLowerCase()}` as keyof RatesResponse;
+  const raw = rates[key];
+  if (raw == null || raw === "") return null;
+  const n = parseFloat(String(raw));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** ACBU received when minting `usd` dollars: usd / (USD per ACBU). */
+function estimateAcbuFromUsd(usd: number, rates: RatesResponse | null): number | null {
+  const perAcbu = localPerAcbu("USD", rates);
+  if (perAcbu == null || !(usd > 0)) return null;
+  return usd / perAcbu;
+}
+
+/** Local currency received when burning `acbu` units to `currency`. */
+function estimateLocalFromAcbu(
+  acbu: number,
+  currency: string,
+  rates: RatesResponse | null,
+): number | null {
+  const perAcbu = localPerAcbu(currency, rates);
+  if (perAcbu == null || !(acbu > 0)) return null;
+  return acbu * perAcbu;
+}
 
 /**
  * Currency management hub.
@@ -39,6 +68,11 @@ export default function CurrencyPage() {
   const [step, setStep] = useState<"input" | "confirm" | "success">("input");
   const [submitting, setSubmitting] = useState(false);
   const [lastTxId, setLastTxId] = useState("");
+  const [lastResponse, setLastResponse] = useState<
+    MintResponse | BurnResponse | null
+  >(null);
+
+  const [rates, setRates] = useState<RatesResponse | null>(null);
 
   // Mint state
   const [mintAmount, setMintAmount] = useState("");
@@ -60,9 +94,36 @@ export default function CurrencyPage() {
   const [intlBankCode, setIntlBankCode] = useState("");
   const [intlAccountName, setIntlAccountName] = useState("");
 
-  const mockBalance = 5280.5;
-  const mockRate = 1620;
-  const exchangeRate = 0.82;
+  useEffect(() => {
+    let cancelled = false;
+    ratesApi
+      .getRates(opts)
+      .then((data) => {
+        if (!cancelled) setRates(data);
+      })
+      .catch(() => {
+        if (!cancelled) setRates(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [opts.token]);
+
+  const usdPerAcbu = useMemo(() => localPerAcbu("USD", rates), [rates]);
+  const ngnPerAcbu = useMemo(() => localPerAcbu("NGN", rates), [rates]);
+  const intlPerAcbu = useMemo(
+    () => localPerAcbu(intlCurrency, rates),
+    [intlCurrency, rates],
+  );
+
+  const availableBalance = balance ?? 0;
+  const burnNumeric = parseFloat(burnAmount || "0");
+  const intlNumeric = parseFloat(intlAmount || "0");
+  const mintNumeric = parseFloat(mintAmount || "0");
+
+  const estimatedMintAcbu = estimateAcbuFromUsd(mintNumeric, rates);
+  const estimatedBurnNgn = estimateLocalFromAcbu(burnNumeric, "NGN", rates);
+  const estimatedIntlLocal = estimateLocalFromAcbu(intlNumeric, intlCurrency, rates);
 
   const handleMintConfirm = () => setStep("confirm");
   const handleBurnConfirm = () => setStep("confirm");
@@ -72,13 +133,18 @@ export default function CurrencyPage() {
     setSubmitting(true);
     try {
       if (activeTab === "mint") {
-        const res: MintResponse = await mintApi.mintFromUsdc(
+        const res = await mintApi.mintFromUsdc(
           mintAmount,
           mintWalletAddress.trim(),
           "auto",
           opts,
         );
         setLastTxId(res.transaction_id);
+        setLastResponse(res);
+        toast({
+          title: "Mint submitted",
+          description: `Transaction ${res.transaction_id} · status ${res.status}`,
+        });
       } else if (activeTab === "burn") {
         const recipientType =
           burnDestination === "bank"
@@ -86,7 +152,7 @@ export default function CurrencyPage() {
             : burnDestination === "mobile"
               ? "mobile_money"
               : undefined;
-        const res: BurnResponse = await burnApi.burnAcbu(
+        const res = await burnApi.burnAcbu(
           burnAmount,
           "NGN",
           {
@@ -98,8 +164,13 @@ export default function CurrencyPage() {
           opts,
         );
         setLastTxId(res.transaction_id);
+        setLastResponse(res);
+        toast({
+          title: "Burn submitted",
+          description: `Transaction ${res.transaction_id} · status ${res.status}`,
+        });
       } else {
-        const res: BurnResponse = await burnApi.burnAcbu(
+        const res = await burnApi.burnAcbu(
           intlAmount,
           intlCurrency,
           {
@@ -110,8 +181,14 @@ export default function CurrencyPage() {
           opts,
         );
         setLastTxId(res.transaction_id);
+        setLastResponse(res);
+        toast({
+          title: "International transfer submitted",
+          description: `Transaction ${res.transaction_id} · status ${res.status}`,
+        });
       }
       setStep("success");
+      refreshBalance();
     } catch (e) {
       setApiError(e);
     } finally {
@@ -133,6 +210,7 @@ export default function CurrencyPage() {
     setIntlAccountName("");
     clearError();
     setLastTxId("");
+    setLastResponse(null);
   };
 
   return (
@@ -154,10 +232,14 @@ export default function CurrencyPage() {
           <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
             <p className="text-sm font-medium opacity-90">ACBU Balance</p>
             <p className="text-3xl font-bold mb-2">
-              ACBU {formatAmount(mockBalance)}
+              {balanceLoading || balance == null
+                ? "ACBU —"
+                : `ACBU ${formatAmount(balance)}`}
             </p>
             <p className="text-xs opacity-75">
-              ≈ ₦{formatAmount(mockBalance * mockRate, 0)}
+              {balanceLoading || balance == null || ngnPerAcbu == null
+                ? "≈ ₦ —"
+                : `≈ ₦${formatAmount(balance * ngnPerAcbu, 0)}`}
             </p>
           </Card>
         </div>
@@ -228,10 +310,12 @@ export default function CurrencyPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  You'll receive: ACBU{" "}
-                  {mintAmount
-                    ? formatAmount(parseFloat(mintAmount) * exchangeRate)
-                    : "0.00"}
+                  You'll receive:{" "}
+                  {estimatedMintAcbu != null
+                    ? `ACBU ${formatAmount(estimatedMintAcbu)}`
+                    : mintNumeric > 0
+                      ? "ACBU — (rate unavailable)"
+                      : "ACBU 0.00"}
                 </p>
               </div>
 
@@ -251,15 +335,18 @@ export default function CurrencyPage() {
               <Card className="border-border bg-muted p-3 mt-4">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-muted-foreground">Fee</span>
-                  <span className="font-medium text-foreground">$2.50</span>
+                  <span className="font-medium text-foreground">
+                    Calculated at confirmation
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total</span>
-                  <span className="font-bold text-foreground">
-                    $
-                    {mintAmount
-                      ? (parseFloat(mintAmount) + 2.5).toFixed(2)
-                      : "2.50"}
+                  <span className="text-muted-foreground">
+                    Rate (ACBU per USD)
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {usdPerAcbu != null
+                      ? formatAmount(1 / usdPerAcbu, 4)
+                      : "—"}
                   </span>
                 </div>
               </Card>
@@ -317,9 +404,12 @@ export default function CurrencyPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Available: ACBU {formatAmount(mockBalance)}
+                  Available:{" "}
+                  {balanceLoading || balance == null
+                    ? "—"
+                    : `ACBU ${formatAmount(balance)}`}
                 </p>
-                {parseFloat(burnAmount || "0") > mockBalance && (
+                {balance != null && burnNumeric > availableBalance && (
                   <p className="text-xs text-destructive mt-1">
                     Insufficient balance
                   </p>
@@ -372,15 +462,18 @@ export default function CurrencyPage() {
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-muted-foreground">You'll receive</span>
                   <span className="font-medium text-foreground">
-                    $
-                    {burnAmount
-                      ? (parseFloat(burnAmount) / exchangeRate).toFixed(2)
-                      : "0.00"}
+                    {estimatedBurnNgn != null
+                      ? `₦${formatAmount(estimatedBurnNgn, 2)}`
+                      : burnNumeric > 0
+                        ? "₦ — (rate unavailable)"
+                        : "₦0.00"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Fee</span>
-                  <span className="font-medium text-foreground">$1.00</span>
+                  <span className="font-medium text-foreground">
+                    Calculated at confirmation
+                  </span>
                 </div>
               </Card>
 
@@ -388,7 +481,8 @@ export default function CurrencyPage() {
                 onClick={handleBurnConfirm}
                 disabled={
                   !burnAmount ||
-                  parseFloat(burnAmount) > mockBalance ||
+                  burnNumeric <= 0 ||
+                  (balance != null && burnNumeric > availableBalance) ||
                   !burnAccountNumber.trim() ||
                   !burnBankCode.trim() ||
                   !burnAccountName.trim()
@@ -509,17 +603,21 @@ export default function CurrencyPage() {
                     <TrendingUp className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
                     <div className="text-sm">
                       <p className="font-medium text-foreground">
-                        {intlAmount
-                          ? `${intlCurrency} ${formatAmount(parseFloat(intlAmount) * 1.8)}`
-                          : `${intlCurrency} 0.00`}
+                        {estimatedIntlLocal != null
+                          ? `${intlCurrency} ${formatAmount(estimatedIntlLocal)}`
+                          : intlNumeric > 0
+                            ? `${intlCurrency} — (rate unavailable)`
+                            : `${intlCurrency} 0.00`}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        at {intlCurrency} 1.80 per ACBU
+                        {intlPerAcbu != null
+                          ? `at ${intlCurrency} ${formatAmount(intlPerAcbu, 4)} per ACBU`
+                          : `rate unavailable for ${intlCurrency}`}
                       </p>
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Fee: {intlCurrency} 0.50
+                    Fee: calculated at confirmation
                   </div>
                 </Card>
 
@@ -554,7 +652,9 @@ export default function CurrencyPage() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {activeTab === 'mint' &&
-                `Mint ACBU ${formatAmount(parseFloat(mintAmount || '0') * exchangeRate)} from USDC`}
+                (estimatedMintAcbu != null
+                  ? `Mint ACBU ${formatAmount(estimatedMintAcbu)} from USDC`
+                  : `Mint from $${mintAmount || '0'} USDC (ACBU amount calculated by backend)`)}
               {activeTab === 'burn' &&
                 `Burn ACBU ${formatAmount(burnAmount)} and withdraw to ${burnDestination}`}
               {activeTab === 'international' &&
@@ -573,9 +673,7 @@ export default function CurrencyPage() {
             <div className="flex justify-between text-sm border-t border-border pt-2">
               <span className="text-muted-foreground">Processing fee:</span>
               <span className="font-medium text-foreground">
-                {activeTab === "mint" && "$2.50"}
-                {activeTab === "burn" && "$1.00"}
-                {activeTab === "international" && `${intlCurrency} 0.50`}
+                Calculated by backend
               </span>
             </div>
           </div>
@@ -604,15 +702,48 @@ export default function CurrencyPage() {
       <AlertDialog open={step === "success"}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Operation Complete</AlertDialogTitle>
+            <AlertDialogTitle>Operation Submitted</AlertDialogTitle>
             <AlertDialogDescription>
-              Your {activeTab} operation has been processed successfully.
+              The backend accepted your {activeTab} request.
+              {lastResponse?.status &&
+                ` Current status: ${lastResponse.status}.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Transaction ID: {lastTxId}
-            </p>
+          <div className="py-4 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Transaction ID:</span>
+              <span className="font-mono text-foreground truncate max-w-[60%]">
+                {lastTxId}
+              </span>
+            </div>
+            {lastResponse && "fee" in lastResponse && lastResponse.fee && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Fee:</span>
+                <span className="font-medium text-foreground">
+                  {lastResponse.fee}
+                </span>
+              </div>
+            )}
+            {lastResponse &&
+              "acbu_amount" in lastResponse &&
+              lastResponse.acbu_amount && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">ACBU received:</span>
+                  <span className="font-medium text-foreground">
+                    ACBU {formatAmount(lastResponse.acbu_amount)}
+                  </span>
+                </div>
+              )}
+            {lastResponse &&
+              "local_amount" in lastResponse &&
+              lastResponse.local_amount && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">You'll receive:</span>
+                  <span className="font-medium text-foreground">
+                    {lastResponse.currency} {lastResponse.local_amount}
+                  </span>
+                </div>
+              )}
           </div>
           <AlertDialogAction
             onClick={resetForm}
