@@ -12,6 +12,7 @@ import {
   Clock,
   Building2,
   ArrowUpRight,
+  HandCoins,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';
@@ -90,6 +91,7 @@ const features = [
   { title: 'Mint', description: 'Create ACBU', icon: Coins, href: '/mint', color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
   { title: 'Simulated Bank', description: 'Demo Fiat', icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
   { title: 'Rates', description: 'Market rates', icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
+  { title: 'Lending', description: 'Apply for a loan', icon: HandCoins, href: '/lending', color: 'bg-orange-100 dark:bg-orange-900/30', iconColor: 'text-orange-600 dark:text-orange-400' },
 ];
 
 function formatDate(iso: string) {
