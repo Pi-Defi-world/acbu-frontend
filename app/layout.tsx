@@ -1,5 +1,6 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
+import { headers } from 'next/headers'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { ErrorBoundary } from '@/components/error-boundary'
@@ -70,6 +71,10 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   const lang = "en";
+  // Read the nonce injected by middleware so Next.js can apply it to
+  // inline scripts/styles it generates (e.g. __NEXT_DATA__).
+  const headersList = await headers();
+  const nonce = headersList.get('x-nonce') ?? undefined;
 
   return (
     <html lang={lang}>
@@ -82,7 +87,7 @@ export default async function RootLayout({
             </AuthGuard>
             <WalletSetupModal />
             <Toaster />
-            <Analytics />
+            <Analytics nonce={nonce} />
           </AuthProvider>
         </ErrorBoundary>
       </body>
