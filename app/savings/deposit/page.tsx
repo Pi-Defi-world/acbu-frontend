@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
 import { resolveRecipient } from "@/lib/api/recipient";
@@ -86,7 +88,7 @@ export default function SavingsDepositPage() {
             );
             setSuccess("Deposit submitted.");
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Deposit failed");
+            setApiError(e);
         } finally {
             setLoading(false);
         }
