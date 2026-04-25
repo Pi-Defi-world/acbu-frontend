@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { CircleAlert as AlertCircle, Eye, EyeOff } from "lucide-react";
 import * as authApi from "@/lib/api/auth";
 
 const MIN_PASSCODE_LENGTH = 12;
@@ -202,11 +202,11 @@ export default function SignUpPage() {
                             {passcode.length > 0 && (
                                 <div className="mt-3 space-y-2">
                                     <div className="grid grid-cols-5 gap-1">
-                                        {Array.from({ length: 5 }).map((_, idx) => (
+                                        {[0, 1, 2, 3, 4].map((bar) => (
                                             <div
-                                                key={idx}
+                                                key={`strength-bar-${bar}`}
                                                 className={`h-1.5 rounded-full ${
-                                                    idx < passcodeStrength.score
+                                                    bar < passcodeStrength.score
                                                         ? passcodeStrength.barColor
                                                         : "bg-muted"
                                                 }`}
