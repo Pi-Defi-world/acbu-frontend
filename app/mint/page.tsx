@@ -674,11 +674,11 @@ export default function MintPage() {
               {ratesLoading ? (
                 <Skeleton className="h-20 w-full" />
               ) : rateRows.length ? (
-                rateRows.map((r: { currency?: string; rate?: number }) => (
-                  <Card key={r.currency ?? r.rate} className="border-border p-4">
+                rateRows.map((r) => (
+                  <Card key={r.currency} className="border-border p-4">
                     <div className="flex justify-between">
-                      <p className="font-semibold text-foreground">ACBU/{r.currency ?? 'Rate'}</p>
-                      <p className="text-lg font-bold text-primary">{r.rate != null ? String(r.rate) : '—'}</p>
+                      <p className="font-semibold text-foreground">ACBU/{r.currency}</p>
+                      <p className="text-lg font-bold text-primary">{formatRate(r.rate)}</p>
                     </div>
                   </Card>
                 ))
