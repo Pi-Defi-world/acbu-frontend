@@ -13,7 +13,7 @@ import type { BusinessStatsResponse } from '@/lib/api/business';
 import { featureFlags } from '@/lib/features';
 
 const businessServices = [
-  { id: 'sme', title: 'SME Services', description: 'Business accounts, transfers & statements', icon: Briefcase, badge: 'Pro', href: '/sme' },
+  { id: 'sme', title: 'SME Services', description: 'Business accounts, transfers & statements', icon: Briefcase, badge: 'Pro', href: '/business/sme' },
   { id: 'salary', title: 'Payroll', description: 'Disburse salaries and manage batches', icon: Users, badge: 'New', href: '/salary' },
   { id: 'campaigns', title: 'Crowdfunding', description: 'Raise funds for projects via Trivela', icon: Zap, badge: 'Alpha', href: '/campaigns/1' },
   { id: 'enterprise', title: 'Enterprise', description: 'Bulk transfers and treasury management', icon: PiggyBank, href: '/enterprise' },
