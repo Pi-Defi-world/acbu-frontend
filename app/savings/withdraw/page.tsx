@@ -6,12 +6,33 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
-import * as recipientApi from "@/lib/api/recipient";
-import type { RecipientResponse } from "@/types/api";
+import { resolveRecipient } from "@/lib/api/recipient";
+
+/**
+ * Resolve any user identifier (Stellar address, phone, alias, pay URI)
+ * through the backend recipient resolver to obtain the canonical pay_uri.
+ * Falls back to the raw value when the resolver is unavailable so that
+ * Stellar-format addresses still work offline.
+ */
+async function resolveUserUri(
+    raw: string,
+    opts: Parameters<typeof resolveRecipient>[1],
+): Promise<string> {
+    try {
+        const resolved = await resolveRecipient(raw, opts);
+        if (resolved.pay_uri) return resolved.pay_uri;
+        if (resolved.alias) return resolved.alias;
+    } catch {
+        // Resolver unavailable — fall through to raw value.
+    }
+    return raw;
+}
 
 export default function SavingsWithdrawPage() {
     const opts = useApiOpts();
@@ -20,6 +41,7 @@ export default function SavingsWithdrawPage() {
     const [termSeconds, setTermSeconds] = useState("0");
     const [amount, setAmount] = useState("");
     const [loading, setLoading] = useState(false);
+    const [resolving, setResolving] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [editingRecipient, setEditingRecipient] = useState(false);
@@ -35,22 +57,38 @@ export default function SavingsWithdrawPage() {
     );
 
     useEffect(() => {
+        let cancelled = false;
+        setResolving(true);
+        setError("");
+
         userApi
             .getReceive(opts)
-            .then((data) => {
+            .then(async (data) => {
                 const uri = (data.pay_uri ?? data.alias) as string | undefined;
-                if (uri && typeof uri === "string") {
-                    setHomeRecipient(uri);
-                    setRecipient(uri);
+                if (!uri || typeof uri !== "string") {
+                    if (!cancelled) setResolving(false);
+                    return;
                 }
+
+                // Resolve through backend recipient resolver so phone-based IDs,
+                // aliases, and other non-Stellar identifiers are accepted.
+                const resolved = await resolveUserUri(uri, opts);
+                if (!cancelled) setUser(resolved);
             })
             .catch((e) => {
-                console.error(
-                    e instanceof Error
-                        ? e.message
-                        : "Failed to load receive address",
-                );
+                if (!cancelled) {
+                    setError(
+                        e instanceof Error
+                            ? e.message
+                            : "Failed to load receive address",
+                    );
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setResolving(false);
             });
+
+        return () => { cancelled = true; };
     }, [opts.token]);
 
     const validateRecipient = async (value: string) => {
@@ -96,6 +134,7 @@ export default function SavingsWithdrawPage() {
         }
 
         setError("");
+        setSuccess("");
         setLoading(true);
 
         try {
@@ -109,7 +148,7 @@ export default function SavingsWithdrawPage() {
             );
             setSuccess("Withdrawal submitted.");
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Withdraw failed");
+            setApiError(e);
         } finally {
             setLoading(false);
         }
@@ -147,7 +186,10 @@ export default function SavingsWithdrawPage() {
             <PageContainer>
                 <Card className="border-border p-4 space-y-4">
                     {error && (
-                        <p className="text-destructive text-sm">{error}</p>
+                        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+                            <AlertCircle className="h-4 w-4 shrink-0" />
+                            <p>{error}</p>
+                        </div>
                     )}
                     {success && (
                         <p className="text-green-600 text-sm">{success}</p>
@@ -171,30 +213,14 @@ export default function SavingsWithdrawPage() {
                                 </Button>
                             </div>
                             <Input
-                                id="withdraw-recipient"
-                                value={recipient}
-                                readOnly={!editingRecipient}
-                                onChange={(e) => handleRecipientChange(e.target.value)}
-                                onBlur={() => {
-                                    if (isRecipientChanged) void validateRecipient(recipient.trim());
-                                }}
-                                className={`border-border font-mono text-sm ${editingRecipient ? '' : 'bg-muted'}`}
-                                placeholder="Enter recipient ID or alias"
+                                id="withdraw-account"
+                                value={resolving ? "Resolving…" : user}
+                                readOnly
+                                className="border-border font-mono text-sm bg-muted"
                             />
-                            {!editingRecipient ? (
-                                <p className="text-xs text-muted-foreground mt-2">
-                                    Your default receive account is locked by default. Click change to withdraw to another recipient.
-                                </p>
-                            ) : null}
-                            {recipientValidationLoading && (
-                                <p className="text-xs text-muted-foreground mt-2">Validating recipient…</p>
-                            )}
-                            {recipientValidationError && (
-                                <p className="text-xs text-destructive mt-2">{recipientValidationError}</p>
-                            )}
-                            {isRecipientChanged && isRecipientResolved && (
-                                <p className="text-xs text-foreground mt-2">
-                                    Resolved recipient: {resolvedRecipientIdentifier || recipient.trim()}
+                            {resolving && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Verifying account identifier…
                                 </p>
                             )}
                         </div>
@@ -247,15 +273,9 @@ export default function SavingsWithdrawPage() {
                         )}
                         <Button
                             type="submit"
-                            disabled={
-                                loading ||
-                                !recipient.trim() ||
-                                !amount ||
-                                parseFloat(amount) <= 0 ||
-                                (isRecipientChanged && (!confirmDifferentRecipient || !isRecipientResolved))
-                            }
+                            disabled={loading || resolving || !user.trim() || !amount}
                         >
-                            Withdraw
+                            {loading ? "Withdrawing…" : "Withdraw"}
                         </Button>
                     </form>
                 </Card>
