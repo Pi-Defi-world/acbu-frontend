@@ -11,7 +11,7 @@ import { ArrowLeft, Clock } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as transactionsApi from '@/lib/api/transactions';
 import type { TransactionListItem } from '@/types/api';
-import { formatAmount } from '@/lib/utils';
+import { formatAcbu, formatAmount } from '@/lib/utils';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
@@ -70,14 +70,14 @@ export default function ActivityPage() {
                   <div className="text-right flex-shrink-0">
                     <p className="font-semibold text-foreground">
                       {t.type === 'burn'
-                        ? `- ACBU ${formatAmount(t.acbu_amount_burned ?? t.amount_acbu)}`
+                        ? `- ACBU ${formatAcbu(t.acbu_amount_burned ?? t.amount_acbu)}`
                         : t.type === 'mint'
                           ? t.amount_acbu != null
-                            ? `+ ACBU ${formatAmount(t.amount_acbu)}`
+                            ? `+ ACBU ${formatAcbu(t.amount_acbu)}`
                             : t.local_currency && t.local_amount
                               ? `+ ${t.local_currency} ${formatAmount(t.local_amount)}`
                               : '—'
-                          : `ACBU ${formatAmount(t.amount_acbu)}`}
+                          : `ACBU ${formatAcbu(t.amount_acbu)}`}
                     </p>
                     <Badge variant="outline" className="text-xs mt-1">{t.status}</Badge>
                   </div>

@@ -3,10 +3,12 @@ import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { GlobalErrorHandler } from '@/components/global-error-handler'
 import './globals.css'
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
   title: 'ACBU - P2P Transfers',
@@ -47,12 +49,14 @@ export default async function RootLayout({
   return (
     <html lang={lang}>
       <body className={`font-sans antialiased`}>
-        <ErrorBoundary>
+        <GlobalErrorHandler />
+        <ErrorBoundary level="app">
           <AuthProvider>
-            <AuthGuard>
+              <AuthGuard>
               <AppLayout>{children}</AppLayout>
             </AuthGuard>
             <WalletSetupModal />
+            <Toaster />
             <Analytics />
           </AuthProvider>
         </ErrorBoundary>
