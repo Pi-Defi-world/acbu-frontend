@@ -19,7 +19,7 @@ export default function RatesPage() {
   const formatRate = (rate: number | undefined): string => {
     if (rate == null) return "—";
 
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(navigator.language || 'en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 6,
       useGrouping: true,
@@ -81,8 +81,8 @@ export default function RatesPage() {
               { currency: "XOF", rate: rates.acbu_xof },
             ]
               .filter(r => r.rate != null)
-              .map((r, i) => (
-                <Card key={i} className="border-border p-4">
+              .map((r) => (
+                <Card key={r.currency} className="border-border p-4">
                   <div className="flex justify-between items-center">
                     <p className="font-semibold text-foreground">
                       ACBU/{r.currency}
