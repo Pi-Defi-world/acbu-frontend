@@ -4,6 +4,9 @@
  * 
  * 401 Handling: When API returns 401 (Unauthorized), a registered callback is invoked
  * to handle stale auth state (e.g., expired httpOnly cookie).
+ * 
+ * Timeout: Requests timeout after NEXT_PUBLIC_API_TIMEOUT ms (default 30000).
+ * If caller provides AbortSignal, it aborts on either timeout or caller's signal.
  */
 
 let authErrorHandler: ((error: ApiError) => void) | null = null;
@@ -34,6 +37,10 @@ export function onAuthError(callback: (error: ApiError) => void): void {
 const BASE = typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL)
   ? (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL)!.replace(/\/$/, '')
   : '';
+
+const DEFAULT_TIMEOUT = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_TIMEOUT
+  ? parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT, 10) || 30000
+  : 30000;
 
 /** Backend often returns `{ error: { message, statusCode } }` (AppError); avoid `[object Object]`. */
 function messageFromErrorBody(
@@ -105,12 +112,22 @@ async function request<T>(
     headers['x-api-key'] = token; // Also send as x-api-key for compatibility
   }
 
-  let signal = opts.signal;
-  if (!signal) {
-    const controller = new AbortController();
-    signal = controller.signal;
-    setTimeout(() => controller.abort(), 30000); // 30 second timeout
+  // Create our own AbortController for timeout, independent of caller's signal
+  const controller = new AbortController();
+  const signal = controller.signal;
+  let timedOut = false;
+
+  // If caller provides signal, abort our controller when caller's aborts
+  if (opts.signal) {
+    opts.signal.addEventListener('abort', () => controller.abort(), { once: true });
   }
+
+  // Set timeout
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, DEFAULT_TIMEOUT);
+
   let res: Response;
   try {
     res = await fetch(url, {
@@ -121,11 +138,17 @@ async function request<T>(
       credentials: 'include', // Include httpOnly cookies in all requests
     });
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError' && !opts.signal) {
-      throw new Error('Request timed out after 30 seconds', { cause: error });
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      if (timedOut) {
+        throw new Error(`Request timed out after ${DEFAULT_TIMEOUT / 1000} seconds`, { cause: error });
+      }
+      // If not timed out, it was aborted by caller's signal, rethrow
+      throw error;
     }
     throw error;
   }
+  clearTimeout(timeoutId);
   let data: { error?: string | { message?: string }; message?: string; details?: unknown };
   const ct = res.headers.get('content-type');
   if (ct?.includes('application/json')) {
