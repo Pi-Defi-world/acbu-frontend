@@ -82,9 +82,12 @@ export default function SendPage() {
   const [transfers, setTransfers] = useState<TransferItem[]>([]);
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingTransfers, setLoadingTransfers] = useState(true);
+<<<<<<< fix/issue-183-qa-gates
+=======
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [transfersError, setTransfersError] = useState("");
   const [contactsError, setContactsError] = useState("");
+>>>>>>> dev
   const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -110,6 +113,11 @@ export default function SendPage() {
     setContactsError("");
     userApi.getContacts(opts).then((data) => {
       setContacts(data.contacts ?? []);
+<<<<<<< fix/issue-183-qa-gates
+      setLoadError("");
+    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts'));
+  }, [opts]);
+=======
       setContactsError("");
     }).catch((e) => {
       const message = e instanceof Error ? e.message : "Failed to load contacts";
@@ -121,11 +129,12 @@ export default function SendPage() {
       });
     }).finally(() => setLoadingContacts(false));
   }, [opts, toast]);
+>>>>>>> dev
 
   useEffect(() => {
     loadTransfers();
     loadContacts();
-  }, [loadTransfers, loadContacts, opts.token]);
+  }, [loadTransfers, loadContacts]);
 
   const getToValue = () =>
     useContact && selectedContact

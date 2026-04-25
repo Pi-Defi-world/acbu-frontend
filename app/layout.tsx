@@ -50,9 +50,9 @@ export default async function RootLayout({
       <body className={`font-sans antialiased`}>
         <ErrorBoundary>
           <AuthProvider>
-            <AuthGuard>
+           {/*  <AuthGuard>*/}
               <AppLayout>{children}</AppLayout>
-            </AuthGuard>
+            {/*</AuthGuard>*/}
             <WalletSetupModal />
             <Toaster />
             <Analytics />
