@@ -26,7 +26,6 @@ import { useAuth } from '@/contexts/auth-context';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureAcbuTrustlineClient } from '@/lib/stellar/trustlines';
 import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
-import { submitBurnRedeemSingleClient } from '@/lib/stellar/burning';
 import { Keypair } from '@stellar/stellar-sdk';
 import * as ratesApi from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
@@ -208,7 +207,17 @@ export default function MintPage() {
         clearMintError();
         setStep("confirm");
     };
-    const handleBurnConfirm = () => setStep("confirm");
+    // Burn tab: deep-link to the dedicated /burn page with amount and currency
+    // prefilled. The /burn page collects the required recipient bank account
+    // details and calls the real burn API — avoiding a fake success here.
+    const handleBurnConfirm = () => {
+        if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency) return;
+        const params = new URLSearchParams({
+            amount: burnAmount,
+            currency: selectedFiatCurrency,
+        });
+        router.push(`/burn?${params.toString()}`);
+    };
     const handleExecuteMint = async () => {
         if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
             return;
@@ -393,10 +402,9 @@ export default function MintPage() {
         }
     };
     const handleExecute = async () => {
+        // Burn is handled by deep-linking to /burn — only mint uses this dialog.
         if (activeTab === "mint") {
             await handleExecuteMint();
-        } else {
-            await handleExecuteBurn();
         }
     };
     const resetForm = () => {
@@ -663,7 +671,7 @@ export default function MintPage() {
                                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
                             >
                                 <ArrowUp className="w-4 h-4 mr-2" />
-                                Burn & Redeem
+                                Continue to Burn & Redeem
                             </Button>
                         </div>
                     </TabsContent>
