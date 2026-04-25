@@ -27,6 +27,8 @@ import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { useBalance } from "@/hooks/use-balance";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
@@ -67,6 +69,7 @@ export default function SendPage() {
   const kit = useStellarWalletsKit();
   const { toast } = useToast();
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [activeTab, setActiveTab] = useState("send");
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -83,9 +86,6 @@ export default function SendPage() {
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingTransfers, setLoadingTransfers] = useState(true);
   const [loadingContacts, setLoadingContacts] = useState(true);
-  const [transfersError, setTransfersError] = useState("");
-  const [contactsError, setContactsError] = useState("");
-  const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
 
   const loadTransfers = useCallback(() => {
@@ -135,7 +135,7 @@ export default function SendPage() {
   const handleConfirmTransfer = async () => {
     const to = getToValue();
     if (!amount || parseFloat(amount) <= 0 || !to) return;
-    setSubmitError("");
+    clearError();
     setSending(true);
     try {
       let blockchainTxHash: string | undefined;
@@ -210,7 +210,7 @@ export default function SendPage() {
         setSelectedContact(null);
       }, 2500);
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Transfer failed");
+      setApiError(e);
     } finally {
       setSending(false);
     }
@@ -493,8 +493,8 @@ const getStatusColor = (status: string) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-4">
-            {submitError && (
-              <p className="text-sm text-destructive">{submitError}</p>
+            {uiError && (
+              <ApiErrorDisplay error={uiError} onDismiss={clearError} />
             )}
             <div className="rounded-lg border border-border bg-muted p-4">
               <p className="text-xs text-muted-foreground">To</p>
@@ -528,7 +528,7 @@ const getStatusColor = (status: string) => {
           </div>
           <div className="flex gap-3">
             <AlertDialogCancel className="flex-1 border-border" disabled={sending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmTransfer} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={sending}>{sending ? 'Sending...' : `Send ACBU ${amount}`}</AlertDialogAction>
+            <AlertDialogAction onClick={handleConfirmTransfer} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={sending || isSubmitDisabled}>{sending ? 'Sending...' : `Send ACBU ${amount}`}</AlertDialogAction>
           </div>
         </AlertDialogContent>
       </AlertDialog>

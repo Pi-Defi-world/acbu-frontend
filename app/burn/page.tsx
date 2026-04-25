@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -68,7 +70,12 @@ export default function BurnPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
-  const [error, setError] = useState("");
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+  const [acbuAmount, setAcbuAmount] = useState("");
+  const [currency, setCurrency] = useState("NGN");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [bankCode, setBankCode] = useState("");
+  const [accountName, setAccountName] = useState("");
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
 
@@ -84,12 +91,21 @@ export default function BurnPage() {
     mode: "onChange",
   });
 
-  const { watch, handleSubmit: formHandleSubmit } = form;
-  const acbuAmount = watch("acbuAmount");
-  const currency = watch("currency");
+  const isValid =
+    acbuAmount &&
+    parseFloat(acbuAmount) > 0 &&
+    currency.length === 3 &&
+    accountNumber.trim().length >= 5 &&
+    accountNumber.trim().length <= 20 &&
+    bankCode.trim().length >= 3 &&
+    bankCode.trim().length <= 10 &&
+    accountName.trim().length >= 3 &&
+    accountName.trim().length <= 100;
 
-  const onSubmit = async (values: BurnFormValues) => {
-    setError("");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isValid) return;
+    clearError();
     setLoading(true);
     setTxId(null);
     
@@ -166,13 +182,7 @@ export default function BurnPage() {
       setTxId(res.transaction_id);
       form.reset({ ...values, acbuAmount: "" }); // Reset amount but keep details for convenience? Or full reset?
     } catch (e) {
-      console.error("Burn error:", e);
-      // Handle server-side validation errors if they follow a specific format
-      if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError("Burn failed. Please check your bank details and try again.");
-      }
+      setApiError(e);
     } finally {
       setLoading(false);
     }
@@ -197,12 +207,13 @@ export default function BurnPage() {
           <p className="text-muted-foreground text-sm">
             Burn ACBU and withdraw to your bank or mobile money account.
           </p>
-          
-          {error && (
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-              <p className="text-destructive text-sm font-medium">{error}</p>
-            </div>
+          {uiError && (
+            <ApiErrorDisplay error={uiError} onDismiss={clearError} />
+          )}
+          {txId && (
+            <p className="text-green-600 text-sm">
+              Transaction submitted: {txId}
+            </p>
           )}
           
           {txId && (
@@ -345,16 +356,15 @@ export default function BurnPage() {
                   </FormItem>
                 )}
               />
-
-              <Button
-                type="submit"
-                disabled={!form.formState.isValid || loading}
-                className="w-full"
-              >
-                {loading ? "Submitting..." : "Burn & Withdraw"}
-              </Button>
-            </form>
-          </Form>
+            </div>
+            <Button
+              type="submit"
+              disabled={!isValid || loading || isSubmitDisabled}
+              className="w-full"
+            >
+              {loading ? "Submitting..." : "Burn & Withdraw"}
+            </Button>
+          </form>
         </Card>
       </PageContainer>
     </>
