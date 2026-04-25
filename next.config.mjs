@@ -10,6 +10,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Don't advertise the framework to reduce attack surface
+  poweredByHeader: false,
   async redirects() {
     return [
       { source: '/account', destination: '/me', permanent: false },

@@ -13,6 +13,7 @@ import {
   Clock,
   Building2,
   ArrowUpRight,
+  HandCoins,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';
@@ -23,7 +24,7 @@ import * as transactionsApi from '@/lib/api/transactions';
 import * as fiatApi from '@/lib/api/fiat';
 import * as ratesApi from '@/lib/api/rates';
 import type { TransactionListItem, RatesResponse } from '@/types/api';
-import { formatAmount } from '@/lib/utils';
+import { formatAcbu, formatAmount } from '@/lib/utils';
 
 function parsePositiveNumber(v: string | number | null | undefined): number | null {
   if (v === null || v === undefined) return null;
@@ -338,14 +339,14 @@ export default function Home() {
                     <div className="flex items-center justify-between pl-11">
                       <p className="text-sm font-semibold text-foreground">
                         {t.type === 'burn'
-                          ? `- ACBU ${formatAmount(t.acbu_amount_burned ?? t.amount_acbu)}`
+                          ? `- ACBU ${formatAcbu(t.acbu_amount_burned ?? t.amount_acbu)}`
                           : t.type === 'mint'
                             ? t.amount_acbu != null
-                              ? `+ ACBU ${formatAmount(t.amount_acbu)}`
+                              ? `+ ACBU ${formatAcbu(t.amount_acbu)}`
                               : t.local_currency && t.local_amount
                                 ? `+ ${t.local_currency} ${formatAmount(t.local_amount)}`
                                 : '—'
-                            : `ACBU ${formatAmount(t.amount_acbu)}`}
+                            : `ACBU ${formatAcbu(t.amount_acbu)}`}
                       </p>
                       <Badge variant="outline" className="text-xs">{t.status}</Badge>
                     </div>
