@@ -19,16 +19,17 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
+import { useApiError } from '@/hooks/use-api-error';
+import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import { useBalance } from '@/hooks/use-balance';
 import { useAuth } from '@/contexts/auth-context';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureAcbuTrustlineClient } from '@/lib/stellar/trustlines';
 import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
-import { submitBurnRedeemSingleClient } from '@/lib/stellar/burning';
 import { Keypair } from '@stellar/stellar-sdk';
 import * as ratesApi from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
-import type { RatesResponse } from '@/types/api';
+import type { QuoteResponse, RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
 
 const MINT_NETWORK_FEE_TEXT = "Estimated at confirmation";
@@ -51,6 +52,48 @@ function estimateAcbuFromFiat(
   return n / localPerAcbu;
 }
 
+function getNumericValue(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string' && value.trim()) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+}
+
+function getQuoteFee(quote: QuoteResponse | null): number | null {
+    if (!quote) return null;
+
+    return (
+        getNumericValue(quote.network_fee) ??
+        getNumericValue(quote.processing_fee) ??
+        getNumericValue(quote.fee_amount) ??
+        getNumericValue(quote.fee) ??
+        getNumericValue(quote.total_fee)
+    );
+}
+
+function getQuoteReceiveAmount(quote: QuoteResponse | null): number | null {
+    if (!quote) return null;
+
+    return (
+        getNumericValue(quote.receive_amount) ??
+        getNumericValue(quote.payout_amount) ??
+        getNumericValue(quote.local_amount) ??
+        getNumericValue(quote.amount)
+    );
+}
+
+function formatQuotedFee(
+    quote: QuoteResponse | null,
+    currency: string,
+    fallback: string,
+): string {
+    const fee = getQuoteFee(quote);
+    if (fee === null) return fallback;
+    return `${currency} ${formatAmount(fee)}`;
+}
+
 /**
  * Mint and Burn page for ACBU tokens.
  */
@@ -59,13 +102,13 @@ export default function MintPage() {
   const { userId, stellarAddress } = useAuth();
   const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const kit = useStellarWalletsKit();
+  const { uiError: mintUiError, setApiError: setMintApiError, clearError: clearMintError, isSubmitDisabled: isMintDisabled } = useApiError();
+  const { uiError: burnUiError, setApiError: setBurnApiError, clearError: clearBurnError, isSubmitDisabled: isBurnDisabled } = useApiError();
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
-  const [burnError, setBurnError] = useState('');
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [ratesLoading, setRatesLoading] = useState(false);
-  const [mintError, setMintError] = useState('');
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
   const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
@@ -74,6 +117,8 @@ export default function MintPage() {
   const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
   
+    const [mintQuote, setMintQuote] = useState<QuoteResponse | null>(null);
+    const [burnQuote, setBurnQuote] = useState<QuoteResponse | null>(null);
   const rateRows = Array.isArray((rates as { rates?: Array<{ currency?: string; rate?: number }> } | null)?.rates)
     ? ((rates as { rates?: Array<{ currency?: string; rate?: number }> }).rates ?? [])
     : [];
@@ -97,6 +142,48 @@ export default function MintPage() {
       cancelled = true;
     };
   }, [opts.token]);
+
+    useEffect(() => {
+        if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency) {
+            setMintQuote(null);
+            return;
+        }
+
+        let cancelled = false;
+        ratesApi
+            .getQuote(fiatAmount, selectedFiatCurrency, opts)
+            .then((quote) => {
+                if (!cancelled) setMintQuote(quote);
+            })
+            .catch(() => {
+                if (!cancelled) setMintQuote(null);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [fiatAmount, selectedFiatCurrency, opts]);
+
+    useEffect(() => {
+        if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency) {
+            setBurnQuote(null);
+            return;
+        }
+
+        let cancelled = false;
+        ratesApi
+            .getQuote(burnAmount, selectedFiatCurrency, opts)
+            .then((quote) => {
+                if (!cancelled) setBurnQuote(quote);
+            })
+            .catch(() => {
+                if (!cancelled) setBurnQuote(null);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [burnAmount, selectedFiatCurrency, opts]);
 
   useEffect(() => {
     fiatApi
@@ -139,6 +226,40 @@ export default function MintPage() {
         );
       }
       const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+    const handleMintConfirm = () => {
+        clearMintError();
+        setStep("confirm");
+    };
+    // Burn tab: deep-link to the dedicated /burn page with amount and currency
+    // prefilled. The /burn page collects the required recipient bank account
+    // details and calls the real burn API — avoiding a fake success here.
+    const handleBurnConfirm = () => {
+        if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency) return;
+        const params = new URLSearchParams({
+            amount: burnAmount,
+            currency: selectedFiatCurrency,
+        });
+        router.push(`/burn?${params.toString()}`);
+    };
+    const handleExecuteMint = async () => {
+        if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
+            return;
+        clearMintError();
+        setExecuting(true);
+        try {
+            // Default setup: make sure the recipient trusts the ACBU asset
+            // before the backend tries to mint. Without this the minting
+            // contract fails with "trustline entry is missing for account".
+            // We add it client-side using the local wallet seed and then
+            // wait for Horizon to confirm the trustline before calling the
+            // backend — Soroban simulation reads the ledger's current state,
+            // so an unconfirmed trustline would still fail the mint.
+            if (!userId) {
+                throw new Error(
+                    "Not signed in — refresh and try again.",
+                );
+            }
+            const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
 
       let accountId: string;
       let trust: Awaited<ReturnType<typeof ensureAcbuTrustlineClient>> | null = null;
@@ -315,6 +436,134 @@ export default function MintPage() {
     setTxId(null);
     setMintAcbuReceived(null);
   };
+            const res = await fiatApi.postOnRamp(
+                fiatAmount,
+                selectedFiatCurrency,
+                opts,
+            );
+            setTxId(
+                res.blockchain_tx_hash ||
+                    res.transaction_id ||
+                    res.transactionId ||
+                    null,
+            );
+            const acbu =
+                res.acbuAmount ??
+                (typeof res.acbu_amount === "number" ? res.acbu_amount : undefined);
+            setMintAcbuReceived(
+                typeof acbu === "number" && Number.isFinite(acbu) ? acbu : null,
+            );
+            refreshBalance();
+            setStep("success");
+        } catch (e) {
+            setMintApiError(e);
+        } finally {
+            setExecuting(false);
+        }
+    };
+    const handleExecuteBurn = async () => {
+        if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency)
+            return;
+        clearBurnError();
+        setExecuting(true);
+        try {
+            if (!userId) {
+                throw new Error("Not signed in — refresh and try again.");
+            }
+            if (!stellarAddress) {
+                throw new Error("No linked Stellar wallet address.");
+            }
+            const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+            let burnTxHash: string;
+            if (secret) {
+                const localPubKey = Keypair.fromSecret(secret).publicKey();
+                if (stellarAddress && localPubKey !== stellarAddress) {
+                    throw new Error(
+                        `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+                    );
+                }
+                const submit = await submitBurnRedeemSingleClient({
+                    userAddress: stellarAddress,
+                    amountAcbu: burnAmount,
+                    currency: selectedFiatCurrency,
+                    userSecret: secret,
+                });
+                burnTxHash = submit.transactionHash;
+            } else {
+                if (!kit) {
+                    throw new Error(
+                        "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+                    );
+                }
+                const address = await new Promise<string>((resolve, reject) => {
+                    kit
+                        .openModal({
+                            onWalletSelected: async (selectedOption: { id: string }) => {
+                                try {
+                                    kit.setWallet(selectedOption.id);
+                                    const { address } = await kit.getAddress();
+                                    resolve(address);
+                                } catch (err) {
+                                    reject(err);
+                                }
+                            },
+                        })
+                        .catch(reject);
+                });
+                if (stellarAddress && address !== stellarAddress) {
+                    throw new Error(
+                        `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+                    );
+                }
+                const submit = await submitBurnRedeemSingleClient({
+                    userAddress: stellarAddress,
+                    amountAcbu: burnAmount,
+                    currency: selectedFiatCurrency,
+                    external: { kit, address },
+                });
+                burnTxHash = submit.transactionHash;
+            }
+            const res = await fiatApi.postOffRamp(
+                burnAmount,
+                selectedFiatCurrency,
+                burnTxHash,
+                opts,
+            );
+            setTxId(res.transaction_id || res.transactionId || null);
+            setStep("success");
+        } catch (e) {
+            setBurnApiError(e);
+        } finally {
+            setExecuting(false);
+        }
+    };
+    const handleExecute = async () => {
+        // Burn is handled by deep-linking to /burn — only mint uses this dialog.
+        if (activeTab === "mint") {
+            await handleExecuteMint();
+        }
+    };
+    const resetForm = () => {
+        setStep("input");
+        setFiatAmount("");
+        setBurnAmount("");
+        clearBurnError();
+        clearMintError();
+        setTxId(null);
+        setMintAcbuReceived(null);
+    };
+
+    const mintFeeText = formatQuotedFee(
+        mintQuote,
+        mintQuote?.currency || selectedFiatCurrency || 'FIAT',
+        'Unavailable until quote loads',
+    );
+    const burnFeeText = formatQuotedFee(
+        burnQuote,
+        burnQuote?.currency || selectedFiatCurrency || 'FIAT',
+        'Unavailable until quote loads',
+    );
+    const quotedBurnReceiveAmount = getQuoteReceiveAmount(burnQuote);
 
   return (
     <>
@@ -581,17 +830,204 @@ export default function MintPage() {
               </Button>
             </div>
           </TabsContent>
+                    <TabsContent value="mint" className="py-6 space-y-4">
+                        <div>
+                            <p className="text-sm text-muted-foreground mb-3">
+                                Mint ACBU via custodial on-ramp (demo basket fiat held on the minting
+                                contract).
+                            </p>
+                            {mintUiError && (
+                                <ApiErrorDisplay error={mintUiError} onDismiss={clearMintError} className="mb-2" />
+                            )}
+                            <div>
+                                <label
+                                    htmlFor="fiat-account"
+                                    className="text-sm font-medium text-foreground mb-2 block"
+                                >
+                                    Basket currency (demo fiat path)
+                                </label>
+                                <select
+                                    id="fiat-account"
+                                    value={selectedFiatCurrency}
+                                    onChange={(e) => setSelectedFiatCurrency(e.target.value)}
+                                    className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
+                                >
+                                    {fiatAccounts.length === 0 ? (
+                                        <option value="" disabled>Loading currencies…</option>
+                                    ) : (
+                                        fiatAccounts.map(acc => (
+                                            <option key={acc.id} value={acc.currency}>
+                                                {acc.currency} — {acc.bank_name}
+                                            </option>
+                                        ))
+                                    )}
+                                </select>
+                            </div>
+                            <div className="mt-4">
+                                <label
+                                    htmlFor="fiat-amount"
+                                    className="text-sm font-medium text-foreground mb-2 block"
+                                >
+                                    Amount to Exchange
+                                </label>
+                                <div className="flex gap-2">
+                                    <span className="flex items-center text-muted-foreground font-medium">
+                                        {selectedFiatCurrency || "FIAT"}
+                                    </span>
+                                    <Input
+                                        id="fiat-amount"
+                                        type="number"
+                                        placeholder="0.00"
+                                        min="0"
+                                        step="any"
+                                        value={fiatAmount}
+                                        onChange={(e) =>
+                                            setFiatAmount(e.target.value)
+                                        }
+                                        className="border-border text-lg font-semibold"
+                                    />
+                                </div>
+                            </div>
+                            {estimatedMintAcbu != null && (
+                                <Card className="border-border bg-muted/80 p-3 mt-3">
+                                    <p className="text-xs text-muted-foreground mb-1">
+                                        Estimated ACBU (from latest rates)
+                                    </p>
+                                    <p className="text-lg font-semibold text-foreground">
+                                        ≈ {formatAmount(estimatedMintAcbu)} ACBU
+                                    </p>
+                                </Card>
+                            )}
+                            <Card className="border-border bg-muted p-3 mt-4">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">
+                                        Network Fee
+                                    </span>
+                                    <span className="font-medium text-foreground">
+                                        {mintFeeText}
+                                    </span>
+                                </div>
+                            </Card>
+                            <Button
+                                onClick={handleMintConfirm}
+                                disabled={
+                                    !fiatAmount ||
+                                    parseFloat(fiatAmount) <= 0 ||
+                                    !selectedFiatCurrency
+                                }
+                                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
+                            >
+                                <ArrowDown className="w-4 h-4 mr-2" />
+                                Mint ACBU
+                            </Button>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="burn" className="py-6 space-y-4">
+                        <div>
+                            <p className="text-sm text-muted-foreground mb-3">
+                                Burn ACBU on-chain for the selected basket slice (no simulated bank
+                                credit).
+                            </p>
+                            {burnUiError && (
+                                <ApiErrorDisplay error={burnUiError} onDismiss={clearBurnError} className="mb-2" />
+                            )}
+                            <div>
+                                <label
+                                    htmlFor="burn-fiat-account"
+                                    className="text-sm font-medium text-foreground mb-2 block"
+                                >
+                                    Basket currency (burn slice)
+                                </label>
+                                <select
+                                    id="burn-fiat-account"
+                                    value={selectedFiatCurrency}
+                                    onChange={(e) => setSelectedFiatCurrency(e.target.value)}
+                                    className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
+                                >
+                                    {fiatAccounts.length === 0 ? (
+                                        <option value="" disabled>Loading currencies…</option>
+                                    ) : (
+                                        fiatAccounts.map(acc => (
+                                            <option key={acc.id} value={acc.currency}>
+                                                {acc.currency} — {acc.bank_name}
+                                            </option>
+                                        ))
+                                    )}
+                                </select>
+                            </div>
+                            <div className="mt-4">
+                                <label
+                                    htmlFor="burn-amount"
+                                    className="text-sm font-medium text-foreground mb-2 block"
+                                >
+                                    Amount to Burn
+                                </label>
+                                <div className="flex gap-2">
+                                    <span className="flex items-center text-muted-foreground font-medium">
+                                        ACBU
+                                    </span>
+                                    <Input
+                                        id="burn-amount"
+                                        type="number"
+                                        placeholder="0.00"
+                                        value={burnAmount}
+                                        onChange={(e) =>
+                                            setBurnAmount(e.target.value)
+                                        }
+                                        className="border-border text-lg font-semibold"
+                                    />
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    Available: ACBU{" "}
+                                    {balanceLoading ? '...' : formatAmount(balance)}
+                                </p>
+                            </div>
+                            <Card className="border-border bg-muted p-3 mt-4">
+                                <div className="flex justify-between text-sm mb-2">
+                                    <span className="text-muted-foreground">
+                                        You'll receive
+                                    </span>
+                                    <span className="font-medium text-foreground">
+                                        {quotedBurnReceiveAmount !== null && selectedFiatCurrency
+                                            ? `~ ${selectedFiatCurrency} ${formatAmount(quotedBurnReceiveAmount)}`
+                                            : "—"}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">
+                                        Processing Fee
+                                    </span>
+                                    <span className="font-medium text-foreground">
+                                        {burnFeeText}
+                                    </span>
+                                </div>
+                            </Card>
+                            <Button
+                                onClick={handleBurnConfirm}
+                                disabled={
+                                    !burnAmount ||
+                                    parseFloat(burnAmount) <= 0 ||
+                                    !selectedFiatCurrency
+                                }
+                                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
+                            >
+                                <ArrowUp className="w-4 h-4 mr-2" />
+                                Continue to Burn & Redeem
+                            </Button>
+                        </div>
+                    </TabsContent>
 
           <TabsContent value="rates" className="py-6 space-y-4">
             <div className="space-y-3">
               {ratesLoading ? (
                 <Skeleton className="h-20 w-full" />
               ) : rateRows.length ? (
-                rateRows.map((r: { currency?: string; rate?: number }) => (
-                  <Card key={r.currency ?? r.rate} className="border-border p-4">
+                rateRows.map((r) => (
+                  <Card key={r.currency} className="border-border p-4">
                     <div className="flex justify-between">
-                      <p className="font-semibold text-foreground">ACBU/{r.currency ?? 'Rate'}</p>
-                      <p className="text-lg font-bold text-primary">{r.rate != null ? String(r.rate) : '—'}</p>
+                      <p className="font-semibold text-foreground">ACBU/{r.currency}</p>
+                      <p className="text-lg font-bold text-primary">{formatRate(r.rate)}</p>
                     </div>
                   </Card>
                 ))
