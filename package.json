@@ -59,18 +59,19 @@
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.4",
     "sonner": "^1.7.4",
-    "tailwind-merge": "^3.3.1",
+    "stellar-sdk": "^13.3.0",
+    "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^9.11.1",
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^10.2.0",
+    "eslint": "^9.11.1",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^17.5.0",
     "postcss": "^8.5",
@@ -81,12 +82,9 @@
   },
   "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b",
   "pnpm": {
-    "overrides": {
-      "@stellar/stellar-sdk": "^15.0.1"
-    },
     "peerDependencyRules": {
       "allowedVersions": {
-        "@trezor/connect-plugin-stellar>@stellar/stellar-sdk": "^15.0.1"
+        "eslint-plugin-react>eslint": "^10"
       }
     }
   }
