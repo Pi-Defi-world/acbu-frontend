@@ -36,13 +36,25 @@ async function resolveUserUri(
 
 export default function SavingsWithdrawPage() {
     const opts = useApiOpts();
-    const [user, setUser] = useState("");
+    const [homeRecipient, setHomeRecipient] = useState("");
+    const [recipient, setRecipient] = useState("");
     const [termSeconds, setTermSeconds] = useState("0");
     const [amount, setAmount] = useState("");
     const [loading, setLoading] = useState(false);
     const [resolving, setResolving] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [editingRecipient, setEditingRecipient] = useState(false);
+    const [resolvedRecipient, setResolvedRecipient] = useState<RecipientResponse | null>(null);
+    const [recipientValidationLoading, setRecipientValidationLoading] = useState(false);
+    const [recipientValidationError, setRecipientValidationError] = useState("");
+    const [confirmDifferentRecipient, setConfirmDifferentRecipient] = useState(false);
+
+    const isRecipientChanged = recipient.trim() !== homeRecipient.trim();
+    const resolvedRecipientIdentifier = resolvedRecipient?.pay_uri || resolvedRecipient?.alias || '';
+    const isRecipientResolved = Boolean(
+        resolvedRecipient?.resolved || resolvedRecipientIdentifier,
+    );
 
     useEffect(() => {
         let cancelled = false;
@@ -79,16 +91,56 @@ export default function SavingsWithdrawPage() {
         return () => { cancelled = true; };
     }, [opts.token]);
 
+    const validateRecipient = async (value: string) => {
+        setRecipientValidationError("");
+        setRecipientValidationLoading(true);
+        setResolvedRecipient(null);
+
+        try {
+            const result = await recipientApi.resolveRecipient(value, opts);
+            setResolvedRecipient(result);
+            if (!result.resolved && !result.pay_uri && !result.alias) {
+                setRecipientValidationError("Recipient could not be resolved. Please enter a valid ID or alias.");
+            }
+        } catch (e) {
+            setRecipientValidationError(
+                e instanceof Error
+                    ? e.message
+                    : "Unable to validate recipient",
+            );
+        } finally {
+            setRecipientValidationLoading(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user.trim() || !amount || parseFloat(amount) <= 0) return;
+        const targetRecipient = isRecipientChanged
+            ? resolvedRecipientIdentifier || recipient.trim()
+            : homeRecipient.trim();
+
+        if (!targetRecipient || !amount || parseFloat(amount) <= 0) return;
+
+        if (isRecipientChanged && !confirmDifferentRecipient) {
+            setError(
+                "Please confirm that you want to withdraw to a different recipient.",
+            );
+            return;
+        }
+
+        if (isRecipientChanged && !isRecipientResolved) {
+            setError("Cannot submit until recipient is resolved.");
+            return;
+        }
+
         setError("");
         setSuccess("");
         setLoading(true);
+
         try {
             await savingsApi.savingsWithdraw(
                 {
-                    user: user.trim(),
+                    user: targetRecipient,
                     term_seconds: parseInt(termSeconds, 10) || 0,
                     amount,
                 },
@@ -100,6 +152,23 @@ export default function SavingsWithdrawPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleRecipientChange = (nextValue: string) => {
+        setRecipient(nextValue);
+        setConfirmDifferentRecipient(false);
+        setResolvedRecipient(null);
+        setRecipientValidationError("");
+    };
+
+    const handleToggleEdit = () => {
+        if (editingRecipient) {
+            setRecipient(homeRecipient);
+            setConfirmDifferentRecipient(false);
+            setResolvedRecipient(null);
+            setRecipientValidationError("");
+        }
+        setEditingRecipient(!editingRecipient);
     };
 
     return (
@@ -127,12 +196,22 @@ export default function SavingsWithdrawPage() {
                     )}
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label
-                                htmlFor="withdraw-account"
-                                className="text-sm font-medium text-foreground mb-2 block"
-                            >
-                                Your account
-                            </label>
+                            <div className="flex items-center justify-between gap-3">
+                                <label
+                                    htmlFor="withdraw-recipient"
+                                    className="text-sm font-medium text-foreground mb-2 block"
+                                >
+                                    Recipient
+                                </label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleToggleEdit}
+                                >
+                                    {editingRecipient ? 'Reset' : 'Change'}
+                                </Button>
+                            </div>
                             <Input
                                 id="withdraw-account"
                                 value={resolving ? "Resolving…" : user}
@@ -178,6 +257,20 @@ export default function SavingsWithdrawPage() {
                                 className="border-border"
                             />
                         </div>
+                        {isRecipientChanged && (
+                            <div className="flex items-start gap-2 rounded-lg border border-border bg-muted p-3">
+                                <input
+                                    type="checkbox"
+                                    id="confirm-different-recipient"
+                                    checked={confirmDifferentRecipient}
+                                    onChange={(e) => setConfirmDifferentRecipient(e.target.checked)}
+                                    className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                                />
+                                <label htmlFor="confirm-different-recipient" className="text-sm text-foreground">
+                                    I confirm I want to withdraw to a different recipient than my default receive account.
+                                </label>
+                            </div>
+                        )}
                         <Button
                             type="submit"
                             disabled={loading || resolving || !user.trim() || !amount}
