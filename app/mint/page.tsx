@@ -19,6 +19,8 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
+import { useApiError } from '@/hooks/use-api-error';
+import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import { useBalance } from '@/hooks/use-balance';
 import { useAuth } from '@/contexts/auth-context';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
@@ -98,13 +100,13 @@ export default function MintPage() {
   const { userId, stellarAddress } = useAuth();
   const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const kit = useStellarWalletsKit();
+  const { uiError: mintUiError, setApiError: setMintApiError, clearError: clearMintError, isSubmitDisabled: isMintDisabled } = useApiError();
+  const { uiError: burnUiError, setApiError: setBurnApiError, clearError: clearBurnError, isSubmitDisabled: isBurnDisabled } = useApiError();
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
-  const [burnError, setBurnError] = useState('');
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [ratesLoading, setRatesLoading] = useState(false);
-  const [mintError, setMintError] = useState('');
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
   const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
@@ -203,14 +205,14 @@ export default function MintPage() {
     }, [activeTab, opts.token]);
 
     const handleMintConfirm = () => {
-        setMintError("");
+        clearMintError();
         setStep("confirm");
     };
     const handleBurnConfirm = () => setStep("confirm");
     const handleExecuteMint = async () => {
         if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
             return;
-        setMintError("");
+        clearMintError();
         setExecuting(true);
         try {
             // Default setup: make sure the recipient trusts the ACBU asset
@@ -309,7 +311,7 @@ export default function MintPage() {
             refreshBalance();
             setStep("success");
         } catch (e) {
-            setMintError(e instanceof Error ? e.message : "Mint failed");
+            setMintApiError(e);
         } finally {
             setExecuting(false);
         }
@@ -317,7 +319,7 @@ export default function MintPage() {
     const handleExecuteBurn = async () => {
         if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency)
             return;
-        setBurnError("");
+        clearBurnError();
         setExecuting(true);
         try {
             if (!userId) {
@@ -385,7 +387,7 @@ export default function MintPage() {
             setTxId(res.transaction_id || res.transactionId || null);
             setStep("success");
         } catch (e) {
-            setBurnError(e instanceof Error ? e.message : "Burn failed");
+            setBurnApiError(e);
         } finally {
             setExecuting(false);
         }
@@ -401,7 +403,8 @@ export default function MintPage() {
         setStep("input");
         setFiatAmount("");
         setBurnAmount("");
-        setBurnError("");
+        clearBurnError();
+        clearMintError();
         setTxId(null);
         setMintAcbuReceived(null);
     };
@@ -483,10 +486,8 @@ export default function MintPage() {
                                 Mint ACBU via custodial on-ramp (demo basket fiat held on the minting
                                 contract).
                             </p>
-                            {mintError && (
-                                <p className="text-sm text-destructive mb-2">
-                                    {mintError}
-                                </p>
+                            {mintUiError && (
+                                <ApiErrorDisplay error={mintUiError} onDismiss={clearMintError} className="mb-2" />
                             )}
                             <div>
                                 <label
@@ -578,10 +579,8 @@ export default function MintPage() {
                                 Burn ACBU on-chain for the selected basket slice (no simulated bank
                                 credit).
                             </p>
-                            {burnError && (
-                                <p className="text-sm text-destructive mb-2">
-                                    {burnError}
-                                </p>
+                            {burnUiError && (
+                                <ApiErrorDisplay error={burnUiError} onDismiss={clearBurnError} className="mb-2" />
                             )}
                             <div>
                                 <label
@@ -674,11 +673,11 @@ export default function MintPage() {
               {ratesLoading ? (
                 <Skeleton className="h-20 w-full" />
               ) : rateRows.length ? (
-                rateRows.map((r: { currency?: string; rate?: number }) => (
-                  <Card key={r.currency ?? r.rate} className="border-border p-4">
+                rateRows.map((r) => (
+                  <Card key={r.currency} className="border-border p-4">
                     <div className="flex justify-between">
-                      <p className="font-semibold text-foreground">ACBU/{r.currency ?? 'Rate'}</p>
-                      <p className="text-lg font-bold text-primary">{r.rate != null ? String(r.rate) : '—'}</p>
+                      <p className="font-semibold text-foreground">ACBU/{r.currency}</p>
+                      <p className="text-lg font-bold text-primary">{formatRate(r.rate)}</p>
                     </div>
                   </Card>
                 ))
@@ -732,7 +731,7 @@ export default function MintPage() {
                         <AlertDialogAction
                             onClick={handleExecute}
                             className="bg-primary text-primary-foreground hover:bg-primary/90"
-                            disabled={executing}
+                            disabled={executing || (activeTab === 'mint' ? isMintDisabled : isBurnDisabled)}
                         >
                             {executing ? "Processing..." : "Confirm"}
                         </AlertDialogAction>
