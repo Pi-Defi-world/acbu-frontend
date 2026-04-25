@@ -19,8 +19,8 @@ import {
 import { ArrowDown, ArrowUp, TrendingUp } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
 import { useApiOpts } from "@/hooks/use-api";
-import { useBalance } from "@/hooks/use-balance";
-import { useToast } from "@/hooks/use-toast";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
 import * as ratesApi from "@/lib/api/rates";
@@ -60,15 +60,13 @@ function estimateLocalFromAcbu(
  */
 export default function CurrencyPage() {
   const opts = useApiOpts();
-  const { toast } = useToast();
-  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
   );
   const [step, setStep] = useState<"input" | "confirm" | "success">("input");
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
   const [lastTxId, setLastTxId] = useState("");
   const [lastResponse, setLastResponse] = useState<
     MintResponse | BurnResponse | null
@@ -131,7 +129,7 @@ export default function CurrencyPage() {
   const handleBurnConfirm = () => setStep("confirm");
 
   const handleExecute = async () => {
-    setSubmitError("");
+    clearError();
     setSubmitting(true);
     try {
       if (activeTab === "mint") {
@@ -192,13 +190,7 @@ export default function CurrencyPage() {
       setStep("success");
       refreshBalance();
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Operation failed";
-      setSubmitError(message);
-      toast({
-        variant: "destructive",
-        title: "Operation failed",
-        description: message,
-      });
+      setApiError(e);
     } finally {
       setSubmitting(false);
     }
@@ -216,7 +208,7 @@ export default function CurrencyPage() {
     setIntlAccountNumber("");
     setIntlBankCode("");
     setIntlAccountName("");
-    setSubmitError("");
+    clearError();
     setLastTxId("");
     setLastResponse(null);
   };
@@ -694,14 +686,14 @@ export default function CurrencyPage() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleExecute}
-              disabled={submitting}
+              disabled={submitting || isSubmitDisabled}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {submitting ? "Processing..." : "Confirm"}
             </AlertDialogAction>
           </div>
-          {submitError && (
-            <p className="text-sm text-destructive mt-2">{submitError}</p>
+          {uiError && (
+            <ApiErrorDisplay error={uiError} onDismiss={clearError} className="mt-2" />
           )}
         </AlertDialogContent>
       </AlertDialog>
