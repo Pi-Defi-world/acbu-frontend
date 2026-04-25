@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
@@ -439,7 +440,7 @@ export default function MintPage() {
                             ACBU Balance
                         </p>
                         <p className="text-3xl font-bold mb-2">
-                            {balanceLoading ? '...' : `ACBU ${formatAmount(balance)}`}
+                            {balanceLoading ? <BalanceSkeleton variant="compact" /> : `ACBU ${formatAmount(balance)}`}
                         </p>
                         <p className="text-xs opacity-75">
                             {balanceSource === "stellar"
