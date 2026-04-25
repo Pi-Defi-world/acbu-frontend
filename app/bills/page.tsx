@@ -22,6 +22,7 @@ import { Zap,
     AlertCircle,
 } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
+import { CURRENCY } from "@/lib/currency";
 
 interface BillProvider {
     id: string;
@@ -227,7 +228,7 @@ export default function BillsPage() {
                                                     {formatAmount(
                                                         provider.minAmount,
                                                     )}{" "}
-                                                    - AFK{" "}
+                                                    - {CURRENCY}{" "}
                                                     {formatAmount(
                                                         provider.maxAmount,
                                                     )}
@@ -266,7 +267,7 @@ export default function BillsPage() {
                                                     <CheckCircle className="w-4 h-4 text-green-600" />
                                                 )}
                                                 <p className="font-semibold text-foreground">
-                                                    -AFK{" "}
+                                                    -{CURRENCY}{" "}
                                                     {formatAmount(tx.amount)}
                                                 </p>
                                             </div>
