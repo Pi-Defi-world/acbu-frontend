@@ -1,4 +1,5 @@
 import localforage from 'localforage';
+import { getPasscode } from './passcode-manager';
 
 localforage.config({
   name: 'ACBU_Wallet',
@@ -8,7 +9,6 @@ localforage.config({
 const KEY_STORE_PREFIX = 'stellar_secret_';
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
 const KEY_STORE_PLAINTEXT_ADDRESS_PREFIX = 'stellar_secret_plain_addr_';
-const KEY_STORE_PASSPHRASE = 'acbu_passcode';
 
 /**
  * Simulates AES encryption for the local storage.
@@ -114,7 +114,7 @@ export async function getWalletSecretLocalPlaintext(
 /**
  * Best-effort wallet secret lookup:
  * - plaintext slot (dev/test flows and wallet-setup modal)
- * - encrypted slot decrypted with passcode from sessionStorage (wallet page flow)
+ * - encrypted slot decrypted with passcode from memory (wallet page flow)
  */
 export async function getWalletSecretAnyLocal(
   userId: string,
@@ -124,12 +124,10 @@ export async function getWalletSecretAnyLocal(
   if (plaintext) return plaintext;
 
   try {
-    if (typeof window !== 'undefined') {
-      const passcode = window.sessionStorage.getItem(KEY_STORE_PASSPHRASE) || '';
-      if (passcode) {
-        const decrypted = await getWalletSecret(userId, passcode);
-        if (decrypted) return decrypted;
-      }
+    const passcode = getPasscode();
+    if (passcode) {
+      const decrypted = await getWalletSecret(userId, passcode);
+      if (decrypted) return decrypted;
     }
   } catch {
     // ignore

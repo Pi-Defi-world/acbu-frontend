@@ -69,10 +69,10 @@ function SignInForm() {
       }
 
       if ("user_id" in result) {
-        // Store passcode in memory for wallet operations
+        // Store passcode in memory for wallet operations (more secure than sessionStorage)
         storePasscode(passcode);
         
-        login(result.user_id, result.stellar_address || null);
+        login(result.user_id, result.stellar_address);
         
         if (result.wallet_created && result.passphrase) {
           sessionStorage.setItem('temp_passphrase', result.passphrase);
