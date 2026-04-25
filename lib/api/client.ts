@@ -61,12 +61,6 @@ export function getApiErrorMessage(e: unknown): string {
   return 'Something went wrong';
 }
 
-function getCsrfToken(): string | undefined {
-  if (typeof document === 'undefined') return undefined;
-  const match = document.cookie.match(/(^|;\s*)XSRF-TOKEN=([^;]*)/);
-  return match ? decodeURIComponent(match[2]) : undefined;
-}
-
 export interface RequestOptions {
   token?: string | null;
   signal?: AbortSignal;
@@ -94,11 +88,8 @@ async function request<T>(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  const csrfToken = getCsrfToken();
-  if (csrfToken) {
-    headers['X-XSRF-TOKEN'] = csrfToken;
-  }
-  
+  // CSRF cookie logic removed: backend does not guarantee XSRF-TOKEN pairing
+
   const token = opts.token !== undefined ? opts.token : currentToken;
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
