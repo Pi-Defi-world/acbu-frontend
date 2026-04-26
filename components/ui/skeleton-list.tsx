@@ -25,7 +25,7 @@ export function SkeletonList({
   return (
     <div className={cn(gap, className)}>
       {Array.from({ length: count }).map((_, i) => (
-        <Skeleton key={`skeleton-${i}`} className={cn('w-full', itemHeight)} />
+        <Skeleton key={i} className={cn('w-full', itemHeight)} />
       ))}
     </div>
   )
