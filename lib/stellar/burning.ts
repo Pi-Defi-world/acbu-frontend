@@ -50,14 +50,14 @@ async function resolveNetworkConfig(): Promise<{
 
 async function submitAndWaitSuccess(params: {
   rpcServer: rpc.Server;
-  tx: any;
+  tx: Parameters<rpc.Server['sendTransaction']>[0];
   timeoutMs?: number;
 }): Promise<{ txHash: string }> {
   const sendRes = await params.rpcServer.sendTransaction(params.tx);
-  if ((sendRes as any).errorResultXdr) {
+  if ((sendRes as { errorResultXdr?: string }).errorResultXdr) {
     throw new Error("Soroban send failed.");
   }
-  const txHash = (sendRes as any).hash as string;
+  const txHash = (sendRes as { hash: string }).hash;
   const timeoutMs = params.timeoutMs ?? 120000;
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
@@ -126,7 +126,7 @@ export async function submitBurnRedeemSingleClient(params: {
   }
   const assembled = rpc.assembleTransaction(tx, simulation).setTimeout(0).build();
 
-  let signedTx: any = assembled;
+  let signedTx: ReturnType<typeof rpc.assembleTransaction> | ReturnType<typeof TransactionBuilder.fromXDR> = assembled;
   if (params.external?.kit) {
     const { signedTxXdr } = await params.external.kit.signTransaction(
       assembled.toXDR(),

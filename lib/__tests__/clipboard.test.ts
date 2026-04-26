@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { copyToClipboard } from '../clipboard';
 
 describe('copyToClipboard', () => {
-  const originalClipboard = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
   const originalExecCommand = typeof document !== 'undefined' ? document.execCommand : undefined;
 
   beforeEach(() => {
@@ -29,8 +28,8 @@ describe('copyToClipboard', () => {
         return el;
       });
       // Mock body methods
-      vi.spyOn(document.body, 'appendChild').mockImplementation((el: any) => el);
-      vi.spyOn(document.body, 'removeChild').mockImplementation((el: any) => el);
+      vi.spyOn(document.body, 'appendChild').mockImplementation((el: Node) => el);
+      vi.spyOn(document.body, 'removeChild').mockImplementation((el: Node) => el);
     }
   });
 
@@ -56,7 +55,7 @@ describe('copyToClipboard', () => {
   });
 
   it('should fallback to document.execCommand when writeText fails', async () => {
-    (navigator.clipboard.writeText as any).mockRejectedValue(new Error('Permission denied'));
+    (navigator.clipboard.writeText as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Permission denied'));
     const text = 'fallback text';
     await copyToClipboard(text);
     expect(document.execCommand).toHaveBeenCalledWith('copy');
@@ -64,7 +63,7 @@ describe('copyToClipboard', () => {
 
   it('should throw an error if both methods fail', async () => {
     vi.stubGlobal('navigator', { clipboard: undefined });
-    (document.execCommand as any).mockReturnValue(false);
+    (document.execCommand as ReturnType<typeof vi.fn>).mockReturnValue(false);
     await expect(copyToClipboard('fail')).rejects.toThrow('Unable to copy to clipboard');
   });
 });

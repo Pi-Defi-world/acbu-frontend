@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { useApiOpts } from '@/hooks/use-api';
+import { useApiOpts, useApiError } from '@/hooks/use-api';
 import * as transactionsApi from '@/lib/api/transactions';
 import type { TransactionDetail } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
@@ -24,9 +24,9 @@ export default function TransactionDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const opts = useApiOpts();
+  const { error, handleError } = useApiError();
   const [data, setData] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!id) {
@@ -37,7 +37,7 @@ export default function TransactionDetailPage() {
     transactionsApi.getTransaction(id, opts).then((res) => {
       if (!cancelled) setData(res);
     }).catch((e) => {
-      if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load');
+      if (!cancelled) handleError(e);
     }).finally(() => {
       if (!cancelled) setLoading(false);
     });
