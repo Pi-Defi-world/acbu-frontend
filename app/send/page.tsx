@@ -26,7 +26,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
-import { useApiOpts } from "@/hooks/use-api";
+import { useApiOpts, useApiError } from "@/hooks/use-api";
+import { mapApiError } from "@/lib/api/client";
 import { useBalance } from "@/hooks/use-balance";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
@@ -80,17 +81,16 @@ export default function SendPage() {
   const [transfers, setTransfers] = useState<TransferItem[]>([]);
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingTransfers, setLoadingTransfers] = useState(true);
-  const [loadingContacts, setLoadingContacts] = useState(true);
-  const [submitError, setSubmitError] = useState("");
+  const { error: submitError, clearError: clearSubmitError, handleError: handleSubmitError } = useApiError();
+  const { error: loadError, setError: setLoadError } = useApiError();
   const [sending, setSending] = useState(false);
-  const [loadError, setLoadError] = useState("");
 
   const loadTransfers = useCallback(() => {
     setLoadError("");
     transfersApi.getTransfers(opts).then((data) => {
       setTransfers(data.transfers ?? []);
       setLoadError("");
-    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load transfers')).finally(() => setLoadingTransfers(false));
+    }).catch((e) => setLoadError(mapApiError(e))).finally(() => setLoadingTransfers(false));
   }, [opts]);
 
   const loadContacts = useCallback(() => {
@@ -98,7 +98,7 @@ export default function SendPage() {
     userApi.getContacts(opts).then((data) => {
       setContacts(data.contacts ?? []);
       setLoadError("");
-    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
+    }).catch((e) => setLoadError(mapApiError(e))).finally(() => {});
   }, [opts]);
 
   useEffect(() => {
@@ -114,7 +114,7 @@ export default function SendPage() {
   const handleConfirmTransfer = async () => {
     const to = getToValue();
     if (!amount || parseFloat(amount) <= 0 || !to) return;
-    setSubmitError("");
+    clearSubmitError();
     setSending(true);
     try {
       let blockchainTxHash: string | undefined;
@@ -189,7 +189,7 @@ export default function SendPage() {
         setSelectedContact(null);
       }, 2500);
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Transfer failed");
+      handleSubmitError(e);
     } finally {
       setSending(false);
     }
