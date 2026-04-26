@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { useTranslations, useFormatter } from 'next-intl';
 import {
   Send,
   TrendingUp,
@@ -86,14 +87,6 @@ function sumSimulatedFiatUsd(
   return { usd: total, partial };
 }
 
-const features = [
-  { title: 'Send', description: 'Transfer money', icon: Send, href: '/send', color: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
-  { title: 'Mint', description: 'Create ACBU', icon: Coins, href: '/mint', color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
-  { title: 'Simulated Bank', description: 'Demo Fiat', icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
-  { title: 'Rates', description: 'Market rates', icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
-  { title: 'Lending', description: 'Apply for a loan', icon: HandCoins, href: '/lending', color: 'bg-orange-100 dark:bg-orange-900/30', iconColor: 'text-orange-600 dark:text-orange-400' },
-];
-
 function formatDate(iso: string) {
   const d = new Date(iso);
   const today = new Date();
@@ -118,6 +111,16 @@ export default function Home() {
   const [fiatLoading, setFiatLoading] = useState(true);
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [ratesLoading, setRatesLoading] = useState(true);
+
+  const t = useTranslations('home');
+  const format = useFormatter();
+
+  const features = [
+    { title: t('features.send.title'), description: t('features.send.description'), icon: Send, href: '/send', color: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
+    { title: t('features.mint.title'), description: t('features.mint.description'), icon: Coins, href: '/mint', color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
+    { title: t('features.simulated_bank.title'), description: t('features.simulated_bank.description'), icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
+    { title: t('features.rates.title'), description: t('features.rates.description'), icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -205,35 +208,35 @@ export default function Home() {
             <div className="flex items-start gap-3 pr-12 mb-1">
               <div className="flex-1 min-w-0 border-r border-border/60 pr-3">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                  ACBU
+                  {t('acbu')}
                 </p>
-                <p className="text-[10px] text-muted-foreground mb-1">Wallet balance</p>
+                <p className="text-[10px] text-muted-foreground mb-1">{t('wallet_balance')}</p>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
                   {!showBalance
                     ? '••••••'
                     : balanceLoading
                       ? '...'
-                      : `ACBU ${formatAmount(balance)}`}
+                      : `ACBU ${balance != null ? format.number(balance, { minimumFractionDigits: 0, maximumFractionDigits: 7 }) : '—'}`}
                 </h2>
                 {!showBalance ? (
                   <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">••••••</p>
                 ) : balanceLoading || ratesLoading ? (
-                  <p className="text-sm text-muted-foreground mt-1.5">≈ USD ...</p>
+                  <p className="text-sm text-muted-foreground mt-1.5">{t('approx_usd')} ...</p>
                 ) : balance == null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5">≈ USD —</p>
+                  <p className="text-sm text-muted-foreground mt-1.5">{t('approx_usd')} —</p>
                 ) : acbuUsd != null ? (
                   <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
-                    ≈ USD {formatAmount(acbuUsd, 2)}
+                    {t('approx_usd')} {format.number(acbuUsd, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                   </p>
                 ) : (
-                  <p className="text-sm text-muted-foreground mt-1.5">≈ USD —</p>
+                  <p className="text-sm text-muted-foreground mt-1.5">{t('approx_usd')} —</p>
                 )}
               </div>
               <div className="flex-1 min-w-0 text-right">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                  Fiat
+                  {t('fiat')}
                 </p>
-                <p className="text-[10px] text-muted-foreground mb-1">Simulated · USD equivalent</p>
+                <p className="text-[10px] text-muted-foreground mb-1">{t('simulated_usd_equivalent')}</p>
                 <div className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums space-y-1">
                   {!showBalance ? (
                     <p>••••••</p>
@@ -242,18 +245,18 @@ export default function Home() {
                   ) : (
                     <>
                       <p>
-                        ≈ USD{' '}
-                        {formatAmount(fiatUsdInfo?.usd ?? 0, 2)}
+                        {t('approx_usd')}{' '}
+                        {format.number(fiatUsdInfo?.usd ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                       </p>
                       {fiatUsdInfo?.partial && fiatAccounts.length > 0 && (
                         <p className="text-[10px] font-normal text-muted-foreground">
-                          Some currencies missing a rate
+                          {t('some_currencies_missing_rate')}
                         </p>
                       )}
                       {!fiatAccounts.length && (
                         <p className="text-sm font-normal text-muted-foreground mt-1">
                           <Link href="/fiat" className="text-primary font-medium underline-offset-2 hover:underline">
-                            Add demo funds
+                            {t('add_demo_funds')}
                           </Link>
                         </p>
                       )}
@@ -286,8 +289,8 @@ export default function Home() {
 
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
-              <h3 className="text-sm font-semibold text-foreground">Recent Activity</h3>
-              <Link href="/activity" className="text-xs text-primary font-medium">View all</Link>
+              <h3 className="text-sm font-semibold text-foreground">{t('recent_activity')}</h3>
+              <Link href="/activity" className="text-xs text-primary font-medium">{t('view_all')}</Link>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             {loading ? (
@@ -295,10 +298,10 @@ export default function Home() {
             ) : transactions.length === 0 ? (
               <EmptyState
                 icon={<Clock className="w-10 h-10" />}
-                title="No recent activity"
+                title={t('no_recent_activity')}
                 action={
                   <Link href="/send" className="text-xs text-primary font-medium">
-                    Send money
+                    {t('send_money')}
                   </Link>
                 }
               />
