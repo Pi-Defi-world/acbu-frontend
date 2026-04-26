@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
 import { formatAmount } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 interface SavingsAccount {
     id: string;
@@ -117,13 +119,16 @@ export default function SavingsPage() {
   const [newGoalTarget, setNewGoalTarget] = useState("");
   const [newGoalDeadline, setNewGoalDeadline] = useState("");
 
-  useEffect(() => {
+ useEffect(() => {
     setReceiveError("");
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === "string") setApiUser(uri);
       setReceiveError("");
-    }).catch((e) => setReceiveError(e instanceof Error ? e.message : "Failed to load user info"));
+    }).catch((e) => {
+      logger.error("Failed to load user info", e); // <-- ADD LOGGER
+      setReceiveError(e instanceof Error ? e.message : "Failed to load user info");
+    });
   }, [opts.token]);
 
   useEffect(() => {
@@ -134,6 +139,7 @@ export default function SavingsPage() {
       setPositionsBalance(res.balance);
       setReceiveError("");
     }).catch((e) => {
+      logger.error("Failed to load savings balance", e); // <-- ADD LOGGER
       setPositionsBalance(null);
       setReceiveError(e instanceof Error ? e.message : "Failed to load savings balance");
     }).finally(() => setPositionsLoading(false));
@@ -159,6 +165,8 @@ export default function SavingsPage() {
 
   const handleConfirmDeposit = () => {
     if (depositAmount && parseFloat(depositAmount) > 0) {
+      // safely log the transaction attempt
+      logger.info("Confirming savings deposit", { accountId: selectedAccount?.id, amount: depositAmount }); 
       setShowDepositDialog(false);
       setDepositAmount("");
     }

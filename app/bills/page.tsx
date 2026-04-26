@@ -22,6 +22,7 @@ import { Zap,
     AlertCircle,
 } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 interface BillProvider {
     id: string;
@@ -125,17 +126,20 @@ export default function BillsPage() {
         setReference("");
     };
 
-    const handlePaymentConfirm = () => {
+   const handlePaymentConfirm = () => {
         if (
             !amount ||
             parseFloat(amount) < (selectedProvider?.minAmount || 0)
         ) {
             return;
         }
+        // safely log the initiation 
+        logger.info("Bill payment initiated", { provider: selectedProvider?.id, amount });
         setPaymentStep("confirm");
     };
 
     const handlePaymentExecute = async () => {
+        logger.info("Executing bill payment", { provider: selectedProvider?.id }); // safe log
         await new Promise((resolve) => setTimeout(resolve, 1500));
         setPaymentStep("success");
     };

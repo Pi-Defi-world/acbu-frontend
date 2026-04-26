@@ -22,6 +22,7 @@ import { useApiOpts } from "@/hooks/use-api";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
 import type { MintResponse, BurnResponse } from "@/types/api";
+import { logger } from "@/lib/logger";
 
 /**
  * Currency management hub.
@@ -67,8 +68,11 @@ export default function CurrencyPage() {
   const handleExecute = async () => {
     setSubmitError("");
     setSubmitting(true);
+    logger.info(`Starting ${activeTab} operation`); // <-- ADD LOGGER
+
     try {
       if (activeTab === "mint") {
+        logger.info("Minting ACBU", { amount: mintAmount }); // <-- ADD LOGGER
         const res: MintResponse = await mintApi.mintFromUsdc(
           mintAmount,
           mintWalletAddress.trim(),
@@ -77,6 +81,7 @@ export default function CurrencyPage() {
         );
         setLastTxId(res.transaction_id);
       } else if (activeTab === "burn") {
+        logger.info("Burning ACBU", { amount: burnAmount, destination: burnDestination }); // <-- ADD LOGGER
         const recipientType =
           burnDestination === "bank"
             ? "bank"
@@ -96,6 +101,7 @@ export default function CurrencyPage() {
         );
         setLastTxId(res.transaction_id);
       } else {
+        logger.info("International transfer", { amount: intlAmount, country: intlCountry }); // <-- ADD LOGGER
         const res: BurnResponse = await burnApi.burnAcbu(
           intlAmount,
           intlCurrency,
@@ -110,6 +116,7 @@ export default function CurrencyPage() {
       }
       setStep("success");
     } catch (e) {
+      logger.error(`Currency operation failed: ${activeTab}`, e); // <-- ADD LOGGER
       setSubmitError(e instanceof Error ? e.message : "Operation failed");
     } finally {
       setSubmitting(false);

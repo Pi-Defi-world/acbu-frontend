@@ -24,7 +24,7 @@ interface AuthContextValue extends AuthState {
   setAuth: (apiKey: string | null, userId: string | null, stellarAddress?: string | null) => void;
   refreshStellarAddress: () => Promise<void>;
 }
-
+git checkout -b fix/f-043-remove-console-logs
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getStoredAuth(): AuthState {
