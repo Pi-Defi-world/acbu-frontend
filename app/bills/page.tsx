@@ -76,10 +76,20 @@ const billProviders: BillProvider[] = [
 /**
  * Bill payment and history page.
  */
+type BillsTab = "catalog" | "history";
+
+const BILLS_TABS: readonly BillsTab[] = ["catalog", "history"];
+
+function isBillsTab(v: string): v is BillsTab {
+    return (BILLS_TABS as readonly string[]).includes(v);
+}
+
 export default function BillsPage() {
-    const [activeTab, setActiveTab] = useState<"catalog" | "history">(
-        "catalog",
-    );
+    const [activeTab, setActiveTab] = useState<BillsTab>("catalog");
+
+    const handleTabChange = (v: string) => {
+        if (isBillsTab(v)) setActiveTab(v);
+    };
     const [selectedProvider, setSelectedProvider] =
         useState<BillProvider | null>(null);
     const [showPayment, setShowPayment] = useState(false);
@@ -179,9 +189,7 @@ export default function BillsPage() {
                     <Tabs
                         defaultValue="catalog"
                         value={activeTab}
-                        onValueChange={(v) =>
-                            setActiveTab(v as "catalog" | "history")
-                        }
+                        onValueChange={handleTabChange}
                     >
                         <TabsList className="grid w-full grid-cols-2 px-4 gap-2 bg-transparent border-b border-border rounded-none">
                             <TabsTrigger
