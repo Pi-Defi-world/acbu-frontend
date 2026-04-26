@@ -31,6 +31,7 @@ import * as ratesApi from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
 import type { QuoteResponse, RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
+import { submitBurnRedeemSingleClient } from '@/lib/stellar/burning';
 
 /** `acbu_*` from API = local currency units per 1 ACBU → ACBU = fiat / localPerAcbu. */
 function estimateAcbuFromFiat(
@@ -685,7 +686,7 @@ export default function MintPage() {
                   <Card key={r.currency} className="border-border p-4">
                     <div className="flex justify-between">
                       <p className="font-semibold text-foreground">ACBU/{r.currency}</p>
-                      <p className="text-lg font-bold text-primary">{formatRate(r.rate)}</p>
+                      <p className="text-lg font-bold text-primary">{formatAmount(r.rate)}</p>
                     </div>
                   </Card>
                 ))
