@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import * as userApi from '@/lib/api/user';
+import { copyToClipboard } from '@/lib/clipboard';
 
 export default function ReceivePage() {
   const opts = useApiOpts();
@@ -35,29 +36,10 @@ export default function ReceivePage() {
 
   const toCopy = payUri || alias;
 
-  const fallbackCopy = (text: string): boolean => {
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.setAttribute('readonly', '');
-    textarea.style.position = 'fixed';
-    textarea.style.left = '-9999px';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-      return document.execCommand('copy');
-    } finally {
-      document.body.removeChild(textarea);
-    }
-  };
-
   const handleCopy = async () => {
     if (!toCopy) return;
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(toCopy);
-      } else if (!fallbackCopy(toCopy)) {
-        throw new Error('Copy unsupported');
-      }
+      await copyToClipboard(toCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {

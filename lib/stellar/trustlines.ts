@@ -21,7 +21,7 @@ async function hasTrustline(
 ): Promise<boolean> {
   const code = asset.getCode();
   const issuer = asset.getIssuer();
-  return account.balances.some((b: any) => {
+  return account.balances.some((b: { asset_type: string; asset_code?: string; asset_issuer?: string }) => {
     if (b.asset_type === "native") return false;
     return b.asset_code === code && b.asset_issuer === issuer;
   });
@@ -55,8 +55,8 @@ async function ensureTestnetAccountExists(
   try {
     await server.loadAccount(address);
     return;
-  } catch (e: any) {
-    if (e?.response?.status !== 404) throw e;
+  } catch (e: unknown) {
+    if ((e as { response?: { status?: number } })?.response?.status !== 404) throw e;
   }
 
   const res = await fetch("/v1/users/me/wallet/activate", {
@@ -71,15 +71,15 @@ async function ensureTestnetAccountExists(
     );
   }
 
-  for (let i = 0; i < 5; i++) {
-    try {
-      await server.loadAccount(address);
-      return;
-    } catch (e: any) {
-      if (e?.response?.status !== 404) throw e;
-      await new Promise((r) => setTimeout(r, 800 * (i + 1)));
+    for (let i = 0; i < 5; i++) {
+      try {
+        await server.loadAccount(address);
+        return;
+      } catch (e: unknown) {
+        if ((e as { response?: { status?: number } })?.response?.status !== 404) throw e;
+        await new Promise((r) => setTimeout(r, 800 * (i + 1)));
+      }
     }
-  }
   throw new Error(
     "Wallet activation submitted but account not visible on Horizon yet.",
   );

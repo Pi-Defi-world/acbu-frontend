@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useApiOpts } from "@/hooks/use-api";
+import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as transfersApi from "@/lib/api/transfers";
 import { formatAmount } from "@/lib/utils";
 
@@ -26,9 +26,9 @@ export default function TransferDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const opts = useApiOpts();
+  const { error, handleError } = useApiError();
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!id) {
@@ -42,8 +42,7 @@ export default function TransferDetailPage() {
         if (!cancelled) setData(res);
       })
       .catch((e) => {
-        if (!cancelled)
-          setError(e instanceof Error ? e.message : "Failed to load");
+        if (!cancelled) handleError(e);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -112,6 +111,7 @@ export default function TransferDetailPage() {
   const createdAt = (data.created_at as string) ?? "";
   const completedAt = (data.completed_at as string) ?? "";
   const txHash = (data.blockchain_tx_hash as string) ?? "";
+  const note = (data.note as string) ?? "";
   const localCurrency = (data.local_currency as string) ?? "";
   const localAmount = (data.local_amount as string) ?? "";
   const amountAcbu = (data.amount_acbu as string) ?? "";
@@ -153,6 +153,12 @@ export default function TransferDetailPage() {
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Completed</span>
               <span>{formatDate(completedAt)}</span>
+            </div>
+          )}
+          {note && (
+            <div className="pt-2 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-1">Note</p>
+              <p className="text-sm text-foreground break-words">{note}</p>
             </div>
           )}
           {txHash && (

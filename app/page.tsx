@@ -16,13 +16,14 @@ import {
 import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
+import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
 import * as transactionsApi from '@/lib/api/transactions';
 import * as fiatApi from '@/lib/api/fiat';
 import * as ratesApi from '@/lib/api/rates';
 import type { TransactionListItem, RatesResponse } from '@/types/api';
-import { formatAmount } from '@/lib/utils';
+import { formatAcbu, formatAmount } from '@/lib/utils';
 
 function parsePositiveNumber(v: string | number | null | undefined): number | null {
   if (v === null || v === undefined) return null;
@@ -210,15 +211,13 @@ export default function Home() {
                   {!showBalance
                     ? '••••••'
                     : balanceLoading
-                      ? '...'
+                      ? <BalanceSkeleton variant="compact" />
                       : `ACBU ${formatAmount(balance)}`}
                 </h2>
                 {!showBalance ? (
                   <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">••••••</p>
                 ) : balanceLoading || ratesLoading ? (
-                  <p className="text-sm text-muted-foreground mt-1.5">≈ USD ...</p>
-                ) : balance == null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5">≈ USD —</p>
+                  <p className="text-sm text-muted-foreground mt-1.5"><BalanceSkeleton variant="compact" /></p>
                 ) : acbuUsd != null ? (
                   <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
                     ≈ USD {formatAmount(acbuUsd, 2)}
@@ -334,14 +333,14 @@ export default function Home() {
                     <div className="flex items-center justify-between pl-11">
                       <p className="text-sm font-semibold text-foreground">
                         {t.type === 'burn'
-                          ? `- ACBU ${formatAmount(t.acbu_amount_burned ?? t.amount_acbu)}`
+                          ? `- ACBU ${formatAcbu(t.acbu_amount_burned ?? t.amount_acbu)}`
                           : t.type === 'mint'
                             ? t.amount_acbu != null
-                              ? `+ ACBU ${formatAmount(t.amount_acbu)}`
+                              ? `+ ACBU ${formatAcbu(t.amount_acbu)}`
                               : t.local_currency && t.local_amount
                                 ? `+ ${t.local_currency} ${formatAmount(t.local_amount)}`
                                 : '—'
-                            : `ACBU ${formatAmount(t.amount_acbu)}`}
+                            : `ACBU ${formatAcbu(t.amount_acbu)}`}
                       </p>
                       <Badge variant="outline" className="text-xs">{t.status}</Badge>
                     </div>
