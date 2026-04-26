@@ -22,6 +22,7 @@ import { Zap,
     AlertCircle,
 } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
+import { useApiError } from "@/hooks/use-api";
 
 interface BillProvider {
     id: string;
@@ -76,6 +77,7 @@ const billProviders: BillProvider[] = [
  * Bill payment and history page.
  */
 export default function BillsPage() {
+    const { error: paymentError, clearError: clearPaymentError, handleError: handlePaymentError } = useApiError();
     const [activeTab, setActiveTab] = useState<"catalog" | "history">(
         "catalog",
     );
@@ -136,8 +138,13 @@ export default function BillsPage() {
     };
 
     const handlePaymentExecute = async () => {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setPaymentStep("success");
+        clearPaymentError();
+        try {
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            setPaymentStep("success");
+        } catch (e) {
+            handlePaymentError(e);
+        }
     };
 
     const resetPayment = () => {
@@ -146,6 +153,7 @@ export default function BillsPage() {
         setAmount("");
         setReference("");
         setSelectedProvider(null);
+        clearPaymentError();
     };
 
     return (
@@ -405,6 +413,11 @@ export default function BillsPage() {
                             </div>
                         )}
 
+                        <div className="flex gap-2">
+                            {paymentError && (
+                                <p className="text-sm text-destructive w-full">{paymentError}</p>
+                            )}
+                        </div>
                         <div className="flex gap-2">
                             {paymentStep !== "success" && (
                                 <AlertDialogCancel onClick={resetPayment}>
