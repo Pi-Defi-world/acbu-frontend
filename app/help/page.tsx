@@ -11,65 +11,61 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { CircleHelp as HelpCircle, MessageSquare, ExternalLink, CircleCheck as CheckCircle, CircleAlert as AlertCircle } from "lucide-react";
+import {
+  HelpCircle,
+  MessageSquare,
+  ExternalLink,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 
 const FAQ_ITEMS = [
   {
-    id: "create-wallet",
     question: "How do I create an ACBU wallet?",
     answer:
       "Sign up for an account, and a wallet will be automatically created for you during the registration process. You'll receive a secure passphrase - make sure to save it in a safe place.",
   },
   {
-    id: "mint-tokens",
     question: "How do I mint ACBU tokens?",
     answer:
       "Go to the Mint page, connect your wallet, enter the amount of USDC you want to convert, and confirm the transaction. Your ACBU tokens will be minted based on the current exchange rate.",
   },
   {
-    id: "transaction-fees",
     question: "What are the transaction fees?",
     answer:
       "Transaction fees vary depending on the operation. Minting and burning typically have a small percentage fee, while transfers may have network fees. Check the transaction preview before confirming.",
   },
   {
-    id: "transaction-time",
     question: "How long do transactions take?",
     answer:
       "Most transactions are processed within 5-30 seconds on the Stellar network. Larger transactions or those during high network activity may take slightly longer.",
   },
   {
-    id: "recover-account",
     question: "How do I recover my account?",
     answer:
       "If you've set up guardians, they can help you recover your account. Alternatively, use your recovery code that was provided during account creation. Go to the Recovery page for more options.",
   },
   {
-    id: "enable-2fa",
     question: "What is 2FA and should I enable it?",
     answer:
       "Two-Factor Authentication (2FA) adds an extra layer of security to your account. We highly recommend enabling it in Settings > Security to protect your account from unauthorized access.",
   },
   {
-    id: "send-acbu",
     question: "How do I send ACBU to another user?",
     answer:
       "Go to the Send page, enter the recipient's address or username, specify the amount, and confirm. You can also add a note to your transaction.",
   },
   {
-    id: "burn-to-fiat",
     question: "Can I burn ACBU back to fiat currency?",
     answer:
       "Yes! Go to the Burn page, select your desired currency (NGN, KES, etc.), enter the amount, provide your bank details, and confirm. The fiat will be sent to your account.",
   },
   {
-    id: "reserve-system",
     question: "What is the ACBU reserve system?",
     answer:
       "ACBU is backed by a diversified reserve of currencies. You can view the current reserve composition, ratios, and health status on the Reserves page.",
   },
   {
-    id: "contact-support",
     question: "How do I contact support?",
     answer:
       "Use the contact form below to submit a support ticket. For urgent issues, check our status page for any ongoing incidents. We typically respond within 24 hours.",
@@ -143,8 +139,8 @@ export default function HelpPage() {
           </div>
 
           <Accordion type="single" collapsible className="w-full">
-            {FAQ_ITEMS.map((item) => (
-              <AccordionItem key={item.id} value={item.id}>
+            {FAQ_ITEMS.map((item, index) => (
+              <AccordionItem key={index} value={`item-${index}`}>
                 <AccordionTrigger className="text-left">
                   {item.question}
                 </AccordionTrigger>
