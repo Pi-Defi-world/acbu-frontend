@@ -1,5 +1,5 @@
 {
-  "name": "my-v0-project",
+  "name": "acbu-frontend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,6 +7,11 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
     "start": "next start"
   },
   "dependencies": {
@@ -60,25 +65,35 @@
     "recharts": "2.15.4",
     "sonner": "^1.7.4",
     "stellar-sdk": "^13.3.0",
-    "tailwind-merge": "^3.3.1",
+    "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
     "zod": "3.25.76"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.1.9",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.5",
     "eslint": "^10.2.0",
     "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "5.2.0",
     "globals": "^17.5.0",
+    "jsdom": "^29.0.2",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
     "typescript": "^5",
-    "typescript-eslint": "^8.58.2"
+    "typescript-eslint": "^8.58.2",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.5"
   },
   "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b"
 }

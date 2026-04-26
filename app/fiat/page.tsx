@@ -5,9 +5,8 @@ import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useApiOpts } from '@/hooks/use-api';
+import { useApiOpts, useApiError } from '@/hooks/use-api';
 import * as fiatApi from '@/lib/api/fiat';
-import { getApiErrorMessage } from '@/lib/api/client';
 import { useAuth } from '@/contexts/auth-context';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureDemoFiatTrustlineClient } from '@/lib/stellar/trustlines';
@@ -20,7 +19,7 @@ export default function FiatSimPage() {
   const kit = useStellarWalletsKit();
   const [accounts, setAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { error, clearError, handleError } = useApiError();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [lastFaucetTx, setLastFaucetTx] = useState<string | null>(null);
 
@@ -32,7 +31,7 @@ export default function FiatSimPage() {
       const data = await fiatApi.getFiatAccounts(opts);
       setAccounts(data.accounts || []);
     } catch (e: unknown) {
-      setError(getApiErrorMessage(e));
+      handleError(e);
     } finally {
       setLoading(false);
     }
@@ -47,7 +46,7 @@ export default function FiatSimPage() {
     if (!faucetAmount || parseFloat(faucetAmount) <= 0) return;
 
     setActionLoading('faucet');
-    setError('');
+    clearError();
     setLastFaucetTx(null);
     try {
       if (!userId) throw new Error('Not logged in');
@@ -89,7 +88,7 @@ export default function FiatSimPage() {
       setLastFaucetTx(res.transaction_hash);
       setFaucetAmount('');
     } catch (e: unknown) {
-      setError(getApiErrorMessage(e));
+      handleError(e);
     } finally {
       setActionLoading(null);
     }

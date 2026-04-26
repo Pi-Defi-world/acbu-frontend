@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
-import { useApiOpts } from "@/hooks/use-api";
+import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -21,7 +21,8 @@ const formatCurrency = (amount: string, currency: string) => {
   if (isNaN(value)) return "";
 
   try {
-    return new Intl.NumberFormat(undefined, {
+    // Use current browser locale for proper grouping separators
+    return new Intl.NumberFormat(navigator.language || 'en-US', {
       style: "currency",
       currency,
     }).format(value);
@@ -39,7 +40,7 @@ export default function BurnPage() {
   const [accountNumber, setAccountNumber] = useState("");
   const [bankCode, setBankCode] = useState("");
   const [accountName, setAccountName] = useState("");
-  const [error, setError] = useState("");
+  const { error, clearError, handleError } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
 
@@ -64,7 +65,7 @@ export default function BurnPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
-    setError("");
+    clearError();
     setLoading(true);
     try {
       if (!userId) throw new Error("Not signed in");
@@ -128,7 +129,7 @@ export default function BurnPage() {
       );
       setTxId(res.transaction_id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Burn failed");
+      handleError(e);
     } finally {
       setLoading(false);
     }
