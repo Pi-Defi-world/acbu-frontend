@@ -18,12 +18,18 @@ export default function RatesPage() {
 
   const formatRate = (rate: number | undefined): string => {
     if (rate == null) return "—";
+    if (rate === 0) return "0.00";
 
-    return new Intl.NumberFormat(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6,
+    // F-058: Significant digits policy
+    // Use toPrecision(4) to get the most important digits, 
+    // then Number() to strip trailing zeros, then toLocaleString for commas.
+    const precision = 4;
+    const formatted = Number(rate.toPrecision(precision));
+
+    return formatted.toLocaleString(undefined, {
       useGrouping: true,
-    }).format(rate);
+      maximumFractionDigits: 8, // Allow decimals for small numbers
+    });
   };
 
   useEffect(() => {

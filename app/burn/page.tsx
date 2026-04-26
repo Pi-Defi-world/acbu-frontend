@@ -21,7 +21,8 @@ const formatCurrency = (amount: string, currency: string) => {
   if (isNaN(value)) return "";
 
   try {
-    return new Intl.NumberFormat(undefined, {
+    // Use current browser locale for proper grouping separators
+    return new Intl.NumberFormat(navigator.language || 'en-US', {
       style: "currency",
       currency,
     }).format(value);

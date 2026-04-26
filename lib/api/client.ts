@@ -61,31 +61,6 @@ export function getApiErrorMessage(e: unknown): string {
   return 'Something went wrong';
 }
 
-/**
- * Maps HTTP status codes to user-friendly, actionable messages.
- * Handles 429 (Rate Limit), 503 (Service Unavailable), and 402 (Payment Required)
- * with specific guidance. Falls back to the raw error message for all other codes.
- */
-export function mapApiError(e: unknown): string {
-  const status = (e as ApiError)?.status;
-  switch (status) {
-    case 429:
-      return 'Too many requests — please wait a moment and try again.';
-    case 503:
-      return 'Service temporarily unavailable. Please try again in a few minutes.';
-    case 402:
-      return 'Payment required — your account may need funding or a plan upgrade before proceeding.';
-    default:
-      return getApiErrorMessage(e);
-  }
-}
-
-function getCsrfToken(): string | undefined {
-  if (typeof document === 'undefined') return undefined;
-  const match = document.cookie.match(/(^|;\s*)XSRF-TOKEN=([^;]*)/);
-  return match ? decodeURIComponent(match[2]) : undefined;
-}
-
 export interface RequestOptions {
   token?: string | null;
   signal?: AbortSignal;
@@ -113,11 +88,8 @@ async function request<T>(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  const csrfToken = getCsrfToken();
-  if (csrfToken) {
-    headers['X-XSRF-TOKEN'] = csrfToken;
-  }
-  
+  // CSRF cookie logic removed: backend does not guarantee XSRF-TOKEN pairing
+
   const token = opts.token !== undefined ? opts.token : currentToken;
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
