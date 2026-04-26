@@ -37,7 +37,7 @@ export async function copyToClipboard(text: string): Promise<void> {
       }
     } catch (err) {
       console.error('Fallback copy failed:', err);
-      throw new Error('Unable to copy to clipboard');
+      throw new Error('Unable to copy to clipboard', { cause: err });
     } finally {
       document.body.removeChild(textarea);
     }

@@ -106,7 +106,7 @@ export default function SavingsPage() {
   const [apiUser, setApiUser] = useState("");
   const [positionsBalance, setPositionsBalance] = useState<string | number | null>(null);
   const [positionsLoading, setPositionsLoading] = useState(false);
-  const [receiveError, setReceiveError] = useState("");
+  const { error: receiveError, clearError: clearReceiveError, handleError: handleReceiveError } = useApiError();
   const [selectedAccount, setSelectedAccount] = useState<SavingsAccount | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
@@ -119,24 +119,24 @@ export default function SavingsPage() {
   const [newGoalDeadline, setNewGoalDeadline] = useState("");
 
   useEffect(() => {
-    setReceiveError("");
+    clearReceiveError();
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === "string") setApiUser(uri);
-      setReceiveError("");
-    }).catch((e) => setReceiveError(e instanceof Error ? e.message : "Failed to load user info"));
+      clearReceiveError();
+    }).catch(handleReceiveError);
   }, [opts.token]);
 
   useEffect(() => {
     if (!apiUser) return;
     setPositionsLoading(true);
-    setReceiveError("");
+    clearReceiveError();
     savingsApi.getSavingsPositions(apiUser, undefined, opts).then((res) => {
       setPositionsBalance(res.balance);
-      setReceiveError("");
+      clearReceiveError();
     }).catch((e) => {
       setPositionsBalance(null);
-      setReceiveError(e instanceof Error ? e.message : "Failed to load savings balance");
+      handleReceiveError(e);
     }).finally(() => setPositionsLoading(false));
   }, [apiUser, opts.token]);
 

@@ -85,11 +85,10 @@ function isBillsTab(v: string): v is BillsTab {
 }
 
 export default function BillsPage() {
-    const [activeTab, setActiveTab] = useState<BillsTab>("catalog");
-
-    const handleTabChange = (v: string) => {
-        if (isBillsTab(v)) setActiveTab(v);
-    };
+    const { error: paymentError, clearError: clearPaymentError, handleError: handlePaymentError } = useApiError();
+    const [activeTab, setActiveTab] = useState<"catalog" | "history">(
+        "catalog",
+    );
     const [selectedProvider, setSelectedProvider] =
         useState<BillProvider | null>(null);
     const [showPayment, setShowPayment] = useState(false);
@@ -147,8 +146,13 @@ export default function BillsPage() {
     };
 
     const handlePaymentExecute = async () => {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setPaymentStep("success");
+        clearPaymentError();
+        try {
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            setPaymentStep("success");
+        } catch (e) {
+            handlePaymentError(e);
+        }
     };
 
     const resetPayment = () => {
@@ -157,6 +161,7 @@ export default function BillsPage() {
         setAmount("");
         setReference("");
         setSelectedProvider(null);
+        clearPaymentError();
     };
 
     return (
@@ -414,6 +419,11 @@ export default function BillsPage() {
                             </div>
                         )}
 
+                        <div className="flex gap-2">
+                            {paymentError && (
+                                <p className="text-sm text-destructive w-full">{paymentError}</p>
+                            )}
+                        </div>
                         <div className="flex gap-2">
                             {paymentStep !== "success" && (
                                 <AlertDialogCancel onClick={resetPayment}>

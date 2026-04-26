@@ -19,7 +19,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
-import { useApiOpts } from '@/hooks/use-api';
+import { useApiOpts, useApiError } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
 import { useAuth } from '@/contexts/auth-context';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
@@ -102,10 +102,9 @@ export default function MintPage() {
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
-  const [burnError, setBurnError] = useState('');
-  const [rates, setRates] = useState<RatesResponse | null>(null);
+  const { error: mintError, clearError: clearMintError, handleError: handleMintError } = useApiError();
+  const { error: burnError, clearError: clearBurnError, handleError: handleBurnError } = useApiError();
   const [ratesLoading, setRatesLoading] = useState(false);
-  const [mintError, setMintError] = useState('');
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
   const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
@@ -204,14 +203,14 @@ export default function MintPage() {
     }, [activeTab, opts.token]);
 
     const handleMintConfirm = () => {
-        setMintError("");
+        clearMintError();
         setStep("confirm");
     };
     const handleBurnConfirm = () => setStep("confirm");
     const handleExecuteMint = async () => {
         if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
             return;
-        setMintError("");
+        clearMintError();
         setExecuting(true);
         try {
             // Default setup: make sure the recipient trusts the ACBU asset
@@ -310,7 +309,7 @@ export default function MintPage() {
             refreshBalance();
             setStep("success");
         } catch (e) {
-            setMintError(e instanceof Error ? e.message : "Mint failed");
+            handleMintError(e);
         } finally {
             setExecuting(false);
         }
@@ -318,7 +317,7 @@ export default function MintPage() {
     const handleExecuteBurn = async () => {
         if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency)
             return;
-        setBurnError("");
+        clearBurnError();
         setExecuting(true);
         try {
             if (!userId) {
@@ -386,7 +385,7 @@ export default function MintPage() {
             setTxId(res.transaction_id || res.transactionId || null);
             setStep("success");
         } catch (e) {
-            setBurnError(e instanceof Error ? e.message : "Burn failed");
+            handleBurnError(e);
         } finally {
             setExecuting(false);
         }
@@ -402,7 +401,7 @@ export default function MintPage() {
         setStep("input");
         setFiatAmount("");
         setBurnAmount("");
-        setBurnError("");
+        clearBurnError();
         setTxId(null);
         setMintAcbuReceived(null);
     };
