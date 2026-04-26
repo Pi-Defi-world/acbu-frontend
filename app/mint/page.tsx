@@ -686,7 +686,7 @@ export default function MintPage() {
                   <Card key={r.currency} className="border-border p-4">
                     <div className="flex justify-between">
                       <p className="font-semibold text-foreground">ACBU/{r.currency}</p>
-                      <p className="text-lg font-bold text-primary">{formatAmount(r.rate)}</p>
+                      <p className="text-lg font-bold text-primary">{formatRate(r.rate)}</p>
                     </div>
                   </Card>
                 ))
