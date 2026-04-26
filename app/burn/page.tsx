@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { cn } from "@/lib/utils";
 
 const burnSchema = z.object({
   acbuAmount: z.string().refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -72,11 +70,6 @@ export default function BurnPage() {
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
-  const [acbuAmount, setAcbuAmount] = useState("");
-  const [currency, setCurrency] = useState("NGN");
-  const [accountNumber, setAccountNumber] = useState("");
-  const [bankCode, setBankCode] = useState("");
-  const [accountName, setAccountName] = useState("");
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
 
@@ -92,38 +85,29 @@ export default function BurnPage() {
     mode: "onChange",
   });
 
-  const isValid =
-    acbuAmount &&
-    parseFloat(acbuAmount) > 0 &&
-    currency.length === 3 &&
-    accountNumber.trim().length >= 5 &&
-    accountNumber.trim().length <= 20 &&
-    bankCode.trim().length >= 3 &&
-    bankCode.trim().length <= 10 &&
-    accountName.trim().length >= 3 &&
-    accountName.trim().length <= 100;
+  const values = form.watch();
+  const currency = values.currency || "NGN";
+  const isValid = form.formState.isValid;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isValid) return;
+  const handleSubmit = async (data: BurnFormValues) => {
     clearError();
     setLoading(true);
     setTxId(null);
-    
+
     try {
       if (!userId) throw new Error("Not signed in");
       if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
-      
+
       const recipientAccount: BurnRecipientAccount = {
-        account_number: values.accountNumber.trim(),
-        bank_code: values.bankCode.trim(),
-        account_name: values.accountName.trim(),
+        account_number: data.accountNumber.trim(),
+        bank_code: data.bankCode.trim(),
+        account_name: data.accountName.trim(),
         type: "bank",
       };
 
       const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
       let burnTxHash: string;
-      
+
       if (secret) {
         const localPubKey = Keypair.fromSecret(secret).publicKey();
         if (stellarAddress && localPubKey !== stellarAddress) {
@@ -133,8 +117,8 @@ export default function BurnPage() {
         }
         const submit = await submitBurnRedeemSingleClient({
           userAddress: stellarAddress,
-          amountAcbu: values.acbuAmount,
-          currency: values.currency,
+          amountAcbu: data.acbuAmount,
+          currency: data.currency,
           userSecret: secret,
         });
         burnTxHash = submit.transactionHash;
@@ -166,22 +150,22 @@ export default function BurnPage() {
         }
         const submit = await submitBurnRedeemSingleClient({
           userAddress: stellarAddress,
-          amountAcbu: values.acbuAmount,
-          currency: values.currency,
+          amountAcbu: data.acbuAmount,
+          currency: data.currency,
           external: { kit, address },
         });
         burnTxHash = submit.transactionHash;
       }
 
       const res = await burnApi.burnAcbu(
-        values.acbuAmount,
-        values.currency,
+        data.acbuAmount,
+        data.currency,
         recipientAccount,
         opts,
         burnTxHash,
       );
       setTxId(res.transaction_id);
-      form.reset({ ...values, acbuAmount: "" }); // Reset amount but keep details for convenience? Or full reset?
+      form.reset({ ...data, acbuAmount: "" });
     } catch (e) {
       setApiError(e);
     } finally {
@@ -216,7 +200,7 @@ export default function BurnPage() {
               Transaction submitted: {txId}
             </p>
           )}
-          
+
           {txId && (
             <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
               <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
@@ -227,7 +211,7 @@ export default function BurnPage() {
           )}
 
           <Form {...form}>
-            <form onSubmit={formHandleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="acbuAmount"
@@ -357,15 +341,15 @@ export default function BurnPage() {
                   </FormItem>
                 )}
               />
-            </div>
-            <Button
-              type="submit"
-              disabled={!isValid || loading || isSubmitDisabled}
-              className="w-full"
-            >
-              {loading ? "Submitting..." : "Burn & Withdraw"}
-            </Button>
-          </form>
+              <Button
+                type="submit"
+                disabled={!isValid || loading || isSubmitDisabled}
+                className="w-full"
+              >
+                {loading ? "Submitting..." : "Burn & Withdraw"}
+              </Button>
+            </form>
+          </Form>
         </Card>
       </PageContainer>
     </>
