@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
+import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
@@ -105,7 +106,7 @@ export default function SavingsPage() {
   const [apiUser, setApiUser] = useState("");
   const [positionsBalance, setPositionsBalance] = useState<string | number | null>(null);
   const [positionsLoading, setPositionsLoading] = useState(false);
-  const [receiveError, setReceiveError] = useState("");
+  const { error: receiveError, clearError: clearReceiveError, handleError: handleReceiveError } = useApiError();
   const [selectedAccount, setSelectedAccount] = useState<SavingsAccount | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
@@ -118,24 +119,24 @@ export default function SavingsPage() {
   const [newGoalDeadline, setNewGoalDeadline] = useState("");
 
   useEffect(() => {
-    setReceiveError("");
+    clearReceiveError();
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === "string") setApiUser(uri);
-      setReceiveError("");
-    }).catch((e) => setReceiveError(e instanceof Error ? e.message : "Failed to load user info"));
+      clearReceiveError();
+    }).catch(handleReceiveError);
   }, [opts.token]);
 
   useEffect(() => {
     if (!apiUser) return;
     setPositionsLoading(true);
-    setReceiveError("");
+    clearReceiveError();
     savingsApi.getSavingsPositions(apiUser, undefined, opts).then((res) => {
       setPositionsBalance(res.balance);
-      setReceiveError("");
+      clearReceiveError();
     }).catch((e) => {
       setPositionsBalance(null);
-      setReceiveError(e instanceof Error ? e.message : "Failed to load savings balance");
+      handleReceiveError(e);
     }).finally(() => setPositionsLoading(false));
   }, [apiUser, opts.token]);
 
@@ -193,7 +194,7 @@ export default function SavingsPage() {
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-3xl font-bold text-foreground mb-1">
-              {positionsLoading ? "—" : `ACBU ${formatAmount(positionsBalance)}`}
+              {positionsLoading ? <BalanceSkeleton variant="compact" /> : `ACBU ${formatAmount(positionsBalance)}`}
             </p>
             <div className="flex gap-2 mt-3">
               <Link href="/savings/deposit">
@@ -213,9 +214,9 @@ export default function SavingsPage() {
               </h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
-            {/* AFTER */}
+            {/* Total Savings */}
             <p className="text-3xl font-bold text-foreground mb-1">
-              {positionsLoading ? "—" : `ACBU ${formatAmount(totalSavings)}`}
+              {positionsLoading ? <BalanceSkeleton variant="compact" /> : `ACBU ${formatAmount(totalSavings)}`}
             </p>
             <p className="text-xs text-muted-foreground mb-3">
               Earning 8% APY interest

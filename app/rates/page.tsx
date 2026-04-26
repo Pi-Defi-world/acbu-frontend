@@ -6,24 +6,30 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { SkeletonList } from "@/components/ui/skeleton-list";
 import { ArrowLeft } from "lucide-react";
-import { useApiOpts } from "@/hooks/use-api";
+import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as ratesApi from "@/lib/api/rates";
 import type { RatesResponse } from "@/types/api";
 
 export default function RatesPage() {
   const opts = useApiOpts();
+  const { error, handleError } = useApiError();
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const formatRate = (rate: number | undefined): string => {
     if (rate == null) return "—";
+    if (rate === 0) return "0.00";
 
-    return new Intl.NumberFormat(navigator.language || 'en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6,
+    // F-058: Significant digits policy
+    // Use toPrecision(4) to get the most important digits, 
+    // then Number() to strip trailing zeros, then toLocaleString for commas.
+    const precision = 4;
+    const formatted = Number(rate.toPrecision(precision));
+
+    return formatted.toLocaleString(undefined, {
       useGrouping: true,
-    }).format(rate);
+      maximumFractionDigits: 8, // Allow decimals for small numbers
+    });
   };
 
   useEffect(() => {
@@ -34,8 +40,7 @@ export default function RatesPage() {
         if (!cancelled) setRates(data);
       })
       .catch((e) => {
-        if (!cancelled)
-          setError(e instanceof Error ? e.message : "Failed to load rates");
+        if (!cancelled) handleError(e);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

@@ -16,6 +16,7 @@ import {
 import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
+import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
 import * as transactionsApi from '@/lib/api/transactions';
@@ -210,15 +211,13 @@ export default function Home() {
                   {!showBalance
                     ? '••••••'
                     : balanceLoading
-                      ? '...'
+                      ? <BalanceSkeleton variant="compact" />
                       : `ACBU ${formatAmount(balance)}`}
                 </h2>
                 {!showBalance ? (
                   <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">••••••</p>
                 ) : balanceLoading || ratesLoading ? (
-                  <p className="text-sm text-muted-foreground mt-1.5">≈ USD ...</p>
-                ) : balance == null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5">≈ USD —</p>
+                  <p className="text-sm text-muted-foreground mt-1.5"><BalanceSkeleton variant="compact" /></p>
                 ) : acbuUsd != null ? (
                   <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
                     ≈ USD {formatAmount(acbuUsd, 2)}

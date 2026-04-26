@@ -29,6 +29,7 @@ export default function BusinessPage() {
   const opts = useApiOpts();
   const [stats, setStats] = useState<BusinessStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const visibleBusinessServices = businessServices.filter((service) => {
     if (service.id === 'gateway') return featureFlags.businessGateway;
     return true;
@@ -39,10 +40,13 @@ export default function BusinessPage() {
       try {
         setLoading(true);
         const data = await businessApi.getBusinessStats(opts);
+        const hasRealData = data && (data.monthly_volume != null || data.employees != null);
         setStats(data);
+        setIsDemoMode(!hasRealData);
       } catch (err) {
-        // Fallback: show loading state instead of error UI
+        // Fallback: mark as demo mode so the user knows numbers are not live
         console.error('Business stats error:', err);
+        setIsDemoMode(true);
       } finally {
         setLoading(false);
       }
@@ -62,6 +66,12 @@ export default function BusinessPage() {
 
       <PageContainer>
         <div className="grid grid-cols-2 gap-3 mb-6">
+          {isDemoMode && (
+            <div className="col-span-2 flex items-center gap-2 rounded-md border border-yellow-400/40 bg-yellow-400/10 px-3 py-2 text-xs text-yellow-700 dark:text-yellow-400">
+              <span>⚠️</span>
+              <span>Demo mode — stats below are placeholder values, not live data.</span>
+            </div>
+          )}
           <Card className="border-border p-4">
             <p className="text-xs text-muted-foreground mb-2">Monthly Volume</p>
             <p className="text-2xl font-bold text-foreground">

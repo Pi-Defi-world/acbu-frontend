@@ -26,7 +26,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
-import { useApiOpts } from "@/hooks/use-api";
+import { useApiOpts, useApiError } from "@/hooks/use-api";
+import { mapApiError } from "@/lib/api/client";
 import { useBalance } from "@/hooks/use-balance";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
@@ -86,6 +87,7 @@ export default function SendPage() {
   const [transfersError, setTransfersError] = useState("");
   const [contactsError, setContactsError] = useState("");
   const [submitError, setSubmitError] = useState("");
+  dev
   const [sending, setSending] = useState(false);
 
   const loadTransfers = useCallback(() => {
@@ -110,6 +112,8 @@ export default function SendPage() {
     setContactsError("");
     userApi.getContacts(opts).then((data) => {
       setContacts(data.contacts ?? []);
+    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts'));
+  }, [opts]);
       setContactsError("");
     }).catch((e) => {
       const message = e instanceof Error ? e.message : "Failed to load contacts";
@@ -121,11 +125,12 @@ export default function SendPage() {
       });
     }).finally(() => setLoadingContacts(false));
   }, [opts, toast]);
+ dev
 
   useEffect(() => {
     loadTransfers();
     loadContacts();
-  }, [loadTransfers, loadContacts, opts.token]);
+  }, [loadTransfers, loadContacts]);
 
   const getToValue = () =>
     useContact && selectedContact
@@ -135,7 +140,7 @@ export default function SendPage() {
   const handleConfirmTransfer = async () => {
     const to = getToValue();
     if (!amount || parseFloat(amount) <= 0 || !to) return;
-    setSubmitError("");
+    clearSubmitError();
     setSending(true);
     try {
       let blockchainTxHash: string | undefined;
@@ -210,7 +215,7 @@ export default function SendPage() {
         setSelectedContact(null);
       }, 2500);
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Transfer failed");
+      handleSubmitError(e);
     } finally {
       setSending(false);
     }

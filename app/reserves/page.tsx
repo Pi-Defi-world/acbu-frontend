@@ -6,16 +6,16 @@ import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
-import { useApiOpts } from '@/hooks/use-api';
+import { useApiOpts, useApiError } from '@/hooks/use-api';
 import * as reservesApi from '@/lib/api/reserves';
 import type { ReservesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
 
 export default function ReservesPage() {
   const opts = useApiOpts();
+  const { error, handleError } = useApiError();
   const [data, setData] = useState<ReservesResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   const fixed7ToNumber = (v?: string | null) => {
     if (!v) return 0;
@@ -40,7 +40,7 @@ export default function ReservesPage() {
     reservesApi.getReserves(opts).then((res) => {
       if (!cancelled) setData(res);
     }).catch((e) => {
-      if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load reserves');
+      if (!cancelled) handleError(e);
     }).finally(() => {
       if (!cancelled) setLoading(false);
     });

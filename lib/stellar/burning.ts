@@ -5,6 +5,8 @@ import {
   TransactionBuilder,
   xdr,
   rpc,
+  Transaction,
+  FeeBumpTransaction,
 } from "@stellar/stellar-sdk";
 import type { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit";
 import { getAssetsConfig } from "@/lib/api/config";
@@ -29,6 +31,31 @@ function i128ScVal(value: bigint): xdr.ScVal {
   );
 }
 
+function formatSorobanError(resultXdr: string): string {
+  try {
+    const txResult = xdr.TransactionResult.fromXDR(resultXdr, "base64");
+    const resultCode = txResult.result().switch().name;
+
+    let detail = "";
+    if (txResult.result().switch() === xdr.TransactionResultCode.txFailed()) {
+      const results = txResult.result().results();
+      if (results && results.length > 0) {
+        const opResult = results[0];
+        const tr = opResult.tr();
+        if (tr && tr.switch().value === xdr.OperationType.invokeHostFunction().value) {
+          detail = `: ${tr.invokeHostFunctionResult().switch().name}`;
+        } else if (tr) {
+          detail = `: ${tr.switch().name}`;
+        }
+      }
+    }
+
+    return `Soroban error: ${resultCode}${detail} (XDR: ${resultXdr})`;
+  } catch {
+    return `Soroban error (XDR: ${resultXdr})`;
+  }
+}
+
 async function resolveNetworkConfig(): Promise<{
   horizonUrl: string;
   rpcUrl: string;
@@ -50,21 +77,21 @@ async function resolveNetworkConfig(): Promise<{
 
 async function submitAndWaitSuccess(params: {
   rpcServer: rpc.Server;
-  tx: any;
+  tx: Transaction | FeeBumpTransaction;
   timeoutMs?: number;
 }): Promise<{ txHash: string }> {
   const sendRes = await params.rpcServer.sendTransaction(params.tx);
-  if ((sendRes as any).errorResultXdr) {
-    throw new Error("Soroban send failed.");
+  if (sendRes.status === "ERROR" || sendRes.errorResultXdr) {
+    throw new Error(formatSorobanError(sendRes.errorResultXdr || "unknown"));
   }
-  const txHash = (sendRes as any).hash as string;
+  const txHash = sendRes.hash;
   const timeoutMs = params.timeoutMs ?? 120000;
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     const status = await params.rpcServer.getTransaction(txHash);
     if (status.status === "SUCCESS") return { txHash };
     if (status.status === "FAILED") {
-      throw new Error("Burn transaction failed on-chain.");
+      throw new Error(formatSorobanError(status.resultXdr));
     }
     await new Promise((r) => setTimeout(r, 1500));
   }
@@ -126,7 +153,7 @@ export async function submitBurnRedeemSingleClient(params: {
   }
   const assembled = rpc.assembleTransaction(tx, simulation).setTimeout(0).build();
 
-  let signedTx: any = assembled;
+  let signedTx: Transaction | FeeBumpTransaction = assembled;
   if (params.external?.kit) {
     const { signedTxXdr } = await params.external.kit.signTransaction(
       assembled.toXDR(),
@@ -138,7 +165,7 @@ export async function submitBurnRedeemSingleClient(params: {
     signedTx = TransactionBuilder.fromXDR(signedTxXdr, networkPassphrase);
   } else {
     if (!params.userSecret) throw new Error("Missing wallet secret.");
-    signedTx.sign(Keypair.fromSecret(params.userSecret));
+    (signedTx as Transaction).sign(Keypair.fromSecret(params.userSecret));
   }
 
   const { txHash } = await submitAndWaitSuccess({
