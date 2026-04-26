@@ -8,6 +8,8 @@ import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield } fro
 import { useAuth } from '@/contexts/auth-context';
 import { useBalance } from '@/hooks/use-balance';
 import { useApiOpts } from '@/hooks/use-api';
+import { Badge } from '@/components/ui/badge';
+import { KycBadge } from '@/components/ui/kyc-badge';
 import { formatAmount } from '@/lib/utils';
 import * as userApi from '@/lib/api/user';
 import * as transactionsApi from '@/lib/api/transactions';
@@ -130,7 +132,10 @@ export default function MePage() {
           <div className="flex items-center gap-3">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0 text-white text-lg font-bold">{initials}</div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-bold text-foreground truncate">{displayName}</h1>
+              <div className="flex items-center gap-2 mb-0.5">
+                <h1 className="text-lg font-bold text-foreground truncate">{displayName}</h1>
+                <KycBadge status={user?.kyc_status} />
+              </div>
               <p className="text-xs text-muted-foreground truncate">{user?.email || user?.phone_e164 || '—'}</p>
             </div>
           </div>
