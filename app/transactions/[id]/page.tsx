@@ -27,6 +27,7 @@ export default function TransactionDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const opts = useApiOpts();
+  const { error, handleError } = useApiError();
   const [data, setData] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

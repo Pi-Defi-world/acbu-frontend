@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
-import { useApiOpts } from "@/hooks/use-api";
+import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
 
@@ -17,7 +17,7 @@ export default function SavingsDepositPage() {
     const [amount, setAmount] = useState("");
     const [termSeconds, setTermSeconds] = useState("0");
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const { error, clearError, handleError } = useApiError();
     const [success, setSuccess] = useState("");
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function SavingsDepositPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user.trim() || !amount || parseFloat(amount) <= 0) return;
-        setError("");
+        clearError();
         setLoading(true);
         try {
             await savingsApi.savingsDeposit(
@@ -45,7 +45,7 @@ export default function SavingsDepositPage() {
             );
             setSuccess("Deposit submitted.");
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Deposit failed");
+            handleError(e);
         } finally {
             setLoading(false);
         }

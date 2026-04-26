@@ -22,6 +22,7 @@ import { Zap,
     AlertCircle,
 } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
+import { CURRENCY } from "@/lib/currency";
 
 interface BillProvider {
     id: string;
@@ -75,7 +76,16 @@ const billProviders: BillProvider[] = [
 /**
  * Bill payment and history page.
  */
+type BillsTab = "catalog" | "history";
+
+const BILLS_TABS: readonly BillsTab[] = ["catalog", "history"];
+
+function isBillsTab(v: string): v is BillsTab {
+    return (BILLS_TABS as readonly string[]).includes(v);
+}
+
 export default function BillsPage() {
+    const { error: paymentError, clearError: clearPaymentError, handleError: handlePaymentError } = useApiError();
     const [activeTab, setActiveTab] = useState<"catalog" | "history">(
         "catalog",
     );
@@ -136,8 +146,13 @@ export default function BillsPage() {
     };
 
     const handlePaymentExecute = async () => {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setPaymentStep("success");
+        clearPaymentError();
+        try {
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            setPaymentStep("success");
+        } catch (e) {
+            handlePaymentError(e);
+        }
     };
 
     const resetPayment = () => {
@@ -146,6 +161,7 @@ export default function BillsPage() {
         setAmount("");
         setReference("");
         setSelectedProvider(null);
+        clearPaymentError();
     };
 
     return (
@@ -178,9 +194,7 @@ export default function BillsPage() {
                     <Tabs
                         defaultValue="catalog"
                         value={activeTab}
-                        onValueChange={(v) =>
-                            setActiveTab(v as "catalog" | "history")
-                        }
+                        onValueChange={handleTabChange}
                     >
                         <TabsList className="grid w-full grid-cols-2 px-4 gap-2 bg-transparent border-b border-border rounded-none">
                             <TabsTrigger
@@ -227,7 +241,7 @@ export default function BillsPage() {
                                                     {formatAmount(
                                                         provider.minAmount,
                                                     )}{" "}
-                                                    - AFK{" "}
+                                                    - {CURRENCY}{" "}
                                                     {formatAmount(
                                                         provider.maxAmount,
                                                     )}
@@ -266,7 +280,7 @@ export default function BillsPage() {
                                                     <CheckCircle className="w-4 h-4 text-green-600" />
                                                 )}
                                                 <p className="font-semibold text-foreground">
-                                                    -AFK{" "}
+                                                    -{CURRENCY}{" "}
                                                     {formatAmount(tx.amount)}
                                                 </p>
                                             </div>
@@ -405,6 +419,11 @@ export default function BillsPage() {
                             </div>
                         )}
 
+                        <div className="flex gap-2">
+                            {paymentError && (
+                                <p className="text-sm text-destructive w-full">{paymentError}</p>
+                            )}
+                        </div>
                         <div className="flex gap-2">
                             {paymentStep !== "success" && (
                                 <AlertDialogCancel onClick={resetPayment}>

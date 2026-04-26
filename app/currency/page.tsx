@@ -18,11 +18,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ArrowDown, ArrowUp, TrendingUp } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
-import { useApiOpts } from "@/hooks/use-api";
+import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
 import type { MintResponse, BurnResponse } from "@/types/api";
 import { featureFlags } from "@/lib/features";
+
+type CurrencyTab = "mint" | "burn" | "international";
+
+const CURRENCY_TABS: readonly CurrencyTab[] = ["mint", "burn", "international"];
+
+function isCurrencyTab(v: string): v is CurrencyTab {
+  return (CURRENCY_TABS as readonly string[]).includes(v);
+}
 
 /**
  * Currency management hub.
@@ -30,12 +38,14 @@ import { featureFlags } from "@/lib/features";
 export default function CurrencyPage() {
   const opts = useApiOpts();
 
-  const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
-    "mint",
-  );
+  const [activeTab, setActiveTab] = useState<CurrencyTab>("mint");
+
+  const handleTabChange = (v: string) => {
+    if (isCurrencyTab(v)) setActiveTab(v);
+  };
   const [step, setStep] = useState<"input" | "confirm" | "success">("input");
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
+  const { error: submitError, clearError: clearSubmitError, handleError: handleSubmitError } = useApiError();
   const [lastTxId, setLastTxId] = useState("");
 
   // Mint state
@@ -66,7 +76,7 @@ export default function CurrencyPage() {
   const handleBurnConfirm = () => setStep("confirm");
 
   const handleExecute = async () => {
-    setSubmitError("");
+    clearSubmitError();
     setSubmitting(true);
     try {
       if (activeTab === "mint") {
@@ -111,7 +121,7 @@ export default function CurrencyPage() {
       }
       setStep("success");
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Operation failed");
+      handleSubmitError(e);
     } finally {
       setSubmitting(false);
     }
@@ -129,7 +139,7 @@ export default function CurrencyPage() {
     setIntlAccountNumber("");
     setIntlBankCode("");
     setIntlAccountName("");
-    setSubmitError("");
+    clearSubmitError();
     setLastTxId("");
   };
 
@@ -164,9 +174,7 @@ export default function CurrencyPage() {
         <Tabs
           defaultValue="mint"
           className="w-full"
-          onValueChange={(v) =>
-            setActiveTab(v as "mint" | "burn" | "international")
-          }
+          onValueChange={handleTabChange}
         >
           <TabsList className="grid w-full grid-cols-3 px-4 gap-2 bg-transparent border-b border-border rounded-none">
             <TabsTrigger
