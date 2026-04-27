@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
-import { storeWalletSecretLocalPlaintext } from "@/lib/wallet-storage";
-import { AlertCircle, ChevronLeft } from "lucide-react";
+import { storeWalletSecret } from "@/lib/wallet-storage";
+import { getPasscode } from "@/lib/passcode-manager";
+import { AlertCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 
 export function WalletSetupModal() {
@@ -24,7 +25,7 @@ export function WalletSetupModal() {
 
   // For importing seed
   const [importSeed, setImportSeed] = useState("");
-  // Plaintext local storage mode: no passcode prompt
+  // Wallet secret is encrypted with the account passcode via storeWalletSecret
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -75,12 +76,21 @@ export function WalletSetupModal() {
    * fails, we don't end up with a local seed whose public key doesn't match
    * the server's record (which is what caused the mint to keep targeting the
    * wrong recipient and erroring with "trustline entry is missing").
+   * 
+   * After syncing, we call postWalletConfirm to complete the activation flow.
    */
   const syncWalletToBackend = async (secret: string): Promise<void> => {
     if (!userId) throw new Error("Not logged in");
+    
+    const passcode = getPasscode();
+    if (!passcode) {
+      throw new Error("Passcode not available. Please log in again to set up your wallet.");
+    }
+
     const kp = Keypair.fromSecret(secret);
     const publicKey = kp.publicKey();
 
+    // Step 1: Update wallet address on backend
     const result = await userApi.putWalletAddress(publicKey);
     if (!result?.ok || (result.stellar_address && result.stellar_address !== publicKey)) {
       throw new Error(
@@ -88,7 +98,16 @@ export function WalletSetupModal() {
       );
     }
 
-    await storeWalletSecretLocalPlaintext(userId, secret, publicKey);
+    // Step 2: Store secret encrypted with passcode
+    await storeWalletSecret(userId, secret, passcode);
+
+    // Step 3: Confirm wallet activation on backend
+    try {
+      await userApi.postWalletConfirm({ wallet_address: publicKey });
+    } catch (err) {
+      console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+      // Don't throw - the address is set, confirmation can retry later if needed
+    }
   };
 
   const handleGenerateConfirm = async (e: React.FormEvent) => {
@@ -145,7 +164,19 @@ export function WalletSetupModal() {
             kit.setWallet(selectedOption.id);
             const { address: pubKey } = await kit.getAddress();
 
-            await userApi.putWalletAddress(pubKey);
+            // Update wallet address on backend
+            const result = await userApi.putWalletAddress(pubKey);
+            if (!result?.ok || (result.stellar_address && result.stellar_address !== pubKey)) {
+              throw new Error("Backend did not accept the wallet address. Please retry.");
+            }
+
+            // Confirm wallet activation on backend
+            try {
+              await userApi.postWalletConfirm({ wallet_address: pubKey });
+            } catch (err) {
+              console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+            }
+
             handleFinish();
           } catch (e: unknown) {
             setError((e as Error).message || "Failed to connect wallet");
@@ -237,6 +268,14 @@ export function WalletSetupModal() {
             {option === 1 && (
               <form onSubmit={handleGenerateConfirm} className="space-y-4">
                 <h2 className="text-lg font-semibold">Your New Wallet</h2>
+                
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                  <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-800 dark:text-blue-300">
+                    Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                  </p>
+                </div>
+
                 <p className="text-sm text-muted-foreground">
                   Please save this secret key somewhere safe. It is required to
                   recover your wallet if you switch devices.
@@ -254,9 +293,17 @@ export function WalletSetupModal() {
             {option === 2 && (
               <form onSubmit={handleImportSeed} className="space-y-4">
                 <h2 className="text-lg font-semibold">Import Seed</h2>
+                
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                  <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-800 dark:text-blue-300">
+                    Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                  </p>
+                </div>
+
                 <p className="text-sm text-muted-foreground">
                   Enter your Stellar secret key (starts with 'S'). It will be stored
-                  securely on this device.
+                  encrypted on this device.
                 </p>
 
                 <Input

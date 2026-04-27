@@ -10,9 +10,10 @@ import { ArrowRight, Briefcase, Users, PiggyBank, CreditCard, Settings, Zap } fr
 import { useApiOpts } from '@/hooks/use-api';
 import * as businessApi from '@/lib/api/business';
 import type { BusinessStatsResponse } from '@/lib/api/business';
+import { featureFlags } from '@/lib/features';
 
 const businessServices = [
-  { id: 'sme', title: 'SME Services', description: 'Business accounts, transfers & statements', icon: Briefcase, badge: 'Pro', href: '/sme' },
+  { id: 'sme', title: 'SME Services', description: 'Business accounts, transfers & statements', icon: Briefcase, badge: 'Pro', href: '/business/sme' },
   { id: 'salary', title: 'Payroll', description: 'Disburse salaries and manage batches', icon: Users, badge: 'New', href: '/salary' },
   { id: 'campaigns', title: 'Crowdfunding', description: 'Raise funds for projects via Trivela', icon: Zap, badge: 'Alpha', href: '/campaigns/1' },
   { id: 'enterprise', title: 'Enterprise', description: 'Bulk transfers and treasury management', icon: PiggyBank, href: '/enterprise' },
@@ -28,6 +29,10 @@ export default function BusinessPage() {
   const opts = useApiOpts();
   const [stats, setStats] = useState<BusinessStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const visibleBusinessServices = businessServices.filter((service) => {
+    if (service.id === 'gateway') return featureFlags.businessGateway;
+    return true;
+  });
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -72,7 +77,7 @@ export default function BusinessPage() {
         </div>
 
         <div className="space-y-3 mb-6">
-          {businessServices.map((service) => {
+          {visibleBusinessServices.map((service) => {
             const Icon = service.icon;
             return (
               <button key={service.id} onClick={() => router.push(service.href)} className="w-full text-left">

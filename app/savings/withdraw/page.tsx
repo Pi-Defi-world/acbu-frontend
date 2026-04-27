@@ -12,130 +12,160 @@ import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
 
 export default function SavingsWithdrawPage() {
-    const opts = useApiOpts();
-    const [user, setUser] = useState("");
-    const [termSeconds, setTermSeconds] = useState("0");
-    const [amount, setAmount] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+  const opts = useApiOpts();
+  const [user, setUser] = useState("");
+  const [termSeconds, setTermSeconds] = useState("0");
+  const [amount, setAmount] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-    useEffect(() => {
-        userApi
-            .getReceive(opts)
-            .then((data) => {
-                const uri = (data.pay_uri ?? data.alias) as string | undefined;
-                if (uri && typeof uri === "string")
-                    setUser(uri);
-            })
-            .catch((e) => {
-                console.error(
-                    e instanceof Error
-                        ? e.message
-                        : "Failed to load receive address",
-                );
-            });
-    }, [opts.token]);
+  useEffect(() => {
+    userApi
+      .getReceive(opts)
+      .then((data) => {
+        const uri = (data.pay_uri ?? data.alias) as string | undefined;
+        if (uri && typeof uri === "string")
+          setUser(uri);
+      })
+      .catch((e) => {
+        console.error(
+          e instanceof Error
+            ? e.message
+            : "Failed to load receive address",
+        );
+      });
+  }, [opts.token]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!user.trim() || !amount || parseFloat(amount) <= 0) return;
-        setError("");
-        setLoading(true);
-        try {
-            await savingsApi.savingsWithdraw(
-                {
-                    user: user.trim(),
-                    term_seconds: parseInt(termSeconds, 10) || 0,
-                    amount,
-                },
-                opts,
-            );
-            setSuccess("Withdrawal submitted.");
-        } catch (e) {
-            setError(e instanceof Error ? e.message : "Withdraw failed");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user.trim() || !amount || parseFloat(amount) <= 0) return;
+    setError("");
+    setLoading(true);
+    try {
+      await savingsApi.savingsWithdraw(
+        {
+          user: user.trim(),
+          term_seconds: parseInt(termSeconds, 10) || 0,
+          amount,
+        },
+        opts,
+      );
+      setSuccess("Withdrawal submitted.");
+      // Reset form on success
+      setAmount("");
+      setTermSeconds("0");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Withdraw failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return (
-        <>
-            <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-                <div className="px-4 py-3 flex items-center gap-3">
-                    <Link href="/savings">
-                        <ArrowLeft className="w-5 h-5 text-primary" />
-                    </Link>
-                    <h1 className="text-lg font-bold text-foreground">
-                        Withdraw
-                    </h1>
-                </div>
+  return (
+    <>
+      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+        <div className="px-4 py-3 flex items-center gap-3">
+          <Link
+            href="/savings"
+            aria-label="Go back to Savings page"
+            className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          >
+            <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
+          </Link>
+          <h1 className="text-lg font-bold text-foreground">
+            Withdraw
+          </h1>
+        </div>
+      </div>
+      <PageContainer>
+        <Card className="border-border p-4 space-y-4">
+          {error && (
+            <p className="text-destructive text-sm" role="alert">
+              {error}
+            </p>
+          )}
+          {success && (
+            <p className="text-green-600 text-sm" role="status">
+              {success}
+            </p>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label
+                htmlFor="withdraw-account-input"
+                className="text-sm font-medium text-foreground mb-2 block"
+              >
+                Your account
+              </label>
+              <Input
+                id="withdraw-account-input"
+                name="withdraw-account"
+                value={user}
+                readOnly
+                className="border-border font-mono text-sm bg-muted"
+                aria-describedby="withdraw-account-hint"
+              />
+              <p id="withdraw-account-hint" className="text-xs text-muted-foreground mt-1">
+                Your registered account address (read-only)
+              </p>
             </div>
-            <PageContainer>
-                <Card className="border-border p-4 space-y-4">
-                    {error && (
-                        <p className="text-destructive text-sm">{error}</p>
-                    )}
-                    {success && (
-                        <p className="text-green-600 text-sm">{success}</p>
-                    )}
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label
-                                htmlFor="withdraw-account"
-                                className="text-sm font-medium text-foreground mb-2 block"
-                            >
-                                Your account
-                            </label>
-                            <Input
-                                id="withdraw-account"
-                                value={user}
-                                readOnly
-                                className="border-border font-mono text-sm bg-muted"
-                            />
-                        </div>
-                        <div>
-                            <label
-                                htmlFor="withdraw-term"
-                                className="text-sm font-medium text-foreground mb-2 block"
-                            >
-                                Term (seconds)
-                            </label>
-                            <Input
-                                id="withdraw-term"
-                                type="number"
-                                min="0"
-                                value={termSeconds}
-                                onChange={(e) => setTermSeconds(e.target.value)}
-                                className="border-border"
-                            />
-                        </div>
-                        <div>
-                            <label
-                                htmlFor="withdraw-amount"
-                                className="text-sm font-medium text-foreground mb-2 block"
-                            >
-                                Amount
-                            </label>
-                            <Input
-                                id="withdraw-amount"
-                                type="number"
-                                min="0"
-                                step="any"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                                className="border-border"
-                            />
-                        </div>
-                        <Button
-                            type="submit"
-                            disabled={loading || !user.trim() || !amount}
-                        >
-                            Withdraw
-                        </Button>
-                    </form>
-                </Card>
-            </PageContainer>
-        </>
-    );
+
+            <div>
+              <label
+                htmlFor="withdraw-term-input"
+                className="text-sm font-medium text-foreground mb-2 block"
+              >
+                Term (seconds)
+              </label>
+              <Input
+                id="withdraw-term-input"
+                name="withdraw-term"
+                type="number"
+                min="0"
+                value={termSeconds}
+                onChange={(e) => setTermSeconds(e.target.value)}
+                className="border-border"
+                aria-describedby="withdraw-term-hint"
+              />
+              <p id="withdraw-term-hint" className="text-xs text-muted-foreground mt-1">
+                Withdrawal term in seconds (0 for immediate withdrawal)
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="withdraw-amount-input"
+                className="text-sm font-medium text-foreground mb-2 block"
+              >
+                Amount
+              </label>
+              <Input
+                id="withdraw-amount-input"
+                name="withdraw-amount"
+                type="number"
+                min="0"
+                step="any"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="border-border"
+                aria-describedby="withdraw-amount-hint"
+              />
+              <p id="withdraw-amount-hint" className="text-xs text-muted-foreground mt-1">
+                Amount to withdraw from savings
+              </p>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading || !user.trim() || !amount || parseFloat(amount) <= 0}
+              aria-label="Submit withdrawal request"
+            >
+              {loading ? "Processing..." : "Withdraw"}
+            </Button>
+          </form>
+        </Card>
+      </PageContainer>
+    </>
+  );
 }
