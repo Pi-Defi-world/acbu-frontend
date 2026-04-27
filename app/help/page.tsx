@@ -140,7 +140,7 @@ export default function HelpPage() {
 
           <Accordion type="single" collapsible className="w-full">
             {FAQ_ITEMS.map((item, index) => (
-              <AccordionItem key={index} value={`item-${index}`}>
+              <AccordionItem key={item.question} value={item.question}>
                 <AccordionTrigger className="text-left">
                   {item.question}
                 </AccordionTrigger>

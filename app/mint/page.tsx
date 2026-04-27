@@ -31,6 +31,7 @@ import * as ratesApi from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
 import type { QuoteResponse, RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
+import { submitBurnRedeemSingleClient } from '@/lib/stellar/burning';
 
 const MINT_NETWORK_FEE_TEXT = "Estimated at confirmation";
 const BURN_PROCESSING_FEE_TEXT = "Estimated at confirmation";
