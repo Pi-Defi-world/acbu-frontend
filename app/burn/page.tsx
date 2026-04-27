@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
@@ -31,12 +32,16 @@ const formatCurrency = (amount: string, currency: string) => {
   }
 };
 
-export default function BurnPage() {
+function BurnPageContent() {
   const opts = useApiOpts();
+  const searchParams = useSearchParams();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
-  const [acbuAmount, setAcbuAmount] = useState("");
-  const [currency, setCurrency] = useState("NGN");
+  
+  // Initialize from search params if available
+  const [acbuAmount, setAcbuAmount] = useState(searchParams.get("amount") || "");
+  const [currency, setCurrency] = useState(searchParams.get("currency") || "NGN");
+  
   const [accountNumber, setAccountNumber] = useState("");
   const [bankCode, setBankCode] = useState("");
   const [accountName, setAccountName] = useState("");
@@ -248,5 +253,13 @@ export default function BurnPage() {
         </Card>
       </PageContainer>
     </>
+  );
+}
+
+export default function BurnPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BurnPageContent />
+    </Suspense>
   );
 }
