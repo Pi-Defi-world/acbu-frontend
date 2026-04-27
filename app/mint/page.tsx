@@ -22,6 +22,7 @@ import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
 import { useApiOpts, useApiError } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
 import { useAuth } from '@/contexts/auth-context';
+import { useRouter } from 'next/navigation';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureAcbuTrustlineClient } from '@/lib/stellar/trustlines';
 import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
@@ -96,6 +97,7 @@ function formatQuotedFee(
  */
 export default function MintPage() {
   const opts = useApiOpts();
+  const router = useRouter();
   const { userId, stellarAddress } = useAuth();
   const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const kit = useStellarWalletsKit();
@@ -206,7 +208,9 @@ export default function MintPage() {
         clearMintError();
         setStep("confirm");
     };
-    const handleBurnConfirm = () => setStep("confirm");
+    const handleBurnConfirm = () => {
+        router.push(`/burn?amount=${burnAmount}&currency=${selectedFiatCurrency}`);
+    };
     const handleExecuteMint = async () => {
         if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
             return;
