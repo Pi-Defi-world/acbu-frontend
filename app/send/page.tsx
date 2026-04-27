@@ -47,6 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 function formatDate(iso: string) {
   const d = new Date(iso);
   const today = new Date();
@@ -195,18 +196,18 @@ export default function SendPage() {
     }
   };
 
-const getStatusBadgeClassName = (status: string) => {
-  switch (status) {
-    case "completed":
-      return "border-[var(--color-status-success-border)] bg-[var(--color-status-success)] text-[var(--color-status-success-foreground)]";
-    case "pending":
-      return "border-[var(--color-status-warning-border)] bg-[var(--color-status-warning)] text-[var(--color-status-warning-foreground)]";
-    case "failed":
-      return "border-destructive/40 bg-destructive/15 text-destructive";
-    default:
-      return "border-[var(--color-status-neutral-border)] bg-[var(--color-status-neutral)] text-[var(--color-status-neutral-foreground)]";
-  }
-};
+  const getStatusBadgeClassName = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "border-[var(--color-status-success-border)] bg-[var(--color-status-success)] text-[var(--color-status-success-foreground)]";
+      case "pending":
+        return "border-[var(--color-status-warning-border)] bg-[var(--color-status-warning)] text-[var(--color-status-warning-foreground)]";
+      case "failed":
+        return "border-destructive/40 bg-destructive/15 text-destructive";
+      default:
+        return "border-[var(--color-status-neutral-border)] bg-[var(--color-status-neutral)] text-[var(--color-status-neutral-foreground)]";
+    }
+  };
 
   const exceedsBalance =
     balance !== null && amount !== "" && parseFloat(amount) > balance;
@@ -218,52 +219,95 @@ const getStatusBadgeClassName = (status: string) => {
     ((useContact && selectedContact) ||
       (!useContact && customRecipient.trim()));
 
-    return (
-        <>
-            <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-                <div className="px-4 py-3">
-                    <h1 className="text-lg font-bold text-foreground mb-3">
-                        Send Money
-                    </h1>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setActiveTab("send")}
-                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === "send" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-                        >
-                            Send
-                        </button>
-                        <button
-                            onClick={() => setActiveTab("history")}
-                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === "history" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-                        >
-                            History
-                        </button>
-                    </div>
-                </div>
-            </header>
-        <div className="px-4 py-4">
-          {loadError && (
-            <div className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              <p className="font-medium">{loadError}</p>
-            </div>
-          )}
+  return (
+    <>
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+        <div className="px-4 py-3">
+          <h1 className="text-lg font-bold text-foreground mb-3">
+            Send Money
+          </h1>
+          <div className="flex gap-2" role="tablist" aria-label="Send money options">
+            <button
+              id="tab-send"
+              role="tab"
+              aria-selected={activeTab === "send"}
+              aria-controls="panel-send"
+              onClick={() => setActiveTab("send")}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                activeTab === "send" 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              Send
+            </button>
+            <button
+              id="tab-history"
+              role="tab"
+              aria-selected={activeTab === "history"}
+              aria-controls="panel-history"
+              onClick={() => setActiveTab("history")}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                activeTab === "history" 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              History
+            </button>
+          </div>
+        </div>
+      </header>
+      
+      <div className="px-4 py-4">
+        {loadError && (
+          <div 
+            className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300"
+            role="alert"
+            aria-live="assertive"
+          >
+            <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
+            <p className="font-medium">{loadError}</p>
+          </div>
+        )}
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsContent value="send" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsContent 
+            value="send" 
+            id="panel-send"
+            role="tabpanel"
+            aria-labelledby="tab-send"
+            className="space-y-4"
+          >
             <div className="grid grid-cols-2 gap-3">
-              <Button onClick={() => setShowSendDialog(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4">
-                <Plus className="mb-2 h-5 w-5" /><span>New Transfer</span>
+              <Button 
+                onClick={() => setShowSendDialog(true)} 
+                className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4"
+                aria-label="Create new transfer"
+              >
+                <Plus className="mb-2 h-5 w-5" aria-hidden="true" />
+                <span>New Transfer</span>
               </Button>
-              <Button asChild variant="outline" className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full">
-                <Link href="/me/settings/contacts">
-                  <Plus className="mb-2 h-5 w-5" /><span>Add Contact</span>
+              <Button 
+                asChild 
+                variant="outline" 
+                className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full"
+              >
+                <Link href="/me/settings/contacts" aria-label="Add new contact">
+                  <Plus className="mb-2 h-5 w-5" aria-hidden="true" />
+                  <span>Add Contact</span>
                 </Link>
               </Button>
             </div>
           </TabsContent>
 
-          <TabsContent value="history" className="space-y-3">
+          <TabsContent 
+            value="history" 
+            id="panel-history"
+            role="tabpanel"
+            aria-labelledby="tab-history"
+            className="space-y-3"
+          >
             <div>
               <h3 className="mb-3 text-sm font-semibold text-foreground">
                 Recent Transfers
@@ -282,7 +326,8 @@ const getStatusBadgeClassName = (status: string) => {
                     <Link
                       key={t.transaction_id}
                       href={`/send/${t.transaction_id}`}
-                      className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
+                      className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                      aria-label={`Transfer of ${t.amount_acbu} ACBU, status ${t.status}, created ${formatDate(t.created_at)}`}
                     >
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-foreground truncate">
@@ -301,10 +346,10 @@ const getStatusBadgeClassName = (status: string) => {
                           className={`mt-1 text-xs ${getStatusBadgeClassName(t.status)}`}
                         >
                           {t.status === "completed" && (
-                            <Check className="mr-1 h-3 w-3" />
+                            <Check className="mr-1 h-3 w-3" aria-hidden="true" />
                           )}
                           {t.status === "pending" && (
-                            <AlertCircle className="mr-1 h-3 w-3" />
+                            <AlertCircle className="mr-1 h-3 w-3" aria-hidden="true" />
                           )}
                           {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
                         </Badge>
@@ -320,11 +365,22 @@ const getStatusBadgeClassName = (status: string) => {
 
       {/* Send Dialog */}
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
-        <DialogContent className="max-w-md border-border">
-          <DialogHeader><DialogTitle>Send Money</DialogTitle><DialogDescription>Transfer ACBU securely to another wallet</DialogDescription></DialogHeader>
+        <DialogContent 
+          className="max-w-md border-border"
+          aria-labelledby="send-dialog-title"
+          aria-describedby="send-dialog-description"
+        >
+          <DialogHeader>
+            <DialogTitle id="send-dialog-title">Send Money</DialogTitle>
+            <DialogDescription id="send-dialog-description">
+              Transfer ACBU securely to another wallet
+            </DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-foreground">Recipient</Label>
+              <Label htmlFor="recipient-type" className="text-foreground">
+                Recipient
+              </Label>
               <Tabs
                 value={useContact ? "contact" : "custom"}
                 onValueChange={(v) => setUseContact(v === "contact")}
@@ -341,7 +397,11 @@ const getStatusBadgeClassName = (status: string) => {
                       if (c) setSelectedContact(c);
                     }}
                   >
-                    <SelectTrigger className="border-border">
+                    <SelectTrigger 
+                      className="border-border"
+                      id="contact-select"
+                      aria-label="Select a contact"
+                    >
                       <SelectValue placeholder="Select a contact" />
                     </SelectTrigger>
                     <SelectContent>
@@ -355,25 +415,36 @@ const getStatusBadgeClassName = (status: string) => {
                 </TabsContent>
                 <TabsContent value="custom">
                   <Input
+                    id="custom-recipient"
+                    name="custom-recipient"
                     placeholder="Wallet address or email"
                     value={customRecipient}
                     onChange={(e) => setCustomRecipient(e.target.value)}
                     className="border-border"
+                    aria-describedby="recipient-hint"
                   />
+                  <p id="recipient-hint" className="text-xs text-muted-foreground mt-1">
+                    Enter a Stellar address or email address
+                  </p>
                 </TabsContent>
               </Tabs>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-foreground">Amount</Label>
+              <Label htmlFor="amount-input" className="text-foreground">
+                Amount
+              </Label>
               <div className="flex gap-2">
                 <span className="flex items-center text-muted-foreground font-medium">
                   ACBU
                 </span>
                 <Input
+                  id="amount-input"
+                  name="amount"
                   type="number"
                   placeholder="0.00"
                   min="0"
+                  step="any"
                   value={amount}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -384,22 +455,36 @@ const getStatusBadgeClassName = (status: string) => {
                       e.preventDefault();
                   }}
                   className="border-border text-lg font-semibold"
+                  aria-describedby={exceedsBalance ? "amount-error amount-hint" : "amount-hint"}
+                  aria-invalid={exceedsBalance}
                 />
               </div>
-              {exceedsBalance && <p className="text-xs text-destructive">Insufficient balance.</p>}
-              <p className="text-xs text-muted-foreground">
+              {exceedsBalance && (
+                <p id="amount-error" className="text-xs text-destructive" role="alert">
+                  Insufficient balance.
+                </p>
+              )}
+              <p id="amount-hint" className="text-xs text-muted-foreground">
                 Available: ACBU {balanceLoading ? '...' : formatAmount(balance)}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-foreground">Note (Optional)</Label>
+              <Label htmlFor="note-input" className="text-foreground">
+                Note (Optional)
+              </Label>
               <Input
+                id="note-input"
+                name="note"
                 placeholder="Add a message..."
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="border-border"
+                aria-describedby="note-hint"
               />
+              <p id="note-hint" className="text-xs text-muted-foreground">
+                Add an optional note to this transfer
+              </p>
             </div>
 
             <Card className="border-border bg-muted p-3">
@@ -414,6 +499,7 @@ const getStatusBadgeClassName = (status: string) => {
                 variant="outline"
                 onClick={() => setShowSendDialog(false)}
                 className="flex-1 border-border"
+                aria-label="Cancel transfer"
               >
                 Cancel
               </Button>
@@ -421,6 +507,7 @@ const getStatusBadgeClassName = (status: string) => {
                 onClick={() => setShowConfirmDialog(true)}
                 disabled={!isFormValid()}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                aria-label="Continue to confirmation"
               >
                 Continue
               </Button>
@@ -431,16 +518,22 @@ const getStatusBadgeClassName = (status: string) => {
 
       {/* Confirm Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent className="max-w-md border-border">
+        <AlertDialogContent 
+          className="max-w-md border-border"
+          aria-labelledby="confirm-dialog-title"
+          aria-describedby="confirm-dialog-description"
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Transfer</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle id="confirm-dialog-title">Confirm Transfer</AlertDialogTitle>
+            <AlertDialogDescription id="confirm-dialog-description">
               Review the details before confirming
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-4">
             {submitError && (
-              <p className="text-sm text-destructive">{submitError}</p>
+              <p className="text-sm text-destructive" role="alert">
+                {submitError}
+              </p>
             )}
             <div className="rounded-lg border border-border bg-muted p-4">
               <p className="text-xs text-muted-foreground">To</p>
@@ -453,7 +546,7 @@ const getStatusBadgeClassName = (status: string) => {
             </div>
             <div className="flex items-center justify-center">
               <div className="rounded-full bg-secondary p-2">
-                <ArrowRight className="h-5 w-5 text-secondary-foreground" />
+                <ArrowRight className="h-5 w-5 text-secondary-foreground" aria-hidden="true" />
               </div>
             </div>
             <div className="rounded-lg border border-border bg-muted p-4">
@@ -473,38 +566,48 @@ const getStatusBadgeClassName = (status: string) => {
             )}
           </div>
           <div className="flex gap-3">
-            <AlertDialogCancel className="flex-1 border-border" disabled={sending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmTransfer} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={sending}>{sending ? 'Sending...' : `Send ACBU ${amount}`}</AlertDialogAction>
+            <AlertDialogCancel 
+              className="flex-1 border-border" 
+              disabled={sending}
+              aria-label="Cancel transfer"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmTransfer} 
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" 
+              disabled={sending}
+              aria-label={sending ? 'Sending transfer' : `Confirm sending ${amount} ACBU`}
+            >
+              {sending ? 'Sending...' : `Send ACBU ${amount}`}
+            </AlertDialogAction>
           </div>
         </AlertDialogContent>
       </AlertDialog>
 
-
-            <Dialog
-                open={showSuccessDialog}
-                onOpenChange={setShowSuccessDialog}
+      {/* Success Dialog */}
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="max-w-md border-border">
+          <div className="flex flex-col items-center text-center py-6">
+            <div className="rounded-full bg-green-100 dark:bg-green-900 p-4 mb-4">
+              <Check className="h-8 w-8 text-green-600 dark:text-green-300" aria-hidden="true" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground mb-2">
+              Transfer Sent!
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              Your transfer for ACBU {formatAmount(lastSentAmount)}{" "}
+              is being processed.
+            </p>
+            <Badge
+              variant="outline"
+              className={`mb-4 ${getStatusBadgeClassName("pending")}`}
             >
-                <DialogContent className="max-w-md border-border">
-                    <div className="flex flex-col items-center text-center py-6">
-                       <div className="rounded-full bg-green-100 dark:bg-green-900 p-4 mb-4">
-                           <Check className="h-8 w-8 text-green-600 dark:text-green-300" />
-                       </div>
-                        <h2 className="text-xl font-bold text-foreground mb-2">
-                            Transfer Sent!
-                        </h2>
-                        <p className="text-muted-foreground mb-4">
-                            Your transfer for ACBU {formatAmount(lastSentAmount)}{" "}
-                            is being processed.
-                        </p>
-                        <Badge
-                          variant="outline"
-                          className={`mb-4 ${getStatusBadgeClassName("pending")}`}
-                        >
-                            Pending
-                        </Badge>
-                    </div>
-                </DialogContent>
-            </Dialog>
-        </>
-    );
+              Pending
+            </Badge>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
