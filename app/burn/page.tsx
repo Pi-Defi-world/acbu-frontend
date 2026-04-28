@@ -2,6 +2,7 @@
 
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,18 @@ function BurnPageContent() {
   const { error, clearError, handleError } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
+
+  // Prefill amount and currency when navigated from the Mint page burn tab
+  useEffect(() => {
+    const paramAmount = searchParams.get("amount");
+    const paramCurrency = searchParams.get("currency");
+    if (paramAmount && parseFloat(paramAmount) > 0) {
+      setAcbuAmount(paramAmount);
+    }
+    if (paramCurrency && paramCurrency.length === 3) {
+      setCurrency(paramCurrency.toUpperCase());
+    }
+  }, [searchParams]);
 
   const recipientAccount: BurnRecipientAccount = {
     account_number: accountNumber.trim(),

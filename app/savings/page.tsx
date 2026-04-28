@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -25,11 +26,11 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
-import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
 import { formatAmount } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 interface SavingsAccount {
     id: string;
@@ -106,7 +107,7 @@ export default function SavingsPage() {
   const [apiUser, setApiUser] = useState("");
   const [positionsBalance, setPositionsBalance] = useState<string | number | null>(null);
   const [positionsLoading, setPositionsLoading] = useState(false);
-  const { error: receiveError, clearError: clearReceiveError, handleError: handleReceiveError } = useApiError();
+  const [receiveError, setReceiveError] = useState("");
   const [selectedAccount, setSelectedAccount] = useState<SavingsAccount | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
@@ -118,25 +119,29 @@ export default function SavingsPage() {
   const [newGoalTarget, setNewGoalTarget] = useState("");
   const [newGoalDeadline, setNewGoalDeadline] = useState("");
 
-  useEffect(() => {
-    clearReceiveError();
+ useEffect(() => {
+    setReceiveError("");
     userApi.getReceive(opts).then((data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === "string") setApiUser(uri);
-      clearReceiveError();
-    }).catch(handleReceiveError);
+      setReceiveError("");
+    }).catch((e) => {
+      logger.error("Failed to load user info", e); // <-- ADD LOGGER
+      setReceiveError(e instanceof Error ? e.message : "Failed to load user info");
+    });
   }, [opts.token]);
 
   useEffect(() => {
     if (!apiUser) return;
     setPositionsLoading(true);
-    clearReceiveError();
+    setReceiveError("");
     savingsApi.getSavingsPositions(apiUser, undefined, opts).then((res) => {
       setPositionsBalance(res.balance);
-      clearReceiveError();
+      setReceiveError("");
     }).catch((e) => {
+      logger.error("Failed to load savings balance", e); // <-- ADD LOGGER
       setPositionsBalance(null);
-      handleReceiveError(e);
+      setReceiveError(e instanceof Error ? e.message : "Failed to load savings balance");
     }).finally(() => setPositionsLoading(false));
   }, [apiUser, opts.token]);
 
@@ -160,6 +165,8 @@ export default function SavingsPage() {
 
   const handleConfirmDeposit = () => {
     if (depositAmount && parseFloat(depositAmount) > 0) {
+      // safely log the transaction attempt
+      logger.info("Confirming savings deposit", { accountId: selectedAccount?.id, amount: depositAmount }); 
       setShowDepositDialog(false);
       setDepositAmount("");
     }
@@ -194,7 +201,7 @@ export default function SavingsPage() {
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-3xl font-bold text-foreground mb-1">
-              {positionsLoading ? <BalanceSkeleton variant="compact" /> : `ACBU ${formatAmount(positionsBalance)}`}
+              {positionsLoading ? "—" : `ACBU ${formatAmount(positionsBalance)}`}
             </p>
             <div className="flex gap-2 mt-3">
               <Link href="/savings/deposit">
@@ -214,9 +221,9 @@ export default function SavingsPage() {
               </h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
-            {/* Total Savings */}
+            {/* AFTER */}
             <p className="text-3xl font-bold text-foreground mb-1">
-              {positionsLoading ? <BalanceSkeleton variant="compact" /> : `ACBU ${formatAmount(totalSavings)}`}
+              {positionsLoading ? "—" : `ACBU ${formatAmount(totalSavings)}`}
             </p>
             <p className="text-xs text-muted-foreground mb-3">
               Earning 8% APY interest
