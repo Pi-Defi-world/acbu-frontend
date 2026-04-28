@@ -27,9 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
-import { useApiOpts } from "@/hooks/use-api";
-import { useApiError } from "@/hooks/use-api-error";
-import { ApiErrorDisplay } from "@/components/ui/api-error-display";
+import { useApiOpts, useApiError } from "@/hooks/use-api";
+import { mapApiError } from "@/lib/api/client";
 import { useBalance } from "@/hooks/use-balance";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
@@ -99,6 +98,10 @@ export default function SendPage() {
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingTransfers, setLoadingTransfers] = useState(true);
   const [loadingContacts, setLoadingContacts] = useState(true);
+  const [transfersError, setTransfersError] = useState("");
+  const [contactsError, setContactsError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  dev
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
   
@@ -129,18 +132,24 @@ export default function SendPage() {
     try {
       const data = await userApi.getContacts(opts);
       setContacts(data.contacts ?? []);
-      setLoadError("");
-    } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Failed to load contacts");
-    } finally {
-      setLoadingContacts(false);
-    }
+    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts'));
   }, [opts]);
+      setContactsError("");
+    }).catch((e) => {
+      const message = e instanceof Error ? e.message : "Failed to load contacts";
+      setContactsError(message);
+      toast({
+        title: "Could not load contacts",
+        description: message,
+        variant: "destructive",
+      });
+    }).finally(() => setLoadingContacts(false));
+  }, [opts, toast]);
+ dev
 
   useEffect(() => {
     loadTransfers();
     loadContacts();
-    // Removed `opts.token` to prevent issues if it overlaps with `opts` logic.
   }, [loadTransfers, loadContacts]);
 
   const getToValue = useCallback(() =>
@@ -152,7 +161,7 @@ export default function SendPage() {
   const handleConfirmTransfer = useCallback(async () => {
     const to = getToValue();
     if (!amount || parseFloat(amount) <= 0 || !to) return;
-    clearError();
+    clearSubmitError();
     setSending(true);
     
     try {
@@ -235,7 +244,7 @@ export default function SendPage() {
       }, 2500);
       
     } catch (e) {
-      setApiError(e);
+      handleSubmitError(e);
     } finally {
       setSending(false);
     }
@@ -441,9 +450,10 @@ export default function SendPage() {
                   ACBU
                 </span>
                 <Input
-                  type="text"
+                  type="number"
                   inputMode="decimal"
                   placeholder="0.00"
+                  min={0}
                   value={amount}
                   onChange={(e) => {
                     const v = e.target.value;
