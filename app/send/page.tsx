@@ -431,8 +431,9 @@ const getStatusColor = (status: string) => {
                 </span>
                 <Input
                   type="number"
+                  inputMode="decimal"
                   placeholder="0.00"
-                  min="0"
+                  min={0}
                   value={amount}
                   onChange={(e) => {
                     const v = e.target.value;
