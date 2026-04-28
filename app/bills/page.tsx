@@ -1,5 +1,10 @@
 "use client";
 
+// F-020: Bills payment is gated behind NEXT_PUBLIC_BILLS_ENABLED.
+// When false (default), users see an honest "coming soon" screen instead of
+// a fake payment flow that only logs to the console.
+const BILLS_ENABLED = process.env.NEXT_PUBLIC_BILLS_ENABLED === "true";
+
 import React, { useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Input } from "@/components/ui/input";
@@ -151,6 +156,36 @@ export default function BillsPage() {
         setReference("");
         setSelectedProvider(null);
     };
+
+    // Feature flag gate — show honest copy instead of the stub flow (F-020).
+    if (!BILLS_ENABLED) {
+        return (
+            <div className="pb-20">
+                <div className="px-4 pt-6 pb-6 border-b border-border">
+                    <h1 className="text-2xl font-bold text-foreground mb-2">
+                        Bills
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                        Pay bills and subscriptions easily
+                    </p>
+                </div>
+                <PageContainer>
+                    <Card className="border-border p-8 flex flex-col items-center text-center gap-4 mt-6">
+                        <Zap className="w-10 h-10 text-muted-foreground" />
+                        <div>
+                            <h2 className="text-lg font-semibold text-foreground mb-1">
+                                Coming soon
+                            </h2>
+                            <p className="text-sm text-muted-foreground max-w-xs">
+                                Bill payments are not yet available. We&apos;ll
+                                notify you when this feature launches.
+                            </p>
+                        </div>
+                    </Card>
+                </PageContainer>
+            </div>
+        );
+    }
 
     return (
         <>
