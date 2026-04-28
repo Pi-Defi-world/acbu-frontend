@@ -6,33 +6,11 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, AlertCircle } from "lucide-react";
-import { useApiOpts } from "@/hooks/use-api";
-import { useApiError } from "@/hooks/use-api-error";
-import { ApiErrorDisplay } from "@/components/ui/api-error-display";
+import { ArrowLeft } from "lucide-react";
+import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
-import { resolveRecipient } from "@/lib/api/recipient";
-
-/**
- * Resolve any user identifier (Stellar address, phone, alias, pay URI)
- * through the backend recipient resolver to obtain the canonical pay_uri.
- * Falls back to the raw value when the resolver is unavailable so that
- * Stellar-format addresses still work offline.
- */
-async function resolveUserUri(
-    raw: string,
-    opts: Parameters<typeof resolveRecipient>[1],
-): Promise<string> {
-    try {
-        const resolved = await resolveRecipient(raw, opts);
-        if (resolved.pay_uri) return resolved.pay_uri;
-        if (resolved.alias) return resolved.alias;
-    } catch {
-        // Resolver unavailable — fall through to raw value.
-    }
-    return raw;
-}
+import { logger } from "@/lib/logger";
 
 export default function SavingsDepositPage() {
     const opts = useApiOpts();
@@ -40,8 +18,7 @@ export default function SavingsDepositPage() {
     const [amount, setAmount] = useState("");
     const [termSeconds, setTermSeconds] = useState("0");
     const [loading, setLoading] = useState(false);
-    const [resolving, setResolving] = useState(false);
-    const [error, setError] = useState("");
+    const { error, clearError, handleError } = useApiError();
     const [success, setSuccess] = useState("");
 
   useEffect(() => {
@@ -61,11 +38,7 @@ export default function SavingsDepositPage() {
       const resolved = await resolveUserUri(uri, opts);
       if (!cancelled) setUser(resolved);
     }).catch((e) => {
-      if (!cancelled) {
-        setError(e instanceof Error ? e.message : 'Failed to load receive address');
-      }
-    }).finally(() => {
-      if (!cancelled) setResolving(false);
+      logger.error(e instanceof Error ? e.message : 'Failed to load receive address');
     });
 
     return () => { cancelled = true; };
@@ -74,8 +47,7 @@ export default function SavingsDepositPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user.trim() || !amount || parseFloat(amount) <= 0) return;
-        setError("");
-        setSuccess("");
+        clearError();
         setLoading(true);
         try {
             await savingsApi.savingsDeposit(
@@ -88,7 +60,7 @@ export default function SavingsDepositPage() {
             );
             setSuccess("Deposit submitted.");
         } catch (e) {
-            setApiError(e);
+            handleError(e);
         } finally {
             setLoading(false);
         }

@@ -10,7 +10,7 @@ import { ArrowRight, Briefcase, Users, PiggyBank, CreditCard, Settings, Zap } fr
 import { useApiOpts } from '@/hooks/use-api';
 import * as businessApi from '@/lib/api/business';
 import type { BusinessStatsResponse } from '@/lib/api/business';
-import { featureFlags } from '@/lib/features';
+import { logger } from '@/lib/logger';
 
 const businessServices = [
   { id: 'sme', title: 'SME Services', description: 'Business accounts, transfers & statements', icon: Briefcase, badge: 'Pro', href: '/business/sme' },
@@ -29,10 +29,6 @@ export default function BusinessPage() {
   const opts = useApiOpts();
   const [stats, setStats] = useState<BusinessStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const visibleBusinessServices = businessServices.filter((service) => {
-    if (service.id === 'gateway') return featureFlags.businessGateway;
-    return true;
-  });
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -42,7 +38,7 @@ export default function BusinessPage() {
         setStats(data);
       } catch (err) {
         // Fallback: show loading state instead of error UI
-        console.error('Business stats error:', err);
+        logger.error('Business stats error:', err);
       } finally {
         setLoading(false);
       }
@@ -77,7 +73,7 @@ export default function BusinessPage() {
         </div>
 
         <div className="space-y-3 mb-6">
-          {visibleBusinessServices.map((service) => {
+          {businessServices.map((service) => {
             const Icon = service.icon;
             return (
               <button key={service.id} onClick={() => router.push(service.href)} className="w-full text-left">

@@ -23,14 +23,19 @@ import { useApiError } from '@/hooks/use-api-error';
 import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import { useBalance } from '@/hooks/use-balance';
 import { useAuth } from '@/contexts/auth-context';
+import { useRouter } from 'next/navigation';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureAcbuTrustlineClient } from '@/lib/stellar/trustlines';
 import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
+import { submitBurnRedeemSingleClient } from '@/lib/stellar/burning';
 import { Keypair } from '@stellar/stellar-sdk';
 import * as ratesApi from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
-import type { QuoteResponse, RatesResponse } from '@/types/api';
+import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+const MINT_NETWORK_FEE_TEXT = "Estimated at confirmation";
+const BURN_PROCESSING_FEE_TEXT = "Estimated at confirmation";
 
 /** `acbu_*` from API = local currency units per 1 ACBU → ACBU = fiat / localPerAcbu. */
 function estimateAcbuFromFiat(
@@ -49,53 +54,12 @@ function estimateAcbuFromFiat(
   return n / localPerAcbu;
 }
 
-function getNumericValue(value: unknown): number | null {
-    if (typeof value === 'number' && Number.isFinite(value)) return value;
-    if (typeof value === 'string' && value.trim()) {
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? parsed : null;
-    }
-    return null;
-}
-
-function getQuoteFee(quote: QuoteResponse | null): number | null {
-    if (!quote) return null;
-
-    return (
-        getNumericValue(quote.network_fee) ??
-        getNumericValue(quote.processing_fee) ??
-        getNumericValue(quote.fee_amount) ??
-        getNumericValue(quote.fee) ??
-        getNumericValue(quote.total_fee)
-    );
-}
-
-function getQuoteReceiveAmount(quote: QuoteResponse | null): number | null {
-    if (!quote) return null;
-
-    return (
-        getNumericValue(quote.receive_amount) ??
-        getNumericValue(quote.payout_amount) ??
-        getNumericValue(quote.local_amount) ??
-        getNumericValue(quote.amount)
-    );
-}
-
-function formatQuotedFee(
-    quote: QuoteResponse | null,
-    currency: string,
-    fallback: string,
-): string {
-    const fee = getQuoteFee(quote);
-    if (fee === null) return fallback;
-    return `${currency} ${formatAmount(fee)}`;
-}
-
 /**
  * Mint and Burn page for ACBU tokens.
  */
 export default function MintPage() {
   const opts = useApiOpts();
+  const router = useRouter();
   const { userId, stellarAddress } = useAuth();
   const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const kit = useStellarWalletsKit();
@@ -105,6 +69,8 @@ export default function MintPage() {
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
   const [rates, setRates] = useState<RatesResponse | null>(null);
+  const { error: mintError, clearError: clearMintError, handleError: handleMintError } = useApiError();
+  const { error: burnError, clearError: clearBurnError, handleError: handleBurnError } = useApiError();
   const [ratesLoading, setRatesLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
@@ -113,8 +79,6 @@ export default function MintPage() {
   const [fiatAmount, setFiatAmount] = useState('');
   const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
-    const [mintQuote, setMintQuote] = useState<QuoteResponse | null>(null);
-    const [burnQuote, setBurnQuote] = useState<QuoteResponse | null>(null);
   const rateRows = Array.isArray((rates as { rates?: Array<{ currency?: string; rate?: number }> } | null)?.rates)
     ? ((rates as { rates?: Array<{ currency?: string; rate?: number }> }).rates ?? [])
     : [];
@@ -139,48 +103,6 @@ export default function MintPage() {
     };
   }, [opts.token]);
 
-    useEffect(() => {
-        if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency) {
-            setMintQuote(null);
-            return;
-        }
-
-        let cancelled = false;
-        ratesApi
-            .getQuote(fiatAmount, selectedFiatCurrency, opts)
-            .then((quote) => {
-                if (!cancelled) setMintQuote(quote);
-            })
-            .catch(() => {
-                if (!cancelled) setMintQuote(null);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [fiatAmount, selectedFiatCurrency, opts]);
-
-    useEffect(() => {
-        if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency) {
-            setBurnQuote(null);
-            return;
-        }
-
-        let cancelled = false;
-        ratesApi
-            .getQuote(burnAmount, selectedFiatCurrency, opts)
-            .then((quote) => {
-                if (!cancelled) setBurnQuote(quote);
-            })
-            .catch(() => {
-                if (!cancelled) setBurnQuote(null);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [burnAmount, selectedFiatCurrency, opts]);
-
   useEffect(() => {
     fiatApi
       .getFiatAccounts(opts)
@@ -190,7 +112,7 @@ export default function MintPage() {
           setSelectedFiatCurrency(res.accounts[0].currency);
         }
       })
-      .catch(console.error);
+      .catch((e) => logger.error('Failed to get fiat accounts', e));
   }, [opts.token]);
 
     useEffect(() => {
@@ -207,16 +129,8 @@ export default function MintPage() {
         clearMintError();
         setStep("confirm");
     };
-    // Burn tab: deep-link to the dedicated /burn page with amount and currency
-    // prefilled. The /burn page collects the required recipient bank account
-    // details and calls the real burn API — avoiding a fake success here.
     const handleBurnConfirm = () => {
-        if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency) return;
-        const params = new URLSearchParams({
-            amount: burnAmount,
-            currency: selectedFiatCurrency,
-        });
-        router.push(`/burn?${params.toString()}`);
+        router.push(`/burn?amount=${burnAmount}&currency=${selectedFiatCurrency}`);
     };
     const handleExecuteMint = async () => {
         if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
@@ -288,7 +202,7 @@ export default function MintPage() {
               });
             }
 
-            console.info("[mint] ACBU trustline ensured", {
+            logger.info("[mint] ACBU trustline ensured", {
                 account: accountId,
                 added: trust?.added,
                 visible: trust?.visible,
@@ -401,6 +315,82 @@ export default function MintPage() {
             setExecuting(false);
         }
     };
+    const handleExecuteBurn = async () => {
+        if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency)
+            return;
+        setBurnError("");
+        setExecuting(true);
+        try {
+            if (!userId) {
+                throw new Error("Not signed in — refresh and try again.");
+            }
+            if (!stellarAddress) {
+                throw new Error("No linked Stellar wallet address.");
+            }
+            const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+            let burnTxHash: string;
+            if (secret) {
+                const localPubKey = Keypair.fromSecret(secret).publicKey();
+                if (stellarAddress && localPubKey !== stellarAddress) {
+                    throw new Error(
+                        `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+                    );
+                }
+                const submit = await submitBurnRedeemSingleClient({
+                    userAddress: stellarAddress,
+                    amountAcbu: burnAmount,
+                    currency: selectedFiatCurrency,
+                    userSecret: secret,
+                });
+                burnTxHash = submit.transactionHash;
+            } else {
+                if (!kit) {
+                    throw new Error(
+                        "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+                    );
+                }
+                const address = await new Promise<string>((resolve, reject) => {
+                    kit
+                        .openModal({
+                            onWalletSelected: async (selectedOption: { id: string }) => {
+                                try {
+                                    kit.setWallet(selectedOption.id);
+                                    const { address } = await kit.getAddress();
+                                    resolve(address);
+                                } catch (err) {
+                                    reject(err);
+                                }
+                            },
+                        })
+                        .catch(reject);
+                });
+                if (stellarAddress && address !== stellarAddress) {
+                    throw new Error(
+                        `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+                    );
+                }
+                const submit = await submitBurnRedeemSingleClient({
+                    userAddress: stellarAddress,
+                    amountAcbu: burnAmount,
+                    currency: selectedFiatCurrency,
+                    external: { kit, address },
+                });
+                burnTxHash = submit.transactionHash;
+            }
+            const res = await fiatApi.postOffRamp(
+                burnAmount,
+                selectedFiatCurrency,
+                burnTxHash,
+                opts,
+            );
+            setTxId(res.transaction_id || res.transactionId || null);
+            setStep("success");
+        } catch (e) {
+            setBurnError(e instanceof Error ? e.message : "Burn failed");
+        } finally {
+            setExecuting(false);
+        }
+    };
     const handleExecute = async () => {
         // Burn is handled by deep-linking to /burn — only mint uses this dialog.
         if (activeTab === "mint") {
@@ -416,18 +406,6 @@ export default function MintPage() {
         setTxId(null);
         setMintAcbuReceived(null);
     };
-
-    const mintFeeText = formatQuotedFee(
-        mintQuote,
-        mintQuote?.currency || selectedFiatCurrency || 'FIAT',
-        'Unavailable until quote loads',
-    );
-    const burnFeeText = formatQuotedFee(
-        burnQuote,
-        burnQuote?.currency || selectedFiatCurrency || 'FIAT',
-        'Unavailable until quote loads',
-    );
-    const quotedBurnReceiveAmount = getQuoteReceiveAmount(burnQuote);
 
   return (
     <>
@@ -562,7 +540,7 @@ export default function MintPage() {
                                         Network Fee
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {mintFeeText}
+                                        {MINT_NETWORK_FEE_TEXT}
                                     </span>
                                 </div>
                             </Card>
@@ -647,8 +625,8 @@ export default function MintPage() {
                                         You'll receive
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {quotedBurnReceiveAmount !== null && selectedFiatCurrency
-                                            ? `~ ${selectedFiatCurrency} ${formatAmount(quotedBurnReceiveAmount)}`
+                                        {burnAmount && selectedFiatCurrency
+                                            ? `~ ${selectedFiatCurrency} (based on current rate)`
                                             : "—"}
                                     </span>
                                 </div>
@@ -657,7 +635,7 @@ export default function MintPage() {
                                         Processing Fee
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {burnFeeText}
+                                        {BURN_PROCESSING_FEE_TEXT}
                                     </span>
                                 </div>
                             </Card>

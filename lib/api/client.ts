@@ -53,12 +53,6 @@ export function getApiErrorMessage(e: unknown): string {
   return 'Something went wrong';
 }
 
-function getCsrfToken(): string | undefined {
-  if (typeof document === 'undefined') return undefined;
-  const match = document.cookie.match(/(^|;\s*)XSRF-TOKEN=([^;]*)/);
-  return match ? decodeURIComponent(match[2]) : undefined;
-}
-
 export interface RequestOptions {
   signal?: AbortSignal;
 }
@@ -85,9 +79,12 @@ async function request<T>(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  const csrfToken = getCsrfToken();
-  if (csrfToken) {
-    headers['X-XSRF-TOKEN'] = csrfToken;
+  // CSRF cookie logic removed: backend does not guarantee XSRF-TOKEN pairing
+
+  const token = opts.token !== undefined ? opts.token : currentToken;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    headers['x-api-key'] = token; // Also send as x-api-key for compatibility
   }
 
   // Create our own AbortController for timeout, independent of caller's signal
@@ -175,6 +172,6 @@ export function del<T>(path: string, opts?: RequestOptions): Promise<T> {
   return request<T>('DELETE', path, undefined, opts);
 }
 
-export function apiOpts(): RequestOptions {
-  return {};
+export function apiOpts(token: string | null | undefined): RequestOptions {
+  return { token: token || undefined };
 }

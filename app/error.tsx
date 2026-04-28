@@ -2,8 +2,7 @@
 
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import { errorReporter } from '@/lib/error-reporting';
+import { logger } from '@/lib/logger';
 
 export default function Error({
   error,
@@ -13,13 +12,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    errorReporter.reportError(error, {
-      level: 'page',
-      context: {
-        digest: error.digest,
-        type: 'route-error'
-      }
-    });
+    logger.error('Application error:', error);
   }, [error]);
 
   const handleGoHome = () => {

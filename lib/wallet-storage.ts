@@ -10,6 +10,14 @@ const KEY_STORE_PREFIX = 'stellar_secret_';
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
 const KEY_STORE_PLAINTEXT_ADDRESS_PREFIX = 'stellar_secret_plain_addr_';
 
+function assertDevOnly(): void {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'Plaintext wallet storage is development-only and cannot be used in production',
+    );
+  }
+}
+
 /**
  * Simulates AES encryption for the local storage.
  * In a production app, use SubtleCrypto or a library like 'crypto-js' to encrypt/decrypt
@@ -56,6 +64,7 @@ export async function storeWalletSecretLocalPlaintext(
   secret: string,
   stellarAddress?: string,
 ): Promise<void> {
+  assertDevOnly();
   const userKey = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
   await localforage.setItem(userKey, secret);
   if (stellarAddress) {
@@ -88,6 +97,7 @@ export async function getWalletSecretLocalPlaintext(
   userId: string,
   stellarAddress?: string | null,
 ): Promise<string | null> {
+  assertDevOnly();
   const userKey = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
   const addressKey = stellarAddress
     ? `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`
@@ -120,6 +130,7 @@ export async function getWalletSecretAnyLocal(
   userId: string,
   stellarAddress?: string | null,
 ): Promise<string | null> {
+  assertDevOnly();
   const plaintext = await getWalletSecretLocalPlaintext(userId, stellarAddress);
   if (plaintext) return plaintext;
 

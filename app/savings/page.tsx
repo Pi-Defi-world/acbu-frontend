@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
 import { resolveRecipient } from "@/lib/api/recipient";
 import { formatAmount } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 /**
  * Resolve any user identifier (Stellar address, phone, alias, pay URI)
@@ -100,22 +102,16 @@ export default function SavingsPage() {
   const [newGoalTarget, setNewGoalTarget] = useState("");
   const [newGoalDeadline, setNewGoalDeadline] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
+ useEffect(() => {
     setReceiveError("");
     userApi.getReceive(opts).then(async (data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
-      if (uri && typeof uri === "string") {
-        // Resolve through backend recipient resolver so phone-based IDs,
-        // aliases, and other non-Stellar identifiers are accepted.
-        const resolved = await resolveUserUri(uri, opts);
-        if (!cancelled) setApiUser(resolved);
-      }
-      if (!cancelled) setReceiveError("");
+      if (uri && typeof uri === "string") setApiUser(uri);
+      setReceiveError("");
     }).catch((e) => {
-      if (!cancelled) setReceiveError(e instanceof Error ? e.message : "Failed to load user info");
+      logger.error("Failed to load user info", e); // <-- ADD LOGGER
+      setReceiveError(e instanceof Error ? e.message : "Failed to load user info");
     });
-    return () => { cancelled = true; };
   }, [opts.token]);
 
   useEffect(() => {
@@ -126,6 +122,7 @@ export default function SavingsPage() {
       setPositionsBalance(res.balance);
       setReceiveError("");
     }).catch((e) => {
+      logger.error("Failed to load savings balance", e); // <-- ADD LOGGER
       setPositionsBalance(null);
       setReceiveError(e instanceof Error ? e.message : "Failed to load savings balance");
     }).finally(() => setPositionsLoading(false));
@@ -133,6 +130,30 @@ export default function SavingsPage() {
 
   const apiBalance = typeof positionsBalance === "number" ? positionsBalance : typeof positionsBalance === "string" ? parseFloat(positionsBalance) || 0 : 0;
   const totalSavings = apiBalance;
+
+  const savingsAccounts: SavingsAccount[] = SAVINGS_ACCOUNT_TYPES.map((acct) => ({
+    ...acct,
+    balance: acct.id === "high-yield" ? apiBalance : 0,
+  }));
+
+  const handleSelectAccount = (account: SavingsAccount) => {
+    setSelectedAccount(account);
+    setShowDialog(true);
+  };
+
+  const handleDeposit = (account: SavingsAccount) => {
+    setSelectedAccount(account);
+    setShowDepositDialog(true);
+  };
+
+  const handleConfirmDeposit = () => {
+    if (depositAmount && parseFloat(depositAmount) > 0) {
+      // safely log the transaction attempt
+      logger.info("Confirming savings deposit", { accountId: selectedAccount?.id, amount: depositAmount }); 
+      setShowDepositDialog(false);
+      setDepositAmount("");
+    }
+  };
 
   return (
     <>

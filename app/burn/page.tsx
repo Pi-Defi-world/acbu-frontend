@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
-import { useApiOpts } from "@/hooks/use-api";
-import { useApiError } from "@/hooks/use-api-error";
-import { ApiErrorDisplay } from "@/components/ui/api-error-display";
+import { ArrowLeft } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -67,16 +66,20 @@ const formatCurrency = (amount: string, currency: string) => {
   }
 };
 
-export default function BurnPage() {
+function BurnPageContent() {
   const opts = useApiOpts();
+  const searchParams = useSearchParams();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
-  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
-  const [acbuAmount, setAcbuAmount] = useState("");
-  const [currency, setCurrency] = useState("NGN");
+  
+  // Initialize from search params if available
+  const [acbuAmount, setAcbuAmount] = useState(searchParams.get("amount") || "");
+  const [currency, setCurrency] = useState(searchParams.get("currency") || "NGN");
+  
   const [accountNumber, setAccountNumber] = useState("");
   const [bankCode, setBankCode] = useState("");
   const [accountName, setAccountName] = useState("");
+  const { error, clearError, handleError } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
 
@@ -183,7 +186,7 @@ export default function BurnPage() {
       setTxId(res.transaction_id);
       form.reset({ ...values, acbuAmount: "" }); // Reset amount but keep details for convenience? Or full reset?
     } catch (e) {
-      setApiError(e);
+      handleError(e);
     } finally {
       setLoading(false);
     }
@@ -369,5 +372,13 @@ export default function BurnPage() {
         </Card>
       </PageContainer>
     </>
+  );
+}
+
+export default function BurnPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BurnPageContent />
+    </Suspense>
   );
 }

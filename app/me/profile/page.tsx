@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { KycBadge } from "@/components/ui/kyc-badge";
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import { normalizeUsername } from "@/lib/utils";
@@ -378,13 +379,11 @@ export default function ProfilePage() {
                                     {user?.phone_verified_at ? "Yes" : "No"}
                                 </span>
                             </div>
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between items-center text-sm">
                                 <span className="text-foreground">
                                     KYC status
                                 </span>
-                                <span className="text-foreground">
-                                    {user?.kyc_status ?? "-"}
-                                </span>
+                                <KycBadge status={user?.kyc_status} />
                             </div>
                         </div>
                     </Card>

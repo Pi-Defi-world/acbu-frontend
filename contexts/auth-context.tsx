@@ -2,8 +2,8 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
 import * as authApi from '@/lib/api/auth';
-import { onAuthError } from '@/lib/api/client';
-import { clearPasscode } from '@/lib/passcode-manager';
+import { onAuthError, setToken } from '@/lib/api/client';
+import { logger } from '@/lib/logger';
 
 const USER_ID_KEY = 'acbu_user_id';
 const STELLAR_ADDRESS_KEY = 'acbu_stellar_address';
@@ -21,7 +21,7 @@ interface AuthContextValue extends AuthState {
   setAuth: (userId: string | null, stellarAddress?: string | null) => void;
   refreshStellarAddress: () => Promise<void>;
 }
-
+git checkout -b fix/f-043-remove-console-logs
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getStoredAuth(): { userId: string | null; stellarAddress: string | null } {
@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuth(state.userId, balance.stellar_address);
       }
     } catch (e) {
-      console.error('Failed to refresh stellar address', e);
+      logger.error('Failed to refresh stellar address', e);
     }
   }, [state.isAuthenticated, state.userId, setAuth]);
 

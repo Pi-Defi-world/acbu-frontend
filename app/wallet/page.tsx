@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,16 +12,15 @@ import { storeWalletSecret } from "@/lib/wallet-storage";
 import { getPasscode } from "@/lib/passcode-manager";
 import { AlertCircle, Wallet, Key, Link as LinkIcon, CheckCircle, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
-import { useApiOpts } from "@/hooks/use-api";
+import { useApiOpts, useApiError } from "@/hooks/use-api";
 
 export default function WalletPage() {
-  const router = useRouter();
-  const { userId, stellarAddress, refreshStellarAddress, logout } = useAuth();
+  const { userId, stellarAddress, refreshStellarAddress } = useAuth();
   const opts = useApiOpts();
   const kit = useStellarWalletsKit();
   const [passphrase, setPassphrase] = useState("");
+  const { error, clearError, handleError, setError } = useApiError();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
   // 1: auto-generated, 2: import seed, 3: connect wallet
@@ -52,7 +50,7 @@ export default function WalletPage() {
 
   const handleGenerateConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    clearError();
 
     setLoading(true);
     try {
@@ -86,8 +84,8 @@ export default function WalletPage() {
       }
 
       handleFinish("New wallet created successfully!");
-    } catch (err: any) {
-      setError(err.message || "Failed to save wallet");
+    } catch (err: unknown) {
+      handleError(err);
     } finally {
       setLoading(false);
     }
@@ -95,7 +93,7 @@ export default function WalletPage() {
 
   const handleImportSeed = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    clearError();
 
     if (!importSeed) {
       setError("Seed is required.");
@@ -135,27 +133,26 @@ export default function WalletPage() {
       }
 
       handleFinish("Wallet imported successfully!");
-    } catch (err: any) {
-      setError("Invalid seed or failed to import. " + (err.message || ""));
+    } catch (err: unknown) {
+      handleError(err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleConnectWallet = async () => {
-    setError("");
+    clearError();
     if (!kit) {
       setError("Wallet Kit is still initializing...");
       return;
     }
-
     setLoading(true);
     try {
       if (!userId) throw new Error("Not logged in");
 
       // This will prompt the user to select and connect a wallet
       await kit.openModal({
-        onWalletSelected: async (selectedOption: any) => {
+        onWalletSelected: async (selectedOption: { id: string }) => {
           try {
             kit.setWallet(selectedOption.id);
             const { address: pubKey } = await kit.getAddress();
@@ -174,13 +171,13 @@ export default function WalletPage() {
             }
 
             handleFinish("External wallet connected successfully!");
-          } catch (e: any) {
-            setError(e.message || "Failed to connect wallet");
+          } catch (e: unknown) {
+            handleError(e);
           }
         },
       });
-    } catch (err: any) {
-      setError(err.message || "Failed to open wallet modal");
+    } catch (err: unknown) {
+      handleError(err);
     } finally {
       setLoading(false);
     }
