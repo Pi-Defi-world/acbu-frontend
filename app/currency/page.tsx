@@ -18,19 +18,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ArrowDown, ArrowUp, TrendingUp } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
-import { useApiOpts, useApiError } from "@/hooks/use-api";
+import { useApiOpts } from "@/hooks/use-api";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
 import type { MintResponse, BurnResponse } from "@/types/api";
-import { featureFlags } from "@/lib/features";
-
-type CurrencyTab = "mint" | "burn" | "international";
-
-const CURRENCY_TABS: readonly CurrencyTab[] = ["mint", "burn", "international"];
-
-function isCurrencyTab(v: string): v is CurrencyTab {
-  return (CURRENCY_TABS as readonly string[]).includes(v);
-}
+import { logger } from "@/lib/logger";
 
 /**
  * Currency management hub.
@@ -38,14 +30,12 @@ function isCurrencyTab(v: string): v is CurrencyTab {
 export default function CurrencyPage() {
   const opts = useApiOpts();
 
-  const [activeTab, setActiveTab] = useState<CurrencyTab>("mint");
-
-  const handleTabChange = (v: string) => {
-    if (isCurrencyTab(v)) setActiveTab(v);
-  };
+  const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
+    "mint",
+  );
   const [step, setStep] = useState<"input" | "confirm" | "success">("input");
   const [submitting, setSubmitting] = useState(false);
-  const { error: submitError, clearError: clearSubmitError, handleError: handleSubmitError } = useApiError();
+  const [submitError, setSubmitError] = useState("");
   const [lastTxId, setLastTxId] = useState("");
 
   // Mint state
@@ -76,10 +66,13 @@ export default function CurrencyPage() {
   const handleBurnConfirm = () => setStep("confirm");
 
   const handleExecute = async () => {
-    clearSubmitError();
+    setSubmitError("");
     setSubmitting(true);
+    logger.info(`Starting ${activeTab} operation`); // <-- ADD LOGGER
+
     try {
       if (activeTab === "mint") {
+        logger.info("Minting ACBU", { amount: mintAmount }); // <-- ADD LOGGER
         const res: MintResponse = await mintApi.mintFromUsdc(
           mintAmount,
           mintWalletAddress.trim(),
@@ -88,6 +81,7 @@ export default function CurrencyPage() {
         );
         setLastTxId(res.transaction_id);
       } else if (activeTab === "burn") {
+        logger.info("Burning ACBU", { amount: burnAmount, destination: burnDestination }); // <-- ADD LOGGER
         const recipientType =
           burnDestination === "bank"
             ? "bank"
@@ -107,6 +101,7 @@ export default function CurrencyPage() {
         );
         setLastTxId(res.transaction_id);
       } else {
+        logger.info("International transfer", { amount: intlAmount, country: intlCountry }); // <-- ADD LOGGER
         const res: BurnResponse = await burnApi.burnAcbu(
           intlAmount,
           intlCurrency,
@@ -121,7 +116,8 @@ export default function CurrencyPage() {
       }
       setStep("success");
     } catch (e) {
-      handleSubmitError(e);
+      logger.error(`Currency operation failed: ${activeTab}`, e); // <-- ADD LOGGER
+      setSubmitError(e instanceof Error ? e.message : "Operation failed");
     } finally {
       setSubmitting(false);
     }
@@ -139,7 +135,7 @@ export default function CurrencyPage() {
     setIntlAccountNumber("");
     setIntlBankCode("");
     setIntlAccountName("");
-    clearSubmitError();
+    setSubmitError("");
     setLastTxId("");
   };
 
@@ -174,7 +170,9 @@ export default function CurrencyPage() {
         <Tabs
           defaultValue="mint"
           className="w-full"
-          onValueChange={handleTabChange}
+          onValueChange={(v) =>
+            setActiveTab(v as "mint" | "burn" | "international")
+          }
         >
           <TabsList className="grid w-full grid-cols-3 px-4 gap-2 bg-transparent border-b border-border rounded-none">
             <TabsTrigger
@@ -189,14 +187,12 @@ export default function CurrencyPage() {
             >
               Burn
             </TabsTrigger>
-            {featureFlags.internationalTransfers && (
-              <TabsTrigger
-                value="international"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-              >
-                International
-              </TabsTrigger>
-            )}
+            <TabsTrigger
+              value="international"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
+              International
+            </TabsTrigger>
           </TabsList>
 
           {/* Mint Tab */}
@@ -408,7 +404,6 @@ export default function CurrencyPage() {
           </TabsContent>
 
           {/* International Tab */}
-          {featureFlags.internationalTransfers && (
           <TabsContent value="international" className="px-4 py-6 space-y-4">
             <div>
               <p className="text-sm text-muted-foreground mb-3">
@@ -545,7 +540,6 @@ export default function CurrencyPage() {
               </div>
             </div>
           </TabsContent>
-          )}
         </Tabs>
       </PageContainer>
 
