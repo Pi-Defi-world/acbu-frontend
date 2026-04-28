@@ -10,7 +10,20 @@ import { ArrowLeft } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
+import { resolveRecipient } from "@/lib/api/recipient";
 import { logger } from "@/lib/logger";
+
+async function resolveUserUri(
+  raw: string,
+  opts: Parameters<typeof resolveRecipient>[1],
+): Promise<string> {
+  try {
+    const resolved = await resolveRecipient(raw, opts);
+    return resolved.pay_uri ?? resolved.alias ?? raw;
+  } catch {
+    return raw;
+  }
+}
 
 export default function SavingsDepositPage() {
     const opts = useApiOpts();
@@ -22,12 +35,18 @@ export default function SavingsDepositPage() {
     const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    userApi.getReceive(opts).then((data) => {
+    let cancelled = false;
+    userApi.getReceive(opts).then(async (data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
-      if (uri && typeof uri === 'string') setUser(uri);
+      if (!uri || typeof uri !== 'string') return;
+      const resolved = await resolveUserUri(uri, opts);
+      if (!cancelled) setUser(resolved);
     }).catch((e) => {
       logger.error(e instanceof Error ? e.message : 'Failed to load receive address');
+    }).finally(() => {
+      if (cancelled) return;
     });
+    return () => { cancelled = true; };
   }, [opts.token]);
 
     const handleSubmit = async (e: React.FormEvent) => {
