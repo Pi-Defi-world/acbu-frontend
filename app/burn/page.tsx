@@ -6,7 +6,7 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
@@ -35,17 +35,72 @@ const burnSchema = z.object({
     message: "Amount must be greater than 0",
   }),
   currency: z.string().length(3, "Currency must be exactly 3 uppercase letters"),
-  accountNumber: z.string()
-    .min(5, "Account number is too short")
-    .max(20, "Account number is too long")
-    .regex(/^\d+$/, "Account number must contain only digits"),
-  bankCode: z.string()
-    .min(3, "Bank code is too short")
-    .max(10, "Bank code is too long")
-    .regex(/^[A-Za-z0-9]+$/, "Bank code must be alphanumeric"),
+  accountNumber: z.string(),
+  bankCode: z.string(),
   accountName: z.string()
     .min(3, "Account name is too short")
     .max(100, "Account name is too long"),
+}).superRefine((data: any, ctx: any) => {
+  if (data.currency === "NGN") {
+    if (!/^\d{10}$/.test(data.accountNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Nigerian account numbers (NUBAN) must be exactly 10 digits",
+        path: ["accountNumber"],
+      });
+    }
+    if (!/^\d{3}$/.test(data.bankCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Nigerian bank codes must be 3 digits",
+        path: ["bankCode"],
+      });
+    }
+  } else if (data.currency === "KES") {
+    if (!/^\d{5,15}$/.test(data.accountNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Kenyan account numbers are typically 5 to 15 digits",
+        path: ["accountNumber"],
+      });
+    }
+    if (!/^[A-Za-z0-9]{3,10}$/.test(data.bankCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Kenyan bank codes must be 3-10 alphanumeric characters",
+        path: ["bankCode"],
+      });
+    }
+  } else {
+    // Generic fallback for other currencies
+    if (!/^\d+$/.test(data.accountNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Account number must contain only digits",
+        path: ["accountNumber"],
+      });
+    } else if (data.accountNumber.length < 5 || data.accountNumber.length > 20) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Account number must be between 5 and 20 digits",
+        path: ["accountNumber"],
+      });
+    }
+    
+    if (!/^[A-Za-z0-9]+$/.test(data.bankCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Bank code must be alphanumeric",
+        path: ["bankCode"],
+      });
+    } else if (data.bankCode.length < 3 || data.bankCode.length > 10) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Bank code must be between 3 and 10 characters",
+        path: ["bankCode"],
+      });
+    }
+  }
 });
 
 type BurnFormValues = z.infer<typeof burnSchema>;
@@ -55,8 +110,7 @@ const formatCurrency = (amount: string, currency: string) => {
   if (isNaN(value)) return "";
 
   try {
-    // Use current browser locale for proper grouping separators
-    return new Intl.NumberFormat(navigator.language || 'en-US', {
+    return new Intl.NumberFormat(typeof navigator !== 'undefined' ? navigator.language : 'en-US', {
       style: "currency",
       currency,
     }).format(value);
@@ -85,11 +139,10 @@ export default function BurnPage() {
     mode: "onChange",
   });
 
-  const values = form.watch();
-  const currency = values.currency || "NGN";
+  const currency = form.watch("currency");
   const isValid = form.formState.isValid;
 
-  const handleSubmit = async (data: BurnFormValues) => {
+  const onSubmit = async (values: BurnFormValues) => {
     clearError();
     setLoading(true);
     setTxId(null);
@@ -165,9 +218,31 @@ export default function BurnPage() {
         burnTxHash,
       );
       setTxId(res.transaction_id);
-      form.reset({ ...data, acbuAmount: "" });
-    } catch (e) {
-      setApiError(e);
+      form.reset({ ...values, acbuAmount: "" });
+    } catch (e: any) {
+      // Handle server-side validation errors if they follow a specific format
+      if (e?.status === 400 && e?.details) {
+        const details = e.details as any;
+        const errors = details.errors || (details.error && typeof details.error === 'object' ? details.error : null);
+        
+        if (errors && typeof errors === 'object') {
+          Object.entries(errors).forEach(([key, msg]) => {
+            const formKey = key === 'account_number' ? 'accountNumber' :
+                            key === 'bank_code' ? 'bankCode' :
+                            key === 'account_name' ? 'accountName' :
+                            key === 'acbu_amount' ? 'acbuAmount' :
+                            key as any;
+            
+            if (['accountNumber', 'bankCode', 'accountName', 'acbuAmount', 'currency'].includes(formKey)) {
+              form.setError(formKey as any, { type: 'server', message: msg as string });
+            }
+          });
+        } else {
+          setApiError(e);
+        }
+      } else {
+        setApiError(e);
+      }
     } finally {
       setLoading(false);
     }
@@ -195,12 +270,7 @@ export default function BurnPage() {
           {uiError && (
             <ApiErrorDisplay error={uiError} onDismiss={clearError} />
           )}
-          {txId && (
-            <p className="text-green-600 text-sm">
-              Transaction submitted: {txId}
-            </p>
-          )}
-
+          
           {txId && (
             <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
               <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
@@ -209,9 +279,9 @@ export default function BurnPage() {
               </p>
             </div>
           )}
-
+          
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="acbuAmount"
@@ -228,11 +298,14 @@ export default function BurnPage() {
                         className="border-border"
                       />
                     </FormControl>
-                    {field.value && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        ≈ {formatCurrency(field.value, currency)}
-                      </p>
-                    )}
+                    <FormDescription>
+                      The amount of ACBU tokens to burn for withdrawal.
+                      {field.value && (
+                        <span className="block mt-1">
+                          ≈ {formatCurrency(field.value, currency)}
+                        </span>
+                      )}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -285,7 +358,11 @@ export default function BurnPage() {
                       />
                     </FormControl>
                     <FormDescription>
-                      {currency === "NGN" ? "Nigerian bank accounts are typically 10 digits." : "Standard bank account number."}
+                      {currency === "NGN" 
+                        ? "Nigerian NUBAN accounts must be 10 digits." 
+                        : currency === "KES"
+                        ? "Kenyan account numbers are typically 5-15 digits."
+                        : "Standard bank account number (digits only)."}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -301,7 +378,7 @@ export default function BurnPage() {
                     <FormControl>
                       <Input
                         type="text"
-                        placeholder="Enter bank code"
+                        placeholder={currency === "NGN" ? "044" : "Enter bank code"}
                         {...field}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           const val = e.target.value.toUpperCase().slice(0, 10);
@@ -312,7 +389,11 @@ export default function BurnPage() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Sort code, SWIFT/BIC, or local bank routing code.
+                      {currency === "NGN"
+                        ? "3-digit CBN bank code."
+                        : currency === "KES"
+                        ? "Bank routing code or SWIFT/BIC."
+                        : "Sort code, SWIFT/BIC, or local bank routing code."}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -341,6 +422,7 @@ export default function BurnPage() {
                   </FormItem>
                 )}
               />
+
               <Button
                 type="submit"
                 disabled={!isValid || loading || isSubmitDisabled}
