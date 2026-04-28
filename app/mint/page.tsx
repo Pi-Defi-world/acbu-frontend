@@ -21,6 +21,7 @@ import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
 import { useAuth } from '@/contexts/auth-context';
+import { useRouter } from 'next/navigation';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureAcbuTrustlineClient } from '@/lib/stellar/trustlines';
 import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
@@ -56,6 +57,7 @@ function estimateAcbuFromFiat(
  */
 export default function MintPage() {
   const opts = useApiOpts();
+  const router = useRouter();
   const { userId, stellarAddress } = useAuth();
   const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const kit = useStellarWalletsKit();
@@ -124,16 +126,8 @@ export default function MintPage() {
         setMintError("");
         setStep("confirm");
     };
-    // Burn tab: deep-link to the dedicated /burn page with amount and currency
-    // prefilled. The /burn page collects the required recipient bank account
-    // details and calls the real burn API — avoiding a fake success here.
     const handleBurnConfirm = () => {
-        if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency) return;
-        const params = new URLSearchParams({
-            amount: burnAmount,
-            currency: selectedFiatCurrency,
-        });
-        router.push(`/burn?${params.toString()}`);
+        router.push(`/burn?amount=${burnAmount}&currency=${selectedFiatCurrency}`);
     };
     const handleExecuteMint = async () => {
         if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
