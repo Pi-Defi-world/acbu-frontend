@@ -146,21 +146,21 @@ export default function BurnPage() {
     clearError();
     setLoading(true);
     setTxId(null);
-    
+
     try {
       if (!userId) throw new Error("Not signed in");
       if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
-      
+
       const recipientAccount: BurnRecipientAccount = {
-        account_number: values.accountNumber.trim(),
-        bank_code: values.bankCode.trim(),
-        account_name: values.accountName.trim(),
+        account_number: data.accountNumber.trim(),
+        bank_code: data.bankCode.trim(),
+        account_name: data.accountName.trim(),
         type: "bank",
       };
 
       const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
       let burnTxHash: string;
-      
+
       if (secret) {
         const localPubKey = Keypair.fromSecret(secret).publicKey();
         if (stellarAddress && localPubKey !== stellarAddress) {
@@ -170,8 +170,8 @@ export default function BurnPage() {
         }
         const submit = await submitBurnRedeemSingleClient({
           userAddress: stellarAddress,
-          amountAcbu: values.acbuAmount,
-          currency: values.currency,
+          amountAcbu: data.acbuAmount,
+          currency: data.currency,
           userSecret: secret,
         });
         burnTxHash = submit.transactionHash;
@@ -203,16 +203,16 @@ export default function BurnPage() {
         }
         const submit = await submitBurnRedeemSingleClient({
           userAddress: stellarAddress,
-          amountAcbu: values.acbuAmount,
-          currency: values.currency,
+          amountAcbu: data.acbuAmount,
+          currency: data.currency,
           external: { kit, address },
         });
         burnTxHash = submit.transactionHash;
       }
 
       const res = await burnApi.burnAcbu(
-        values.acbuAmount,
-        values.currency,
+        data.acbuAmount,
+        data.currency,
         recipientAccount,
         opts,
         burnTxHash,

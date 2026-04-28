@@ -1,0 +1,34 @@
+{
+  "home": {
+    "acbu": "ACBU",
+    "wallet_balance": "Wallet balance",
+    "fiat": "Fiat",
+    "simulated_usd_equivalent": "Simulated · USD equivalent",
+    "add_demo_funds": "Add demo funds",
+    "recent_activity": "Recent Activity",
+    "view_all": "View all",
+    "no_recent_activity": "No recent activity",
+    "send_money": "Send money",
+    "some_currencies_missing_rate": "Some currencies missing a rate",
+    "usd": "USD",
+    "approx_usd": "≈ USD"
+  },
+  "features": {
+    "send": {
+      "title": "Send",
+      "description": "Transfer money"
+    },
+    "mint": {
+      "title": "Mint",
+      "description": "Create ACBU"
+    },
+    "simulated_bank": {
+      "title": "Simulated Bank",
+      "description": "Demo Fiat"
+    },
+    "rates": {
+      "title": "Rates",
+      "description": "Market rates"
+    }
+  }
+}
