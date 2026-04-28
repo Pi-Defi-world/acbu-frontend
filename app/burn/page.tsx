@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,8 @@ export default function BurnPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
+  const searchParams = useSearchParams();
+
   const [acbuAmount, setAcbuAmount] = useState("");
   const [currency, setCurrency] = useState("NGN");
   const [accountNumber, setAccountNumber] = useState("");
@@ -43,6 +46,18 @@ export default function BurnPage() {
   const { error, clearError, handleError } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
+
+  // Prefill amount and currency when navigated from the Mint page burn tab
+  useEffect(() => {
+    const paramAmount = searchParams.get("amount");
+    const paramCurrency = searchParams.get("currency");
+    if (paramAmount && parseFloat(paramAmount) > 0) {
+      setAcbuAmount(paramAmount);
+    }
+    if (paramCurrency && paramCurrency.length === 3) {
+      setCurrency(paramCurrency.toUpperCase());
+    }
+  }, [searchParams]);
 
   const recipientAccount: BurnRecipientAccount = {
     account_number: accountNumber.trim(),
