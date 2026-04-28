@@ -62,8 +62,9 @@ export default function MintPage() {
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
-  const [burnError, setBurnError] = useState('');
   const [rates, setRates] = useState<RatesResponse | null>(null);
+  const { error: mintError, clearError: clearMintError, handleError: handleMintError } = useApiError();
+  const { error: burnError, clearError: clearBurnError, handleError: handleBurnError } = useApiError();
   const [ratesLoading, setRatesLoading] = useState(false);
   const [mintError, setMintError] = useState('');
   const [txId, setTxId] = useState<string | null>(null);
@@ -123,7 +124,17 @@ export default function MintPage() {
         setMintError("");
         setStep("confirm");
     };
-    const handleBurnConfirm = () => setStep("confirm");
+    // Burn tab: deep-link to the dedicated /burn page with amount and currency
+    // prefilled. The /burn page collects the required recipient bank account
+    // details and calls the real burn API — avoiding a fake success here.
+    const handleBurnConfirm = () => {
+        if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency) return;
+        const params = new URLSearchParams({
+            amount: burnAmount,
+            currency: selectedFiatCurrency,
+        });
+        router.push(`/burn?${params.toString()}`);
+    };
     const handleExecuteMint = async () => {
         if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
             return;
@@ -308,10 +319,9 @@ export default function MintPage() {
         }
     };
     const handleExecute = async () => {
+        // Burn is handled by deep-linking to /burn — only mint uses this dialog.
         if (activeTab === "mint") {
             await handleExecuteMint();
-        } else {
-            await handleExecuteBurn();
         }
     };
     const resetForm = () => {
@@ -569,7 +579,7 @@ export default function MintPage() {
                                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
                             >
                                 <ArrowUp className="w-4 h-4 mr-2" />
-                                Burn & Redeem
+                                Continue to Burn & Redeem
                             </Button>
                         </div>
                     </TabsContent>
