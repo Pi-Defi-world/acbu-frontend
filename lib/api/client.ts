@@ -83,8 +83,10 @@ async function request<T>(
 
   const token = opts.token !== undefined ? opts.token : currentToken;
   if (token) {
+    // Send only the Authorization header per backend contract.
+    // The former x-api-key duplicate has been removed to eliminate the redundant
+    // secret channel that could surface in proxy logs (F-007).
     headers['Authorization'] = `Bearer ${token}`;
-    headers['x-api-key'] = token; // Also send as x-api-key for compatibility
   }
 
   // Create our own AbortController for timeout, independent of caller's signal
