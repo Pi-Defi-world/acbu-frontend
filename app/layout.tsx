@@ -1,5 +1,6 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
+import { headers } from 'next/headers'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { ErrorBoundary } from '@/components/error-boundary'
@@ -9,6 +10,31 @@ import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
 import { Toaster } from '@/components/ui/toaster';
+
+const apiBaseUrl =
+  typeof process !== 'undefined'
+    ? process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
+    : ''
+const apiUrl =
+  typeof process !== 'undefined'
+    ? process.env.NEXT_PUBLIC_API_URL?.trim()
+    : ''
+
+if (
+  typeof process !== 'undefined' &&
+  process.env.NODE_ENV === 'development' &&
+  !apiBaseUrl &&
+  !apiUrl
+) {
+  console.error(
+    "\n=================================================================\n" +
+    "🚨 CRITICAL MISSING CONFIGURATION 🚨\n" +
+    "NEXT_PUBLIC_API_BASE_URL (or NEXT_PUBLIC_API_URL) is not set.\n" +
+    "Without this, POST/auth requests will hit Next.js and return 405 errors.\n" +
+    "Please update your .env.local file with your backend API root.\n" +
+    "=================================================================\n"
+  );
+}
 
 export const metadata: Metadata = {
   title: 'ACBU - P2P Transfers',
@@ -33,34 +59,18 @@ export const metadata: Metadata = {
   },
 }
 
+// FIXED: Removed maximumScale to allow zooming
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  // Remove maximumScale to allow users to zoom
+  userScalable: true,
 }
 
 export default async function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
-  const lang = "en";
-
-  return (
-    <html lang={lang}>
-      <body className={`font-sans antialiased`}>
-        <GlobalErrorHandler />
-        <ErrorBoundary level="app">
-          <AuthProvider>
-              <AuthGuard>
-              <AppLayout>{children}</AppLayout>
-            </AuthGuard>
-            <WalletSetupModal />
-            <Toaster />
-            <Analytics />
-          </AuthProvider>
-        </ErrorBoundary>
-      </body>
-    </html>
-  )
+}: {
+  children: React.ReactNode;
+}) {
+  return children;
 }
