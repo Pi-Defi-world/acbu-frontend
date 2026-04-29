@@ -86,8 +86,8 @@ export default function RatesPage() {
               { currency: "XOF", rate: rates.acbu_xof },
             ]
               .filter(r => r.rate != null)
-              .map((r, i) => (
-                <Card key={i} className="border-border p-4">
+              .map((r) => (
+                <Card key={r.currency} className="border-border p-4">
                   <div className="flex justify-between items-center">
                     <p className="font-semibold text-foreground">
                       ACBU/{r.currency}

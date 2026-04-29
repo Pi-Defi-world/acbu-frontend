@@ -4,11 +4,37 @@ import { headers } from 'next/headers'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { GlobalErrorHandler } from '@/components/global-error-handler'
 import './globals.css'
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
 import { Toaster } from '@/components/ui/toaster';
+
+const apiBaseUrl =
+  typeof process !== 'undefined'
+    ? process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
+    : ''
+const apiUrl =
+  typeof process !== 'undefined'
+    ? process.env.NEXT_PUBLIC_API_URL?.trim()
+    : ''
+
+if (
+  typeof process !== 'undefined' &&
+  process.env.NODE_ENV === 'development' &&
+  !apiBaseUrl &&
+  !apiUrl
+) {
+  console.error(
+    "\n=================================================================\n" +
+    "🚨 CRITICAL MISSING CONFIGURATION 🚨\n" +
+    "NEXT_PUBLIC_API_BASE_URL (or NEXT_PUBLIC_API_URL) is not set.\n" +
+    "Without this, POST/auth requests will hit Next.js and return 405 errors.\n" +
+    "Please update your .env.local file with your backend API root.\n" +
+    "=================================================================\n"
+  );
+}
 
 export const metadata: Metadata = {
   title: 'ACBU - P2P Transfers',
@@ -46,11 +72,16 @@ export default async function RootLayout({
 }>) {
   const nonce = (await headers()).get('x-nonce') || undefined;
   const lang = "en";
+  // Read the nonce injected by middleware so Next.js can apply it to
+  // inline scripts/styles it generates (e.g. __NEXT_DATA__).
+  const headersList = await headers();
+  const nonce = headersList.get('x-nonce') ?? undefined;
 
   return (
     <html lang={lang}>
       <body className={`font-sans antialiased`}>
-        <ErrorBoundary>
+        <GlobalErrorHandler />
+        <ErrorBoundary level="app">
           <AuthProvider>
            {/*  <AuthGuard>*/}
               <AppLayout>{children}</AppLayout>
