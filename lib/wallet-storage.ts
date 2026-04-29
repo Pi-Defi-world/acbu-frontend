@@ -1,4 +1,5 @@
 import localforage from 'localforage';
+import { getPasscode } from './passcode-manager';
 
 localforage.config({
   name: 'ACBU_Wallet',
@@ -8,11 +9,14 @@ localforage.config({
 const KEY_STORE_PREFIX = 'stellar_secret_';
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
 const KEY_STORE_PLAINTEXT_ADDRESS_PREFIX = 'stellar_secret_plain_addr_';
+<<<<<<< fix/174-178-191-236-security-billing-headers-sri
 // KEY_STORE_PASSPHRASE intentionally removed (F-003):
 // The passcode must never be persisted in sessionStorage — it must only live
 // in memory for the duration of a single decrypt operation.  Any caller that
 // previously relied on the sessionStorage round-trip must pass the passcode
 // explicitly as a function argument instead.
+=======
+>>>>>>> dev
 
 function assertDevOnly(): void {
   if (process.env.NODE_ENV === 'production') {
@@ -126,19 +130,41 @@ export async function getWalletSecretLocalPlaintext(
 }
 
 /**
+<<<<<<< fix/174-178-191-236-security-billing-headers-sri
  * Best-effort wallet secret lookup (dev/test flows only).
  *
  * Returns the plaintext secret from the dev storage slot.
  * The former sessionStorage passcode path has been intentionally removed (F-003):
  * passcodes must be held in memory only and passed explicitly to `getWalletSecret()`
  * by callers that perform authenticated decryption.
+=======
+ * Best-effort wallet secret lookup:
+ * - plaintext slot (dev/test flows and wallet-setup modal)
+ * - encrypted slot decrypted with passcode from memory (wallet page flow)
+>>>>>>> dev
  */
 export async function getWalletSecretAnyLocal(
   userId: string,
   stellarAddress?: string | null,
 ): Promise<string | null> {
   assertDevOnly();
+<<<<<<< fix/174-178-191-236-security-billing-headers-sri
   return getWalletSecretLocalPlaintext(userId, stellarAddress);
+=======
+  const plaintext = await getWalletSecretLocalPlaintext(userId, stellarAddress);
+  if (plaintext) return plaintext;
+
+  try {
+    const passcode = getPasscode();
+    if (passcode) {
+      const decrypted = await getWalletSecret(userId, passcode);
+      if (decrypted) return decrypted;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+>>>>>>> dev
 }
 
 export async function hasStoredWallet(userId: string): Promise<boolean> {

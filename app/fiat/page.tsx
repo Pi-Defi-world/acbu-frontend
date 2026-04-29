@@ -11,12 +11,13 @@ import { useAuth } from '@/contexts/auth-context';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureDemoFiatTrustlineClient } from '@/lib/stellar/trustlines';
 import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
-import { AlertCircle, Building2, Plus } from 'lucide-react';
+import { Building2, Plus } from 'lucide-react';
 import { Keypair } from '@stellar/stellar-sdk';
 export default function FiatSimPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [accounts, setAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const { error, clearError, handleError } = useApiError();
@@ -105,11 +106,8 @@ export default function FiatSimPage() {
           </p>
         </div>
 
-        {error && (
-          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex gap-2 text-destructive text-sm">
-            <AlertCircle className="w-4 h-4 mt-0.5" />
-            <p>{error}</p>
-          </div>
+        {uiError && (
+          <ApiErrorDisplay error={uiError} onDismiss={clearError} />
         )}
 
         {lastFaucetTx && (
@@ -147,7 +145,7 @@ export default function FiatSimPage() {
                 onChange={(e) => setFaucetAmount(e.target.value)}
                 className="flex-1 min-w-[120px]"
               />
-              <Button type="submit" disabled={!!actionLoading}>
+              <Button type="submit" disabled={!!actionLoading || isSubmitDisabled}>
                 {actionLoading === 'faucet' ? '...' : 'Get tokens'}
               </Button>
             </form>

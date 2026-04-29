@@ -41,7 +41,7 @@ export function MobileNav() {
             <Link
               key={item.href}
               href={item.href}
-              aria-label={showLabels ? undefined : item.name}
+              aria-label={item.name}
               className={`flex flex-col items-center justify-center flex-1 h-20 gap-1 transition-colors ${
                 isActive
                   ? "text-primary"
