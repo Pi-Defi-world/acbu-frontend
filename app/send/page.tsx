@@ -107,6 +107,29 @@ export default function SendPage() {
     overscan: 5,
   });
 
+  const virtualizedContacts = useMemo(() => {
+    return virtualizer.getVirtualItems().map((virtualRow) => {
+      const c = contacts[virtualRow.index];
+      return (
+        <div
+          key={virtualRow.key}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: `${virtualRow.size}px`,
+            transform: `translateY(${virtualRow.start}px)`,
+          }}
+        >
+          <SelectItem value={c.id}>
+            {c.alias ?? c.pay_uri ?? c.id}
+          </SelectItem>
+        </div>
+      );
+    });
+  }, [virtualizer, contacts]);
+
   const loadTransfers = useCallback(async () => {
     setLoadError("");
     try {
@@ -138,6 +161,31 @@ export default function SendPage() {
     loadContacts();
     // Removed `opts.token` to prevent issues if it overlaps with `opts` logic.
   }, [loadTransfers, loadContacts]);
+
+  const handleShowSendDialog = useCallback(() => setShowSendDialog(true), []);
+  const handleSendDialogChange = useCallback((open: boolean) => setShowSendDialog(open), []);
+  const handleConfirmDialogChange = useCallback((open: boolean) => setShowConfirmDialog(open), []);
+  const handleSuccessDialogChange = useCallback((open: boolean) => setShowSuccessDialog(open), []);
+  const handleTabChange = useCallback((value: string) => setActiveTab(value), []);
+  const handleUseContactChange = useCallback((v: string) => setUseContact(v === "contact"), []);
+  const handleContactSelect = useCallback((id: string) => {
+    const c = contacts.find((x: ContactItem) => x.id === id);
+    if (c) setSelectedContact(c);
+  }, [contacts]);
+  const handleCustomRecipientChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setCustomRecipient(e.target.value), []);
+  const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    if (v === "" || /^\d*\.?\d*$/.test(v)) {
+      setAmount(v);
+    }
+  }, []);
+  const handleNoteChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNote(e.target.value), []);
+  const handleSendDialogClose = useCallback(() => setShowSendDialog(false), []);
+  const handleShowConfirmDialog = useCallback(() => setShowConfirmDialog(true), []);
+  const handleConfirmAction = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    handleConfirmTransfer();
+  }, [handleConfirmTransfer]);
 
   const getToValue = useCallback(() =>
     useContact && selectedContact
@@ -305,7 +353,7 @@ export default function SendPage() {
   }, [transfers, loadingTransfers]);
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3">
           <h1 className="text-lg font-bold text-foreground mb-3">
@@ -333,7 +381,7 @@ export default function SendPage() {
         <TabsContent value="send" className="space-y-4 outline-none mt-0">
           <div className="grid grid-cols-2 gap-3">
             <Button
-              onClick={() => setShowSendDialog(true)}
+              onClick={handleShowSendDialog}
               className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4"
             >
               <Plus className="mb-2 h-5 w-5" />
@@ -363,7 +411,7 @@ export default function SendPage() {
       </div>
 
       {/* Send Dialog */}
-      <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
+      <Dialog open={showSendDialog} onOpenChange={handleSendDialogChange}>
         <DialogContent className="max-w-md border-border">
           <DialogHeader>
             <DialogTitle>Send Money</DialogTitle>
@@ -374,7 +422,7 @@ export default function SendPage() {
               <Label className="text-foreground">Recipient</Label>
               <Tabs
                 value={useContact ? "contact" : "custom"}
-                onValueChange={(v) => setUseContact(v === "contact")}
+                onValueChange={handleUseContactChange}
               >
                 <TabsList className="grid w-full grid-cols-2 bg-muted">
                   <TabsTrigger value="contact">From Contacts</TabsTrigger>
@@ -383,10 +431,7 @@ export default function SendPage() {
                 <TabsContent value="contact" className="mt-3">
                   <Select
                     value={selectedContact?.id || ""}
-                    onValueChange={(id: string) => {
-                      const c = contacts.find((x: ContactItem) => x.id === id);
-                      if (c) setSelectedContact(c);
-                    }}
+                    onValueChange={handleContactSelect}
                   >
                     <SelectTrigger className="border-border">
                       <SelectValue placeholder="Select a contact" />
@@ -400,26 +445,7 @@ export default function SendPage() {
                           position: 'relative',
                         }}
                       >
-                        {virtualizer.getVirtualItems().map((virtualRow) => {
-                          const c = contacts[virtualRow.index];
-                          return (
-                            <div
-                              key={virtualRow.key}
-                              style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: `${virtualRow.size}px`,
-                                transform: `translateY(${virtualRow.start}px)`,
-                              }}
-                            >
-                              <SelectItem value={c.id}>
-                                {c.alias ?? c.pay_uri ?? c.id}
-                              </SelectItem>
-                            </div>
-                          );
-                        })}
+                        {virtualizedContacts}
                       </div>
                     </SelectContent>
                   </Select>
@@ -428,7 +454,7 @@ export default function SendPage() {
                   <Input
                     placeholder="Wallet address or email"
                     value={customRecipient}
-                    onChange={(e) => setCustomRecipient(e.target.value)}
+                    onChange={handleCustomRecipientChange}
                     className="border-border"
                   />
                 </TabsContent>
@@ -446,12 +472,7 @@ export default function SendPage() {
                   inputMode="decimal"
                   placeholder="0.00"
                   value={amount}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === "" || /^\d*\.?\d*$/.test(v)) {
-                      setAmount(v);
-                    }
-                  }}
+                  onChange={handleAmountChange}
                   className="border-border text-lg font-semibold"
                 />
               </div>
@@ -466,7 +487,7 @@ export default function SendPage() {
               <Input
                 placeholder="Add a message..."
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
+                onChange={handleNoteChange}
                 className="border-border"
               />
             </div>
@@ -481,14 +502,14 @@ export default function SendPage() {
             <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
-                onClick={() => setShowSendDialog(false)}
+                onClick={handleSendDialogClose}
                 className="flex-1 border-border"
                 disabled={sending}
               >
                 Cancel
               </Button>
               <Button
-                onClick={() => setShowConfirmDialog(true)}
+                onClick={handleShowConfirmDialog}
                 disabled={!isValid}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
@@ -500,7 +521,7 @@ export default function SendPage() {
       </Dialog>
 
       {/* Confirm Dialog */}
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+      <AlertDialog open={showConfirmDialog} onOpenChange={handleConfirmDialogChange}>
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Transfer</AlertDialogTitle>
@@ -550,10 +571,7 @@ export default function SendPage() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction 
-              onClick={(e) => {
-                e.preventDefault();
-                handleConfirmTransfer();
-              }} 
+              onClick={handleConfirmAction} 
               className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" 
               disabled={sending}
             >
@@ -563,7 +581,7 @@ export default function SendPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+      <Dialog open={showSuccessDialog} onOpenChange={handleSuccessDialogChange}>
         <DialogContent className="max-w-md border-border">
           <div className="flex flex-col items-center text-center py-6">
             <div className="rounded-full bg-green-100 dark:bg-green-900 p-4 mb-4">
