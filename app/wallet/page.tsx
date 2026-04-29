@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
-import { storeWalletSecretLocalPlaintext } from "@/lib/wallet-storage";
-import { AlertCircle, Wallet, Key, Link as LinkIcon, CheckCircle } from "lucide-react";
+import { storeWalletSecret } from "@/lib/wallet-storage";
+import { getPasscode } from "@/lib/passcode-manager";
+import { AlertCircle, Wallet, Key, Link as LinkIcon, CheckCircle, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 import { useApiOpts, useApiError } from "@/hooks/use-api";
 
@@ -55,11 +56,19 @@ export default function WalletPage() {
     try {
       if (!userId) throw new Error("Not logged in");
 
+      const passcode = getPasscode();
+      if (!passcode) {
+        // Passcode missing - redirect to signin for re-authentication
+        await logout();
+        router.push("/auth/signin");
+        return;
+      }
+
       const kp = Keypair.fromSecret(passphrase);
       const newAddress = kp.publicKey();
 
-      // Store locally (plaintext). This is not meant as a security measure.
-      await storeWalletSecretLocalPlaintext(userId, passphrase, newAddress);
+      // Store encrypted with passcode (secure)
+      await storeWalletSecret(userId, passphrase, passcode);
 
       // Sync public key to backend.
       const result = await userApi.putWalletAddress(newAddress, opts);
@@ -95,12 +104,20 @@ export default function WalletPage() {
     try {
       if (!userId) throw new Error("Not logged in");
 
+      const passcode = getPasscode();
+      if (!passcode) {
+        // Passcode missing - redirect to signin for re-authentication
+        await logout();
+        router.push("/auth/signin");
+        return;
+      }
+
       // Validate seed
       const kp = Keypair.fromSecret(importSeed);
       const newAddress = kp.publicKey();
 
-      // Store locally (plaintext). This is not meant as a security measure.
-      await storeWalletSecretLocalPlaintext(userId, importSeed, newAddress);
+      // Store encrypted with passcode (secure)
+      await storeWalletSecret(userId, importSeed, passcode);
 
       // Tell backend to update stellarAddress
       const result = await userApi.putWalletAddress(newAddress, opts);
@@ -278,6 +295,14 @@ export default function WalletPage() {
               {option === 1 && (
                 <form onSubmit={handleGenerateConfirm} className="space-y-4">
                   <h2 className="text-lg font-semibold">Your New Wallet</h2>
+                  
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                    <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-800 dark:text-blue-300">
+                      Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                    </p>
+                  </div>
+
                   <p className="text-sm text-muted-foreground">
                     Please save this secret key somewhere safe. It is required to
                     recover your wallet if you switch devices.
@@ -295,9 +320,17 @@ export default function WalletPage() {
               {option === 2 && (
                 <form onSubmit={handleImportSeed} className="space-y-4">
                   <h2 className="text-lg font-semibold">Import Seed</h2>
+                  
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                    <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-800 dark:text-blue-300">
+                      Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                    </p>
+                  </div>
+
                   <p className="text-sm text-muted-foreground">
                     Enter your Stellar secret key (starts with 'S'). It will be stored
-                    securely on this device.
+                    encrypted on this device.
                   </p>
 
                   <div>
