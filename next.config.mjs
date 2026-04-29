@@ -1,3 +1,7 @@
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -6,6 +10,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Don't advertise the framework to reduce attack surface
+  poweredByHeader: false,
   async redirects() {
     return [
       { source: '/account', destination: '/me', permanent: false },
@@ -16,4 +22,4 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+export default withNextIntl(nextConfig)

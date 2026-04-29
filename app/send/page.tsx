@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,8 +27,6 @@ import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
-import { useApiError } from "@/hooks/use-api-error";
-import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { useBalance } from "@/hooks/use-balance";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
@@ -61,19 +58,6 @@ function formatDate(iso: string) {
   return d.toLocaleDateString();
 }
 
-function getStatusColor(status: string | undefined) {
-  switch (status) {
-    case "completed":
-      return "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800";
-    case "pending":
-      return "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
-    case "failed":
-      return "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800";
-    default:
-      return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700";
-  }
-}
-
 /**
  * Page component for sending ACBU tokens.
  */
@@ -82,14 +66,14 @@ export default function SendPage() {
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
-  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [activeTab, setActiveTab] = useState("send");
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [selectedContact, setSelectedContact] = useState<ContactItem | null>(null);
+  const [selectedContact, setSelectedContact] = useState<ContactItem | null>(
+    null,
+  );
   const [amount, setAmount] = useState("");
-  const [confirmedAmount, setConfirmedAmount] = useState("");
   const [lastSentAmount, setLastSentAmount] = useState("");
   const [note, setNote] = useState("");
   const [customRecipient, setCustomRecipient] = useState("");
@@ -98,17 +82,9 @@ export default function SendPage() {
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingTransfers, setLoadingTransfers] = useState(true);
   const [loadingContacts, setLoadingContacts] = useState(true);
+  const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
-  
-  const contactsParentRef = useRef<HTMLDivElement>(null);
-  
-  const virtualizer = useVirtualizer({
-    count: contacts.length,
-    getScrollElement: () => contactsParentRef.current?.parentElement as Element | null,
-    estimateSize: () => 36,
-    overscan: 5,
-  });
 
   const virtualizedContacts = useMemo(() => {
     return virtualizer.getVirtualItems().map((virtualRow) => {
@@ -135,35 +111,24 @@ export default function SendPage() {
 
   const loadTransfers = useCallback(async () => {
     setLoadError("");
-    try {
-      const data = await transfersApi.getTransfers(opts);
+    transfersApi.getTransfers(opts).then((data) => {
       setTransfers(data.transfers ?? []);
       setLoadError("");
-    } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Failed to load transfers");
-    } finally {
-      setLoadingTransfers(false);
-    }
+    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load transfers')).finally(() => setLoadingTransfers(false));
   }, [opts]);
 
-  const loadContacts = useCallback(async () => {
+  const loadContacts = useCallback(() => {
     setLoadError("");
-    try {
-      const data = await userApi.getContacts(opts);
+    userApi.getContacts(opts).then((data) => {
       setContacts(data.contacts ?? []);
       setLoadError("");
-    } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Failed to load contacts");
-    } finally {
-      setLoadingContacts(false);
-    }
+    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
   }, [opts]);
 
   useEffect(() => {
     loadTransfers();
     loadContacts();
-    // Removed `opts.token` to prevent issues if it overlaps with `opts` logic.
-  }, [loadTransfers, loadContacts]);
+  }, [loadTransfers, loadContacts, opts.token]);
 
   const handleShowSendDialog = useCallback(() => setShowSendDialog(true), []);
   const handleSendDialogChange = useCallback((open: boolean) => setShowSendDialog(open), []);
@@ -201,24 +166,20 @@ export default function SendPage() {
   const getToValue = useCallback(() =>
     useContact && selectedContact
       ? selectedContact.pay_uri || selectedContact.alias || selectedContact.id
-      : customRecipient.trim(),
-  [useContact, selectedContact, customRecipient]);
+      : customRecipient.trim();
 
-  const handleConfirmTransfer = useCallback(async () => {
+  const handleConfirmTransfer = async () => {
     const to = getToValue();
     if (!confirmedAmount || parseFloat(confirmedAmount) <= 0 || !to) return;
     clearError();
     setSending(true);
-    
     try {
       let blockchainTxHash: string | undefined;
 
       // Client-signed path for direct Stellar addresses.
       if (looksLikeStellarAddress(to)) {
         if (!userId) throw new Error("Not logged in");
-        
         const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
-        
         if (secret) {
           const sourceAddress = Keypair.fromSecret(secret).publicKey();
           if (stellarAddress && sourceAddress !== stellarAddress) {
@@ -228,7 +189,7 @@ export default function SendPage() {
           }
           const submit = await submitAcbuPaymentClient({
             destination: to,
-            amount: confirmedAmount,
+            amount,
             userSecret: secret,
           });
           blockchainTxHash = submit.transactionHash;
@@ -253,7 +214,6 @@ export default function SendPage() {
               })
               .catch(reject);
           });
-          
           if (stellarAddress && address !== stellarAddress) {
             throw new Error(
               `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
@@ -261,7 +221,7 @@ export default function SendPage() {
           }
           const submit = await submitAcbuPaymentClient({
             destination: to,
-            amount: confirmedAmount,
+            amount,
             external: { kit, address },
           });
           blockchainTxHash = submit.transactionHash;
@@ -269,28 +229,24 @@ export default function SendPage() {
       }
 
       await transfersApi.createTransfer(
-        { to, amount_acbu: confirmedAmount, note, ...(blockchainTxHash ? { blockchain_tx_hash: blockchainTxHash } : {}) },
+        { to, amount_acbu: amount, note, ...(blockchainTxHash ? { blockchain_tx_hash: blockchainTxHash } : {}) },
         opts,
       );
-      
       loadTransfers();
       refreshBalance();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
-      setLastSentAmount(confirmedAmount);
+      setLastSentAmount(amount);
       setShowSuccessDialog(true);
-      
       setTimeout(() => {
         setShowSuccessDialog(false);
         setAmount("");
-        setConfirmedAmount("");
         setNote("");
         setCustomRecipient("");
         setSelectedContact(null);
       }, 2500);
-      
     } catch (e) {
-      setApiError(e);
+      setSubmitError(e instanceof Error ? e.message : "Transfer failed");
     } finally {
       setSending(false);
     }
@@ -365,21 +321,47 @@ export default function SendPage() {
           <h1 className="text-lg font-bold text-foreground mb-3">
             Send Money
           </h1>
-          <TabsList className="bg-muted inline-flex h-10 items-center justify-start rounded-lg p-1 text-muted-foreground">
-            <TabsTrigger value="send" className="px-4 py-1.5 rounded-md font-medium text-sm transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+          <div className="flex gap-2" role="tablist" aria-label="Send money options">
+            <button
+              id="tab-send"
+              role="tab"
+              aria-selected={activeTab === "send"}
+              aria-controls="panel-send"
+              onClick={() => setActiveTab("send")}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                activeTab === "send" 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
               Send
-            </TabsTrigger>
-            <TabsTrigger value="history" className="px-4 py-1.5 rounded-md font-medium text-sm transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </button>
+            <button
+              id="tab-history"
+              role="tab"
+              aria-selected={activeTab === "history"}
+              aria-controls="panel-history"
+              onClick={() => setActiveTab("history")}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                activeTab === "history" 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
               History
-            </TabsTrigger>
-          </TabsList>
+            </button>
+          </div>
         </div>
       </header>
-
+      
       <div className="px-4 py-4">
         {loadError && (
-          <div className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300">
-            <AlertCircle className="h-5 w-5 shrink-0" />
+          <div 
+            className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300"
+            role="alert"
+            aria-live="assertive"
+          >
+            <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
             <p className="font-medium">{loadError}</p>
           </div>
         )}
@@ -406,26 +388,82 @@ export default function SendPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-3 outline-none mt-0">
-          <div>
-            <h3 className="mb-3 text-sm font-semibold text-foreground">
-              Recent Transfers
-            </h3>
-            {transfersList}
-          </div>
-        </TabsContent>
+          <TabsContent 
+            value="history" 
+            id="panel-history"
+            role="tabpanel"
+            aria-labelledby="tab-history"
+            className="space-y-3"
+          >
+            <div>
+              <h3 className="mb-3 text-sm font-semibold text-foreground">
+                Recent Transfers
+              </h3>
+              {loadingTransfers ? (
+                <SkeletonList count={2} itemHeight="h-14" />
+              ) : transfers.length === 0 ? (
+                <div className="rounded-lg border border-border bg-card p-6 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No transfers yet
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {transfers.map((t: TransferItem) => (
+                    <Link
+                      key={t.transaction_id}
+                      href={`/send/${t.transaction_id}`}
+                      className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                      aria-label={`Transfer of ${t.amount_acbu} ACBU, status ${t.status}, created ${formatDate(t.created_at)}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate">
+                          Transfer
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(t.created_at)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-foreground">
+                          ACBU {formatAmount(t.amount_acbu)}
+                        </p>
+                        <Badge
+                          variant="outline"
+                          className={`mt-1 text-xs ${getStatusBadgeClassName(t.status)}`}
+                        >
+                          {t.status === "completed" && (
+                            <Check className="mr-1 h-3 w-3" aria-hidden="true" />
+                          )}
+                          {t.status === "pending" && (
+                            <AlertCircle className="mr-1 h-3 w-3" aria-hidden="true" />
+                          )}
+                          {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                        </Badge>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Send Dialog */}
       <Dialog open={showSendDialog} onOpenChange={handleSendDialogChange}>
         <DialogContent className="max-w-md border-border">
           <DialogHeader>
-            <DialogTitle>Send Money</DialogTitle>
-            <DialogDescription>Transfer ACBU securely to another wallet</DialogDescription>
+            <DialogTitle id="send-dialog-title">Send Money</DialogTitle>
+            <DialogDescription id="send-dialog-description">
+              Transfer ACBU securely to another wallet
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-foreground">Recipient</Label>
+              <Label htmlFor="recipient-type" className="text-foreground">
+                Recipient
+              </Label>
               <Tabs
                 value={useContact ? "contact" : "custom"}
                 onValueChange={handleUseContactChange}
@@ -439,7 +477,11 @@ export default function SendPage() {
                     value={selectedContact?.id || ""}
                     onValueChange={handleContactSelect}
                   >
-                    <SelectTrigger className="border-border">
+                    <SelectTrigger 
+                      className="border-border"
+                      id="contact-select"
+                      aria-label="Select a contact"
+                    >
                       <SelectValue placeholder="Select a contact" />
                     </SelectTrigger>
                     <SelectContent>
@@ -456,46 +498,71 @@ export default function SendPage() {
                     </SelectContent>
                   </Select>
                 </TabsContent>
-                <TabsContent value="custom" className="mt-3">
+                <TabsContent value="custom">
                   <Input
+                    id="custom-recipient"
+                    name="custom-recipient"
                     placeholder="Wallet address or email"
                     value={customRecipient}
                     onChange={handleCustomRecipientChange}
                     className="border-border"
+                    aria-describedby="recipient-hint"
                   />
+                  <p id="recipient-hint" className="text-xs text-muted-foreground mt-1">
+                    Enter a Stellar address or email address
+                  </p>
                 </TabsContent>
               </Tabs>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-foreground">Amount</Label>
+              <Label htmlFor="amount-input" className="text-foreground">
+                Amount
+              </Label>
               <div className="flex gap-2">
                 <span className="flex items-center text-muted-foreground font-medium">
                   ACBU
                 </span>
                 <Input
-                  type="text"
-                  inputMode="decimal"
+                  id="amount-input"
+                  name="amount"
+                  type="number"
                   placeholder="0.00"
+                  min="0"
+                  step="any"
                   value={amount}
                   onChange={handleAmountChange}
                   className="border-border text-lg font-semibold"
+                  aria-describedby={exceedsBalance ? "amount-error amount-hint" : "amount-hint"}
+                  aria-invalid={exceedsBalance}
                 />
               </div>
-              {exceedsBalance && <p className="text-xs text-destructive">Insufficient balance.</p>}
-              <p className="text-xs text-muted-foreground">
-                Available: ACBU {balanceLoading ? "..." : formatAmount(balance)}
+              {exceedsBalance && (
+                <p id="amount-error" className="text-xs text-destructive" role="alert">
+                  Insufficient balance.
+                </p>
+              )}
+              <p id="amount-hint" className="text-xs text-muted-foreground">
+                Available: ACBU {balanceLoading ? '...' : formatAmount(balance)}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-foreground">Note (Optional)</Label>
+              <Label htmlFor="note-input" className="text-foreground">
+                Note (Optional)
+              </Label>
               <Input
+                id="note-input"
+                name="note"
                 placeholder="Add a message..."
                 value={note}
                 onChange={handleNoteChange}
                 className="border-border"
+                aria-describedby="note-hint"
               />
+              <p id="note-hint" className="text-xs text-muted-foreground">
+                Add an optional note to this transfer
+              </p>
             </div>
 
             <Card className="border-border bg-muted p-3">
@@ -510,7 +577,7 @@ export default function SendPage() {
                 variant="outline"
                 onClick={handleSendDialogClose}
                 className="flex-1 border-border"
-                disabled={sending}
+                aria-label="Cancel transfer"
               >
                 Cancel
               </Button>
@@ -518,6 +585,7 @@ export default function SendPage() {
                 onClick={handleShowConfirmDialog}
                 disabled={!isFormValid}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                aria-label="Continue to confirmation"
               >
                 Continue
               </Button>
@@ -529,14 +597,16 @@ export default function SendPage() {
       <AlertDialog open={showConfirmDialog} onOpenChange={handleConfirmDialogChange}>
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Transfer</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle id="confirm-dialog-title">Confirm Transfer</AlertDialogTitle>
+            <AlertDialogDescription id="confirm-dialog-description">
               Review the details before confirming
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-4">
-            {uiError && (
-              <ApiErrorDisplay error={uiError} onDismiss={clearError} />
+            {submitError && (
+              <p className="text-sm text-destructive" role="alert">
+                {submitError}
+              </p>
             )}
             <div className="rounded-lg border border-border bg-muted p-4">
               <p className="text-xs text-muted-foreground">To</p>
@@ -549,13 +619,13 @@ export default function SendPage() {
             </div>
             <div className="flex items-center justify-center">
               <div className="rounded-full bg-secondary p-2">
-                <ArrowRight className="h-5 w-5 text-secondary-foreground" />
+                <ArrowRight className="h-5 w-5 text-secondary-foreground" aria-hidden="true" />
               </div>
             </div>
             <div className="rounded-lg border border-border bg-muted p-4">
               <p className="text-xs text-muted-foreground">Amount</p>
-              <p className="text-2xl font-bold text-foreground" data-testid="confirm-amount">
-                ACBU {formatAmount(confirmedAmount)}
+              <p className="text-2xl font-bold text-foreground">
+                ACBU {formatAmount(amount)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 Network Fee: Free
@@ -590,20 +660,24 @@ export default function SendPage() {
         <DialogContent className="max-w-md border-border">
           <div className="flex flex-col items-center text-center py-6">
             <div className="rounded-full bg-green-100 dark:bg-green-900 p-4 mb-4">
-              <Check className="h-8 w-8 text-green-600 dark:text-green-300" />
+              <Check className="h-8 w-8 text-green-600 dark:text-green-300" aria-hidden="true" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">
               Transfer Sent!
             </h2>
             <p className="text-muted-foreground mb-4">
-              Your transfer for ACBU {formatAmount(lastSentAmount)} is being processed.
+              Your transfer for ACBU {formatAmount(lastSentAmount)}{" "}
+              is being processed.
             </p>
-            <Badge variant="secondary" className="mb-4">
+            <Badge
+              variant="outline"
+              className={`mb-4 ${getStatusBadgeClassName("pending")}`}
+            >
               Pending
             </Badge>
           </div>
         </DialogContent>
       </Dialog>
-    </Tabs>
+    </>
   );
 }

@@ -1,5 +1,5 @@
 /**
- * API client: base URL from env, Bearer token from opts.
+ * API client: base URL from env, authentication via httpOnly cookies.
  * All backend responses are JSON; errors throw with message/details.
  * 
  * 401 Handling: When API returns 401 (Unauthorized), a registered callback is invoked
@@ -10,21 +10,6 @@
  */
 
 let authErrorHandler: ((error: ApiError) => void) | null = null;
-let currentToken: string | null = null;
-
-/**
- * Set the global API key to be used for all requests.
- */
-export function setToken(token: string | null): void {
-  currentToken = token;
-}
-
-/**
- * Get the global API key.
- */
-export function getToken(): string | null {
-  return currentToken;
-}
 
 /**
  * Register a callback to be invoked when API returns 401 (Unauthorized).
@@ -75,7 +60,6 @@ function getCsrfToken(): string | undefined {
 }
 
 export interface RequestOptions {
-  token?: string | null;
   signal?: AbortSignal;
 }
 
@@ -104,12 +88,6 @@ async function request<T>(
   const csrfToken = getCsrfToken();
   if (csrfToken) {
     headers['X-XSRF-TOKEN'] = csrfToken;
-  }
-  
-  const token = opts.token !== undefined ? opts.token : currentToken;
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-    headers['x-api-key'] = token; // Also send as x-api-key for compatibility
   }
 
   // Create our own AbortController for timeout, independent of caller's signal
@@ -197,6 +175,6 @@ export function del<T>(path: string, opts?: RequestOptions): Promise<T> {
   return request<T>('DELETE', path, undefined, opts);
 }
 
-export function apiOpts(token: string | null | undefined): RequestOptions {
-  return { token: token || undefined };
+export function apiOpts(): RequestOptions {
+  return {};
 }

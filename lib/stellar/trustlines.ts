@@ -8,6 +8,7 @@ import {
 import { acbuAsset, demoFiatAsset } from "./demo-fiat";
 import { getAssetsConfig } from "../api/config";
 import type { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit";
+import { logger } from '@/lib/logger';
 
 const TESTNET_HORIZON_URL =
   process.env.NEXT_PUBLIC_STELLAR_HORIZON_URL ??
@@ -217,11 +218,9 @@ export async function ensureAcbuTrustlineClient(params: {
   } catch {
     asset = acbuAsset();
   }
-  if (typeof console !== "undefined") {
-    console.info("[trustline] ensuring ACBU trustline", {
+    logger.info("[trustline] ensuring ACBU trustline", {
       code: asset.getCode(),
       issuer: asset.getIssuer(),
     });
-  }
   return addTrustlineForAsset({ userSecret: params.userSecret, external: params.external, asset });
 }
