@@ -6,21 +6,22 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApiOpts } from '@/hooks/use-api';
+import { useApiError } from '@/hooks/use-api-error';
+import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import * as fiatApi from '@/lib/api/fiat';
-import { getApiErrorMessage } from '@/lib/api/client';
 import { useAuth } from '@/contexts/auth-context';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureDemoFiatTrustlineClient } from '@/lib/stellar/trustlines';
 import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
-import { AlertCircle, Building2, Plus } from 'lucide-react';
+import { Building2, Plus } from 'lucide-react';
 import { Keypair } from '@stellar/stellar-sdk';
 export default function FiatSimPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [accounts, setAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [lastFaucetTx, setLastFaucetTx] = useState<string | null>(null);
 
@@ -32,7 +33,7 @@ export default function FiatSimPage() {
       const data = await fiatApi.getFiatAccounts(opts);
       setAccounts(data.accounts || []);
     } catch (e: unknown) {
-      setError(getApiErrorMessage(e));
+      setApiError(e);
     } finally {
       setLoading(false);
     }
@@ -47,7 +48,7 @@ export default function FiatSimPage() {
     if (!faucetAmount || parseFloat(faucetAmount) <= 0) return;
 
     setActionLoading('faucet');
-    setError('');
+    clearError();
     setLastFaucetTx(null);
     try {
       if (!userId) throw new Error('Not logged in');
@@ -89,7 +90,7 @@ export default function FiatSimPage() {
       setLastFaucetTx(res.transaction_hash);
       setFaucetAmount('');
     } catch (e: unknown) {
-      setError(getApiErrorMessage(e));
+      setApiError(e);
     } finally {
       setActionLoading(null);
     }
@@ -106,11 +107,8 @@ export default function FiatSimPage() {
           </p>
         </div>
 
-        {error && (
-          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex gap-2 text-destructive text-sm">
-            <AlertCircle className="w-4 h-4 mt-0.5" />
-            <p>{error}</p>
-          </div>
+        {uiError && (
+          <ApiErrorDisplay error={uiError} onDismiss={clearError} />
         )}
 
         {lastFaucetTx && (
@@ -148,7 +146,7 @@ export default function FiatSimPage() {
                 onChange={(e) => setFaucetAmount(e.target.value)}
                 className="flex-1 min-w-[120px]"
               />
-              <Button type="submit" disabled={!!actionLoading}>
+              <Button type="submit" disabled={!!actionLoading || isSubmitDisabled}>
                 {actionLoading === 'faucet' ? '...' : 'Get tokens'}
               </Button>
             </form>

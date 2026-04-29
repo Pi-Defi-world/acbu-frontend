@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { errorReporter } from '@/lib/error-reporting';
 
-export default function Error({
+export default function BillsError({
   error,
   reset,
 }: {
@@ -16,8 +16,8 @@ export default function Error({
     errorReporter.reportError(error, {
       level: 'page',
       context: {
+        page: 'bills',
         digest: error.digest,
-        type: 'route-error'
       }
     });
   }, [error]);
@@ -35,9 +35,9 @@ export default function Error({
       </div>
       
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold text-foreground">Page Error</h2>
+        <h2 className="text-xl font-semibold text-foreground">Bills Error</h2>
         <p className="text-sm text-muted-foreground max-w-md">
-          This page encountered an unexpected error. You can try again or return to the home page.
+          There was an error loading the bills page. Please try again.
         </p>
         {error.digest && (
           <p className="text-xs text-muted-foreground mt-2">

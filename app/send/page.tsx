@@ -28,6 +28,8 @@ import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { useBalance } from "@/hooks/use-balance";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
@@ -80,12 +82,14 @@ export default function SendPage() {
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [activeTab, setActiveTab] = useState("send");
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [selectedContact, setSelectedContact] = useState<ContactItem | null>(null);
   const [amount, setAmount] = useState("");
+  const [confirmedAmount, setConfirmedAmount] = useState("");
   const [lastSentAmount, setLastSentAmount] = useState("");
   const [note, setNote] = useState("");
   const [customRecipient, setCustomRecipient] = useState("");
@@ -94,7 +98,6 @@ export default function SendPage() {
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingTransfers, setLoadingTransfers] = useState(true);
   const [loadingContacts, setLoadingContacts] = useState(true);
-  const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
   
@@ -164,7 +167,12 @@ export default function SendPage() {
 
   const handleShowSendDialog = useCallback(() => setShowSendDialog(true), []);
   const handleSendDialogChange = useCallback((open: boolean) => setShowSendDialog(open), []);
-  const handleConfirmDialogChange = useCallback((open: boolean) => setShowConfirmDialog(open), []);
+  const handleConfirmDialogChange = useCallback((open: boolean) => {
+    if (!open && !sending) {
+      setConfirmedAmount("");
+    }
+    setShowConfirmDialog(open);
+  }, [sending]);
   const handleSuccessDialogChange = useCallback((open: boolean) => setShowSuccessDialog(open), []);
   const handleTabChange = useCallback((value: string) => setActiveTab(value), []);
   const handleUseContactChange = useCallback((v: string) => setUseContact(v === "contact"), []);
@@ -181,7 +189,10 @@ export default function SendPage() {
   }, []);
   const handleNoteChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNote(e.target.value), []);
   const handleSendDialogClose = useCallback(() => setShowSendDialog(false), []);
-  const handleShowConfirmDialog = useCallback(() => setShowConfirmDialog(true), []);
+  const handleShowConfirmDialog = useCallback(() => {
+    setConfirmedAmount(amount);
+    setShowConfirmDialog(true);
+  }, [amount]);
   const handleConfirmAction = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     handleConfirmTransfer();
@@ -195,9 +206,8 @@ export default function SendPage() {
 
   const handleConfirmTransfer = useCallback(async () => {
     const to = getToValue();
-    if (!amount || parseFloat(amount) <= 0 || !to) return;
-    
-    setSubmitError("");
+    if (!confirmedAmount || parseFloat(confirmedAmount) <= 0 || !to) return;
+    clearError();
     setSending(true);
     
     try {
@@ -218,7 +228,7 @@ export default function SendPage() {
           }
           const submit = await submitAcbuPaymentClient({
             destination: to,
-            amount,
+            amount: confirmedAmount,
             userSecret: secret,
           });
           blockchainTxHash = submit.transactionHash;
@@ -251,7 +261,7 @@ export default function SendPage() {
           }
           const submit = await submitAcbuPaymentClient({
             destination: to,
-            amount,
+            amount: confirmedAmount,
             external: { kit, address },
           });
           blockchainTxHash = submit.transactionHash;
@@ -259,12 +269,7 @@ export default function SendPage() {
       }
 
       await transfersApi.createTransfer(
-        { 
-          to, 
-          amount_acbu: amount, 
-          note, 
-          ...(blockchainTxHash ? { blockchain_tx_hash: blockchainTxHash } : {}) 
-        },
+        { to, amount_acbu: confirmedAmount, note, ...(blockchainTxHash ? { blockchain_tx_hash: blockchainTxHash } : {}) },
         opts,
       );
       
@@ -272,28 +277,29 @@ export default function SendPage() {
       refreshBalance();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
-      setLastSentAmount(amount);
+      setLastSentAmount(confirmedAmount);
       setShowSuccessDialog(true);
       
       setTimeout(() => {
         setShowSuccessDialog(false);
         setAmount("");
+        setConfirmedAmount("");
         setNote("");
         setCustomRecipient("");
         setSelectedContact(null);
       }, 2500);
       
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Transfer failed");
+      setApiError(e);
     } finally {
       setSending(false);
     }
-  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance]);
+  }, [confirmedAmount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance, clearError]);
 
   const exceedsBalance =
     balance !== null && amount !== "" && parseFloat(amount) > balance;
 
-  const isValid = useMemo(() => {
+  const isFormValid = useMemo(() => {
     return amount &&
       parseFloat(amount) > 0 &&
       !exceedsBalance &&
@@ -510,7 +516,7 @@ export default function SendPage() {
               </Button>
               <Button
                 onClick={handleShowConfirmDialog}
-                disabled={!isValid}
+                disabled={!isFormValid}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 Continue
@@ -520,7 +526,6 @@ export default function SendPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={handleConfirmDialogChange}>
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
@@ -530,8 +535,8 @@ export default function SendPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-4">
-            {submitError && (
-              <p className="text-sm text-destructive">{submitError}</p>
+            {uiError && (
+              <ApiErrorDisplay error={uiError} onDismiss={clearError} />
             )}
             <div className="rounded-lg border border-border bg-muted p-4">
               <p className="text-xs text-muted-foreground">To</p>
@@ -549,8 +554,8 @@ export default function SendPage() {
             </div>
             <div className="rounded-lg border border-border bg-muted p-4">
               <p className="text-xs text-muted-foreground">Amount</p>
-              <p className="text-2xl font-bold text-foreground">
-                ACBU {formatAmount(amount)}
+              <p className="text-2xl font-bold text-foreground" data-testid="confirm-amount">
+                ACBU {formatAmount(confirmedAmount)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 Network Fee: Free
@@ -571,11 +576,11 @@ export default function SendPage() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction 
-              onClick={handleConfirmAction} 
+              onClick={handleConfirmTransfer} 
               className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" 
-              disabled={sending}
+              disabled={sending || isSubmitDisabled}
             >
-              {sending ? "Sending..." : `Send ACBU ${amount}`}
+              {sending ? "Sending..." : `Send ACBU ${confirmedAmount}`}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>

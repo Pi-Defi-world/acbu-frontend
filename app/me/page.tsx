@@ -4,17 +4,28 @@ import React, { useState, useEffect } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2 } from 'lucide-react';
+import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useBalance } from '@/hooks/use-balance';
 import { useApiOpts } from '@/hooks/use-api';
 import { formatAmount } from '@/lib/utils';
 import * as userApi from '@/lib/api/user';
+import * as transactionsApi from '@/lib/api/transactions';
 import type { UserMe } from '@/types/api';
+import type { TransactionListItem } from '@/types/api';
 import Link from 'next/link';
 
 const menuItems = [
-  { section: 'Account', items: [{ title: 'Profile', icon: User, href: '/me/profile' }, { title: 'Settings', icon: Settings, href: '/me/settings' }, { title: 'Wallet', icon: Eye, href: '/wallet' }, { title: 'Simulated Bank', icon: Building2, href: '/fiat' }] },
+  { 
+    section: 'Account', 
+    items: [
+      { title: 'Profile', icon: User, href: '/me/profile' }, 
+      { title: 'Settings', icon: Settings, href: '/me/settings' }, 
+      { title: 'Two-Factor Auth', icon: Shield, href: '/me/settings/security' }, 
+      { title: 'Wallet', icon: Eye, href: '/wallet' }, 
+      { title: 'Simulated Bank', icon: Building2, href: '/fiat' }
+    ] 
+  },
   { section: 'Support', items: [{ title: 'Activity History', icon: Clock, href: '/activity' }] },
 ];
 
@@ -27,14 +38,53 @@ export default function MePage() {
   const { balance, loading: balanceLoading } = useBalance();
   const opts = useApiOpts();
   const [user, setUser] = useState<UserMe | null>(null);
+  const [monthlyNet, setMonthlyNet] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    userApi.getMe(opts).then((data) => {
-      if (!cancelled) setUser(data);
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const getTransactionDelta = (transaction: TransactionListItem) => {
+      if (transaction.status !== 'completed') return 0;
+
+      if (transaction.type === 'mint') {
+        return Number(transaction.amount_acbu ?? 0);
+      }
+
+      if (transaction.type === 'burn') {
+        return -Number(transaction.acbu_amount_burned ?? transaction.amount_acbu ?? 0);
+      }
+
+      if (transaction.type === 'transfer') {
+        return -Number(transaction.amount_acbu ?? 0);
+      }
+
+      return 0;
+    };
+
+    Promise.all([
+      userApi.getMe(opts),
+      transactionsApi.listTransactions({ limit: 100 }, opts),
+    ]).then(([userData, transactionsData]) => {
+      if (cancelled) return;
+
+      const currentMonthTransactions = (transactionsData.transactions ?? []).filter((transaction) => {
+        const createdAt = new Date(transaction.created_at);
+        return createdAt.getMonth() === currentMonth && createdAt.getFullYear() === currentYear;
+      });
+
+      const monthlyAggregate = currentMonthTransactions.reduce(
+        (sum, transaction) => sum + getTransactionDelta(transaction),
+        0,
+      );
+
+      setUser(userData);
+      setMonthlyNet(monthlyAggregate);
     }).catch((e) => {
       if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load profile');
     }).finally(() => {
@@ -71,6 +121,7 @@ export default function MePage() {
 
   const displayName = user?.username || user?.email || user?.phone_e164 || 'Account';
   const initials = (displayName.slice(0, 2) || 'AB').toUpperCase();
+  const monthlyNetPositive = (monthlyNet ?? 0) >= 0;
 
   return (
     <>
@@ -97,8 +148,8 @@ export default function MePage() {
             </div>
             <div className="rounded-lg border border-border bg-card p-4 text-center">
               <p className="text-xs text-muted-foreground mb-2 font-medium">This Month</p>
-              <p className="text-2xl font-bold text-accent">
-                {balanceLoading ? '...' : `+ACBU ${formatAmount(0)}`}
+              <p className={`text-2xl font-bold ${monthlyNetPositive ? 'text-accent' : 'text-destructive'}`}>
+                {loading ? '...' : monthlyNet === null ? '—' : `${monthlyNetPositive ? '+' : '-'}ACBU ${formatAmount(Math.abs(monthlyNet))}`}
               </p>
             </div>
           </div>

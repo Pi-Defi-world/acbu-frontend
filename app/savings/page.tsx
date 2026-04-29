@@ -28,7 +28,28 @@ import { PageContainer } from "@/components/layout/page-container";
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
+import { resolveRecipient } from "@/lib/api/recipient";
 import { formatAmount } from "@/lib/utils";
+
+/**
+ * Resolve any user identifier (Stellar address, phone, alias, pay URI)
+ * through the backend recipient resolver to obtain the canonical pay_uri.
+ * Falls back to the raw value when the resolver is unavailable so that
+ * Stellar-format addresses still work offline.
+ */
+async function resolveUserUri(
+  raw: string,
+  opts: Parameters<typeof resolveRecipient>[1],
+): Promise<string> {
+  try {
+    const resolved = await resolveRecipient(raw, opts);
+    if (resolved.pay_uri) return resolved.pay_uri;
+    if (resolved.alias) return resolved.alias;
+  } catch {
+    // Resolver unavailable — fall through to raw value.
+  }
+  return raw;
+}
 
 interface SavingsAccount {
     id: string;
@@ -118,12 +139,21 @@ export default function SavingsPage() {
   const [newGoalDeadline, setNewGoalDeadline] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
     setReceiveError("");
-    userApi.getReceive(opts).then((data) => {
+    userApi.getReceive(opts).then(async (data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
-      if (uri && typeof uri === "string") setApiUser(uri);
-      setReceiveError("");
-    }).catch((e) => setReceiveError(e instanceof Error ? e.message : "Failed to load user info"));
+      if (uri && typeof uri === "string") {
+        // Resolve through backend recipient resolver so phone-based IDs,
+        // aliases, and other non-Stellar identifiers are accepted.
+        const resolved = await resolveUserUri(uri, opts);
+        if (!cancelled) setApiUser(resolved);
+      }
+      if (!cancelled) setReceiveError("");
+    }).catch((e) => {
+      if (!cancelled) setReceiveError(e instanceof Error ? e.message : "Failed to load user info");
+    });
+    return () => { cancelled = true; };
   }, [opts.token]);
 
   useEffect(() => {
