@@ -2,75 +2,178 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
 import * as authApi from '@/lib/api/auth';
+import { onAuthError, setToken } from '@/lib/api/client';
+import { logger } from '@/lib/logger';
 
 const USER_ID_KEY = 'acbu_user_id';
+const STELLAR_ADDRESS_KEY = 'acbu_stellar_address';
 
 interface AuthState {
-  apiKey: string | null;
   userId: string | null;
+  stellarAddress: string | null;
   isAuthenticated: boolean;
+  isHydrated: boolean;
 }
 
 interface AuthContextValue extends AuthState {
-  login: (apiKey: string, userId: string) => void;
+  login: (userId: string, stellarAddress?: string | null) => void;
   logout: () => Promise<void>;
-  setAuth: (apiKey: string | null, userId: string | null) => void;
+  setAuth: (userId: string | null, stellarAddress?: string | null) => void;
+  refreshStellarAddress: () => Promise<void>;
 }
-
+git checkout -b fix/f-043-remove-console-logs
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function getStoredAuth(): AuthState {
+function getStoredAuth(): { userId: string | null; stellarAddress: string | null } {
   if (typeof window === 'undefined') {
-    return { apiKey: null, userId: null, isAuthenticated: false };
+    return { userId: null, stellarAddress: null };
   }
   const userId = sessionStorage.getItem(USER_ID_KEY);
+  const stellarAddress = sessionStorage.getItem(STELLAR_ADDRESS_KEY);
+
   return {
-    // Keep API key in memory only; do not persist in browser storage.
-    apiKey: null,
     userId,
-    isAuthenticated: false,
+    stellarAddress,
   };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({ apiKey: null, userId: null, isAuthenticated: false });
+  const [state, setState] = useState<AuthState>({ 
+    userId: null, 
+    stellarAddress: null, 
+    isAuthenticated: false,
+    isHydrated: false,
+  });
 
+  // Validate session on mount by checking if the httpOnly cookie is still valid
   useEffect(() => {
-    setState(getStoredAuth());
+    const validateSession = async () => {
+      const storedAuth = getStoredAuth();
+      
+      // If no userId in storage, definitely not authenticated
+      if (!storedAuth.userId) {
+        setState({ 
+          userId: null,
+          stellarAddress: null,
+          isAuthenticated: false,
+          isHydrated: true 
+        });
+        return;
+      }
+
+      // Validate the httpOnly cookie by making an API call
+      try {
+        const { getMe } = await import('@/lib/api/user');
+        await getMe(); // If this succeeds, the cookie is valid
+        
+        // Cookie is valid, mark as authenticated
+        setState({
+          userId: storedAuth.userId,
+          stellarAddress: storedAuth.stellarAddress,
+          isAuthenticated: true,
+          isHydrated: true,
+        });
+      } catch (error) {
+        const status = (error as { status?: number })?.status;
+        
+        if (status === 401) {
+          // Cookie is invalid or expired - clear stored auth
+          // The onAuthError handler will also be triggered
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem(USER_ID_KEY);
+            sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+          }
+          clearPasscode();
+          setState({
+            userId: null,
+            stellarAddress: null,
+            isAuthenticated: false,
+            isHydrated: true,
+          });
+        } else {
+          // Network error or other transient failure
+          // Keep stored data but mark as not authenticated until retry succeeds
+          setState({
+            userId: storedAuth.userId,
+            stellarAddress: storedAuth.stellarAddress,
+            isAuthenticated: false,
+            isHydrated: true,
+          });
+        }
+      }
+    };
+
+    validateSession();
   }, []);
 
-  const setAuth = useCallback((apiKey: string | null, userId: string | null) => {
+  const setAuth = useCallback((userId: string | null, stellarAddress: string | null = null) => {
     if (typeof window !== 'undefined') {
       if (userId) {
         sessionStorage.setItem(USER_ID_KEY, userId);
+        if (stellarAddress) {
+          sessionStorage.setItem(STELLAR_ADDRESS_KEY, stellarAddress);
+        } else {
+          sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+        }
       } else {
         sessionStorage.removeItem(USER_ID_KEY);
+        sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
       }
     }
+
     setState({
-      apiKey,
       userId,
-      isAuthenticated: !!apiKey && !!userId,
+      stellarAddress,
+      isAuthenticated: !!userId,
+      isHydrated: true,
     });
   }, []);
 
+  const refreshStellarAddress = useCallback(async () => {
+    if (!state.isAuthenticated) return;
+    try {
+      const { getBalance } = await import('@/lib/api/user');
+      const balance = await getBalance();
+      
+      if (balance.stellar_address) {
+        setAuth(state.userId, balance.stellar_address);
+      }
+    } catch (e) {
+      logger.error('Failed to refresh stellar address', e);
+    }
+  }, [state.isAuthenticated, state.userId, setAuth]);
+
   const login = useCallback(
-    (apiKey: string, userId: string) => {
-      setAuth(apiKey, userId);
+    (userId: string, stellarAddress: string | null = null) => {
+      setAuth(userId, stellarAddress);
     },
     [setAuth]
   );
 
   const logout = useCallback(async () => {
-    if (state.apiKey) {
-      try {
-        await authApi.signout({ token: state.apiKey });
-      } catch {
-        // ignore network errors; clear local state anyway
-      }
+    try {
+      await authApi.signout();
+    } catch {
+      // ignore network errors; clear local state anyway
     }
+    clearPasscode(); // Clear passcode from memory
     setAuth(null, null);
-  }, [setAuth, state.apiKey]);
+  }, [setAuth]);
+
+  // Register 401 error handler: when API returns 401, clear stale auth state
+  useEffect(() => {
+    const handler = () => {
+      clearPasscode(); // Clear passcode from memory on auth error
+      setAuth(null, null);
+    };
+    
+    onAuthError(handler);
+    
+    // Cleanup: unregister handler on unmount
+    return () => {
+      onAuthError(() => {}); // Reset to no-op
+    };
+  }, [setAuth]);
 
   const value = useMemo(
     () => ({
@@ -78,8 +181,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       logout,
       setAuth,
+      refreshStellarAddress,
     }),
-    [state, login, logout, setAuth]
+    [state, login, logout, setAuth, refreshStellarAddress]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

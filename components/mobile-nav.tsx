@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Send, Coins, Briefcase, User } from "lucide-react";
+import { Home, Send, Coins, Briefcase, User, Wallet } from "lucide-react";
 
 interface NavItem {
   name: string;
@@ -20,6 +20,7 @@ const navItems: NavItem[] = [
     href: "/business",
     icon: <Briefcase className="w-5 h-5" />,
   },
+  { name: "Wallet", href: "/wallet", icon: <Wallet className="w-5 h-5" /> },
   { name: "Me", href: "/me", icon: <User className="w-5 h-5" /> },
 ];
 
@@ -40,7 +41,7 @@ export function MobileNav() {
             <Link
               key={item.href}
               href={item.href}
-              aria-label={showLabels ? undefined : item.name}
+              aria-label={item.name}
               className={`flex flex-col items-center justify-center flex-1 h-20 gap-1 transition-colors ${
                 isActive
                   ? "text-primary"
