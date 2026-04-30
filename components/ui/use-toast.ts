@@ -6,7 +6,7 @@ import * as React from 'react'
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast'
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 5000 // 5 seconds to allow animation + removal cleanup
 
 type ToasterToast = ToastProps & {
   id: string
@@ -15,12 +15,6 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
-const actionTypes = {
-  ADD_TOAST: 'ADD_TOAST',
-  UPDATE_TOAST: 'UPDATE_TOAST',
-  DISMISS_TOAST: 'DISMISS_TOAST',
-  REMOVE_TOAST: 'REMOVE_TOAST',
-} as const
 
 let count = 0
 
@@ -29,25 +23,11 @@ function genId() {
   return count.toString()
 }
 
-type ActionType = typeof actionTypes
-
 type Action =
-  | {
-      type: ActionType['ADD_TOAST']
-      toast: ToasterToast
-    }
-  | {
-      type: ActionType['UPDATE_TOAST']
-      toast: Partial<ToasterToast>
-    }
-  | {
-      type: ActionType['DISMISS_TOAST']
-      toastId?: ToasterToast['id']
-    }
-  | {
-      type: ActionType['REMOVE_TOAST']
-      toastId?: ToasterToast['id']
-    }
+  | { type: 'ADD_TOAST'; toast: ToasterToast }
+  | { type: 'UPDATE_TOAST'; toast: Partial<ToasterToast> }
+  | { type: 'DISMISS_TOAST'; toastId?: ToasterToast['id'] }
+  | { type: 'REMOVE_TOAST'; toastId?: ToasterToast['id'] }
 
 interface State {
   toasts: ToasterToast[]
