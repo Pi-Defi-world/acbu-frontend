@@ -23,7 +23,7 @@ import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
-import type { MintResponse, BurnResponse } from "@/types/api";
+import type { MintResponse, BurnResponse, CurrencyPreference } from "@/types/api";
 import { logger } from "@/lib/logger";
 
 /** Local currency units per 1 ACBU from the `/rates` oracle, or null if missing. */
@@ -75,7 +75,7 @@ export default function CurrencyPage() {
 
   // Mint state
   const [mintAmount, setMintAmount] = useState("");
-  const [mintSource, setMintSource] = useState("usdc");
+  const [mintSource, setMintSource] = useState<Exclude<CurrencyPreference, "auto">>("usdc");
   const [mintWalletAddress, setMintWalletAddress] = useState("");
 
   // Burn state
@@ -138,7 +138,7 @@ export default function CurrencyPage() {
         const res: MintResponse = await mintApi.mintFromUsdc(
           mintAmount,
           mintWalletAddress.trim(),
-          "auto",
+          mintSource,
           opts,
         );
         setLastTxId(res.transaction_id);
