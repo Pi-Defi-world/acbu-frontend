@@ -104,7 +104,7 @@ function TwoFactorForm() {
             <div>
               <label
                 htmlFor="auth-code"
-                className="text-sm font-medium text-foreground mb-2 block"
+                className="form-label"
               >
                 Authentication Code
               </label>

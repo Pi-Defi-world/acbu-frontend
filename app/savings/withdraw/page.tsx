@@ -127,12 +127,12 @@ export default function SavingsWithdrawPage() {
 
     return (
         <>
-            <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-                <div className="px-4 py-3 flex items-center gap-3">
+            <div className="page-header">
+                <div className="page-header-row">
                     <Link href="/savings">
                         <ArrowLeft className="w-5 h-5 text-primary" />
                     </Link>
-                    <h1 className="text-lg font-bold text-foreground">
+                    <h1 className="page-title">
                         Withdraw
                     </h1>
                 </div>
@@ -153,7 +153,7 @@ export default function SavingsWithdrawPage() {
                             <div className="flex items-center justify-between gap-3">
                                 <label
                                     htmlFor="withdraw-recipient"
-                                    className="text-sm font-medium text-foreground mb-2 block"
+                                    className="form-label"
                                 >
                                     Recipient
                                 </label>
@@ -181,7 +181,7 @@ export default function SavingsWithdrawPage() {
                         <div>
                             <label
                                 htmlFor="withdraw-term"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Term (seconds)
                             </label>
@@ -197,7 +197,7 @@ export default function SavingsWithdrawPage() {
                         <div>
                             <label
                                 htmlFor="withdraw-amount"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Amount
                             </label>

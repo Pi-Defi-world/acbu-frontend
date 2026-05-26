@@ -297,7 +297,7 @@ export default function CurrencyPage() {
               </Card>
 
               <div className="mb-4">
-                <Label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="form-label">
                   Amount to Mint
                 </Label>
                 <div className="flex gap-2">
@@ -323,7 +323,7 @@ export default function CurrencyPage() {
               </div>
 
               <div>
-                <Label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="form-label">
                   Destination Wallet Address
                 </Label>
                 <Input
@@ -391,7 +391,7 @@ export default function CurrencyPage() {
               </Card>
 
               <div>
-                <Label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="form-label">
                   Amount to Burn
                 </Label>
                 <div className="flex gap-2">
@@ -507,7 +507,7 @@ export default function CurrencyPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+                  <label className="form-label">
                     Recipient Country
                   </label>
                   <select
@@ -524,7 +524,7 @@ export default function CurrencyPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+                  <label className="form-label">
                     Currency
                   </label>
                   <select
@@ -541,7 +541,7 @@ export default function CurrencyPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+                  <label className="form-label">
                     Amount (ACBU)
                   </label>
                   <div className="flex gap-2">

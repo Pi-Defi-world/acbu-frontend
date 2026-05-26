@@ -1,7 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(grep -oP '`[^`]*`')",
+      "Bash(sed 's/`//g')",
+      "Bash(xargs perl -i -pe 's/sticky top-0 z-10 border-b border-border bg-card\\\\/95 backdrop-blur-sm/page-header/g')",
+      "Bash(xargs perl -i -pe 's/px-4 py-3 flex items-center gap-3/page-header-row/g')",
+      "Bash(xargs perl -i -pe 's/text-lg font-bold text-foreground/page-title/g')",
+      "Bash(xargs perl -i -pe 's/text-sm font-medium text-foreground mb-2 block/form-label/g')",
+      "Bash(xargs perl -i -pe 's/flex min-h-\\\\[400px\\\\] flex-col items-center justify-center gap-4 p-6 text-center/error-state/g')",
+      "Bash(xargs perl -i -pe 's/rounded-full bg-red-100 dark:bg-red-900\\\\/30 p-3/error-icon-wrapper/g')",
+      "Bash(xargs perl -i -pe 's/h-8 w-8 text-red-600 dark:text-red-400/error-icon/g')",
+      "Bash(xargs perl -i -pe 's/flex items-center justify-center min-w-\\\\[44px\\\\] min-h-\\\\[44px\\\\] -m-2/touch-target/g')",
+      "Bash(npx tsc *)",
+      "Bash(git -C /Users/user/Documents/Phanta/acbu-frontend diff app/burn/page.tsx)",
+      "Bash(git -C /Users/user/Documents/Phanta/acbu-frontend diff app/send/page.tsx)"
     ]
   }
 }
