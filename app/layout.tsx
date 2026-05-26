@@ -70,7 +70,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const nonce = (await headers()).get('x-nonce') || undefined;
   const lang = "en";
   // Read the nonce injected by middleware so Next.js can apply it to
   // inline scripts/styles it generates (e.g. __NEXT_DATA__).
