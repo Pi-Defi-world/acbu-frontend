@@ -360,7 +360,7 @@ export default function BillsPage() {
                                 <div>
                                     <label
                                         htmlFor="payment-amount"
-                                        className="text-sm font-medium text-foreground mb-2 block"
+                                        className="form-label"
                                     >
                                         Amount
                                     </label>
@@ -394,7 +394,7 @@ export default function BillsPage() {
                                 <div>
                                     <label
                                         htmlFor="payment-reference"
-                                        className="text-sm font-medium text-foreground mb-2 block"
+                                        className="form-label"
                                     >
                                         Reference (optional)
                                     </label>

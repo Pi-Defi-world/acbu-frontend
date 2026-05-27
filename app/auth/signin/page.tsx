@@ -128,7 +128,7 @@ function SignInForm() {
                         <div>
                             <label
                                 htmlFor="signin-detail"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Username, email, or phone
                             </label>
@@ -145,7 +145,7 @@ function SignInForm() {
                         </div>
 
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
+              <label className="form-label">
                 Passcode
               </label>
               <div className="relative">

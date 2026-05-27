@@ -146,8 +146,8 @@ export default function HelpPage() {
           </div>
 
           <Accordion type="single" collapsible className="w-full">
-            {FAQ_ITEMS.map((item, index) => (
-              <AccordionItem key={index} value={`item-${index}`}>
+            {FAQ_ITEMS.map((item) => (
+              <AccordionItem key={item.question} value={item.question}>
                 <AccordionTrigger className="text-left">
                   {item.question}
                 </AccordionTrigger>
@@ -243,7 +243,7 @@ export default function HelpPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">
+                <label className="form-label">
                   Name
                 </label>
                 <Input
@@ -259,7 +259,7 @@ export default function HelpPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">
+                <label className="form-label">
                   Email
                 </label>
                 <Input
@@ -276,7 +276,7 @@ export default function HelpPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
+              <label className="form-label">
                 Subject
               </label>
               <Input
@@ -292,7 +292,7 @@ export default function HelpPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
+              <label className="form-label">
                 Message
               </label>
               <Textarea

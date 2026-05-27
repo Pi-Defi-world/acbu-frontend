@@ -49,13 +49,13 @@ export default function LendingAdminPage() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <header className="page-header">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
           <Link href="/lending" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Back to lending">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Lending · Backoffice</h1>
+            <h1 className="page-title">Lending · Backoffice</h1>
             <p className="text-xs text-muted-foreground">Review loan applications</p>
           </div>
           <Button

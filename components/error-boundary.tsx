@@ -2,7 +2,8 @@
 
 import React, { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { logger } from '@/lib/logger';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { errorReporter } from '@/lib/error-reporting';
 
 interface Props {
   children: ReactNode;
@@ -28,7 +29,13 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    logger.error('ErrorBoundary caught an error:', { error, errorInfo });
+    errorReporter.reportError(error, {
+      level: this.props.level ?? 'component',
+      context: {
+        componentStack: errorInfo.componentStack,
+        boundary: 'ErrorBoundary',
+      },
+    });
   }
 
   handleReset = (): void => {
@@ -55,8 +62,8 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className={`flex flex-col items-center justify-center gap-4 p-6 text-center ${
           isAppLevel ? 'min-h-screen' : isPageLevel ? 'min-h-[400px]' : 'min-h-[200px]'
         }`}>
-          <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-3">
-            <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
+          <div className="error-icon-wrapper">
+            <AlertTriangle className="error-icon" />
           </div>
           
           <div className="space-y-2">

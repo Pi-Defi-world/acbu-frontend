@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
+  // Block direct access to any markdown files served from public/
+  if (request.nextUrl.pathname.endsWith('.md')) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   
   const isDev = process.env.NODE_ENV === 'development';

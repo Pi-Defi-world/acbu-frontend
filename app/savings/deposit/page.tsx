@@ -75,12 +75,12 @@ export default function SavingsDepositPage() {
 
     return (
         <>
-            <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-                <div className="px-4 py-3 flex items-center gap-3">
+            <div className="page-header">
+                <div className="page-header-row">
                     <Link href="/savings">
                         <ArrowLeft className="w-5 h-5 text-primary" />
                     </Link>
-                    <h1 className="text-lg font-bold text-foreground">
+                    <h1 className="page-title">
                         Deposit
                     </h1>
                 </div>
@@ -100,7 +100,7 @@ export default function SavingsDepositPage() {
                         <div>
                             <label
                                 htmlFor="deposit-account"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Your account
                             </label>
@@ -119,7 +119,7 @@ export default function SavingsDepositPage() {
                         <div>
                             <label
                                 htmlFor="deposit-amount"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Amount
                             </label>
@@ -136,7 +136,7 @@ export default function SavingsDepositPage() {
                         <div>
                             <label
                                 htmlFor="deposit-term"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Term (seconds)
                             </label>

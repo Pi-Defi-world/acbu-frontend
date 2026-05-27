@@ -156,7 +156,7 @@ export default function SignUpPage() {
                         <div>
                             <label
                                 htmlFor="signup-username"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Username
                             </label>
@@ -175,7 +175,7 @@ export default function SignUpPage() {
                         <div>
                             <label
                                 htmlFor="signup-passcode"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Passcode (min 12 characters)
                             </label>
@@ -236,7 +236,7 @@ export default function SignUpPage() {
                         <div>
                             <label
                                 htmlFor="confirm-passcode"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Confirm passcode
                             </label>

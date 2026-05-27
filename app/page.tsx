@@ -26,6 +26,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
+import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import * as transactionsApi from '@/lib/api/transactions';
 import * as fiatApi from '@/lib/api/fiat';
 import * as ratesApi from '@/lib/api/rates';
@@ -126,6 +127,8 @@ export default function Home() {
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [ratesLoading, setRatesLoading] = useState(true);
 
+  useScrollRestoration('/', !loading);
+
   useEffect(() => {
     let cancelled = false;
     setRatesLoading(true);
@@ -184,7 +187,7 @@ export default function Home() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <header className="page-header">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1">

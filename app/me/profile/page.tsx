@@ -185,7 +185,7 @@ export default function ProfilePage() {
         return (
             <>
                 <div className="flex items-center gap-3 border-b border-border px-4 pb-6 pt-4">
-                    <Link href="/me">
+                    <Link href="/me" aria-label="Back to profile">
                         <ArrowLeft className="h-5 w-5 text-primary" />
                     </Link>
                     <h1 className="text-xl font-bold text-foreground">
@@ -204,7 +204,7 @@ export default function ProfilePage() {
         return (
             <>
                 <div className="flex items-center gap-3 border-b border-border px-4 pb-6 pt-4">
-                    <Link href="/me">
+                    <Link href="/me" aria-label="Back to profile">
                         <ArrowLeft className="h-5 w-5 text-primary" />
                     </Link>
                     <h1 className="text-xl font-bold text-foreground">
@@ -221,7 +221,7 @@ export default function ProfilePage() {
     return (
         <>
             <div className="flex items-center gap-3 border-b border-border px-4 pb-6 pt-4">
-                <Link href="/me">
+                <Link href="/me" aria-label="Back to profile">
                     <ArrowLeft className="h-5 w-5 text-primary hover:text-primary/80" />
                 </Link>
                 <h1 className="text-xl font-bold text-foreground">Profile</h1>

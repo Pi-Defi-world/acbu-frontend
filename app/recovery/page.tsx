@@ -79,7 +79,7 @@ export default function RecoveryUnlockPage() {
                         <div>
                             <label
                                 htmlFor="recovery-code"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Recovery code
                             </label>
