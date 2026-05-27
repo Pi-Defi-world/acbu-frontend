@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Lending Admin | ACBU',
+  description: 'Manage and review loan applications, approve or reject requests, and monitor lending operations.',
+};
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Inbox, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';

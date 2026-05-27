@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'My Account | ACBU',
+  description: 'Manage your ACBU account, view your profile, access settings, and monitor your wallet activity.',
+};
+
 import React, { useState, useEffect } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';

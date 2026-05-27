@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Guardians | ACBU',
+  description: 'Manage your account guardians who can help you recover access to your ACBU account if needed.',
+};
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';

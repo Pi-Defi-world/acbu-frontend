@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Exchange Rates | ACBU',
+  description: 'View current ACBU exchange rates for multiple currencies including USD, EUR, GBP, and more.',
+};
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";

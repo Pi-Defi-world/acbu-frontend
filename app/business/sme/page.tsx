@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'SME Services | ACBU',
+  description: 'Explore ACBU services for small and medium enterprises including business accounts and payment solutions.',
+};
+
 import React from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';

@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Bill Catalog | ACBU',
+  description: 'Browse available bill payment services and providers on the ACBU platform.',
+};
+
 import React from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';

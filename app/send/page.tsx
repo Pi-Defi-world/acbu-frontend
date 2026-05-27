@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Send Money | ACBU',
+  description: 'Send ACBU tokens to other users securely. Transfer money using phone numbers, aliases, or Stellar addresses.',
+};
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import Link from "next/link";

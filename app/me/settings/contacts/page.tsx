@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Contacts | ACBU',
+  description: 'Manage your ACBU contacts for quick and easy money transfers to frequently used recipients.',
+};
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';

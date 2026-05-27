@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Wallet Settings | ACBU',
+  description: 'Manage your ACBU wallet settings, view your Stellar address, and configure wallet preferences.',
+};
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
