@@ -80,7 +80,7 @@ export default function BusinessPage() {
                 <Card className="border-border p-4 transition-all hover:border-primary hover:shadow-sm">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 bg-secondary rounded-lg"><Icon className="w-5 h-5 text-primary" /></div>
+                      <div className="p-2 bg-secondary rounded-lg"><Icon className="w-5 h-5 text-primary" aria-hidden="true" /></div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-semibold text-foreground">{service.title}</h3>
@@ -89,7 +89,7 @@ export default function BusinessPage() {
                         <p className="text-xs text-muted-foreground">{service.description}</p>
                       </div>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                    <ArrowRight className="w-5 h-5 text-muted-foreground flex-shrink-0" aria-hidden="true" />
                   </div>
                 </Card>
               </button>
@@ -100,12 +100,12 @@ export default function BusinessPage() {
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground">Additional Tools</h3>
           <Button variant="outline" className="w-full justify-between border-border bg-transparent" onClick={() => router.push('/me/settings')}>
-            <div className="flex items-center gap-2"><Settings className="w-4 h-4" /><span>Business Settings</span></div>
-            <ArrowRight className="w-4 h-4" />
+            <div className="flex items-center gap-2"><Settings className="w-4 h-4" aria-hidden="true" /><span>Business Settings</span></div>
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </Button>
           <Button variant="outline" className="w-full justify-between border-border bg-transparent" onClick={() => router.push('/me/settings')}>
-            <div className="flex items-center gap-2"><Zap className="w-4 h-4" /><span>API Integration</span></div>
-            <ArrowRight className="w-4 h-4" />
+            <div className="flex items-center gap-2"><Zap className="w-4 h-4" aria-hidden="true" /><span>API Integration</span></div>
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </Button>
         </div>
       </PageContainer>

@@ -60,8 +60,8 @@ export default function TransactionDetailPage() {
       <>
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
-            <Link href="/activity">
-              <ArrowLeft className="w-5 h-5 text-primary" />
+            <Link href="/activity" aria-label="Back to activity">
+              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
             </Link>
             <h1 className="text-lg font-bold text-foreground">Transaction</h1>
           </div>
@@ -78,8 +78,8 @@ export default function TransactionDetailPage() {
       <>
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
-            <Link href="/activity">
-              <ArrowLeft className="w-5 h-5 text-primary" />
+            <Link href="/activity" aria-label="Back to activity">
+              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
             </Link>
             <h1 className="text-lg font-bold text-foreground">Transaction</h1>
           </div>
@@ -96,8 +96,8 @@ export default function TransactionDetailPage() {
       <>
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
-            <Link href="/activity">
-              <ArrowLeft className="w-5 h-5 text-primary" />
+            <Link href="/activity" aria-label="Back to activity">
+              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
             </Link>
             <h1 className="text-lg font-bold text-foreground">Transaction</h1>
           </div>
@@ -117,8 +117,8 @@ export default function TransactionDetailPage() {
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
-          <Link href="/activity">
-            <ArrowLeft className="w-5 h-5 text-primary" />
+          <Link href="/activity" aria-label="Back to activity">
+            <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
           </Link>
           <h1 className="text-lg font-bold text-foreground truncate">
             Transaction

@@ -160,10 +160,7 @@ export default function SavingsPage() {
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
           <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Savings</h1>
+            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             <p className="text-xs text-muted-foreground">Grow your wealth</p>
           </div>
         </div>
@@ -173,7 +170,7 @@ export default function SavingsPage() {
         <div className="space-y-6">
           {receiveError && (
             <div className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
-              <AlertCircle className="h-5 w-5 shrink-0" />
+              <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
               <p className="font-medium">{receiveError}</p>
             </div>
           )}
@@ -181,7 +178,7 @@ export default function SavingsPage() {
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-lg font-bold text-foreground">Savings balance (API)</h2>
-              <PiggyBank className="w-5 h-5 text-green-600" />
+              <PiggyBank className="w-5 h-5 text-green-600" aria-hidden="true" />
             </div>
             <p className="text-3xl font-bold text-foreground mb-1">
               {positionsLoading ? "—" : `ACBU ${formatAmount(positionsBalance)}`}
@@ -202,7 +199,7 @@ export default function SavingsPage() {
               <h2 className="text-lg font-bold text-foreground">
                 Total Savings
               </h2>
-              <PiggyBank className="w-5 h-5 text-green-600" />
+              <PiggyBank className="w-5 h-5 text-green-600" aria-hidden="true" />
             </div>
             {/* AFTER */}
             <p className="text-3xl font-bold text-foreground mb-1">
@@ -212,7 +209,7 @@ export default function SavingsPage() {
               Earning 8% APY interest
             </p>
             <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
-              <TrendingUp className="w-3 h-3" />
+              <TrendingUp className="w-3 h-3" aria-hidden="true" />
             <span>+ACBU {formatAmount((totalSavings * 0.08) / 12)} this month</span>
             </div>
           </Card>
@@ -221,7 +218,7 @@ export default function SavingsPage() {
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground">Savings Goals</h3>
               <Button size="sm" variant="outline" className="h-7 border-border bg-transparent" onClick={() => setShowNewGoalDialog(true)}>
-                <Plus className="w-3 h-3 mr-1" /> New Goal
+                <Plus className="w-3 h-3 mr-1" aria-hidden="true" /> New Goal
               </Button>
             </div>
             {goals.map((goal) => {

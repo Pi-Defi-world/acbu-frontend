@@ -104,7 +104,7 @@ function SignInForm() {
                     <form onSubmit={handleSignIn} className="space-y-4">
                         {error && (
                             <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-                                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
                                 <p className="text-sm text-destructive">
                                     {error}
                                 </p>
@@ -158,9 +158,9 @@ function SignInForm() {
                   disabled={loading}
                 >
                   {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
+                    <EyeOff className="w-4 h-4" aria-hidden="true" />
                   ) : (
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-4 h-4" aria-hidden="true" />
                   )}
                 </button>
               </div>

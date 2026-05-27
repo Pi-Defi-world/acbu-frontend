@@ -225,14 +225,14 @@ export default function WalletSetupPage() {
         <Card className="border-border p-6 space-y-6">
           {error && (
             <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
           {success && (
             <div className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10">
-              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
               <p className="text-sm text-green-600">{success}</p>
             </div>
           )}
@@ -292,7 +292,7 @@ export default function WalletSetupPage() {
                 className="mb-2 -ml-2 h-8 px-2"
                 disabled={loading}
               >
-                <ChevronLeft className="w-4 h-4 mr-1" />
+                <ChevronLeft className="w-4 h-4 mr-1" aria-hidden="true" />
                 Back
               </Button>
 
@@ -302,7 +302,7 @@ export default function WalletSetupPage() {
                     <h2 className="text-lg font-semibold mb-2">Your New Wallet</h2>
                     
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-3">
-                      <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                      <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
                       <p className="text-xs text-blue-800 dark:text-blue-300">
                         Your wallet secret will be encrypted with your account passcode and stored securely on this device.
                       </p>
@@ -330,7 +330,7 @@ export default function WalletSetupPage() {
                     <h2 className="text-lg font-semibold mb-2">Import Seed</h2>
                     
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-3">
-                      <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                      <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
                       <p className="text-xs text-blue-800 dark:text-blue-300">
                         Your wallet secret will be encrypted with your account passcode and stored securely on this device.
                       </p>

@@ -58,7 +58,7 @@ export default function TransferDetailPage() {
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
             <Link href="/send" aria-label="Back to transfers">
-              <ArrowLeft className="w-5 h-5 text-primary" />
+              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
             </Link>
             <h1 className="text-lg font-bold text-foreground">Transfer</h1>
           </div>
@@ -76,7 +76,7 @@ export default function TransferDetailPage() {
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
             <Link href="/send" aria-label="Back to transfers">
-              <ArrowLeft className="w-5 h-5 text-primary" />
+              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
             </Link>
             <h1 className="text-lg font-bold text-foreground">Transfer</h1>
           </div>
@@ -94,7 +94,7 @@ export default function TransferDetailPage() {
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
             <Link href="/send" aria-label="Back to transfers">
-              <ArrowLeft className="w-5 h-5 text-primary" />
+              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
             </Link>
             <h1 className="text-lg font-bold text-foreground">Transfer</h1>
           </div>
@@ -122,7 +122,7 @@ export default function TransferDetailPage() {
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
           <Link href="/send" aria-label="Back to transfers">
-            <ArrowLeft className="w-5 h-5 text-primary" />
+            <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
           </Link>
           <h1 className="text-lg font-bold text-foreground truncate">
             {isFiatRecord ? "Faucet" : "Transfer"}

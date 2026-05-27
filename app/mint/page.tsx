@@ -412,7 +412,7 @@ export default function MintPage() {
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-4 flex items-center gap-3">
           <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
           </Link>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">Mint & Burn</h1>
@@ -553,7 +553,7 @@ export default function MintPage() {
                                 }
                                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
                             >
-                                <ArrowDown className="w-4 h-4 mr-2" />
+                                <ArrowDown className="w-4 h-4 mr-2" aria-hidden="true" />
                                 Mint ACBU
                             </Button>
                         </div>
@@ -648,7 +648,7 @@ export default function MintPage() {
                                 }
                                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
                             >
-                                <ArrowUp className="w-4 h-4 mr-2" />
+                                <ArrowUp className="w-4 h-4 mr-2" aria-hidden="true" />
                                 Continue to Burn & Redeem
                             </Button>
                         </div>

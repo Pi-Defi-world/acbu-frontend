@@ -13,7 +13,7 @@ export default function MeActivityPage() {
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
-          <Link href="/me" className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+          <Link href="/me" className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2" aria-label="Back to profile"><ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" /></Link>
           <h1 className="text-lg font-bold text-foreground">My activity</h1>
         </div>
       </div>

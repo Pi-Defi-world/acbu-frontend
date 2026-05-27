@@ -333,7 +333,7 @@ export default function SendPage() {
       <div className="px-4 py-4">
         {loadError && (
           <div className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300">
-            <AlertCircle className="h-5 w-5 shrink-0" />
+            <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
             <p className="font-medium">{loadError}</p>
           </div>
         )}
@@ -344,7 +344,7 @@ export default function SendPage() {
               onClick={() => setShowSendDialog(true)}
               className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4"
             >
-              <Plus className="mb-2 h-5 w-5" />
+              <Plus className="mb-2 h-5 w-5" aria-hidden="true" />
               <span>New Transfer</span>
             </Button>
             <Button
@@ -353,7 +353,7 @@ export default function SendPage() {
               className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full"
             >
               <Link href="/me/settings/contacts">
-                <Plus className="mb-2 h-5 w-5" />
+                <Plus className="mb-2 h-5 w-5" aria-hidden="true" />
                 <span>Add Contact</span>
               </Link>
             </Button>
@@ -540,7 +540,7 @@ export default function SendPage() {
             </div>
             <div className="flex items-center justify-center">
               <div className="rounded-full bg-secondary p-2">
-                <ArrowRight className="h-5 w-5 text-secondary-foreground" />
+                <ArrowRight className="h-5 w-5 text-secondary-foreground" aria-hidden="true" />
               </div>
             </div>
             <div className="rounded-lg border border-border bg-muted p-4">
@@ -570,7 +570,7 @@ export default function SendPage() {
         <DialogContent className="max-w-md border-border">
           <div className="flex flex-col items-center text-center py-6">
             <div className="rounded-full bg-green-100 dark:bg-green-900 p-4 mb-4">
-              <Check className="h-8 w-8 text-green-600 dark:text-green-300" />
+              <Check className="h-8 w-8 text-green-600 dark:text-green-300" aria-hidden="true" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">
               Transfer Sent!

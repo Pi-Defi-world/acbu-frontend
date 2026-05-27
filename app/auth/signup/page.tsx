@@ -139,7 +139,7 @@ export default function SignUpPage() {
                     <form onSubmit={handleSignUp} className="space-y-4">
                         {error && (
                             <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-                                <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                                <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
                                 <p className="text-sm text-destructive">
                                     {error}
                                 </p>
@@ -190,12 +190,13 @@ export default function SignUpPage() {
                                         setShowPassword(!showPassword)
                                     }
                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                                     disabled={loading}
                                 >
                                     {showPassword ? (
-                                        <EyeOff className="w-4 h-4" />
+                                        <EyeOff className="w-4 h-4" aria-hidden="true" />
                                     ) : (
-                                        <Eye className="w-4 h-4" />
+                                        <Eye className="w-4 h-4" aria-hidden="true" />
                                     )}
                                 </button>
                             </div>

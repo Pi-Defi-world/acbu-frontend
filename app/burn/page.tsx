@@ -201,7 +201,7 @@ function BurnPageContent() {
             aria-label="Go back to Mint page" 
             className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2"
           >
-            <ArrowLeft className="w-5 h-5 text-primary" />
+            <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
           </Link>
           <h1 className="text-lg font-bold text-foreground">Withdraw (Burn)</h1>
         </div>
@@ -222,7 +222,7 @@ function BurnPageContent() {
           
           {txId && (
             <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
-              <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+              <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" aria-hidden="true" />
               <p className="text-green-600 text-sm font-medium">
                 Transaction submitted successfully! ID: {txId}
               </p>

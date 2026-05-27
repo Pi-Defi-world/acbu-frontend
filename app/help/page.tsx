@@ -111,7 +111,7 @@ export default function HelpPage() {
         {/* Status Banner */}
         <Card className="mb-8 p-4 border-green-500/30 bg-green-500/10">
           <div className="flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600" />
+            <CheckCircle className="w-5 h-5 text-green-600" aria-hidden="true" />
             <div className="flex-1">
               <p className="text-sm font-medium text-green-600">
                 All systems operational
@@ -123,7 +123,7 @@ export default function HelpPage() {
                 className="text-xs text-green-600/80 hover:text-green-600 inline-flex items-center gap-1"
               >
                 View status page
-                <ExternalLink className="w-3 h-3" />
+                <ExternalLink className="w-3 h-3" aria-hidden="true" />
               </a>
             </div>
           </div>
@@ -132,7 +132,7 @@ export default function HelpPage() {
         {/* FAQ Section */}
         <Card className="mb-8 p-6">
           <div className="flex items-center gap-2 mb-6">
-            <HelpCircle className="w-6 h-6 text-primary" />
+            <HelpCircle className="w-6 h-6 text-primary" aria-hidden="true" />
             <h2 className="text-2xl font-semibold text-foreground">
               Frequently Asked Questions
             </h2>
@@ -169,7 +169,7 @@ export default function HelpPage() {
                   Technical guides
                 </p>
               </div>
-              <ExternalLink className="w-4 h-4 text-muted-foreground" />
+              <ExternalLink className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
             </a>
           </Card>
 
@@ -188,7 +188,7 @@ export default function HelpPage() {
                   Service uptime
                 </p>
               </div>
-              <ExternalLink className="w-4 h-4 text-muted-foreground" />
+              <ExternalLink className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
             </a>
           </Card>
 
@@ -205,7 +205,7 @@ export default function HelpPage() {
                   Join discussions
                 </p>
               </div>
-              <ExternalLink className="w-4 h-4 text-muted-foreground" />
+              <ExternalLink className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
             </a>
           </Card>
         </div>
@@ -213,7 +213,7 @@ export default function HelpPage() {
         {/* Contact Form */}
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-6">
-            <MessageSquare className="w-6 h-6 text-primary" />
+            <MessageSquare className="w-6 h-6 text-primary" aria-hidden="true" />
             <h2 className="text-2xl font-semibold text-foreground">
               Contact Support
             </h2>
@@ -221,7 +221,7 @@ export default function HelpPage() {
 
           {submitted && (
             <div className="mb-6 p-4 rounded-lg border border-green-500/30 bg-green-500/10 flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
               <div>
                 <p className="text-sm font-medium text-green-600">
                   Message sent successfully!

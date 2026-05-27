@@ -45,10 +45,7 @@ export default function LendingAdminPage() {
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
           <Link href="/lending" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Back to lending">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Lending · Backoffice</h1>
+            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             <p className="text-xs text-muted-foreground">Review loan applications</p>
           </div>
           <Button
@@ -57,7 +54,7 @@ export default function LendingAdminPage() {
             onClick={refresh}
             className="border-border bg-transparent"
           >
-            <RefreshCw className="w-3.5 h-3.5 mr-1" /> Refresh
+            <RefreshCw className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Refresh
           </Button>
         </div>
       </header>
@@ -84,7 +81,7 @@ export default function LendingAdminPage() {
 
             {applications.length === 0 ? (
               <Card className="border-border p-6 flex flex-col items-center text-center gap-3">
-                <Inbox className="w-10 h-10 text-muted-foreground" />
+                <Inbox className="w-10 h-10 text-muted-foreground" aria-hidden="true" />
                 <p className="text-sm font-medium text-foreground">No applications yet</p>
                 <p className="text-xs text-muted-foreground">
                   Submitted applications from{' '}
@@ -164,7 +161,7 @@ export default function LendingAdminPage() {
                           className="flex-1 border-green-500/40 text-green-700 hover:bg-green-500/10 bg-transparent dark:text-green-400"
                           onClick={() => handleDecision(app.id, 'approved')}
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Approve
+                          <CheckCircle2 className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Approve
                         </Button>
                         <Button
                           size="sm"
@@ -172,7 +169,7 @@ export default function LendingAdminPage() {
                           className="flex-1 border-destructive/40 text-destructive hover:bg-destructive/10 bg-transparent"
                           onClick={() => handleDecision(app.id, 'rejected')}
                         >
-                          <XCircle className="w-3.5 h-3.5 mr-1" /> Reject
+                          <XCircle className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Reject
                         </Button>
                       </div>
                     )}

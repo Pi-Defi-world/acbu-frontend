@@ -67,7 +67,7 @@ export default function ContactsPage() {
       <>
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
-            <Link href="/me/settings"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+            <Link href="/me/settings" aria-label="Back to settings"><ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" /></Link>
             <h1 className="text-lg font-bold text-foreground">Contacts</h1>
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function ContactsPage() {
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
-          <Link href="/me/settings"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+          <Link href="/me/settings" aria-label="Back to settings"><ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" /></Link>
           <h1 className="text-lg font-bold text-foreground">Contacts</h1>
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function ContactsPage() {
         <div className="space-y-2">
           {contacts.length === 0 ? (
             <EmptyState
-              icon={<UserPlus className="w-10 h-10" />}
+              icon={<UserPlus className="w-10 h-10" aria-hidden="true" />}
               title="No contacts yet"
               description="Add your first contact above to quickly send money to friends and family."
             />

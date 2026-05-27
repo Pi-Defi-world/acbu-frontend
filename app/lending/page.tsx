@@ -234,10 +234,7 @@ export default function LendingPage() {
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
           <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Lending</h1>
+            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             <p className="text-xs text-muted-foreground">Apply for a loan</p>
           </div>
           <Link
@@ -254,7 +251,7 @@ export default function LendingPage() {
           <Card className="border-border bg-gradient-to-br from-amber-500/10 to-amber-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-sm font-semibold text-foreground">Lending position</h2>
-              <Wallet className="w-5 h-5 text-amber-600" />
+              <Wallet className="w-5 h-5 text-amber-600" aria-hidden="true" />
             </div>
             <p className="text-2xl font-bold text-foreground">
               {balanceLoading
@@ -288,7 +285,7 @@ export default function LendingPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-lg bg-muted">
-                        <Icon className="w-5 h-5" />
+                        <Icon className="w-5 h-5" aria-hidden="true" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
@@ -370,19 +367,19 @@ export default function LendingPage() {
 
               {formError && (
                 <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
-                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
                   <p>{formError}</p>
                 </div>
               )}
               {successMessage && (
                 <div className="flex items-start gap-2 rounded-lg border border-green-500/30 bg-green-500/5 p-3 text-xs text-green-700 dark:text-green-400">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
                   <p>{successMessage}</p>
                 </div>
               )}
               {warningMessage && (
                 <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-400">
-                  <Clock className="h-4 w-4 shrink-0 mt-0.5" />
+                  <Clock className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
                   <p>{warningMessage}</p>
                 </div>
               )}

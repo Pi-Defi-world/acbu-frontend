@@ -120,7 +120,7 @@ export default function FiatSimPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <Card className="p-5 space-y-4">
             <div className="flex items-center gap-2 font-semibold">
-              <Plus className="w-5 h-5 text-primary" />
+              <Plus className="w-5 h-5 text-primary" aria-hidden="true" />
               <h2>Request test tokens (faucet)</h2>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -154,7 +154,7 @@ export default function FiatSimPage() {
 
         <div className="space-y-3">
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Building2 className="w-5 h-5" />
+            <Building2 className="w-5 h-5" aria-hidden="true" />
             Basket currencies
           </h2>
 

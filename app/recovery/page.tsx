@@ -46,7 +46,7 @@ export default function RecoveryUnlockPage() {
                         href="/auth/signin"
                         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
                     >
-                        <ArrowLeft className="w-4 h-4" />
+                        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
                         Back to sign in
                     </Link>
                     <div className="mb-8">
@@ -62,7 +62,7 @@ export default function RecoveryUnlockPage() {
                     <form onSubmit={handleUnlock} className="space-y-4">
                         {error && (
                             <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-                                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
                                 <p className="text-sm text-destructive">
                                     {error}
                                 </p>

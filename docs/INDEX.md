@@ -116,6 +116,21 @@ Topics:
   • Future enhancements
 ```
 
+### 7. **WCAG_ALT_TEXT.md** ♿ Accessibility Guidelines
+```
+What: WCAG 1.1.1 alt text compliance guidelines
+Who: Developers & Designers
+Duration: 15 minutes
+Topics:
+  • When to use alt text
+  • Alt text best practices
+  • Component usage guide
+  • Testing for compliance
+  • Content vs decorative images
+  • Icon accessibility
+  • WCAG 1.1.1 requirement details
+```
+
 ---
 
 ## 🗂️ Directory Structure
@@ -128,7 +143,8 @@ docs/
 ├── ROUTES.md             ← Navigation reference
 ├── ARCHITECTURE.md       ← System design
 ├── DIAGRAMS.md           ← Visual guides
-└── MIGRATION.md          ← Change log
+├── MIGRATION.md          ← Change log
+└── WCAG_ALT_TEXT.md      ← Accessibility guidelines
 
 app/
 ├── page.tsx              ← Home dashboard
@@ -207,6 +223,9 @@ components/
 ### "What's the color system?"
 → Check [`QUICK_REFERENCE.md`](./QUICK_REFERENCE.md) section "Color Reference"
 
+### "How do I make images WCAG compliant?"
+→ Check [`WCAG_ALT_TEXT.md`](./WCAG_ALT_TEXT.md) for alt text guidelines
+
 ---
 
 ## 🎯 By Role
@@ -224,6 +243,7 @@ Essential reading:
 - [`QUICK_REFERENCE.md`](./QUICK_REFERENCE.md) - Cheat sheet
 - [`ROUTES.md`](./ROUTES.md) - Routes & navigation
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) - System design
+- [`WCAG_ALT_TEXT.md`](./WCAG_ALT_TEXT.md) - Accessibility compliance
 - Code examples in pages
 
 ### Backend Developer
@@ -238,6 +258,7 @@ Essential reading:
 - [`README.md`](./README.md) - Design system
 - [`QUICK_REFERENCE.md`](./QUICK_REFERENCE.md) - Color & components
 - [`DIAGRAMS.md`](./DIAGRAMS.md) - Layouts & flows
+- [`WCAG_ALT_TEXT.md`](./WCAG_ALT_TEXT.md) - Image accessibility
 - Component library in shadcn/ui
 
 ### Architect
@@ -298,6 +319,9 @@ Essential reading:
 - 🚀 **QUICK_REFERENCE.md** - Cheat sheet
 - 🗺️ **ROUTES.md** - Navigation
 - 🏗️ **ARCHITECTURE.md** - System design
+- 📊 **DIAGRAMS.md** - Visual guides
+- 🔄 **MIGRATION.md** - Change log
+- ♿ **WCAG_ALT_TEXT.md** - Accessibility
 - 📊 **DIAGRAMS.md** - Visual guides
 - 🔄 **MIGRATION.md** - Changes
 - 📚 **INDEX.md** - This file

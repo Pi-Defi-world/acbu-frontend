@@ -39,7 +39,7 @@ export default function GlobalError({
       <body>
         <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-6 text-center bg-background">
           <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-4">
-            <AlertTriangle className="h-12 w-12 text-red-600 dark:text-red-400" />
+            <AlertTriangle className="h-12 w-12 text-red-600 dark:text-red-400" aria-hidden="true" />
           </div>
           
           <div className="space-y-3 max-w-md">
@@ -76,7 +76,7 @@ export default function GlobalError({
 
           <div className="flex gap-3">
             <Button onClick={reset} variant="outline" size="default">
-              <RefreshCw className="w-4 h-4 mr-2" />
+              <RefreshCw className="w-4 h-4 mr-2" aria-hidden="true" />
               Try again
             </Button>
             <Button onClick={handleReload} variant="default" size="default">

@@ -70,8 +70,8 @@ export default function SavingsDepositPage() {
         <>
             <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
                 <div className="px-4 py-3 flex items-center gap-3">
-                    <Link href="/savings">
-                        <ArrowLeft className="w-5 h-5 text-primary" />
+                    <Link href="/savings" aria-label="Back to savings">
+                        <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
                     </Link>
                     <h1 className="text-lg font-bold text-foreground">
                         Deposit
@@ -82,7 +82,7 @@ export default function SavingsDepositPage() {
                 <Card className="border-border p-4 space-y-4">
                     {error && (
                         <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
-                            <AlertCircle className="h-4 w-4 shrink-0" />
+                            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                             <p>{error}</p>
                         </div>
                     )}

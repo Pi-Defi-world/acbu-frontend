@@ -59,7 +59,7 @@ export default function RatesPage() {
             aria-label="Go back" 
             className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2"
           >
-            <ArrowLeft className="w-5 h-5 text-primary" />
+            <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
           </Link>
           <h1 className="text-lg font-bold text-foreground">Rates</h1>
         </div>

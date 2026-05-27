@@ -31,7 +31,7 @@ export default function AuthError({
   return (
     <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-6 text-center">
       <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-3">
-        <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
+        <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" aria-hidden="true" />
       </div>
       
       <div className="space-y-2">
@@ -48,11 +48,11 @@ export default function AuthError({
 
       <div className="flex gap-2">
         <Button onClick={reset} variant="outline" size="sm">
-          <RefreshCw className="w-4 h-4 mr-2" />
+          <RefreshCw className="w-4 h-4 mr-2" aria-hidden="true" />
           Try again
         </Button>
         <Button onClick={handleGoToSignIn} variant="default" size="sm">
-          <LogIn className="w-4 h-4 mr-2" />
+          <LogIn className="w-4 h-4 mr-2" aria-hidden="true" />
           Sign in
         </Button>
       </div>

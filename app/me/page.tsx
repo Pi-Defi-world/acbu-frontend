@@ -75,7 +75,7 @@ function KycBadge({ status, loading }: { status: KycStatus | undefined | null; l
   const { label, className, Icon } = getKycBadgeConfig(status);
   return (
     <Badge variant="outline" className={`text-xs font-medium gap-1 px-2 py-0.5 ${className}`}>
-      <Icon className="w-3 h-3 flex-shrink-0" />
+      <Icon className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
       {label}
     </Badge>
   );
@@ -239,11 +239,11 @@ export default function MePage() {
                     <Link key={item.href} href={item.href} className="w-full text-left transition-colors active:bg-muted">
                       <div className="rounded-lg border border-border bg-card p-4 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <Icon className="w-5 h-5 text-primary flex-shrink-0" />
+                          <Icon className="w-5 h-5 text-primary flex-shrink-0" aria-hidden="true" />
                           <span className="font-medium text-foreground text-sm truncate">{item.title}</span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                          <ArrowRight className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                         </div>
                       </div>
                     </Link>
@@ -254,7 +254,7 @@ export default function MePage() {
           ))}
 
           <Button variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 bg-transparent mt-6" onClick={() => setShowLogoutConfirm(true)}>
-            <LogOut className="w-4 h-4 mr-2" />Sign Out
+            <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />Sign Out
           </Button>
         </div>
       </PageContainer>

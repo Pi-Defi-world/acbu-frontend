@@ -20,7 +20,7 @@ function MetricLabel({ label, tip }: { label: string; tip: string }) {
       <Tooltip>
         <TooltipTrigger asChild>
           <a href={DOCS_URL} target="_blank" rel="noopener noreferrer" aria-label={`Learn more: ${label}`}>
-            <Info className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-primary transition-colors" />
+            <Info className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-primary transition-colors" aria-hidden="true" />
           </a>
         </TooltipTrigger>
         <TooltipContent>{tip}</TooltipContent>
@@ -69,7 +69,7 @@ export default function ReservesPage() {
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
-          <Link href="/me" className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+          <Link href="/me" className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2" aria-label="Back to profile"><ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" /></Link>
           <h1 className="text-lg font-bold text-foreground">Reserves</h1>
         </div>
       </div>

@@ -196,7 +196,7 @@ export default function WalletPage() {
         <div className="space-y-6">
           {successMsg && (
             <div className="flex items-center gap-2 rounded-lg bg-green-100 dark:bg-green-900/30 p-3 border border-green-200 dark:border-green-800">
-              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" aria-hidden="true" />
               <p className="text-sm font-medium text-green-800 dark:text-green-300">{successMsg}</p>
             </div>
           )}
@@ -222,7 +222,7 @@ export default function WalletPage() {
                 variant="outline"
               >
                 <div className="p-2 bg-primary/10 rounded-full text-primary">
-                  <Wallet className="w-5 h-5" />
+                  <Wallet className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <div className="text-left">
                   <span className="font-semibold block">Generate New Wallet</span>
@@ -238,7 +238,7 @@ export default function WalletPage() {
                 variant="outline"
               >
                 <div className="p-2 bg-primary/10 rounded-full text-primary">
-                  <Key className="w-5 h-5" />
+                  <Key className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <div className="text-left">
                   <span className="font-semibold block">Import Existing Seed</span>
@@ -254,7 +254,7 @@ export default function WalletPage() {
                 className="w-full h-auto py-4 flex items-center justify-start gap-4 px-5 bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <div className="p-2 bg-primary-foreground/20 rounded-full">
-                  <LinkIcon className="w-5 h-5" />
+                  <LinkIcon className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <div className="text-left">
                   <span className="font-semibold block">
@@ -287,7 +287,7 @@ export default function WalletPage() {
 
               {error && (
                 <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10 mb-4">
-                  <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
                   <p className="text-sm text-destructive">{error}</p>
                 </div>
               )}
@@ -297,7 +297,7 @@ export default function WalletPage() {
                   <h2 className="text-lg font-semibold">Your New Wallet</h2>
                   
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                    <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
                     <p className="text-xs text-blue-800 dark:text-blue-300">
                       Your wallet secret will be encrypted with your account passcode and stored securely on this device.
                     </p>
@@ -322,7 +322,7 @@ export default function WalletPage() {
                   <h2 className="text-lg font-semibold">Import Seed</h2>
                   
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                    <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
                     <p className="text-xs text-blue-800 dark:text-blue-300">
                       Your wallet secret will be encrypted with your account passcode and stored securely on this device.
                     </p>

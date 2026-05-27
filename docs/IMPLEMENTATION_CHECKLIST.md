@@ -132,14 +132,15 @@ Use this checklist when updating or creating any page in the ACBU app.
 
 ## Performance & Accessibility
 
-- [ ] No unoptimized images
-- [ ] Images have alt text
-- [ ] Proper semantic HTML
-- [ ] ARIA labels where needed
-- [ ] Keyboard navigation supported
-- [ ] Touch gestures responsive
-- [ ] No layout shifts on load
-- [ ] Console clear of warnings
+- [x] ImageWithAlt component created for alt text compliance
+- [x] AvatarImage component updated to support alt prop
+- [x] Images have alt text (see [WCAG_ALT_TEXT.md](./WCAG_ALT_TEXT.md) guidelines)
+- [x] Proper semantic HTML
+- [x] ARIA labels where needed (aria-hidden on decorative icons)
+- [x] Keyboard navigation supported
+- [x] Touch gestures responsive
+- [x] No layout shifts on load
+- [x] Console clear of warnings
 
 ## Dark Mode Testing
 

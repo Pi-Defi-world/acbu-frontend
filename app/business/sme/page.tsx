@@ -19,8 +19,8 @@ export default function SmePage() {
     <>
       <div className="border-b border-border bg-card/95 backdrop-blur-sm sticky top-0 z-10">
         <div className="px-4 py-3 flex items-center gap-3">
-          <Link href="/business" className="text-primary">
-            <ArrowLeft className="w-5 h-5" />
+          <Link href="/business" className="text-primary" aria-label="Back to business">
+            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
           </Link>
           <div>
             <h1 className="text-lg font-bold text-foreground">SME Services</h1>
@@ -33,7 +33,7 @@ export default function SmePage() {
         <Card className="border-border p-6 space-y-4">
           <div className="flex items-start gap-4">
             <div className="rounded-2xl bg-secondary p-3">
-              <Briefcase className="w-6 h-6 text-primary" />
+              <Briefcase className="w-6 h-6 text-primary" aria-hidden="true" />
             </div>
             <div>
               <h2 className="text-xl font-semibold text-foreground">SME onboarding</h2>
@@ -56,7 +56,7 @@ export default function SmePage() {
             <Button className="w-full justify-between" asChild>
               <a href={mailtoLink} className="flex items-center justify-between gap-3">
                 <span>Apply for SME services</span>
-                <Mail className="w-4 h-4" />
+                <Mail className="w-4 h-4" aria-hidden="true" />
               </a>
             </Button>
 

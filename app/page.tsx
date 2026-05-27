@@ -201,7 +201,7 @@ export default function Home() {
               className="absolute top-4 right-4 p-1.5 hover:bg-muted rounded-full transition-colors flex-shrink-0 z-10"
               aria-label={showBalance ? 'Hide balances' : 'Show balances'}
             >
-              {showBalance ? <Eye className="w-4 h-4 text-muted-foreground" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+              {showBalance ? <Eye className="w-4 h-4 text-muted-foreground" aria-hidden="true" /> : <EyeOff className="w-4 h-4 text-muted-foreground" aria-hidden="true" />}
             </button>
             <div className="flex items-start gap-3 pr-12 mb-1">
               <div className="flex-1 min-w-0 border-r border-border/60 pr-3">
@@ -274,7 +274,7 @@ export default function Home() {
               return (
                 <Link key={feature.href} href={feature.href} className="block">
                   <div className={`${feature.color} rounded-lg border border-border/50 p-4 h-full transition-all active:scale-95`}>
-                    <Icon className={`w-6 h-6 ${feature.iconColor} mb-2`} />
+                    <Icon className={`w-6 h-6 ${feature.iconColor} mb-2`} aria-hidden="true" />
                     <h3 className="text-sm font-semibold text-foreground mb-0.5">{feature.title}</h3>
                     <p className="text-xs text-muted-foreground">{feature.description}</p>
                   </div>
@@ -293,7 +293,7 @@ export default function Home() {
               <SkeletonList count={3} itemHeight="h-20" />
             ) : transactions.length === 0 ? (
               <EmptyState
-                icon={<Clock className="w-10 h-10" />}
+                icon={<Clock className="w-10 h-10" aria-hidden="true" />}
                 title="No recent activity"
                 action={
                   <Link href="/send" className="text-xs text-primary font-medium">

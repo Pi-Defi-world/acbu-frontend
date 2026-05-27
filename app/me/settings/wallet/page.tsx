@@ -86,9 +86,10 @@ export default function WalletPage() {
         <div className="px-4 py-3 flex items-center gap-3">
           <Link
             href="/me/settings"
+            aria-label="Back to settings"
             className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2"
           >
-            <ArrowLeft className="w-5 h-5 text-primary" />
+            <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
           </Link>
           <h1 className="text-lg font-bold text-foreground">Wallet Settings</h1>
         </div>
@@ -104,20 +105,20 @@ export default function WalletPage() {
             <>
               {error && (
                 <div className="flex gap-2 rounded-lg bg-destructive/10 p-3 border border-destructive/20">
-                  <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
                   <p className="text-sm text-destructive">{error}</p>
                 </div>
               )}
               {success && (
                 <div className="flex gap-2 rounded-lg bg-green-500/10 p-3 border border-green-500/20">
-                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
                   <p className="text-sm text-green-600">{success}</p>
                 </div>
               )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Key className="w-4 h-4" /> Connected Stellar Address
+                  <Key className="w-4 h-4" aria-hidden="true" /> Connected Stellar Address
                 </label>
                 {stellarAddress ? (
                   <div className="p-3 rounded-lg bg-muted border border-border">
@@ -148,7 +149,7 @@ export default function WalletPage() {
                   onClick={handleRemoveWallet}
                   disabled={loading}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
                   {hasLocalSecret ? "Remove Local Wallet" : "Reset Wallet Connection"}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-3 text-center">

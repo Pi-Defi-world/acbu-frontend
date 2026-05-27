@@ -65,7 +65,7 @@ export default function GuardiansPage() {
       <>
         <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 py-3 flex items-center gap-3">
-            <Link href="/me/settings"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+            <Link href="/me/settings" aria-label="Back to settings"><ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" /></Link>
             <h1 className="text-lg font-bold text-foreground">Guardians</h1>
           </div>
         </div>
@@ -80,7 +80,7 @@ export default function GuardiansPage() {
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
-          <Link href="/me/settings"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+          <Link href="/me/settings" aria-label="Back to settings"><ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" /></Link>
           <h1 className="text-lg font-bold text-foreground">Guardians</h1>
         </div>
       </div>
@@ -93,7 +93,7 @@ export default function GuardiansPage() {
         <div className="space-y-2">
           {guardians.length === 0 ? (
             <EmptyState
-              icon={<Shield className="w-10 h-10" />}
+              icon={<Shield className="w-10 h-10" aria-hidden="true" />}
               title="No guardians yet"
               description="Add trusted guardians who can help you recover your account if needed."
             />

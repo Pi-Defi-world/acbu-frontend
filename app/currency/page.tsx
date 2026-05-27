@@ -363,7 +363,7 @@ export default function CurrencyPage() {
                 }
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
               >
-                <ArrowDown className="w-4 h-4 mr-2" />
+                <ArrowDown className="w-4 h-4 mr-2" aria-hidden="true" />
                 Mint ACBU
               </Button>
             </div>
@@ -492,7 +492,7 @@ export default function CurrencyPage() {
                 }
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
               >
-                <ArrowUp className="w-4 h-4 mr-2" />
+                <ArrowUp className="w-4 h-4 mr-2" aria-hidden="true" />
                 Burn & Withdraw
               </Button>
             </div>
@@ -602,7 +602,7 @@ export default function CurrencyPage() {
 
                 <Card className="border-border bg-muted p-3">
                   <div className="flex items-start gap-2 mb-3">
-                    <TrendingUp className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
+                    <TrendingUp className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" aria-hidden="true" />
                     <div className="text-sm">
                       <p className="font-medium text-foreground">
                         {estimatedIntlLocal != null

@@ -65,8 +65,8 @@ export default function SecurityPage() {
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
-          <Link href="/me/settings">
-            <ArrowLeft className="w-5 h-5 text-primary" />
+          <Link href="/me/settings" aria-label="Back to settings">
+            <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
           </Link>
           <div>
             <h1 className="text-lg font-bold text-foreground">Security</h1>
@@ -86,7 +86,7 @@ export default function SecurityPage() {
           <Card className="border-border p-4">
             <div className="flex items-center gap-4">
               <div className="bg-primary/10 p-2 rounded-full">
-                <Shield className="w-5 h-5 text-primary" />
+                <Shield className="w-5 h-5 text-primary" aria-hidden="true" />
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-base font-medium text-foreground">Two-Factor Authentication</h2>
@@ -99,7 +99,7 @@ export default function SecurityPage() {
                 {is2faEnabled ? '2FA is enabled on this account.' : '2FA is currently disabled.'}
               </p>
               <Button variant="outline" onClick={() => setMessage('Rotate device flow started.')}>
-                <Zap className="w-4 h-4 mr-2" />
+                <Zap className="w-4 h-4 mr-2" aria-hidden="true" />
                 Rotate Device
               </Button>
             </div>
@@ -143,7 +143,7 @@ export default function SecurityPage() {
           <Card className="border-border p-4">
             <div className="flex items-center gap-4 mb-4">
               <div className="bg-primary/10 p-2 rounded-full">
-                <Key className="w-5 h-5 text-primary" />
+                <Key className="w-5 h-5 text-primary" aria-hidden="true" />
               </div>
               <div>
                 <h2 className="text-base font-medium text-foreground">API Keys</h2>
@@ -169,7 +169,7 @@ export default function SecurityPage() {
             </div>
             <div className="mt-4">
               <Button onClick={createApiKey} className="w-full sm:w-auto">
-                <Globe className="w-4 h-4 mr-2" />
+                <Globe className="w-4 h-4 mr-2" aria-hidden="true" />
                 Create API key
               </Button>
             </div>
@@ -178,7 +178,7 @@ export default function SecurityPage() {
           <Card className="border-destructive/20 border p-4">
             <div className="flex items-start gap-4">
               <div className="bg-destructive/10 p-2 rounded-full mt-0.5">
-                <AlertTriangle className="w-5 h-5 text-destructive" />
+                <AlertTriangle className="w-5 h-5 text-destructive" aria-hidden="true" />
               </div>
               <div className="flex-1 min-w-0 space-y-3">
                 <div>
@@ -186,7 +186,7 @@ export default function SecurityPage() {
                   <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data. This action cannot be undone.</p>
                 </div>
                 <Button variant="destructive" className="w-full sm:w-auto">
-                  <Trash2 className="w-4 h-4 mr-2" />
+                  <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" />
                   Delete Account
                 </Button>
               </div>

@@ -88,6 +88,21 @@ const itemMediaVariants = cva(
   },
 )
 
+/**
+ * ItemMedia - Container for media in an Item component
+ *
+ * Usage with images (WCAG 1.1.1 compliant):
+ * @example
+ * <ItemMedia variant="image">
+ *   <img src="/product.jpg" alt="Product name and description" />
+ * </ItemMedia>
+ *
+ * For decorative images:
+ * @example
+ * <ItemMedia variant="image">
+ *   <img src="/decoration.svg" alt="" aria-hidden="true" />
+ * </ItemMedia>
+ */
 function ItemMedia({
   className,
   variant = 'default',
