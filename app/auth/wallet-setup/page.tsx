@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
 import { storeWalletSecret } from "@/lib/wallet-storage";
-import { getPasscode } from "@/lib/passcode-manager";
+import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, CheckCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 
@@ -45,19 +45,19 @@ export default function WalletSetupPage() {
     const passcode = getPasscode();
     if (!passcode) {
       // Passcode lost on refresh, clear temp data and redirect to signin
-      sessionStorage.removeItem("temp_passphrase");
+      clearTempPassphrase();
       router.push("/auth/signin");
       return;
     }
 
     // If user already has a wallet address, skip setup and go home
-    if (stellarAddress && !sessionStorage.getItem("temp_passphrase")) {
+    if (stellarAddress && !getTempPassphrase()) {
       router.push("/");
       return;
     }
 
     // Check if we have an auto-generated passphrase from signin
-    const autoGenPassphrase = sessionStorage.getItem("temp_passphrase");
+    const autoGenPassphrase = getTempPassphrase();
     if (autoGenPassphrase) {
       setPassphrase(autoGenPassphrase);
       setOption(1); // Show the confirmation step
@@ -115,8 +115,8 @@ export default function WalletSetupPage() {
       await syncWalletToBackend(passphrase);
       setSuccess("Wallet set up successfully!");
       
-      // Clean up session storage
-      sessionStorage.removeItem("temp_passphrase");
+      // Clean up in-memory temp passphrase
+      clearTempPassphrase();
       
       // Refresh user context to update stellar address
       await refreshStellarAddress();
@@ -147,8 +147,8 @@ export default function WalletSetupPage() {
       await syncWalletToBackend(importSeed);
       setSuccess("Wallet imported successfully!");
       
-      // Clean up session storage
-      sessionStorage.removeItem("temp_passphrase");
+      // Clean up in-memory temp passphrase
+      clearTempPassphrase();
       
       // Refresh user context
       await refreshStellarAddress();
