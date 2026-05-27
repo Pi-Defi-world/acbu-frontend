@@ -39,8 +39,12 @@ function TwoFactorForm() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const storedToken = sessionStorage.getItem(CHALLENGE_TOKEN_KEY);
-    if (storedToken) {
+    const passcode = getPasscode();
+    if (storedToken && passcode) {
       setChallengeToken(storedToken);
+    } else {
+      // Always require a fresh challenge — clear stale token on mount
+      sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
     }
     setChecked(true);
   }, []);
@@ -57,15 +61,6 @@ function TwoFactorForm() {
       }
       if (!challengeToken) {
         setError("Missing challenge. Please sign in again.");
-        return;
-      }
-
-      // Guard: If passcode is missing after page refresh, require re-authentication
-      const passcode = getPasscode();
-      if (!passcode) {
-        setError("Session expired. Please sign in again.");
-        sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
-        setTimeout(() => router.push('/auth/signin'), 2000);
         return;
       }
 
