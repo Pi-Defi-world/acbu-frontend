@@ -3,8 +3,17 @@
 import { useEffect, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { logger } from '@/lib/logger';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { errorReporter } from '@/lib/error-reporting';
+
+function getUserId(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return sessionStorage.getItem('acbu_user_id');
+  } catch {
+    return null;
+  }
+}
 
 export default function Error({
   error,
@@ -16,7 +25,14 @@ export default function Error({
   const router = useRouter();
 
   useEffect(() => {
-    logger.error('Application error:', error);
+    errorReporter.reportError(error, {
+      level: 'page',
+      context: {
+        route: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+        digest: error.digest,
+        userId: getUserId(),
+      },
+    });
   }, [error]);
 
   const handleGoHome = () => {
@@ -33,11 +49,11 @@ export default function Error({
   };
 
   return (
-    <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-6 text-center">
-      <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-3">
-        <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
+    <div className="error-state">
+      <div className="error-icon-wrapper">
+        <AlertTriangle className="error-icon" />
       </div>
-      
+
       <div className="space-y-2">
         <h2 className="text-xl font-semibold text-foreground">Page Error</h2>
         <p className="text-sm text-muted-foreground max-w-md">
@@ -48,7 +64,7 @@ export default function Error({
             Error ID: {error.digest}
           </p>
         )}
-        
+
         {process.env.NODE_ENV === 'development' && (
           <details className="mt-4 text-left">
             <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">

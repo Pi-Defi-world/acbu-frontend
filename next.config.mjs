@@ -3,9 +3,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  images: {
-    unoptimized: true,
-  },
   // Don't advertise the framework to reduce attack surface
   poweredByHeader: false,
   async redirects() {
