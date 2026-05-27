@@ -178,7 +178,7 @@ export default function Home() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <header className="page-header">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1">
