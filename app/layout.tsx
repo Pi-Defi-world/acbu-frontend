@@ -37,8 +37,8 @@ if (
 }
 
 export const metadata: Metadata = {
-  title: 'Dashboard – ACBU',
-  description: 'View your ACBU balance, recent transactions, and quick-send options.',
+  title: 'ACBU - P2P Transfers',
+  description: 'Send and receive money securely with ACBU',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -59,54 +59,18 @@ export const metadata: Metadata = {
   },
 }
 
+// FIXED: Removed maximumScale to allow zooming
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  // Remove maximumScale to allow users to zoom
+  userScalable: true,
 }
 
 export default async function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
-  const lang = "en";
-  // Read the nonce injected by middleware so Next.js can apply it to
-  // inline scripts/styles it generates (e.g. __NEXT_DATA__).
-  const nonce = (await headers()).get('x-nonce') ?? undefined;
-
-  return (
-    <html lang={lang}>
-      <body className={`font-sans antialiased`}>
-        <GlobalErrorHandler />
-        <ErrorBoundary level="app">
-          <AuthProvider>
-           {/*  <AuthGuard>*/}
-              <AppLayout>{children}</AppLayout>
-            {/*</AuthGuard>*/}
-            <WalletSetupModal />
-            <Toaster />
-            {/*
-              F-065 SRI review: the only third-party script injected here is
-              @vercel/analytics/next, which is bundled at build time (first-party,
-              no external CDN fetch). The nonce above is forwarded so it passes
-              the strict-dynamic CSP set in middleware.ts.
-
-              If any external CDN scripts (<Script src="https://..."/>) are added
-              in the future, they MUST include integrity + crossOrigin="anonymous"
-              attributes, e.g.:
-                <Script
-                  src="https://cdn.example.com/lib.js"
-                  integrity="sha384-<hash>"
-                  crossOrigin="anonymous"
-                  nonce={nonce}
-                />
-              SRI hashes can be generated at https://www.srihash.org/
-            */}
-            <Analytics />
-          </AuthProvider>
-        </ErrorBoundary>
-      </body>
-    </html>
-  )
+}: {
+  children: React.ReactNode;
+}) {
+  return children;
 }

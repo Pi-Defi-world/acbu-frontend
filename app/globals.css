@@ -37,6 +37,15 @@
   --sidebar-accent-foreground: oklch(0.98 0 0);
   --sidebar-border: oklch(0.92 0 0);
   --sidebar-ring: oklch(0.35 0.12 280);
+  --status-success: oklch(0.95 0.05 160);
+  --status-success-foreground: oklch(0.28 0.08 160);
+  --status-success-border: oklch(0.86 0.07 160);
+  --status-warning: oklch(0.96 0.04 95);
+  --status-warning-foreground: oklch(0.4 0.07 95);
+  --status-warning-border: oklch(0.88 0.06 95);
+  --status-neutral: var(--secondary);
+  --status-neutral-foreground: var(--secondary-foreground);
+  --status-neutral-border: color-mix(in oklab, var(--secondary) 70%, var(--border));
 }
 
 .dark {
@@ -51,7 +60,7 @@
   --secondary: oklch(0.28 0.06 280);
   --secondary-foreground: oklch(0.95 0 0);
   --muted: oklch(0.28 0 0);
-  --muted-foreground: oklch(0.65 0 0);
+  --muted-foreground: oklch(0.75 0 0);
   --accent: oklch(0.65 0.15 160);
   --accent-foreground: oklch(0.12 0 0);
   --destructive: oklch(0.55 0.2 20);
@@ -72,6 +81,15 @@
   --sidebar-accent-foreground: oklch(0.12 0 0);
   --sidebar-border: oklch(0.28 0 0);
   --sidebar-ring: oklch(0.65 0.12 280);
+  --status-success: oklch(0.3 0.07 160);
+  --status-success-foreground: oklch(0.93 0.03 160);
+  --status-success-border: oklch(0.42 0.08 160);
+  --status-warning: oklch(0.32 0.06 95);
+  --status-warning-foreground: oklch(0.95 0.03 95);
+  --status-warning-border: oklch(0.44 0.07 95);
+  --status-neutral: var(--secondary);
+  --status-neutral-foreground: var(--secondary-foreground);
+  --status-neutral-border: color-mix(in oklab, var(--secondary) 75%, var(--border));
 }
 
 @theme inline {
@@ -113,6 +131,15 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-status-success: var(--status-success);
+  --color-status-success-foreground: var(--status-success-foreground);
+  --color-status-success-border: var(--status-success-border);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-foreground: var(--status-warning-foreground);
+  --color-status-warning-border: var(--status-warning-border);
+  --color-status-neutral: var(--status-neutral);
+  --color-status-neutral-foreground: var(--status-neutral-foreground);
+  --color-status-neutral-border: var(--status-neutral-border);
 }
 
 @layer base {
