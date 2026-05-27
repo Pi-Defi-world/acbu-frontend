@@ -125,6 +125,12 @@ async function request<T>(
     controller.abort();
   }, DEFAULT_TIMEOUT);
 
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    throw new Error(
+      'You appear to be offline. Please check your internet connection and try again.',
+    );
+  }
+
   let res: Response;
   try {
     res = await fetch(url, {
