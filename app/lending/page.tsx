@@ -18,7 +18,11 @@ import { formatAmount } from '@/lib/utils';
 import {
   listApplications,
   saveApplication,
+  listActiveLoans,
+  upsertActiveLoan,
+  recordRepayment,
   type StoredLoanApplication,
+  type StoredActiveLoan,
 } from '@/lib/lending-store';
 
 interface LoanProduct {
@@ -94,9 +98,13 @@ export default function LendingPage() {
   const [warningMessage, setWarningMessage] = useState('');
 
   const [applications, setApplications] = useState<StoredLoanApplication[]>([]);
+  const [activeLoans, setActiveLoans] = useState<StoredActiveLoan[]>([]);
+  const [repayingId, setRepayingId] = useState<string | null>(null);
+  const [repayAmounts, setRepayAmounts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setApplications(listApplications());
+    setActiveLoans(listActiveLoans());
   }, []);
 
   useEffect(() => {
@@ -129,6 +137,37 @@ export default function LendingPage() {
       })
       .finally(() => {
         if (!cancelled) setBalanceLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiUser, opts.token]);
+
+  useEffect(() => {
+    if (!apiUser) return;
+    let cancelled = false;
+    lendingApi
+      .getActiveLoans(apiUser, opts)
+      .then((res) => {
+        if (cancelled) return;
+        const stored = res.loans.map((l) => ({
+          loan_id: l.loan_id,
+          product_id: l.product_id,
+          product_name: l.product_name,
+          principal: l.principal,
+          outstanding: l.outstanding,
+          term_months: l.term_months,
+          rate_pct: l.rate_pct,
+          status: l.status,
+          disbursed_at: l.disbursed_at,
+          due_at: l.due_at,
+        }));
+        let current = listActiveLoans();
+        stored.forEach((l) => { current = upsertActiveLoan(l); });
+        setActiveLoans(current);
+      })
+      .catch(() => {
+        /* use local cache on failure */
       });
     return () => {
       cancelled = true;
@@ -217,6 +256,14 @@ export default function LendingPage() {
     resetForm();
     setSubmitting(false);
 
+    // Emit LoanCreatedEvent so other parts of the app can react
+    window.dispatchEvent(
+      new CustomEvent('LoanCreatedEvent', {
+        detail: { loanId, productId: selectedProduct.id, amount: parsedAmount, term: parsedTerm, synced },
+        bubbles: true,
+      })
+    );
+
     if (synced) {
       setSuccessMessage(`Application submitted. Reference: ${loanId}`);
     } else {
@@ -227,6 +274,38 @@ export default function LendingPage() {
           : 'Pending backend sync — backoffice stub captured the submission.'
       );
     }
+  };
+
+  const handleRepay = async (loan: StoredActiveLoan) => {
+    const rawAmount = repayAmounts[loan.loan_id] ?? '';
+    const amount = parseFloat(rawAmount);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+
+    setRepayingId(loan.loan_id);
+    let updatedLoans: StoredActiveLoan[];
+
+    try {
+      const res = await lendingApi.repayLoan({ loan_id: loan.loan_id, amount }, opts);
+      updatedLoans = recordRepayment(loan.loan_id, res.amount_paid);
+      window.dispatchEvent(
+        new CustomEvent('RepaymentEvent', {
+          detail: { loanId: loan.loan_id, amountPaid: res.amount_paid, outstanding: res.outstanding, fullyRepaid: res.fully_repaid },
+          bubbles: true,
+        })
+      );
+    } catch {
+      updatedLoans = recordRepayment(loan.loan_id, amount);
+      window.dispatchEvent(
+        new CustomEvent('RepaymentEvent', {
+          detail: { loanId: loan.loan_id, amountPaid: amount, outstanding: Math.max(0, loan.outstanding - amount), fullyRepaid: false },
+          bubbles: true,
+        })
+      );
+    }
+
+    setActiveLoans(updatedLoans);
+    setRepayAmounts((prev) => { const next = { ...prev }; delete next[loan.loan_id]; return next; });
+    setRepayingId(null);
   };
 
   return (
@@ -392,6 +471,55 @@ export default function LendingPage() {
               </Button>
             </form>
           </Card>
+
+          {activeLoans.filter((l) => l.status === 'active').length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Active loans</h3>
+              <div className="space-y-3">
+                {activeLoans.filter((l) => l.status === 'active').map((loan) => (
+                  <Card key={loan.loan_id} className="border-border p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground text-sm">
+                          {loan.product_name ?? loan.product_id}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Outstanding: ACBU {formatAmount(loan.outstanding)} / {formatAmount(loan.principal)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          {loan.term_months} months · {loan.rate_pct}% APR
+                        </p>
+                      </div>
+                      <Badge variant="default" className="text-[10px]">Active</Badge>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        min={0.01}
+                        max={loan.outstanding}
+                        step="any"
+                        placeholder={`Up to ${formatAmount(loan.outstanding)}`}
+                        value={repayAmounts[loan.loan_id] ?? ''}
+                        onChange={(e) =>
+                          setRepayAmounts((prev) => ({ ...prev, [loan.loan_id]: e.target.value }))
+                        }
+                        className="border-border h-8 text-sm"
+                      />
+                      <Button
+                        size="sm"
+                        disabled={repayingId === loan.loan_id || !repayAmounts[loan.loan_id]}
+                        onClick={() => handleRepay(loan)}
+                        className="shrink-0"
+                      >
+                        {repayingId === loan.loan_id ? 'Paying…' : 'Repay'}
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">

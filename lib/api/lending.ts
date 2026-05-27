@@ -4,7 +4,10 @@ import type {
   LendingBalanceResponse,
   LendingDepositBody,
   LendingWithdrawBody,
-  ApplyLoanBody
+  ApplyLoanBody,
+  ActiveLoansResponse,
+  RepayLoanBody,
+  RepayLoanResponse,
 } from '@/types/api';
 
 export async function getLendingBalance(
@@ -33,4 +36,18 @@ export async function applyForLoan(
   opts?: RequestOptions
 ): Promise<{ success: boolean; loanId?: string }> {
   return post('/lending/apply', body, opts);
+}
+
+export async function getActiveLoans(
+  borrower: string,
+  opts?: RequestOptions
+): Promise<ActiveLoansResponse> {
+  return get<ActiveLoansResponse>(`/lending/loans?borrower=${encodeURIComponent(borrower)}`, opts);
+}
+
+export async function repayLoan(
+  body: RepayLoanBody,
+  opts?: RequestOptions
+): Promise<RepayLoanResponse> {
+  return post<RepayLoanResponse>('/lending/repay', body, opts);
 }

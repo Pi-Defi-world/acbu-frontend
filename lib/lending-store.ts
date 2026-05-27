@@ -65,3 +65,59 @@ export function updateApplicationStatus(
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   return next;
 }
+
+// ─── Active Loans (local cache for offline/stub support) ─────────────────────
+
+export interface StoredActiveLoan {
+  loan_id: string;
+  product_id: string;
+  product_name?: string;
+  principal: number;
+  outstanding: number;
+  term_months: number;
+  rate_pct: number;
+  status: 'active' | 'repaid' | 'defaulted';
+  disbursed_at: string;
+  due_at?: string;
+}
+
+const LOANS_KEY = 'acbu:lending:active_loans';
+
+export function listActiveLoans(): StoredActiveLoan[] {
+  if (!hasWindow()) return [];
+  try {
+    const raw = window.localStorage.getItem(LOANS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (l): l is StoredActiveLoan =>
+        !!l && typeof l === 'object' && typeof (l as StoredActiveLoan).loan_id === 'string'
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function upsertActiveLoan(loan: StoredActiveLoan): StoredActiveLoan[] {
+  if (!hasWindow()) return [];
+  const current = listActiveLoans();
+  const next = [loan, ...current.filter((l) => l.loan_id !== loan.loan_id)];
+  window.localStorage.setItem(LOANS_KEY, JSON.stringify(next));
+  return next;
+}
+
+export function recordRepayment(
+  loan_id: string,
+  amount: number
+): StoredActiveLoan[] {
+  if (!hasWindow()) return [];
+  const current = listActiveLoans();
+  const next = current.map((l) => {
+    if (l.loan_id !== loan_id) return l;
+    const outstanding = Math.max(0, l.outstanding - amount);
+    return { ...l, outstanding, status: outstanding === 0 ? ('repaid' as const) : l.status };
+  });
+  window.localStorage.setItem(LOANS_KEY, JSON.stringify(next));
+  return next;
+}

@@ -306,6 +306,36 @@ export interface ApplyLoanBody {
   term: number;
 }
 
+export interface LoanItem {
+  loan_id: string;
+  product_id: string;
+  product_name?: string;
+  principal: number;
+  outstanding: number;
+  term_months: number;
+  rate_pct: number;
+  status: 'active' | 'repaid' | 'defaulted';
+  disbursed_at: string;
+  due_at?: string;
+}
+
+export interface ActiveLoansResponse {
+  loans: LoanItem[];
+}
+
+export interface RepayLoanBody {
+  loan_id: string;
+  amount: number;
+}
+
+export interface RepayLoanResponse {
+  success: boolean;
+  loan_id: string;
+  amount_paid: number;
+  outstanding: number;
+  fully_repaid: boolean;
+}
+
 // Recipient
 export interface RecipientResponse {
   resolved?: boolean;
