@@ -9,6 +9,7 @@ import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ArrowLeft, Clock } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
+import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import * as transactionsApi from '@/lib/api/transactions';
 import type { TransactionListItem } from '@/types/api';
 import { formatAcbu, formatAmount } from '@/lib/utils';
@@ -25,6 +26,8 @@ export default function ActivityPage() {
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  useScrollRestoration('/activity', !loading);
 
   useEffect(() => {
     let cancelled = false;

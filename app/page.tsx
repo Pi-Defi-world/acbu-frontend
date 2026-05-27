@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
+import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import * as transactionsApi from '@/lib/api/transactions';
 import * as fiatApi from '@/lib/api/fiat';
 import * as ratesApi from '@/lib/api/rates';
@@ -119,6 +120,8 @@ export default function Home() {
   const [fiatLoading, setFiatLoading] = useState(true);
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [ratesLoading, setRatesLoading] = useState(true);
+
+  useScrollRestoration('/', !loading);
 
   useEffect(() => {
     let cancelled = false;

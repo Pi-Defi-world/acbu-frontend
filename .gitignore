@@ -29,6 +29,6 @@ next-env.d.ts
 package-lock.json
 pnpm-lock.yaml
 
-.pnpm-store/
-.history/*
+# prevent documentation files from being accidentally served as static assets
+/public/**/*.md
 
