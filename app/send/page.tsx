@@ -33,6 +33,7 @@ import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
 import type { TransferItem, ContactItem } from "@/types/api";
 import { formatAmount } from "@/lib/utils";
+import { useDebounce } from "@/hooks/use-debounce";
 import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import {
@@ -152,6 +153,7 @@ export default function SendPage() {
       setAmount(v);
     }
   }, []);
+  const debouncedAmount = useDebounce(amount, 300);
   const handleNoteChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNote(e.target.value), []);
   const handleSendDialogClose = useCallback(() => setShowSendDialog(false), []);
   const handleShowConfirmDialog = useCallback(() => {
@@ -253,14 +255,14 @@ export default function SendPage() {
   }, [confirmedAmount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance, clearError]);
 
   const exceedsBalance =
-    balance !== null && amount !== "" && parseFloat(amount) > balance;
+    balance !== null && debouncedAmount !== "" && parseFloat(debouncedAmount) > balance;
 
   const isFormValid = useMemo(() => {
-    return amount &&
-      parseFloat(amount) > 0 &&
+    return debouncedAmount &&
+      parseFloat(debouncedAmount) > 0 &&
       !exceedsBalance &&
       ((useContact && selectedContact) || (!useContact && customRecipient.trim()));
-  }, [amount, exceedsBalance, useContact, selectedContact, customRecipient]);
+  }, [debouncedAmount, exceedsBalance, useContact, selectedContact, customRecipient]);
 
   const transfersList = useMemo(() => {
     if (loadingTransfers) {
