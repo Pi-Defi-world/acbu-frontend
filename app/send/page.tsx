@@ -314,9 +314,9 @@ export default function SendPage() {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <header className="page-header">
         <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-foreground mb-3">
+          <h1 className="page-title mb-3">
             Send Money
           </h1>
           <TabsList className="bg-muted inline-flex h-10 items-center justify-start rounded-lg p-1 text-muted-foreground">

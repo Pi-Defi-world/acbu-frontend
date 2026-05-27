@@ -240,8 +240,8 @@ export default function MePage() {
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0 text-white text-lg font-bold">{initials}</div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <h1 className="text-lg font-bold text-foreground truncate">{displayName}</h1>
-                <LocalKycBadge status={user?.kyc_status} loading={loading} />
+                <h1 className="page-title truncate">{displayName}</h1>
+                <KycBadge status={user?.kyc_status} />
               </div>
               <p className="text-xs text-muted-foreground truncate">{user?.email || user?.phone_e164 || '—'}</p>
             </div>
@@ -299,7 +299,7 @@ export default function MePage() {
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-50 flex items-end bg-black/50">
           <div className="w-full max-w-md bg-card p-6 rounded-t-xl border-t border-border">
-            <h3 className="text-lg font-bold text-foreground mb-2">Sign Out</h3>
+            <h3 className="page-title mb-2">Sign Out</h3>
             <p className="text-sm text-muted-foreground mb-6">You'll be logged out of your account. You can log back in anytime.</p>
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1 border-border bg-transparent" onClick={() => setShowLogoutConfirm(false)}>Cancel</Button>

@@ -22,7 +22,9 @@ export default function SettingsPage() {
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
-          <Link href="/me"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+          <Link href="/me" aria-label="Back to profile">
+            <ArrowLeft className="w-5 h-5 text-primary" />
+          </Link>
           <h1 className="text-lg font-bold text-foreground">Settings</h1>
         </div>
       </div>
