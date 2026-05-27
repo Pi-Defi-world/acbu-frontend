@@ -87,20 +87,22 @@ function LocalKycBadge({ status, loading }: { status: KycStatus | undefined | nu
 }
 
 const menuItems = [
-  { 
-    section: 'Account', 
+  {
+    section: 'Account',
     items: [
-      { title: 'Profile', icon: User, href: '/me/profile' }, 
-      { title: 'Settings', icon: Settings, href: '/me/settings' }, 
-      { title: 'Two-Factor Auth', icon: Shield, href: '/me/settings/security' }, 
-      { title: 'Wallet', icon: Eye, href: '/wallet' }, 
+      { title: 'Profile', icon: User, href: '/me/profile' },
+      { title: 'Settings', icon: Settings, href: '/me/settings' },
+      { title: 'Two-Factor Auth', icon: Shield, href: '/me/settings/security' },
+      { title: 'Wallet', icon: Eye, href: '/wallet' },
       { title: 'Simulated Bank', icon: Building2, href: '/fiat' }
-    ] 
+    ]
   },
-  { section: 'Support', items: [
-    { title: 'Activity History', icon: Clock, href: '/activity' },
-    { title: 'Help Center', icon: HelpCircle, href: '/help' }
-  ] },
+  {
+    section: 'Support', items: [
+      { title: 'Activity History', icon: Clock, href: '/activity' },
+      { title: 'Help Center', icon: HelpCircle, href: '/help' }
+    ]
+  },
 ];
 
 export default function MePage() {
@@ -177,7 +179,7 @@ export default function MePage() {
       try {
         const freshUserData = await userApi.getMe(opts);
         const nextStatus = freshUserData.kyc_status?.toLowerCase() || '';
-        
+
         setUser(freshUserData);
 
         if (TERMINAL_KYC_STATUSES.has(nextStatus)) {
@@ -273,7 +275,7 @@ export default function MePage() {
                 {section.items.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <Link key={item.href} href={item.href} className="w-full text-left transition-colors active:bg-muted">
+                    <Link key={item.href} href={item.href} prefetch={false} className="w-full text-left transition-colors active:bg-muted">
                       <div className="rounded-lg border border-border bg-card p-4 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <Icon className="w-5 h-5 text-primary flex-shrink-0" />
