@@ -7,9 +7,11 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { useApiOpts, useApiError } from "@/hooks/use-api";
+import { ArrowLeft, CheckCircle } from "lucide-react";
+import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
+import { SkeletonList } from "@/components/ui/skeleton-list";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -29,7 +31,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { cn } from "@/lib/utils";
 
 const burnSchema = z.object({
   acbuAmount: z.string().refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -56,7 +57,6 @@ const formatCurrency = (amount: string, currency: string) => {
   if (isNaN(value)) return "";
 
   try {
-    // Use current browser locale for proper grouping separators
     return new Intl.NumberFormat(navigator.language || 'en-US', {
       style: "currency",
       currency,
@@ -71,23 +71,15 @@ function BurnPageContent() {
   const searchParams = useSearchParams();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
-  
-  // Initialize from search params if available
-  const [acbuAmount, setAcbuAmount] = useState(searchParams.get("amount") || "");
-  const [currency, setCurrency] = useState(searchParams.get("currency") || "NGN");
-  
-  const [accountNumber, setAccountNumber] = useState("");
-  const [bankCode, setBankCode] = useState("");
-  const [accountName, setAccountName] = useState("");
-  const { error, clearError, handleError } = useApiError();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
 
   const form = useForm<BurnFormValues>({
     resolver: zodResolver(burnSchema),
     defaultValues: {
-      acbuAmount: "",
-      currency: "NGN",
+      acbuAmount: searchParams.get("amount") || "",
+      currency: searchParams.get("currency") || "NGN",
       accountNumber: "",
       bankCode: "",
       accountName: "",
@@ -95,28 +87,15 @@ function BurnPageContent() {
     mode: "onChange",
   });
 
-  const isValid =
-    acbuAmount &&
-    parseFloat(acbuAmount) > 0 &&
-    currency.length === 3 &&
-    accountNumber.trim().length >= 5 &&
-    accountNumber.trim().length <= 20 &&
-    bankCode.trim().length >= 3 &&
-    bankCode.trim().length <= 10 &&
-    accountName.trim().length >= 3 &&
-    accountName.trim().length <= 100;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isValid) return;
+  const onSubmit = async (values: BurnFormValues) => {
     clearError();
     setLoading(true);
     setTxId(null);
-    
+
     try {
       if (!userId) throw new Error("Not signed in");
       if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
-      
+
       const recipientAccount: BurnRecipientAccount = {
         account_number: values.accountNumber.trim(),
         bank_code: values.bankCode.trim(),
@@ -126,7 +105,7 @@ function BurnPageContent() {
 
       const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
       let burnTxHash: string;
-      
+
       if (secret) {
         const localPubKey = Keypair.fromSecret(secret).publicKey();
         if (stellarAddress && localPubKey !== stellarAddress) {
@@ -184,13 +163,15 @@ function BurnPageContent() {
         burnTxHash,
       );
       setTxId(res.transaction_id);
-      form.reset({ ...values, acbuAmount: "" }); // Reset amount but keep details for convenience? Or full reset?
+      form.reset({ ...values, acbuAmount: "" });
     } catch (e) {
-      handleError(e);
+      setApiError(e);
     } finally {
       setLoading(false);
     }
   };
+
+  const currency = form.watch("currency");
 
   return (
     <>
@@ -198,7 +179,7 @@ function BurnPageContent() {
         <div className="page-header-row">
           <Link
             href="/mint"
-            aria-label="Go back to Mint page" 
+            aria-label="Go back to Mint page"
             className="touch-target"
           >
             <ArrowLeft className="w-5 h-5 text-primary" />
@@ -215,12 +196,6 @@ function BurnPageContent() {
             <ApiErrorDisplay error={uiError} onDismiss={clearError} />
           )}
           {txId && (
-            <p className="text-green-600 text-sm">
-              Transaction submitted: {txId}
-            </p>
-          )}
-          
-          {txId && (
             <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
               <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
               <p className="text-green-600 text-sm font-medium">
@@ -230,7 +205,7 @@ function BurnPageContent() {
           )}
 
           <Form {...form}>
-            <form onSubmit={formHandleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="acbuAmount"
@@ -360,15 +335,34 @@ function BurnPageContent() {
                   </FormItem>
                 )}
               />
-            </div>
-            <Button
-              type="submit"
-              disabled={!isValid || loading || isSubmitDisabled}
-              className="w-full"
-            >
-              {loading ? "Submitting..." : "Burn & Withdraw"}
-            </Button>
-          </form>
+
+              <Button
+                type="submit"
+                disabled={!form.formState.isValid || loading || isSubmitDisabled}
+                className="w-full"
+              >
+                {loading ? "Submitting..." : "Burn & Withdraw"}
+              </Button>
+            </form>
+          </Form>
+        </Card>
+      </PageContainer>
+    </>
+  );
+}
+
+function BurnPageSkeleton() {
+  return (
+    <>
+      <div className="page-header">
+        <div className="page-header-row">
+          <div className="w-9 h-9" />
+          <div className="h-6 w-40 bg-accent animate-pulse rounded-md" />
+        </div>
+      </div>
+      <PageContainer>
+        <Card className="border-border p-4 space-y-4">
+          <SkeletonList count={5} itemHeight="h-14" />
         </Card>
       </PageContainer>
     </>
@@ -377,7 +371,7 @@ function BurnPageContent() {
 
 export default function BurnPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<BurnPageSkeleton />}>
       <BurnPageContent />
     </Suspense>
   );
