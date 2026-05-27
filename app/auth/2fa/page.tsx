@@ -10,8 +10,10 @@ import { AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import * as authApi from '@/lib/api/auth';
 import { getPasscode } from '@/lib/passcode-manager';
+import { isSafeRedirect } from '@/lib/redirect';
 
 const CHALLENGE_TOKEN_KEY = '2fa_challenge_token';
+const POST_AUTH_REDIRECT_KEY = 'post_auth_redirect';
 
 export default function TwoFactorPage() {
   return (
@@ -72,7 +74,12 @@ function TwoFactorForm() {
       const result = await authApi.verify2fa(challengeToken, code);
       login(result.api_key!, result.user_id, result.stellar_address);
       sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
-      router.push('/');
+
+      // honor a stored safe post-auth redirect if present
+      const stored = typeof window !== 'undefined' ? sessionStorage.getItem(POST_AUTH_REDIRECT_KEY) : null;
+      if (typeof window !== 'undefined') sessionStorage.removeItem(POST_AUTH_REDIRECT_KEY);
+      const safe = isSafeRedirect(stored);
+      router.push(safe ?? '/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {
