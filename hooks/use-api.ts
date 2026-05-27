@@ -1,6 +1,6 @@
 import { useMemo, useCallback, useState } from 'react';
 import type { RequestOptions } from '@/lib/api/client';
-import { mapApiError } from '@/lib/api/client';
+import { getApiErrorMessage } from '@/lib/api/client';
 
 /**
  * Returns RequestOptions for use with API modules.
@@ -29,7 +29,7 @@ export function useApiError() {
   const clearError = useCallback(() => setErrorState(''), []);
 
   const handleError = useCallback((e: unknown) => {
-    setErrorState(mapApiError(e));
+    setErrorState(getApiErrorMessage(e));
   }, []);
 
   const setError = useCallback((msg: string) => setErrorState(msg), []);

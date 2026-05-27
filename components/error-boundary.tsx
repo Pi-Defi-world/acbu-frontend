@@ -55,8 +55,8 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className={`flex flex-col items-center justify-center gap-4 p-6 text-center ${
           isAppLevel ? 'min-h-screen' : isPageLevel ? 'min-h-[400px]' : 'min-h-[200px]'
         }`}>
-          <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-3">
-            <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
+          <div className="error-icon-wrapper">
+            <AlertTriangle className="error-icon" />
           </div>
           
           <div className="space-y-2">

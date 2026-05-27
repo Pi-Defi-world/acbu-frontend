@@ -409,13 +409,13 @@ export default function MintPage() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <header className="page-header">
         <div className="px-4 py-4 flex items-center gap-3">
           <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Mint & Burn</h1>
+            <h1 className="page-title">Mint & Burn</h1>
             <p className="text-xs text-muted-foreground">Create and redeem ACBU</p>
           </div>
         </div>
@@ -478,7 +478,7 @@ export default function MintPage() {
                             <div>
                                 <label
                                     htmlFor="fiat-account"
-                                    className="text-sm font-medium text-foreground mb-2 block"
+                                    className="form-label"
                                 >
                                     Basket currency (demo fiat path)
                                 </label>
@@ -502,7 +502,7 @@ export default function MintPage() {
                             <div className="mt-4">
                                 <label
                                     htmlFor="fiat-amount"
-                                    className="text-sm font-medium text-foreground mb-2 block"
+                                    className="form-label"
                                 >
                                     Amount to Exchange
                                 </label>
@@ -571,7 +571,7 @@ export default function MintPage() {
                             <div>
                                 <label
                                     htmlFor="burn-fiat-account"
-                                    className="text-sm font-medium text-foreground mb-2 block"
+                                    className="form-label"
                                 >
                                     Basket currency (burn slice)
                                 </label>
@@ -595,7 +595,7 @@ export default function MintPage() {
                             <div className="mt-4">
                                 <label
                                     htmlFor="burn-amount"
-                                    className="text-sm font-medium text-foreground mb-2 block"
+                                    className="form-label"
                                 >
                                     Amount to Burn
                                 </label>

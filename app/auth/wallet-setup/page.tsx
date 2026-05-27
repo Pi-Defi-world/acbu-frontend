@@ -214,9 +214,9 @@ export default function WalletSetupPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <div className="page-header">
         <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-foreground">Finish Wallet Setup</h1>
+          <h1 className="page-title">Finish Wallet Setup</h1>
           <p className="text-xs text-muted-foreground">Complete your wallet activation</p>
         </div>
       </div>
