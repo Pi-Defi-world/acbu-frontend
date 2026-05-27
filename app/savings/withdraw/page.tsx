@@ -6,10 +6,23 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
+import * as recipientApi from "@/lib/api/recipient";
+import type { RecipientResponse } from "@/types/api";
+
+import { resolveRecipient } from "@/lib/api/recipient";
+
+async function resolveUserUri(raw: string, opts: Parameters<typeof resolveRecipient>[1]): Promise<string> {
+  try {
+    const r = await resolveRecipient(raw, opts);
+    if (r.pay_uri) return r.pay_uri;
+    if (r.alias) return r.alias;
+  } catch { /* fall through */ }
+  return raw;
+}
 import { logger } from "@/lib/logger";
 
 export default function SavingsWithdrawPage() {
@@ -18,8 +31,11 @@ export default function SavingsWithdrawPage() {
     const [recipient, setRecipient] = useState("");
     const [termSeconds, setTermSeconds] = useState("0");
     const [amount, setAmount] = useState("");
+    const [resolving, setResolving] = useState(false);
+    const [user, setUser] = useState("");
     const [loading, setLoading] = useState(false);
-    const { error, clearError, handleError } = useApiError();
+    const { uiError, setApiError: handleError, clearError } = useApiError();
+    const error = uiError?.message ?? "";
     const [success, setSuccess] = useState("");
     const [editingRecipient, setEditingRecipient] = useState(false);
     const [resolvedRecipient, setResolvedRecipient] = useState<RecipientResponse | null>(null);
@@ -36,7 +52,7 @@ export default function SavingsWithdrawPage() {
     useEffect(() => {
         let cancelled = false;
         setResolving(true);
-        setError("");
+        // error cleared via clearError
 
         userApi
             .getReceive(opts)
@@ -50,7 +66,7 @@ export default function SavingsWithdrawPage() {
                 // Resolve through backend recipient resolver so phone-based IDs,
                 // aliases, and other non-Stellar identifiers are accepted.
                 const resolved = await resolveUserUri(uri, opts);
-                if (!cancelled) setUser(resolved);
+                if (!cancelled) { setUser(resolved); setHomeRecipient(resolved); }
             })
             .catch((e) => {
                 logger.error(
@@ -94,7 +110,7 @@ export default function SavingsWithdrawPage() {
         try {
             await savingsApi.savingsWithdraw(
                 {
-                    user: targetRecipient,
+                    user: recipient.trim() || homeRecipient.trim(),
                     term_seconds: parseInt(termSeconds, 10) || 0,
                     amount,
                 },

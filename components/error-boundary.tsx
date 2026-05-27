@@ -2,6 +2,7 @@
 
 import React, { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 interface Props {

@@ -5,8 +5,13 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Info } from 'lucide-react';
 import { useApiOpts, useApiError } from '@/hooks/use-api';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import * as reservesApi from '@/lib/api/reserves';
 import type { ReservesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
@@ -31,7 +36,7 @@ function MetricLabel({ label, tip }: { label: string; tip: string }) {
 
 export default function ReservesPage() {
   const opts = useApiOpts();
-  const { error, handleError } = useApiError();
+  const { uiError: error, setApiError: handleError } = useApiError();
   const [data, setData] = useState<ReservesResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -74,7 +79,7 @@ export default function ReservesPage() {
         </div>
       </div>
       <PageContainer>
-        {error && <p className="text-destructive text-sm mb-3">{error}</p>}
+        {error && <p className="text-destructive text-sm mb-3">{error.message}</p>}
         {loading ? (
           <Skeleton className="h-24 w-full" />
         ) : data ? (

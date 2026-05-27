@@ -28,7 +28,8 @@ import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts, useApiError } from "@/hooks/use-api";
-import { mapApiError } from "@/lib/api/client";
+import { useToast } from "@/hooks/use-toast";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { useBalance } from "@/hooks/use-balance";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
@@ -100,8 +101,6 @@ export default function SendPage() {
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [transfersError, setTransfersError] = useState("");
   const [contactsError, setContactsError] = useState("");
-  const [submitError, setSubmitError] = useState("");
-  dev
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
   
@@ -128,14 +127,11 @@ export default function SendPage() {
   }, [opts]);
 
   const loadContacts = useCallback(async () => {
-    setLoadError("");
+    setContactsError("");
     try {
       const data = await userApi.getContacts(opts);
       setContacts(data.contacts ?? []);
-    }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts'));
-  }, [opts]);
-      setContactsError("");
-    }).catch((e) => {
+    } catch (e) {
       const message = e instanceof Error ? e.message : "Failed to load contacts";
       setContactsError(message);
       toast({
@@ -143,9 +139,10 @@ export default function SendPage() {
         description: message,
         variant: "destructive",
       });
-    }).finally(() => setLoadingContacts(false));
+    } finally {
+      setLoadingContacts(false);
+    }
   }, [opts, toast]);
- dev
 
   useEffect(() => {
     loadTransfers();
@@ -158,10 +155,15 @@ export default function SendPage() {
       : customRecipient.trim(),
   [useContact, selectedContact, customRecipient]);
 
+  const isFormValid = useCallback(() => {
+    const to = getToValue();
+    return !!to && !!amount && parseFloat(amount) > 0 && !isSubmitDisabled;
+  }, [getToValue, amount, isSubmitDisabled]);
+
   const handleConfirmTransfer = useCallback(async () => {
     const to = getToValue();
     if (!amount || parseFloat(amount) <= 0 || !to) return;
-    clearSubmitError();
+    clearError();
     setSending(true);
     
     try {
@@ -244,7 +246,7 @@ export default function SendPage() {
       }, 2500);
       
     } catch (e) {
-      handleSubmitError(e);
+      setApiError(e);
     } finally {
       setSending(false);
     }

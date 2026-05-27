@@ -7,8 +7,8 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
@@ -79,7 +79,7 @@ function BurnPageContent() {
   const [accountNumber, setAccountNumber] = useState("");
   const [bankCode, setBankCode] = useState("");
   const [accountName, setAccountName] = useState("");
-  const { error, clearError, handleError } = useApiError();
+  const { uiError, setApiError: handleError, clearError, isSubmitDisabled } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
 
@@ -106,9 +106,7 @@ function BurnPageContent() {
     accountName.trim().length >= 3 &&
     accountName.trim().length <= 100;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isValid) return;
+  const onSubmit = async (values: BurnFormValues) => {
     clearError();
     setLoading(true);
     setTxId(null);
@@ -230,7 +228,7 @@ function BurnPageContent() {
           )}
 
           <Form {...form}>
-            <form onSubmit={formHandleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="acbuAmount"
@@ -360,7 +358,6 @@ function BurnPageContent() {
                   </FormItem>
                 )}
               />
-            </div>
             <Button
               type="submit"
               disabled={!isValid || loading || isSubmitDisabled}
@@ -369,6 +366,7 @@ function BurnPageContent() {
               {loading ? "Submitting..." : "Burn & Withdraw"}
             </Button>
           </form>
+          </Form>
         </Card>
       </PageContainer>
     </>

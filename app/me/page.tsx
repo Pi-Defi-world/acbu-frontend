@@ -5,11 +5,10 @@ import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, HelpCircle } from 'lucide-react';
+import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, HelpCircle, CheckCircle2, Clock3, XCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useBalance } from '@/hooks/use-balance';
 import { useApiOpts } from '@/hooks/use-api';
-import { Badge } from '@/components/ui/badge';
 import { KycBadge } from '@/components/ui/kyc-badge';
 import { formatAmount } from '@/lib/utils';
 import * as userApi from '@/lib/api/user';
@@ -68,18 +67,6 @@ function getKycBadgeConfig(status: KycStatus | undefined | null): KycBadgeConfig
   }
 }
 
-function KycBadge({ status, loading }: { status: KycStatus | undefined | null; loading: boolean }) {
-  if (loading) {
-    return <div className="h-5 w-24 rounded-full bg-muted animate-pulse" />;
-  }
-  const { label, className, Icon } = getKycBadgeConfig(status);
-  return (
-    <Badge variant="outline" className={`text-xs font-medium gap-1 px-2 py-0.5 ${className}`}>
-      <Icon className="w-3 h-3 flex-shrink-0" />
-      {label}
-    </Badge>
-  );
-}
 
 const menuItems = [
   { 
@@ -205,7 +192,7 @@ export default function MePage() {
               </div>
               <p className="text-xs text-muted-foreground truncate">{user?.email || user?.phone_e164 || '—'}</p>
               <div className="mt-1.5">
-                <KycBadge status={user?.kyc_status} loading={loading} />
+                <KycBadge status={user?.kyc_status} />
               </div>
             </div>
           </div>

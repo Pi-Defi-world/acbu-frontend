@@ -2,7 +2,8 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
 import * as authApi from '@/lib/api/auth';
-import { onAuthError, setToken } from '@/lib/api/client';
+import { onAuthError } from '@/lib/api/client';
+import { clearPasscode } from '@/lib/passcode-manager';
 import { logger } from '@/lib/logger';
 
 const USER_ID_KEY = 'acbu_user_id';
@@ -21,7 +22,6 @@ interface AuthContextValue extends AuthState {
   setAuth: (userId: string | null, stellarAddress?: string | null) => void;
   refreshStellarAddress: () => Promise<void>;
 }
-git checkout -b fix/f-043-remove-console-logs
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getStoredAuth(): { userId: string | null; stellarAddress: string | null } {

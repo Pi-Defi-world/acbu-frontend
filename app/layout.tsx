@@ -37,8 +37,8 @@ if (
 }
 
 export const metadata: Metadata = {
-  title: 'ACBU - P2P Transfers',
-  description: 'Send and receive money securely with ACBU',
+  title: 'Dashboard – ACBU',
+  description: 'View your ACBU balance, recent transactions, and quick-send options.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -70,12 +70,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const nonce = (await headers()).get('x-nonce') || undefined;
   const lang = "en";
   // Read the nonce injected by middleware so Next.js can apply it to
   // inline scripts/styles it generates (e.g. __NEXT_DATA__).
-  const headersList = await headers();
-  const nonce = headersList.get('x-nonce') ?? undefined;
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
     <html lang={lang}>
@@ -105,7 +103,7 @@ export default async function RootLayout({
                 />
               SRI hashes can be generated at https://www.srihash.org/
             */}
-            <Analytics nonce={nonce} />
+            <Analytics />
           </AuthProvider>
         </ErrorBoundary>
       </body>

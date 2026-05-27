@@ -34,6 +34,11 @@ import * as fiatApi from '@/lib/api/fiat';
 import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
 import { logger } from '@/lib/logger';
+function formatRate(rate: number | undefined): string {
+  if (rate == null) return "—";
+  return Number(rate.toPrecision(4)).toLocaleString(undefined, { maximumFractionDigits: 8 });
+}
+
 const MINT_NETWORK_FEE_TEXT = "Estimated at confirmation";
 const BURN_PROCESSING_FEE_TEXT = "Estimated at confirmation";
 
@@ -69,8 +74,7 @@ export default function MintPage() {
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
   const [rates, setRates] = useState<RatesResponse | null>(null);
-  const { error: mintError, clearError: clearMintError, handleError: handleMintError } = useApiError();
-  const { error: burnError, clearError: clearBurnError, handleError: handleBurnError } = useApiError();
+
   const [ratesLoading, setRatesLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
@@ -315,82 +319,7 @@ export default function MintPage() {
             setExecuting(false);
         }
     };
-    const handleExecuteBurn = async () => {
-        if (!burnAmount || parseFloat(burnAmount) <= 0 || !selectedFiatCurrency)
-            return;
-        setBurnError("");
-        setExecuting(true);
-        try {
-            if (!userId) {
-                throw new Error("Not signed in — refresh and try again.");
-            }
-            if (!stellarAddress) {
-                throw new Error("No linked Stellar wallet address.");
-            }
-            const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
-            let burnTxHash: string;
-            if (secret) {
-                const localPubKey = Keypair.fromSecret(secret).publicKey();
-                if (stellarAddress && localPubKey !== stellarAddress) {
-                    throw new Error(
-                        `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
-                    );
-                }
-                const submit = await submitBurnRedeemSingleClient({
-                    userAddress: stellarAddress,
-                    amountAcbu: burnAmount,
-                    currency: selectedFiatCurrency,
-                    userSecret: secret,
-                });
-                burnTxHash = submit.transactionHash;
-            } else {
-                if (!kit) {
-                    throw new Error(
-                        "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
-                    );
-                }
-                const address = await new Promise<string>((resolve, reject) => {
-                    kit
-                        .openModal({
-                            onWalletSelected: async (selectedOption: { id: string }) => {
-                                try {
-                                    kit.setWallet(selectedOption.id);
-                                    const { address } = await kit.getAddress();
-                                    resolve(address);
-                                } catch (err) {
-                                    reject(err);
-                                }
-                            },
-                        })
-                        .catch(reject);
-                });
-                if (stellarAddress && address !== stellarAddress) {
-                    throw new Error(
-                        `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
-                    );
-                }
-                const submit = await submitBurnRedeemSingleClient({
-                    userAddress: stellarAddress,
-                    amountAcbu: burnAmount,
-                    currency: selectedFiatCurrency,
-                    external: { kit, address },
-                });
-                burnTxHash = submit.transactionHash;
-            }
-            const res = await fiatApi.postOffRamp(
-                burnAmount,
-                selectedFiatCurrency,
-                burnTxHash,
-                opts,
-            );
-            setTxId(res.transaction_id || res.transactionId || null);
-            setStep("success");
-        } catch (e) {
-            setBurnError(e instanceof Error ? e.message : "Burn failed");
-        } finally {
-            setExecuting(false);
-        }
-    };
+;
     const handleExecute = async () => {
         // Burn is handled by deep-linking to /burn — only mint uses this dialog.
         if (activeTab === "mint") {

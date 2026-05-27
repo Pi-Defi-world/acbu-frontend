@@ -26,7 +26,7 @@ export default function TransferDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const opts = useApiOpts();
-  const { error, handleError } = useApiError();
+  const { uiError: error, setApiError: handleError } = useApiError();
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -100,7 +100,7 @@ export default function TransferDetailPage() {
           </div>
         </div>
         <PageContainer>
-          <p className="text-destructive">{error || "Not found"}</p>
+          <p className="text-destructive">{error?.message || "Not found"}</p>
         </PageContainer>
       </>
     );

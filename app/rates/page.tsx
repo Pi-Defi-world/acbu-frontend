@@ -12,7 +12,7 @@ import type { RatesResponse } from "@/types/api";
 
 export default function RatesPage() {
   const opts = useApiOpts();
-  const { error, handleError } = useApiError();
+  const { uiError: error, setApiError: handleError } = useApiError();
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -65,7 +65,7 @@ export default function RatesPage() {
         </div>
       </div>
       <PageContainer>
-        {error && <p className="text-destructive text-sm mb-3">{error}</p>}
+        {error && <p className="text-destructive text-sm mb-3">{error.message}</p>}
         {loading ? (
           <SkeletonList count={2} itemHeight="h-20" />
         ) : rates ? (

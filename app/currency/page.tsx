@@ -19,6 +19,10 @@ import {
 import { ArrowDown, ArrowUp, TrendingUp } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
 import { useApiOpts } from "@/hooks/use-api";
+import { useBalance } from "@/hooks/use-balance";
+import { useToast } from "@/hooks/use-toast";
+import * as ratesApi from "@/lib/api/rates";
+import type { RatesResponse } from "@/types/api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as mintApi from "@/lib/api/mint";
@@ -60,6 +64,8 @@ function estimateLocalFromAcbu(
 export default function CurrencyPage() {
   const opts = useApiOpts();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
@@ -195,7 +201,7 @@ export default function CurrencyPage() {
       refreshBalance();
     } catch (e) {
       logger.error(`Currency operation failed: ${activeTab}`, e); // <-- ADD LOGGER
-      setSubmitError(e instanceof Error ? e.message : "Operation failed");
+      setApiError(e);
     } finally {
       setSubmitting(false);
     }

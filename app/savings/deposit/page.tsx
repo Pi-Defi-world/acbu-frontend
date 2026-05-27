@@ -6,10 +6,20 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
+import { resolveRecipient } from "@/lib/api/recipient";
+
+async function resolveUserUri(raw: string, opts: Parameters<typeof resolveRecipient>[1]): Promise<string> {
+  try {
+    const r = await resolveRecipient(raw, opts);
+    if (r.pay_uri) return r.pay_uri;
+    if (r.alias) return r.alias;
+  } catch { /* fall through */ }
+  return raw;
+}
 import { logger } from "@/lib/logger";
 
 export default function SavingsDepositPage() {
@@ -17,14 +27,16 @@ export default function SavingsDepositPage() {
     const [user, setUser] = useState("");
     const [amount, setAmount] = useState("");
     const [termSeconds, setTermSeconds] = useState("0");
+    const [resolving, setResolving] = useState(false);
     const [loading, setLoading] = useState(false);
-    const { error, clearError, handleError } = useApiError();
+    const { uiError, setApiError: handleError, clearError } = useApiError();
+    const error = uiError?.message ?? "";
     const [success, setSuccess] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     setResolving(true);
-    setError("");
+    // error cleared via clearError
 
     userApi.getReceive(opts).then(async (data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
