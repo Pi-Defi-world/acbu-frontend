@@ -1,16 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, HelpCircle } from 'lucide-react';
+import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, HelpCircle, CheckCircle2, Clock3, XCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useBalance } from '@/hooks/use-balance';
 import { useApiOpts } from '@/hooks/use-api';
-import { Badge } from '@/components/ui/badge';
-import { KycBadge } from '@/components/ui/kyc-badge';
 import { formatAmount } from '@/lib/utils';
 import * as userApi from '@/lib/api/user';
 import * as transactionsApi from '@/lib/api/transactions';
@@ -19,10 +17,17 @@ import type { TransactionListItem } from '@/types/api';
 import Link from 'next/link';
 
 // ---------------------------------------------------------------------------
+// KYC polling constants
+// ---------------------------------------------------------------------------
+
+/** Statuses where KYC has reached a final state — polling must stop. */
+const TERMINAL_KYC_STATUSES = new Set(['verified', 'approved', 'rejected', 'failed', 'not_started']);
+
+// ---------------------------------------------------------------------------
 // KYC badge helpers
 // ---------------------------------------------------------------------------
 
-type KycStatus = 'verified' | 'pending' | 'rejected' | 'not_started' | string;
+type KycStatus = 'verified' | 'approved' | 'pending' | 'under_review' | 'submitted' | 'rejected' | 'failed' | 'not_started' | string;
 
 interface KycBadgeConfig {
   label: string;
@@ -32,7 +37,7 @@ interface KycBadgeConfig {
 }
 
 function getKycBadgeConfig(status: KycStatus | undefined | null): KycBadgeConfig {
-  switch (status) {
+  switch (status?.toLowerCase()) {
     case 'verified':
     case 'approved':
       return {
@@ -68,7 +73,7 @@ function getKycBadgeConfig(status: KycStatus | undefined | null): KycBadgeConfig
   }
 }
 
-function KycBadge({ status, loading }: { status: KycStatus | undefined | null; loading: boolean }) {
+function LocalKycBadge({ status, loading }: { status: KycStatus | undefined | null; loading: boolean }) {
   if (loading) {
     return <div className="h-5 w-24 rounded-full bg-muted animate-pulse" />;
   }
@@ -98,9 +103,6 @@ const menuItems = [
   ] },
 ];
 
-/**
- * User profile and account summary page.
- */
 export default function MePage() {
   const router = useRouter();
   const { logout } = useAuth();
@@ -112,6 +114,11 @@ export default function MePage() {
   const [error, setError] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+  // Backoff Polling States
+  const [pollingDelay, setPollingDelay] = useState<number>(3000); // Start with 3 seconds
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Main page initializer data fetch
   useEffect(() => {
     let cancelled = false;
     const now = new Date();
@@ -120,19 +127,9 @@ export default function MePage() {
 
     const getTransactionDelta = (transaction: TransactionListItem) => {
       if (transaction.status !== 'completed') return 0;
-
-      if (transaction.type === 'mint') {
-        return Number(transaction.amount_acbu ?? 0);
-      }
-
-      if (transaction.type === 'burn') {
-        return -Number(transaction.acbu_amount_burned ?? transaction.amount_acbu ?? 0);
-      }
-
-      if (transaction.type === 'transfer') {
-        return -Number(transaction.amount_acbu ?? 0);
-      }
-
+      if (transaction.type === 'mint') return Number(transaction.amount_acbu ?? 0);
+      if (transaction.type === 'burn') return -Number(transaction.acbu_amount_burned ?? transaction.amount_acbu ?? 0);
+      if (transaction.type === 'transfer') return -Number(transaction.amount_acbu ?? 0);
       return 0;
     };
 
@@ -159,8 +156,51 @@ export default function MePage() {
     }).finally(() => {
       if (!cancelled) setLoading(false);
     });
+
     return () => { cancelled = true; };
   }, [opts.token]);
+
+  // SMART POLL IMPLEMENTATION: Handles the dynamic KYC verification state loop
+  useEffect(() => {
+    // If user layout is loading, or we don't have user metrics yet, do nothing
+    if (loading || !user) return;
+
+    const currentStatus = user.kyc_status?.toLowerCase() || '';
+
+    // If it hits a terminal status, stop scheduling timeouts entirely!
+    if (TERMINAL_KYC_STATUSES.has(currentStatus)) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      return;
+    }
+
+    const pollKycStatus = async () => {
+      try {
+        const freshUserData = await userApi.getMe(opts);
+        const nextStatus = freshUserData.kyc_status?.toLowerCase() || '';
+        
+        setUser(freshUserData);
+
+        if (TERMINAL_KYC_STATUSES.has(nextStatus)) {
+          // Found success or rejection! End cycle loop.
+          return;
+        }
+
+        // Keep searching, but double the interval delay (Cap at 60 seconds max)
+        setPollingDelay((prev: number) => Math.min(prev * 2, 60000));
+      } catch (err) {
+        console.error('KYC polling attempt failed:', err);
+        // On server error, backoff anyway to prevent loop thrashing
+        setPollingDelay((prev: number) => Math.min(prev * 2, 60000));
+      }
+    };
+
+    // Queue up the process iteration dynamically
+    timerRef.current = setTimeout(pollKycStatus, pollingDelay);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [user?.kyc_status, pollingDelay, loading, opts]);
 
   const handleLogout = async () => {
     setShowLogoutConfirm(false);
@@ -201,12 +241,9 @@ export default function MePage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <h1 className="text-lg font-bold text-foreground truncate">{displayName}</h1>
-                <KycBadge status={user?.kyc_status} />
+                <LocalKycBadge status={user?.kyc_status} loading={loading} />
               </div>
               <p className="text-xs text-muted-foreground truncate">{user?.email || user?.phone_e164 || '—'}</p>
-              <div className="mt-1.5">
-                <KycBadge status={user?.kyc_status} loading={loading} />
-              </div>
             </div>
           </div>
         </div>

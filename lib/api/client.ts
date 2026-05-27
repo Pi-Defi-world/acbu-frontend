@@ -55,6 +55,7 @@ export function getApiErrorMessage(e: unknown): string {
 
 export interface RequestOptions {
   signal?: AbortSignal;
+  token?: string;
 }
 
 export interface ApiError extends Error {
