@@ -1,3 +1,7 @@
+import { validateEnv } from './lib/env-safety.js';
+
+validateEnv(process.env);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
