@@ -96,9 +96,10 @@ async function request<T>(
     );
   }
   const url = path.startsWith('http') ? path : `${BASE}${path.startsWith('/') ? path : `/${path}`}`;
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const headers: Record<string, string> = {};
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
   // CSRF cookie logic removed: backend does not guarantee XSRF-TOKEN pairing
 
   const token = opts.token !== undefined ? opts.token : currentToken;
