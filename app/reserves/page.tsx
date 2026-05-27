@@ -5,9 +5,13 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { ArrowLeft, Info } from 'lucide-react';
-import { useApiOpts } from '@/hooks/use-api';
+import { useApiOpts, useApiError } from '@/hooks/use-api';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import * as reservesApi from '@/lib/api/reserves';
 import type { ReservesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
@@ -32,9 +36,9 @@ function MetricLabel({ label, tip }: { label: string; tip: string }) {
 
 export default function ReservesPage() {
   const opts = useApiOpts();
+  const { uiError: error, setApiError: handleError } = useApiError();
   const [data, setData] = useState<ReservesResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   const fixed7ToNumber = (v?: string | null) => {
     if (!v) return 0;
@@ -59,7 +63,7 @@ export default function ReservesPage() {
     reservesApi.getReserves(opts).then((res) => {
       if (!cancelled) setData(res);
     }).catch((e) => {
-      if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load reserves');
+      if (!cancelled) handleError(e);
     }).finally(() => {
       if (!cancelled) setLoading(false);
     });
@@ -75,7 +79,7 @@ export default function ReservesPage() {
         </div>
       </div>
       <PageContainer>
-        {error && <p className="text-destructive text-sm mb-3">{error}</p>}
+        {error && <p className="text-destructive text-sm mb-3">{error.message}</p>}
         {loading ? (
           <Skeleton className="h-24 w-full" />
         ) : data ? (
@@ -83,8 +87,8 @@ export default function ReservesPage() {
             <Card className="border-border p-4 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col">
-                  <MetricLabel label="Total reserves" tip="On-chain USD value of all backing assets, stored as 7-decimal fixed-point integers." />
-                  <span className="text-xs text-muted-foreground">On-chain USD value (7-dec fixed).</span>
+                  <MetricLabel label="Total reserves (USD)" tip="On-chain USD value of all backing assets, stored as 7-decimal fixed-point integers." />
+                  <span className="text-xs text-muted-foreground">USD value at 7-decimal fixed precision.</span>
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="font-medium">
@@ -97,7 +101,7 @@ export default function ReservesPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col">
                   <MetricLabel label="Total ACBU supply" tip="Total ACBU tokens in circulation, tracked by the minting contract." />
-                  <span className="text-xs text-muted-foreground">Minting contract tracked supply.</span>
+                  <span className="text-xs text-muted-foreground">ACBU tokens in circulation.</span>
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="font-medium">
@@ -108,8 +112,8 @@ export default function ReservesPage() {
 
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col">
-                  <MetricLabel label="Collateral ratio" tip="Reserves ÷ ACBU supply in USD terms. Must stay above the minimum ratio to remain solvent." />
-                  <span className="text-xs text-muted-foreground">Reserves ÷ supply (USD terms).</span>
+                  <MetricLabel label="Collateral ratio (×)" tip="Total reserves divided by total ACBU supply in USD terms. Expressed as a multiplier." />
+                  <span className="text-xs text-muted-foreground">Reserves ÷ supply, shown as a multiplier.</span>
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="font-medium">
@@ -123,8 +127,8 @@ export default function ReservesPage() {
 
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col">
-                  <MetricLabel label="Health" tip="Issuer-reported reserve health status. Reflects whether collateral ratio and weight compliance are within acceptable bounds." />
-                  <span className="text-xs text-muted-foreground">Issuer-reported status.</span>
+                  <MetricLabel label="Health" tip="Issuer-reported reserve health status. Indicates whether collateral ratio and weight compliance are within acceptable bounds." />
+                  <span className="text-xs text-muted-foreground">Issuer-reported health status.</span>
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="font-medium">{data.health || '—'}</span>
@@ -172,23 +176,23 @@ export default function ReservesPage() {
 
                     <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                       <div className="flex flex-col">
-                        <MetricLabel label="Balance" tip="Raw on-chain balance of this currency in the reserve pool." />
+                        <MetricLabel label="Balance" tip="Raw on-chain amount of this currency held in the reserve pool." />
                         <span className="text-foreground">
                           {formatAmount(fixed7ToNumber(c.amount), 2)} {c.currency}
                         </span>
                       </div>
                       <div className="flex flex-col items-end">
-                        <MetricLabel label="USD value" tip="Balance converted to USD at the current oracle rate." />
+                        <MetricLabel label="USD value" tip="Currency balance converted to USD using the current oracle exchange rate." />
                         <span className="text-foreground">
                           USD {formatAmount(fixed7ToNumber(c.value_usd), 2)}
                         </span>
                       </div>
                       <div className="flex flex-col">
-                        <MetricLabel label="Target" tip="Desired portfolio weight for this currency (basis points ÷ 100 = %)." />
+                        <MetricLabel label="Target" tip="Desired portfolio weight for this currency, expressed in basis points (÷100 = %)." />
                         <span className="text-foreground">{formatPct(c.target_weight_bps)}</span>
                       </div>
                       <div className="flex flex-col items-end">
-                        <MetricLabel label="Actual" tip="Current portfolio weight. Drift from target triggers a warning when outside the allowed threshold." />
+                        <MetricLabel label="Actual" tip="Current portfolio weight, expressed in basis points. Drift from target triggers warnings beyond the allowed threshold." />
                         <span className="text-foreground">{formatPct(c.actual_weight_bps)}</span>
                       </div>
                     </div>

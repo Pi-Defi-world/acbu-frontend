@@ -9,33 +9,114 @@ localforage.config({
 const KEY_STORE_PREFIX = 'stellar_secret_';
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
 const KEY_STORE_PLAINTEXT_ADDRESS_PREFIX = 'stellar_secret_plain_addr_';
+// KEY_STORE_PASSPHRASE intentionally removed (F-003):
+// The passcode must never be persisted in sessionStorage — it must only live
+// in memory for the duration of a single decrypt operation.  Any caller that
+// previously relied on the sessionStorage round-trip must pass the passcode
+// explicitly as a function argument instead.
 
-/**
- * Simulates AES encryption for the local storage.
- * In a production app, use SubtleCrypto or a library like 'crypto-js' to encrypt/decrypt
- * using the user's passcode or a derived key.
- */
-function encryptSecret(secret: string, passcode: string): string {
-  // Mock encryption: simple base64 encode with passcode for demo.
-  // DO NOT use this in real production without real AES encryption.
-  return btoa(`${passcode}:${secret}`);
+function assertDevOnly(): void {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'Plaintext wallet storage is development-only and cannot be used in production',
+    );
+  }
 }
 
-function decryptSecret(encrypted: string, passcode: string): string | null {
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+const SALT_SIZE = 16;
+const IV_SIZE = 12;
+const PBKDF2_ITERATIONS = 200_000;
+
+function toBase64(buffer: ArrayBuffer | Uint8Array): string {
+  const bytes = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i += 1) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function fromBase64(value: string): Uint8Array {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+async function deriveKey(passcode: string, salt: Uint8Array): Promise<CryptoKey> {
+  const baseKey = await crypto.subtle.importKey(
+    'raw',
+    textEncoder.encode(passcode),
+    'PBKDF2',
+    false,
+    ['deriveKey'],
+  );
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256',
+    },
+    baseKey,
+    {
+      name: 'AES-GCM',
+      length: 256,
+    },
+    false,
+    ['encrypt', 'decrypt'],
+  );
+}
+
+async function encryptSecret(secret: string, passcode: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_SIZE));
+  const iv = crypto.getRandomValues(new Uint8Array(IV_SIZE));
+  const key = await deriveKey(passcode, salt);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    textEncoder.encode(secret),
+  );
+
+  return JSON.stringify({
+    version: 1,
+    salt: toBase64(salt),
+    iv: toBase64(iv),
+    ciphertext: toBase64(ciphertext),
+  });
+}
+
+async function decryptSecret(encrypted: string, passcode: string): Promise<string | null> {
   try {
-    const decoded = atob(encrypted);
-    const [p, secret] = decoded.split(':');
-    if (p === passcode) {
-      return secret;
-    }
-    return null;
+    const payload = JSON.parse(encrypted) as {
+      version: number;
+      salt: string;
+      iv: string;
+      ciphertext: string;
+    };
+    if (payload.version !== 1) return null;
+
+    const salt = fromBase64(payload.salt);
+    const iv = fromBase64(payload.iv);
+    const ciphertext = fromBase64(payload.ciphertext);
+    const key = await deriveKey(passcode, salt);
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      ciphertext,
+    );
+    return textDecoder.decode(decrypted);
   } catch {
     return null;
   }
 }
 
 export async function storeWalletSecret(userId: string, secret: string, passcode: string): Promise<void> {
-  const encrypted = encryptSecret(secret, passcode);
+  const encrypted = await encryptSecret(secret, passcode);
   await localforage.setItem(`${KEY_STORE_PREFIX}${userId}`, encrypted);
 }
 
@@ -43,7 +124,7 @@ export async function getWalletSecret(userId: string, passcode: string): Promise
   const encrypted = await localforage.getItem<string>(`${KEY_STORE_PREFIX}${userId}`);
   if (!encrypted) return null;
   
-  return decryptSecret(encrypted, passcode);
+  return await decryptSecret(encrypted, passcode);
 }
 
 /**
@@ -56,6 +137,7 @@ export async function storeWalletSecretLocalPlaintext(
   secret: string,
   stellarAddress?: string,
 ): Promise<void> {
+  assertDevOnly();
   const userKey = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
   await localforage.setItem(userKey, secret);
   if (stellarAddress) {
@@ -88,6 +170,7 @@ export async function getWalletSecretLocalPlaintext(
   userId: string,
   stellarAddress?: string | null,
 ): Promise<string | null> {
+  assertDevOnly();
   const userKey = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
   const addressKey = stellarAddress
     ? `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`
@@ -112,27 +195,19 @@ export async function getWalletSecretLocalPlaintext(
 }
 
 /**
- * Best-effort wallet secret lookup:
- * - plaintext slot (dev/test flows and wallet-setup modal)
- * - encrypted slot decrypted with passcode from memory (wallet page flow)
+ * Best-effort wallet secret lookup (dev/test flows only).
+ *
+ * Returns the plaintext secret from the dev storage slot.
+ * The former sessionStorage passcode path has been intentionally removed (F-003):
+ * passcodes must be held in memory only and passed explicitly to `getWalletSecret()`
+ * by callers that perform authenticated decryption.
  */
 export async function getWalletSecretAnyLocal(
   userId: string,
   stellarAddress?: string | null,
 ): Promise<string | null> {
-  const plaintext = await getWalletSecretLocalPlaintext(userId, stellarAddress);
-  if (plaintext) return plaintext;
-
-  try {
-    const passcode = getPasscode();
-    if (passcode) {
-      const decrypted = await getWalletSecret(userId, passcode);
-      if (decrypted) return decrypted;
-    }
-  } catch {
-    // ignore
-  }
-  return null;
+  assertDevOnly();
+  return getWalletSecretLocalPlaintext(userId, stellarAddress);
 }
 
 export async function hasStoredWallet(userId: string): Promise<boolean> {

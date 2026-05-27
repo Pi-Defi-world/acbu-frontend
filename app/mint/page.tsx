@@ -30,6 +30,7 @@ import * as ratesApi from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
 import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
+import { useDebounce } from '@/hooks/use-debounce';
 import { logger } from '@/lib/logger';
 const MINT_NETWORK_FEE_TEXT = "Estimated at confirmation";
 const BURN_PROCESSING_FEE_TEXT = "Estimated at confirmation";
@@ -71,6 +72,8 @@ export default function MintPage() {
   const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [selectedFiatCurrency, setSelectedFiatCurrency] = useState('');
   const [fiatAmount, setFiatAmount] = useState('');
+  const debouncedFiatAmount = useDebounce(fiatAmount, 300);
+  const debouncedBurnAmount = useDebounce(burnAmount, 300);
   const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
   const rateRows = Array.isArray((rates as { rates?: Array<{ currency?: string; rate?: number }> } | null)?.rates)
@@ -78,8 +81,8 @@ export default function MintPage() {
     : [];
 
   const estimatedMintAcbu = useMemo(
-    () => estimateAcbuFromFiat(fiatAmount, selectedFiatCurrency, mintQuoteRates),
-    [fiatAmount, selectedFiatCurrency, mintQuoteRates],
+    () => estimateAcbuFromFiat(debouncedFiatAmount, selectedFiatCurrency, mintQuoteRates),
+    [debouncedFiatAmount, selectedFiatCurrency, mintQuoteRates],
   );
 
   useEffect(() => {
@@ -120,10 +123,14 @@ export default function MintPage() {
     }, [activeTab, opts.token]);
 
     const handleMintConfirm = () => {
+        if (!debouncedFiatAmount || parseFloat(debouncedFiatAmount) <= 0 || !selectedFiatCurrency) return;
         setMintError("");
         setStep("confirm");
     };
-    const handleBurnConfirm = () => setStep("confirm");
+    const handleBurnConfirm = () => {
+        if (!debouncedBurnAmount || parseFloat(debouncedBurnAmount) <= 0 || !selectedFiatCurrency) return;
+        setStep("confirm");
+    };
     const handleExecuteMint = async () => {
         if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
             return;
@@ -444,10 +451,10 @@ export default function MintPage() {
                             </div>
                             {estimatedMintAcbu != null && (
                                 <Card className="border-border bg-muted/80 p-3 mt-3">
-                                    <p className="text-xs text-muted-foreground mb-1">
+                                    <p className="text-xs text-muted-foreground mb-1 break-words">
                                         Estimated ACBU (from latest rates)
                                     </p>
-                                    <p className="text-lg font-semibold text-foreground">
+                                    <p className="text-lg font-semibold text-foreground break-words">
                                         ≈ {formatAmount(estimatedMintAcbu)} ACBU
                                     </p>
                                 </Card>
@@ -465,8 +472,8 @@ export default function MintPage() {
                             <Button
                                 onClick={handleMintConfirm}
                                 disabled={
-                                    !fiatAmount ||
-                                    parseFloat(fiatAmount) <= 0 ||
+                                    !debouncedFiatAmount ||
+                                    parseFloat(debouncedFiatAmount) <= 0 ||
                                     !selectedFiatCurrency
                                 }
                                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
@@ -604,7 +611,7 @@ export default function MintPage() {
                                 ? "Confirm Mint"
                                 : "Confirm Burn"}
                         </AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogDescription className="break-words">
                             {activeTab === "mint" &&
                                 `Mint ACBU by exchanging ${selectedFiatCurrency} ${formatAmount(fiatAmount)}${
                                     estimatedMintAcbu != null
@@ -620,7 +627,7 @@ export default function MintPage() {
                             <span className="text-muted-foreground">
                                 Amount:
                             </span>
-                            <span className="font-medium text-foreground">
+                            <span className="font-medium text-foreground break-words">
                                 {activeTab === "mint"
                                     ? `${selectedFiatCurrency} ${fiatAmount}`
                                     : `ACBU ${formatAmount(burnAmount)}`}

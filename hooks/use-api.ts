@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { RequestOptions } from '@/lib/api/client';
+export { useApiError } from '@/hooks/use-api-error';
 
 /**
  * Returns RequestOptions for use with API modules.

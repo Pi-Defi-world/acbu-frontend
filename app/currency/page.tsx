@@ -18,14 +18,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ArrowDown, ArrowUp, TrendingUp } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
+import { useDebounce } from "@/hooks/use-debounce";
 import { useApiOpts } from "@/hooks/use-api";
+import { useBalance } from "@/hooks/use-balance";
+import { useToast } from "@/hooks/use-toast";
+import * as ratesApi from "@/lib/api/rates";
+import type { RatesResponse } from "@/types/api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
-import * as ratesApi from "@/lib/api/rates";
-import type { MintResponse, BurnResponse, RatesResponse } from "@/types/api";
-import { featureFlags } from "@/lib/features";
+import type { MintResponse, BurnResponse } from "@/types/api";
+import { logger } from "@/lib/logger";
 
 /** Local currency units per 1 ACBU from the `/rates` oracle, or null if missing. */
 function localPerAcbu(currency: string, rates: RatesResponse | null): number | null {
@@ -61,6 +65,8 @@ function estimateLocalFromAcbu(
 export default function CurrencyPage() {
   const opts = useApiOpts();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
@@ -76,11 +82,13 @@ export default function CurrencyPage() {
 
   // Mint state
   const [mintAmount, setMintAmount] = useState("");
-  const [mintSource, setMintSource] = useState("usdc");
+  const debouncedMintAmount = useDebounce(mintAmount, 300);
+  const [mintSource, setMintSource] = useState("stellar");
   const [mintWalletAddress, setMintWalletAddress] = useState("");
 
   // Burn state
   const [burnAmount, setBurnAmount] = useState("");
+  const debouncedBurnAmount = useDebounce(burnAmount, 300);
   const [burnDestination, setBurnDestination] = useState("bank");
   const [burnAccountNumber, setBurnAccountNumber] = useState("");
   const [burnBankCode, setBurnBankCode] = useState("");
@@ -88,6 +96,7 @@ export default function CurrencyPage() {
 
   // International state
   const [intlAmount, setIntlAmount] = useState("");
+  const debouncedIntlAmount = useDebounce(intlAmount, 300);
   const [intlCurrency, setIntlCurrency] = useState("USD");
   const [intlCountry, setIntlCountry] = useState("US");
   const [intlAccountNumber, setIntlAccountNumber] = useState("");
@@ -117,9 +126,9 @@ export default function CurrencyPage() {
   );
 
   const availableBalance = balance ?? 0;
-  const burnNumeric = parseFloat(burnAmount || "0");
-  const intlNumeric = parseFloat(intlAmount || "0");
-  const mintNumeric = parseFloat(mintAmount || "0");
+  const burnNumeric = parseFloat(debouncedBurnAmount || "0");
+  const intlNumeric = parseFloat(debouncedIntlAmount || "0");
+  const mintNumeric = parseFloat(debouncedMintAmount || "0");
 
   const estimatedMintAcbu = estimateAcbuFromUsd(mintNumeric, rates);
   const estimatedBurnNgn = estimateLocalFromAcbu(burnNumeric, "NGN", rates);
@@ -131,9 +140,12 @@ export default function CurrencyPage() {
   const handleExecute = async () => {
     clearError();
     setSubmitting(true);
+    logger.info(`Starting ${activeTab} operation`); // <-- ADD LOGGER
+
     try {
       if (activeTab === "mint") {
-        const res = await mintApi.mintFromUsdc(
+        logger.info("Minting ACBU", { amount: mintAmount }); // <-- ADD LOGGER
+        const res: MintResponse = await mintApi.mintFromUsdc(
           mintAmount,
           mintWalletAddress.trim(),
           "auto",
@@ -146,6 +158,7 @@ export default function CurrencyPage() {
           description: `Transaction ${res.transaction_id} · status ${res.status}`,
         });
       } else if (activeTab === "burn") {
+        logger.info("Burning ACBU", { amount: burnAmount, destination: burnDestination }); // <-- ADD LOGGER
         const recipientType =
           burnDestination === "bank"
             ? "bank"
@@ -170,7 +183,8 @@ export default function CurrencyPage() {
           description: `Transaction ${res.transaction_id} · status ${res.status}`,
         });
       } else {
-        const res = await burnApi.burnAcbu(
+        logger.info("International transfer", { amount: intlAmount, country: intlCountry }); // <-- ADD LOGGER
+        const res: BurnResponse = await burnApi.burnAcbu(
           intlAmount,
           intlCurrency,
           {
@@ -190,6 +204,7 @@ export default function CurrencyPage() {
       setStep("success");
       refreshBalance();
     } catch (e) {
+      logger.error(`Currency operation failed: ${activeTab}`, e); // <-- ADD LOGGER
       setApiError(e);
     } finally {
       setSubmitting(false);
@@ -265,14 +280,12 @@ export default function CurrencyPage() {
             >
               Burn
             </TabsTrigger>
-            {featureFlags.internationalTransfers && (
-              <TabsTrigger
-                value="international"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-              >
-                International
-              </TabsTrigger>
-            )}
+            <TabsTrigger
+              value="international"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
+              International
+            </TabsTrigger>
           </TabsList>
 
           {/* Mint Tab */}
@@ -288,8 +301,7 @@ export default function CurrencyPage() {
                   onChange={(e) => setMintSource(e.target.value)}
                   className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                 >
-                  <option value="usdc">USDC (Ethereum)</option>
-                  <option value="usdc-polygon">USDC (Polygon)</option>
+                  <option value="stellar">USDC (Stellar)</option>
                 </select>
               </Card>
 
@@ -309,7 +321,7 @@ export default function CurrencyPage() {
                     className="border-border text-lg font-semibold"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-xs text-muted-foreground mt-2 break-words">
                   You'll receive:{" "}
                   {estimatedMintAcbu != null
                     ? `ACBU ${formatAmount(estimatedMintAcbu)}`
@@ -354,8 +366,8 @@ export default function CurrencyPage() {
               <Button
                 onClick={handleMintConfirm}
                 disabled={
-                  !mintAmount ||
-                  parseFloat(mintAmount) <= 0 ||
+                  !debouncedMintAmount ||
+                  parseFloat(debouncedMintAmount) <= 0 ||
                   !mintWalletAddress.trim()
                 }
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
@@ -480,7 +492,7 @@ export default function CurrencyPage() {
               <Button
                 onClick={handleBurnConfirm}
                 disabled={
-                  !burnAmount ||
+                  !debouncedBurnAmount ||
                   burnNumeric <= 0 ||
                   (balance != null && burnNumeric > availableBalance) ||
                   !burnAccountNumber.trim() ||
@@ -496,7 +508,6 @@ export default function CurrencyPage() {
           </TabsContent>
 
           {/* International Tab */}
-          {featureFlags.internationalTransfers && (
           <TabsContent value="international" className="px-4 py-6 space-y-4">
             <div>
               <p className="text-sm text-muted-foreground mb-3">
@@ -624,8 +635,8 @@ export default function CurrencyPage() {
                 <Button
                   onClick={() => setStep("confirm")}
                   disabled={
-                    !intlAmount ||
-                    parseFloat(intlAmount) <= 0 ||
+                    !debouncedIntlAmount ||
+                    parseFloat(debouncedIntlAmount) <= 0 ||
                     !intlAccountNumber.trim() ||
                     !intlBankCode.trim() ||
                     !intlAccountName.trim()
@@ -637,7 +648,6 @@ export default function CurrencyPage() {
               </div>
             </div>
           </TabsContent>
-          )}
         </Tabs>
       </PageContainer>
 
@@ -650,7 +660,7 @@ export default function CurrencyPage() {
               {activeTab === "burn" && "Confirm Burn & Withdrawal"}
               {activeTab === "international" && "Confirm Transfer"}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="break-words">
               {activeTab === 'mint' &&
                 (estimatedMintAcbu != null
                   ? `Mint ACBU ${formatAmount(estimatedMintAcbu)} from USDC`
@@ -664,7 +674,7 @@ export default function CurrencyPage() {
           <div className="py-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Amount:</span>
-              <span className="font-medium text-foreground">
+              <span className="font-medium text-foreground break-words">
                 {activeTab === 'mint' && `$${mintAmount}`}
                 {activeTab === 'burn' && `ACBU ${formatAmount(burnAmount)}`}
                 {activeTab === 'international' && `ACBU ${formatAmount(intlAmount)}`}
