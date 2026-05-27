@@ -130,10 +130,6 @@ export async function getWalletSecretLocalPlaintext(
  * Best-effort wallet secret lookup:
  * - plaintext slot (dev/test flows and wallet-setup modal)
  * - encrypted slot decrypted with passcode from memory (wallet page flow)
- *
- * The former sessionStorage passcode path has been intentionally removed (F-003):
- * passcodes must be held in memory only and passed explicitly to `getWalletSecret()`
- * by callers that perform authenticated decryption.
  */
 export async function getWalletSecretAnyLocal(
   userId: string,
