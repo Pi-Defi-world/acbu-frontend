@@ -53,14 +53,9 @@ export function getApiErrorMessage(e: unknown): string {
   return 'Something went wrong';
 }
 
-function getCsrfToken(): string | undefined {
-  if (typeof document === 'undefined') return undefined;
-  const match = document.cookie.match(/(^|;\s*)XSRF-TOKEN=([^;]*)/);
-  return match ? decodeURIComponent(match[2]) : undefined;
-}
-
 export interface RequestOptions {
   signal?: AbortSignal;
+  token?: string;
 }
 
 export interface ApiError extends Error {
@@ -85,9 +80,14 @@ async function request<T>(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  const csrfToken = getCsrfToken();
-  if (csrfToken) {
-    headers['X-XSRF-TOKEN'] = csrfToken;
+  // CSRF cookie logic removed: backend does not guarantee XSRF-TOKEN pairing
+
+  const token = opts.token ?? undefined;
+  if (token) {
+    // Send only the Authorization header per backend contract.
+    // The former x-api-key duplicate has been removed to eliminate the redundant
+    // secret channel that could surface in proxy logs (F-007).
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   // Create our own AbortController for timeout, independent of caller's signal
@@ -175,6 +175,16 @@ export function del<T>(path: string, opts?: RequestOptions): Promise<T> {
   return request<T>('DELETE', path, undefined, opts);
 }
 
-export function apiOpts(): RequestOptions {
-  return {};
+export function apiOpts(token: string | null | undefined): RequestOptions {
+  return { token: token || undefined };
+}
+
+/**
+ * No-op: auth is now handled via httpOnly cookies set by the backend.
+ * Kept for backward compatibility with callers that haven't been updated yet.
+ * @deprecated Remove call sites; token is no longer stored client-side.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function setToken(_token: string | null): void {
+  // intentional no-op
 }

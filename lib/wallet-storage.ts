@@ -9,6 +9,19 @@ localforage.config({
 const KEY_STORE_PREFIX = 'stellar_secret_';
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
 const KEY_STORE_PLAINTEXT_ADDRESS_PREFIX = 'stellar_secret_plain_addr_';
+// KEY_STORE_PASSPHRASE intentionally removed (F-003):
+// The passcode must never be persisted in sessionStorage — it must only live
+// in memory for the duration of a single decrypt operation.  Any caller that
+// previously relied on the sessionStorage round-trip must pass the passcode
+// explicitly as a function argument instead.
+
+function assertDevOnly(): void {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'Plaintext wallet storage is development-only and cannot be used in production',
+    );
+  }
+}
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -124,6 +137,7 @@ export async function storeWalletSecretLocalPlaintext(
   secret: string,
   stellarAddress?: string,
 ): Promise<void> {
+  assertDevOnly();
   const userKey = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
   await localforage.setItem(userKey, secret);
   if (stellarAddress) {
@@ -156,6 +170,7 @@ export async function getWalletSecretLocalPlaintext(
   userId: string,
   stellarAddress?: string | null,
 ): Promise<string | null> {
+  assertDevOnly();
   const userKey = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
   const addressKey = stellarAddress
     ? `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`
@@ -180,27 +195,19 @@ export async function getWalletSecretLocalPlaintext(
 }
 
 /**
- * Best-effort wallet secret lookup:
- * - plaintext slot (dev/test flows and wallet-setup modal)
- * - encrypted slot decrypted with passcode from memory (wallet page flow)
+ * Best-effort wallet secret lookup (dev/test flows only).
+ *
+ * Returns the plaintext secret from the dev storage slot.
+ * The former sessionStorage passcode path has been intentionally removed (F-003):
+ * passcodes must be held in memory only and passed explicitly to `getWalletSecret()`
+ * by callers that perform authenticated decryption.
  */
 export async function getWalletSecretAnyLocal(
   userId: string,
   stellarAddress?: string | null,
 ): Promise<string | null> {
-  const plaintext = await getWalletSecretLocalPlaintext(userId, stellarAddress);
-  if (plaintext) return plaintext;
-
-  try {
-    const passcode = getPasscode();
-    if (passcode) {
-      const decrypted = await getWalletSecret(userId, passcode);
-      if (decrypted) return decrypted;
-    }
-  } catch {
-    // ignore
-  }
-  return null;
+  assertDevOnly();
+  return getWalletSecretLocalPlaintext(userId, stellarAddress);
 }
 
 export async function hasStoredWallet(userId: string): Promise<boolean> {

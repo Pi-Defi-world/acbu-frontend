@@ -20,13 +20,16 @@ import { ArrowDown, ArrowUp, TrendingUp } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useApiOpts } from "@/hooks/use-api";
+import { useBalance } from "@/hooks/use-balance";
+import { useToast } from "@/hooks/use-toast";
+import * as ratesApi from "@/lib/api/rates";
+import type { RatesResponse } from "@/types/api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
-import * as ratesApi from "@/lib/api/rates";
-import type { MintResponse, BurnResponse, RatesResponse } from "@/types/api";
-import { featureFlags } from "@/lib/features";
+import type { MintResponse, BurnResponse } from "@/types/api";
+import { logger } from "@/lib/logger";
 
 /** Local currency units per 1 ACBU from the `/rates` oracle, or null if missing. */
 function localPerAcbu(currency: string, rates: RatesResponse | null): number | null {
@@ -62,6 +65,8 @@ function estimateLocalFromAcbu(
 export default function CurrencyPage() {
   const opts = useApiOpts();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
@@ -135,9 +140,12 @@ export default function CurrencyPage() {
   const handleExecute = async () => {
     clearError();
     setSubmitting(true);
+    logger.info(`Starting ${activeTab} operation`); // <-- ADD LOGGER
+
     try {
       if (activeTab === "mint") {
-        const res = await mintApi.mintFromUsdc(
+        logger.info("Minting ACBU", { amount: mintAmount }); // <-- ADD LOGGER
+        const res: MintResponse = await mintApi.mintFromUsdc(
           mintAmount,
           mintWalletAddress.trim(),
           "auto",
@@ -150,6 +158,7 @@ export default function CurrencyPage() {
           description: `Transaction ${res.transaction_id} · status ${res.status}`,
         });
       } else if (activeTab === "burn") {
+        logger.info("Burning ACBU", { amount: burnAmount, destination: burnDestination }); // <-- ADD LOGGER
         const recipientType =
           burnDestination === "bank"
             ? "bank"
@@ -174,7 +183,8 @@ export default function CurrencyPage() {
           description: `Transaction ${res.transaction_id} · status ${res.status}`,
         });
       } else {
-        const res = await burnApi.burnAcbu(
+        logger.info("International transfer", { amount: intlAmount, country: intlCountry }); // <-- ADD LOGGER
+        const res: BurnResponse = await burnApi.burnAcbu(
           intlAmount,
           intlCurrency,
           {
@@ -194,6 +204,7 @@ export default function CurrencyPage() {
       setStep("success");
       refreshBalance();
     } catch (e) {
+      logger.error(`Currency operation failed: ${activeTab}`, e); // <-- ADD LOGGER
       setApiError(e);
     } finally {
       setSubmitting(false);
@@ -269,14 +280,12 @@ export default function CurrencyPage() {
             >
               Burn
             </TabsTrigger>
-            {featureFlags.internationalTransfers && (
-              <TabsTrigger
-                value="international"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-              >
-                International
-              </TabsTrigger>
-            )}
+            <TabsTrigger
+              value="international"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
+              International
+            </TabsTrigger>
           </TabsList>
 
           {/* Mint Tab */}
@@ -499,7 +508,6 @@ export default function CurrencyPage() {
           </TabsContent>
 
           {/* International Tab */}
-          {featureFlags.internationalTransfers && (
           <TabsContent value="international" className="px-4 py-6 space-y-4">
             <div>
               <p className="text-sm text-muted-foreground mb-3">
@@ -640,7 +648,6 @@ export default function CurrencyPage() {
               </div>
             </div>
           </TabsContent>
-          )}
         </Tabs>
       </PageContainer>
 
