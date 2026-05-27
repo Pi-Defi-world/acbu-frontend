@@ -1,8 +1,7 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import React, { useRef, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Home, Send, Coins, Briefcase, User, Wallet } from "lucide-react";
 
 interface NavItem {
@@ -26,6 +25,18 @@ const navItems: NavItem[] = [
 
 export function MobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const navigatingTo = useRef<string | null>(null);
+
+  function handleNav(href: string) {
+    if (isPending || navigatingTo.current === href || pathname === href) return;
+    navigatingTo.current = href;
+    startTransition(() => {
+      router.push(href);
+      navigatingTo.current = null;
+    });
+  }
 
   return (
     <nav
@@ -36,28 +47,22 @@ export function MobileNav() {
       <div className="flex justify-between items-center h-20 px-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
-          const showLabels = true;
           return (
-            <Link
+            <button
               key={item.href}
-              href={item.href}
+              onClick={() => handleNav(item.href)}
               aria-label={item.name}
+              aria-current={isActive ? "page" : undefined}
+              disabled={isPending}
               className={`flex flex-col items-center justify-center flex-1 h-20 gap-1 transition-colors ${
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               }`}
-              aria-current={isActive ? "page" : undefined}
             >
               {item.icon}
-              {showLabels ? (
-                <span className="text-xs font-medium text-center">
-                  {item.name}
-                </span>
-              ) : (
-                <span className="sr-only">{item.name}</span>
-              )}
-            </Link>
+              <span className="text-xs font-medium text-center">{item.name}</span>
+            </button>
           );
         })}
       </div>
