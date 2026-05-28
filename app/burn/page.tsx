@@ -7,9 +7,10 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { useApiOpts, useApiError } from "@/hooks/use-api";
+import { ArrowLeft, CheckCircle } from "lucide-react";
+import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -72,22 +73,15 @@ function BurnPageContent() {
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
   
-  // Initialize from search params if available
-  const [acbuAmount, setAcbuAmount] = useState(searchParams.get("amount") || "");
-  const [currency, setCurrency] = useState(searchParams.get("currency") || "NGN");
-  
-  const [accountNumber, setAccountNumber] = useState("");
-  const [bankCode, setBankCode] = useState("");
-  const [accountName, setAccountName] = useState("");
-  const { error, clearError, handleError } = useApiError();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
 
   const form = useForm<BurnFormValues>({
     resolver: zodResolver(burnSchema),
     defaultValues: {
-      acbuAmount: "",
-      currency: "NGN",
+      acbuAmount: searchParams?.get("amount") || "",
+      currency: searchParams?.get("currency") || "NGN",
       accountNumber: "",
       bankCode: "",
       accountName: "",
@@ -95,20 +89,10 @@ function BurnPageContent() {
     mode: "onChange",
   });
 
-  const isValid =
-    acbuAmount &&
-    parseFloat(acbuAmount) > 0 &&
-    currency.length === 3 &&
-    accountNumber.trim().length >= 5 &&
-    accountNumber.trim().length <= 20 &&
-    bankCode.trim().length >= 3 &&
-    bankCode.trim().length <= 10 &&
-    accountName.trim().length >= 3 &&
-    accountName.trim().length <= 100;
+  const { isValid } = form.formState;
+  const currency = form.watch("currency");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isValid) return;
+  const onSubmit = async (values: BurnFormValues) => {
     clearError();
     setLoading(true);
     setTxId(null);
@@ -186,7 +170,7 @@ function BurnPageContent() {
       setTxId(res.transaction_id);
       form.reset({ ...values, acbuAmount: "" }); // Reset amount but keep details for convenience? Or full reset?
     } catch (e) {
-      handleError(e);
+      setApiError(e);
     } finally {
       setLoading(false);
     }
@@ -230,7 +214,7 @@ function BurnPageContent() {
           )}
 
           <Form {...form}>
-            <form onSubmit={formHandleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="acbuAmount"
@@ -360,7 +344,6 @@ function BurnPageContent() {
                   </FormItem>
                 )}
               />
-            </div>
             <Button
               type="submit"
               disabled={!isValid || loading || isSubmitDisabled}
@@ -369,7 +352,8 @@ function BurnPageContent() {
               {loading ? "Submitting..." : "Burn & Withdraw"}
             </Button>
           </form>
-        </Card>
+        </Form>
+      </Card>
       </PageContainer>
     </>
   );

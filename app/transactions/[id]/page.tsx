@@ -8,13 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useApiOpts } from "@/hooks/use-api";
+import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as transactionsApi from "@/lib/api/transactions";
 import type { TransactionDetail } from "@/types/api";
-import { formatAmount } from "@/lib/utils";
+import { formatAmount, parseUtcDate } from "@/lib/utils";
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
+  return parseUtcDate(iso).toLocaleString(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
   });
@@ -27,7 +27,7 @@ export default function TransactionDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const opts = useApiOpts();
-  const { error, handleError } = useApiError();
+  const { handleError } = useApiError();
   const [data, setData] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

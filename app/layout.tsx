@@ -1,5 +1,4 @@
 import React from "react"
-import dynamic from 'next/dynamic'
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
 import { Analytics } from '@vercel/analytics/next'
@@ -12,11 +11,7 @@ import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
 import { Toaster } from '@/components/ui/toaster';
-
-const OfflineIndicator = dynamic(
-  () => import('@/components/offline-indicator').then((m) => ({ default: m.OfflineIndicator })),
-  { ssr: false },
-)
+import { OfflineIndicator } from '@/components/offline-indicator';
 
 const apiBaseUrl =
   typeof process !== 'undefined'

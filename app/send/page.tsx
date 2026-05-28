@@ -36,7 +36,7 @@ import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
 import type { TransferItem, ContactItem } from "@/types/api";
-import { formatAcbu, formatAmount } from "@/lib/utils";
+import { formatAcbu, formatAmount, parseUtcDate } from "@/lib/utils";
 import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import {
@@ -53,7 +53,7 @@ import {
 } from "@/components/ui/select";
 
 function formatDate(iso: string) {
-  const d = new Date(iso);
+  const d = parseUtcDate(iso);
   const today = new Date();
   if (d.toDateString() === today.toDateString()) return "Today";
   const yesterday = new Date(today);

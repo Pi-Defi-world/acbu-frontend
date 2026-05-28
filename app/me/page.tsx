@@ -9,7 +9,7 @@ import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, Help
 import { useAuth } from '@/contexts/auth-context';
 import { useBalance } from '@/hooks/use-balance';
 import { useApiOpts } from '@/hooks/use-api';
-import { formatAmount } from '@/lib/utils';
+import { formatAmount, parseUtcDate } from '@/lib/utils';
 import * as userApi from '@/lib/api/user';
 import * as transactionsApi from '@/lib/api/transactions';
 import type { UserMe } from '@/types/api';
@@ -140,7 +140,7 @@ export default function MePage() {
       if (cancelled) return;
 
       const currentMonthTransactions = (transactionsData.transactions ?? []).filter((transaction) => {
-        const createdAt = new Date(transaction.created_at);
+        const createdAt = parseUtcDate(transaction.created_at);
         return createdAt.getMonth() === currentMonth && createdAt.getFullYear() === currentYear;
       });
 
