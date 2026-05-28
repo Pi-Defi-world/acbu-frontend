@@ -195,19 +195,41 @@ export async function getWalletSecretLocalPlaintext(
 }
 
 /**
+<<<<<<< HEAD
  * Best-effort wallet secret lookup (dev/test flows only).
  *
  * Returns the plaintext secret from the dev storage slot.
  * The former sessionStorage passcode path has been intentionally removed (F-003):
  * passcodes must be held in memory only and passed explicitly to `getWalletSecret()`
  * by callers that perform authenticated decryption.
+=======
+ * Best-effort wallet secret lookup:
+ * - plaintext slot (dev/test flows and wallet-setup modal)
+ * - encrypted slot decrypted with passcode from memory (wallet page flow)
+>>>>>>> origin/dev
  */
 export async function getWalletSecretAnyLocal(
   userId: string,
   stellarAddress?: string | null,
 ): Promise<string | null> {
   assertDevOnly();
+<<<<<<< HEAD
   return getWalletSecretLocalPlaintext(userId, stellarAddress);
+=======
+  const plaintext = await getWalletSecretLocalPlaintext(userId, stellarAddress);
+  if (plaintext) return plaintext;
+
+  try {
+    const passcode = getPasscode();
+    if (passcode) {
+      const decrypted = await getWalletSecret(userId, passcode);
+      if (decrypted) return decrypted;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+>>>>>>> origin/dev
 }
 
 export async function hasStoredWallet(userId: string): Promise<boolean> {

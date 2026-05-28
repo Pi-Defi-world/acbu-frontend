@@ -141,11 +141,12 @@ export interface TransactionsListResponse {
   next_cursor?: string | null;
 }
 
-// Mint
+export type CurrencyPreference = "auto" | "usdc" | "usdc-polygon";
+
 export interface MintFromUsdcBody {
   usdc_amount: string;
   wallet_address: string;
-  currency_preference?: "auto";
+  currency_preference?: CurrencyPreference;
 }
 
 export interface MintResponse {

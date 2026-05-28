@@ -27,6 +27,27 @@ export function useBalance(): UseBalanceReturn {
 
   const refresh = useCallback(() => setTick((t) => t + 1), []);
 
+  // Auto-refresh balance every 30 seconds to catch external transactions
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refresh();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [refresh]);
+
+  // Refresh balance when tab/window regains focus
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refresh();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [refresh]);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);

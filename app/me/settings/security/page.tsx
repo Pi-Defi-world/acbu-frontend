@@ -63,13 +63,13 @@ export default function SecurityPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3 flex items-center gap-3">
+      <div className="page-header">
+        <div className="page-header-row">
           <Link href="/me/settings">
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
           <div>
-            <h1 className="text-lg font-bold text-foreground">Security</h1>
+            <h1 className="page-title">Security</h1>
             <p className="text-sm text-muted-foreground">Manage account protection, sessions, and API access.</p>
           </div>
         </div>

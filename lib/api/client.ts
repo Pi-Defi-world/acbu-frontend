@@ -53,6 +53,25 @@ export function getApiErrorMessage(e: unknown): string {
   return 'Something went wrong';
 }
 
+/**
+ * Maps HTTP status codes to user-friendly, actionable messages.
+ * Handles 429 (Rate Limit), 503 (Service Unavailable), and 402 (Payment Required)
+ * with specific guidance. Falls back to the raw error message for all other codes.
+ */
+export function mapApiError(e: unknown): string {
+  const status = (e as ApiError)?.status;
+  switch (status) {
+    case 429:
+      return 'Too many requests — please wait a moment and try again.';
+    case 503:
+      return 'Service temporarily unavailable. Please try again in a few minutes.';
+    case 402:
+      return 'Payment required — your account may need funding or a plan upgrade before proceeding.';
+    default:
+      return getApiErrorMessage(e);
+  }
+}
+
 export interface RequestOptions {
   signal?: AbortSignal;
   token?: string;
@@ -105,6 +124,12 @@ async function request<T>(
     timedOut = true;
     controller.abort();
   }, DEFAULT_TIMEOUT);
+
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    throw new Error(
+      'You appear to be offline. Please check your internet connection and try again.',
+    );
+  }
 
   let res: Response;
   try {

@@ -24,7 +24,10 @@ interface AuthContextValue extends AuthState {
   setAuth: (apiKey: string | null, userId: string | null, stellarAddress?: string | null) => void;
   refreshStellarAddress: () => Promise<void>;
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/dev
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getStoredAuth(): AuthState {
