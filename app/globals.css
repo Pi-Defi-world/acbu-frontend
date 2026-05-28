@@ -1,5 +1,31 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source(none);
 @import 'tw-animate-css';
+
+/* Only scan shipped app routes and shared source code.
+   Legacy routes like /burn, /currency, /reserves, and /test-locale stay out
+   of the production CSS build unless they are explicitly reintroduced here. */
+@source "./page.tsx";
+@source "./error.tsx";
+@source "./global-error.tsx";
+@source "./bills";
+@source "./business";
+@source "./fiat";
+@source "./help";
+@source "./lending";
+@source "./me";
+@source "./mint";
+@source "./rates";
+@source "./recovery";
+@source "./savings";
+@source "./send";
+@source "./transactions";
+@source "./wallet";
+@source "./[locale]";
+@source "../components";
+@source "../contexts";
+@source "../hooks";
+@source "../i18n";
+@source "../lib";
 
 @custom-variant dark (&:is(.dark *));
 
