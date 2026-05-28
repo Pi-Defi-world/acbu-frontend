@@ -3,6 +3,7 @@
 import React, { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -56,7 +57,7 @@ export class ErrorBoundary extends Component<Props, State> {
           isAppLevel ? 'min-h-screen' : isPageLevel ? 'min-h-[400px]' : 'min-h-[200px]'
         }`}>
           <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-3">
-            <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
+            <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" aria-hidden="true" />
           </div>
           
           <div className="space-y-2">
@@ -93,12 +94,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
           <div className="flex gap-2">
             <Button onClick={this.handleReset} variant="outline" size="sm">
-              <RefreshCw className="w-4 h-4 mr-2" />
+              <RefreshCw className="w-4 h-4 mr-2" aria-hidden="true" />
               Try again
             </Button>
             {(isAppLevel || isPageLevel) && (
               <Button onClick={this.handleGoHome} variant="default" size="sm">
-                <Home className="w-4 h-4 mr-2" />
+                <Home className="w-4 h-4 mr-2" aria-hidden="true" />
                 Go home
               </Button>
             )}

@@ -98,7 +98,7 @@ export function ApiErrorDisplay({
           aria-label="Dismiss error"
           className="shrink-0 rounded p-0.5 hover:bg-destructive/10"
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" aria-hidden="true" />
         </button>
       )}
     </div>

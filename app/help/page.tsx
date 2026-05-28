@@ -312,7 +312,7 @@ export default function HelpPage() {
 
           <div className="mt-6 pt-6 border-t border-border">
             <p className="text-sm text-muted-foreground">
-              <AlertCircle className="w-4 h-4 inline mr-1" />
+              <AlertCircle className="w-4 h-4 inline mr-1" aria-hidden="true" />
               For urgent security issues, please email{" "}
               <a
                 href="mailto:security@acbu.io"

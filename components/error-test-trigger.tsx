@@ -36,7 +36,7 @@ export function ErrorTestTrigger() {
   return (
     <div className="fixed bottom-4 right-4 p-4 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg shadow-lg">
       <div className="flex items-center gap-2 mb-3">
-        <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+        <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" aria-hidden="true" />
         <span className="text-sm font-semibold text-yellow-900 dark:text-yellow-100">
           Error Testing (Dev Only)
         </span>

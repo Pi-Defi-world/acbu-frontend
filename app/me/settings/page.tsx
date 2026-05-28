@@ -38,7 +38,7 @@ export default function SettingsPage() {
                 aria-label={`Go to ${item.title} settings - ${item.description}`}
               >
                 <Card className="border-border p-4 flex items-center gap-3">
-                  <Icon className="w-5 h-5 text-primary flex-shrink-0" />
+                  <Icon className="w-5 h-5 text-primary flex-shrink-0" aria-hidden="true" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-foreground truncate">
                       {item.title}

@@ -52,7 +52,7 @@ export function BackButton({
     >
       {children || (
         <>
-          <ArrowLeft className="w-5 h-5 text-primary" />
+          <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
           {label && <span className="sr-only">{label}</span>}
         </>
       )}

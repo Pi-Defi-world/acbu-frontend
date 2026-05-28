@@ -207,7 +207,7 @@ export function WalletSetupModal() {
 
         {error && (
           <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10 mb-2">
-            <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
@@ -261,7 +261,7 @@ export function WalletSetupModal() {
               onClick={() => setOption(null)}
               className="mb-2 -ml-2 h-8 px-2"
             >
-              <ChevronLeft className="w-4 h-4 mr-1" />
+              <ChevronLeft className="w-4 h-4 mr-1" aria-hidden="true" />
               Back
             </Button>
 
@@ -270,7 +270,7 @@ export function WalletSetupModal() {
                 <h2 className="text-lg font-semibold">Your New Wallet</h2>
                 
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                  <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
                   <p className="text-xs text-blue-800 dark:text-blue-300">
                     Your wallet secret will be encrypted with your account passcode and stored securely on this device.
                   </p>
@@ -295,7 +295,7 @@ export function WalletSetupModal() {
                 <h2 className="text-lg font-semibold">Import Seed</h2>
                 
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                  <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
                   <p className="text-xs text-blue-800 dark:text-blue-300">
                     Your wallet secret will be encrypted with your account passcode and stored securely on this device.
                   </p>

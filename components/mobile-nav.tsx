@@ -12,16 +12,16 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-  { name: "Send", href: "/send", icon: <Send className="w-5 h-5" /> },
-  { name: "Mint", href: "/mint", icon: <Coins className="w-5 h-5" /> },
+  { name: "Home", href: "/", icon: <Home className="w-5 h-5" aria-hidden="true" /> },
+  { name: "Send", href: "/send", icon: <Send className="w-5 h-5" aria-hidden="true" /> },
+  { name: "Mint", href: "/mint", icon: <Coins className="w-5 h-5" aria-hidden="true" /> },
   {
     name: "Business",
     href: "/business",
-    icon: <Briefcase className="w-5 h-5" />,
+    icon: <Briefcase className="w-5 h-5" aria-hidden="true" />,
   },
-  { name: "Wallet", href: "/wallet", icon: <Wallet className="w-5 h-5" /> },
-  { name: "Me", href: "/me", icon: <User className="w-5 h-5" /> },
+  { name: "Wallet", href: "/wallet", icon: <Wallet className="w-5 h-5" aria-hidden="true" /> },
+  { name: "Me", href: "/me", icon: <User className="w-5 h-5" aria-hidden="true" /> },
 ];
 
 export function MobileNav() {

@@ -44,7 +44,7 @@ const billProviders: BillProvider[] = [
         id: "electric",
         name: "Electricity",
         category: "Utilities",
-        icon: <Zap className="w-6 h-6" />,
+        icon: <Zap className="w-6 h-6" aria-hidden="true" />,
         description: "Pay your electric bill",
         minAmount: 100,
         maxAmount: 50000,
@@ -53,7 +53,7 @@ const billProviders: BillProvider[] = [
         id: "water",
         name: "Water",
         category: "Utilities",
-        icon: <Droplet className="w-6 h-6" />,
+        icon: <Droplet className="w-6 h-6" aria-hidden="true" />,
         description: "Pay your water bill",
         minAmount: 50,
         maxAmount: 10000,
@@ -62,7 +62,7 @@ const billProviders: BillProvider[] = [
         id: "internet",
         name: "Internet",
         category: "Connectivity",
-        icon: <Wifi className="w-6 h-6" />,
+        icon: <Wifi className="w-6 h-6" aria-hidden="true" />,
         description: "Pay your internet bill",
         minAmount: 200,
         maxAmount: 5000,
@@ -71,7 +71,7 @@ const billProviders: BillProvider[] = [
         id: "mobile",
         name: "Mobile Airtime",
         category: "Connectivity",
-        icon: <Phone className="w-6 h-6" />,
+        icon: <Phone className="w-6 h-6" aria-hidden="true" />,
         description: "Top up mobile balance",
         minAmount: 100,
         maxAmount: 20000,
@@ -171,7 +171,7 @@ export default function BillsPage() {
                 </div>
                 <PageContainer>
                     <Card className="border-border p-8 flex flex-col items-center text-center gap-4 mt-6">
-                        <Zap className="w-10 h-10 text-muted-foreground" />
+                        <Zap className="w-10 h-10 text-muted-foreground" aria-hidden="true" />
                         <div>
                             <h2 className="text-lg font-semibold text-foreground mb-1">
                                 Coming soon
@@ -302,7 +302,7 @@ export default function BillsPage() {
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {tx.status === "completed" && (
-                                                    <CheckCircle className="w-4 h-4 text-green-600" />
+                                                    <CheckCircle className="w-4 h-4 text-green-600" aria-hidden="true" />
                                                 )}
                                                 <p className="font-semibold text-foreground">
                                                     -AFK{" "}
@@ -317,7 +317,7 @@ export default function BillsPage() {
                                 ))
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                                    <AlertCircle className="w-8 h-8 text-muted-foreground mb-3" />
+                                    <AlertCircle className="w-8 h-8 text-muted-foreground mb-3" aria-hidden="true" />
                                     <p className="text-sm text-muted-foreground">
                                         No bill payments yet
                                     </p>
@@ -436,7 +436,7 @@ export default function BillsPage() {
 
                         {paymentStep === "success" && (
                             <div className="py-4 text-center">
-                                <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
+                                <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" aria-hidden="true" />
                                 <p className="text-sm text-muted-foreground mb-4">
                                     Transaction reference: TXN_
                                     {Date.now().toString().slice(-8)}

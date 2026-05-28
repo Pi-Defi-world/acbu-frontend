@@ -298,10 +298,10 @@ export default function SendPage() {
                 className={`mt-1 text-xs ${getStatusColor(t.status)}`}
               >
                 {t.status === "completed" && (
-                  <Check className="mr-1 h-3 w-3" />
+                  <Check className="mr-1 h-3 w-3" aria-hidden="true" />
                 )}
                 {t.status === "pending" && (
-                  <AlertCircle className="mr-1 h-3 w-3" />
+                  <AlertCircle className="mr-1 h-3 w-3" aria-hidden="true" />
                 )}
                 {t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : "Unknown"}
               </Badge>
