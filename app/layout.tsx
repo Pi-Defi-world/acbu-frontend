@@ -70,16 +70,21 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const nonce = (await headers()).get('x-nonce') || undefined;
-  const lang = "en";
   // Read the nonce injected by middleware so Next.js can apply it to
   // inline scripts/styles it generates (e.g. __NEXT_DATA__).
   const headersList = await headers();
   const nonce = headersList.get('x-nonce') ?? undefined;
+  const lang = "en";
 
   return (
     <html lang={lang}>
       <body className={`font-sans antialiased`}>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          Skip to main content
+        </a>
         <GlobalErrorHandler />
         <ErrorBoundary level="app">
           <AuthProvider>
