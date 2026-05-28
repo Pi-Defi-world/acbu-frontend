@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KycBadge } from "@/components/ui/kyc-badge";
+import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import { normalizeUsername } from "@/lib/utils";
@@ -78,9 +79,14 @@ export default function ProfilePage() {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState("");
+    const [tick, setTick] = useState(0);
+
+    const refetch = () => setTick((t) => t + 1);
 
     useEffect(() => {
         let cancelled = false;
+        setLoading(true);
+        setError("");
 
         userApi
             .getMe(opts)
@@ -112,7 +118,7 @@ export default function ProfilePage() {
         return () => {
             cancelled = true;
         };
-    }, [opts]);
+    }, [opts, tick]);
 
     const handleChange = (
         field: keyof FormData,
@@ -205,7 +211,7 @@ export default function ProfilePage() {
                     </h1>
                 </div>
                 <PageContainer>
-                    <p className="text-destructive">{error}</p>
+                    <RetryErrorBlock message={error} onRetry={refetch} className="p-4" />
                 </PageContainer>
             </>
         );

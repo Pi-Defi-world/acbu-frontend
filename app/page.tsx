@@ -18,12 +18,14 @@ import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
 import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
+import { Button } from '@/components/ui/button';
+import { RetryErrorBlock } from '@/components/ui/retry-error-block';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
 import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import * as transactionsApi from '@/lib/api/transactions';
 import * as fiatApi from '@/lib/api/fiat';
-import * as ratesApi from '@/lib/api/rates';
+import { useRates } from '@/lib/api/rates';
 import type { TransactionListItem, RatesResponse } from '@/types/api';
 import { formatAcbu, formatAmount } from '@/lib/utils';
 
@@ -111,36 +113,26 @@ function formatDate(iso: string) {
  */
 export default function Home() {
   const [showBalance, setShowBalance] = useState(true);
-  const { balance, loading: balanceLoading, error: balanceError } = useBalance();
+  const {
+    balance,
+    loading: balanceLoading,
+    error: balanceError,
+    refetch: refetchBalance,
+  } = useBalance();
   const opts = useApiOpts();
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [fiatLoading, setFiatLoading] = useState(true);
-  const [rates, setRates] = useState<RatesResponse | null>(null);
-  const [ratesLoading, setRatesLoading] = useState(true);
+  const {
+    data: rates,
+    loading: ratesLoading,
+    error: ratesError,
+    refetch: refetchRates,
+  } = useRates(opts);
 
   useScrollRestoration('/', !loading);
-
-  useEffect(() => {
-    let cancelled = false;
-    setRatesLoading(true);
-    ratesApi
-      .getRates(opts)
-      .then((data) => {
-        if (!cancelled) setRates(data);
-      })
-      .catch(() => {
-        if (!cancelled) setRates(null);
-      })
-      .finally(() => {
-        if (!cancelled) setRatesLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
 
   useEffect(() => {
     let cancelled = false;
@@ -264,10 +256,15 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            {showBalance && balanceError && (
-              <div className="flex items-center gap-1 text-xs text-destructive mt-2">
-                <span>{balanceError}</span>
-              </div>
+            {showBalance && (balanceError || ratesError) && (
+              <RetryErrorBlock
+                className="mt-3 text-xs"
+                message={balanceError || ratesError}
+                onRetry={() => {
+                  if (balanceError) refetchBalance();
+                  if (ratesError) refetchRates();
+                }}
+              />
             )}
           </div>
 

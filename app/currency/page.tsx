@@ -21,9 +21,12 @@ import { formatAmount } from "@/lib/utils";
 import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
+import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
-import type { MintResponse, BurnResponse, CurrencyPreference } from "@/types/api";
+import * as ratesApi from "@/lib/api/rates";
+import { useBalance } from "@/hooks/use-balance";
+import type { MintResponse, BurnResponse, CurrencyPreference, RatesResponse } from "@/types/api";
 import { logger } from "@/lib/logger";
 import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
@@ -67,6 +70,12 @@ export default function CurrencyPage() {
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
+  const {
+    balance,
+    loading: balanceLoading,
+    error: balanceError,
+    refetch: refetchBalance,
+  } = useBalance();
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
@@ -317,7 +326,7 @@ export default function CurrencyPage() {
         });
       }
       setStep("success");
-      refreshBalance();
+      refetchBalance();
     } catch (e) {
       logger.error(`Currency operation failed: ${activeTab}`, e); // <-- ADD LOGGER
       setSubmitError(e instanceof Error ? e.message : "Operation failed");
@@ -371,6 +380,11 @@ export default function CurrencyPage() {
                 ? "≈ ₦ —"
                 : `≈ ₦${formatAmount(balance * ngnPerAcbu, 0)}`}
             </p>
+            <RetryErrorBlock
+              message={balanceError}
+              onRetry={refetchBalance}
+              className="mt-3 bg-destructive/10 text-xs"
+            />
           </Card>
         </div>
 
