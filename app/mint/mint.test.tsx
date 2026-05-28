@@ -64,6 +64,12 @@ vi.mock('@/components/ui/alert-dialog', () => ({
   AlertDialogCancel: ({ children, onClick }: { children: React.ReactNode, onClick: () => void }) => <button onClick={onClick}>{children}</button>,
 }))
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useParams: () => ({}),
+  usePathname: () => '/',
+}))
+
 vi.mock('next/link', () => ({
   default: ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>
@@ -132,6 +138,6 @@ describe('MintPage', () => {
     const availableTexts = screen.getAllByText(/100/)
     expect(availableTexts.length).toBeGreaterThan(0)
     expect(screen.getByText(/Available: ACBU/)).toBeInTheDocument()
-    expect(screen.getByText('Burn & Redeem')).not.toBeDisabled()
+    expect(screen.getByText('Continue to Burn & Redeem')).not.toBeDisabled()
   })
 })

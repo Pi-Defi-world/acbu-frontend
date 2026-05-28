@@ -28,8 +28,13 @@ import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
-import type { MintResponse, BurnResponse } from "@/types/api";
+import type { MintResponse, BurnResponse, CurrencyPreference } from "@/types/api";
 import { logger } from "@/lib/logger";
+import { useAuth } from "@/contexts/auth-context";
+import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
+import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
+import { Keypair } from "@stellar/stellar-sdk";
+import { submitBurnRedeemSingleClient } from "@/lib/stellar/burning";
 
 /** Local currency units per 1 ACBU from the `/rates` oracle, or null if missing. */
 function localPerAcbu(currency: string, rates: RatesResponse | null): number | null {
@@ -65,8 +70,13 @@ function estimateLocalFromAcbu(
 export default function CurrencyPage() {
   const opts = useApiOpts();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+<<<<<<< HEAD
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const { toast } = useToast();
+=======
+  const { userId, stellarAddress } = useAuth();
+  const kit = useStellarWalletsKit();
+>>>>>>> origin/dev
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
@@ -82,8 +92,12 @@ export default function CurrencyPage() {
 
   // Mint state
   const [mintAmount, setMintAmount] = useState("");
+<<<<<<< HEAD
   const debouncedMintAmount = useDebounce(mintAmount, 300);
   const [mintSource, setMintSource] = useState("stellar");
+=======
+  const [mintSource, setMintSource] = useState<Exclude<CurrencyPreference, "auto">>("usdc");
+>>>>>>> origin/dev
   const [mintWalletAddress, setMintWalletAddress] = useState("");
 
   // Burn state
@@ -148,7 +162,7 @@ export default function CurrencyPage() {
         const res: MintResponse = await mintApi.mintFromUsdc(
           mintAmount,
           mintWalletAddress.trim(),
-          "auto",
+          mintSource,
           opts,
         );
         setLastTxId(res.transaction_id);
@@ -159,6 +173,64 @@ export default function CurrencyPage() {
         });
       } else if (activeTab === "burn") {
         logger.info("Burning ACBU", { amount: burnAmount, destination: burnDestination }); // <-- ADD LOGGER
+        
+        // Generate blockchain proof before submission
+        if (!userId) throw new Error("Not signed in");
+        if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
+        
+        let burnTxHash: string;
+        const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+        
+        if (secret) {
+          const localPubKey = Keypair.fromSecret(secret).publicKey();
+          if (stellarAddress && localPubKey !== stellarAddress) {
+            throw new Error(
+              `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+            );
+          }
+          const submit = await submitBurnRedeemSingleClient({
+            userAddress: stellarAddress,
+            amountAcbu: burnAmount,
+            currency: "NGN",
+            userSecret: secret,
+          });
+          burnTxHash = submit.transactionHash;
+        } else {
+          if (!kit) {
+            throw new Error(
+              "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+            );
+          }
+          const address = await new Promise<string>((resolve, reject) => {
+            kit
+              .openModal({
+                onWalletSelected: async (selectedOption: { id: string }) => {
+                  try {
+                    kit.setWallet(selectedOption.id);
+                    const { address } = await kit.getAddress();
+                    resolve(address);
+                  } catch (err) {
+                    reject(err);
+                  }
+                },
+              })
+              .catch(reject);
+          });
+          if (stellarAddress && address !== stellarAddress) {
+            throw new Error(
+              `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+            );
+          }
+          const submit = await submitBurnRedeemSingleClient({
+            userAddress: stellarAddress,
+            amountAcbu: burnAmount,
+            currency: "NGN",
+            external: { kit, address },
+          });
+          burnTxHash = submit.transactionHash;
+        }
+        
+        // Submit burn with blockchain proof
         const recipientType =
           burnDestination === "bank"
             ? "bank"
@@ -175,6 +247,7 @@ export default function CurrencyPage() {
             account_name: burnAccountName.trim(),
           },
           opts,
+          burnTxHash,
         );
         setLastTxId(res.transaction_id);
         setLastResponse(res);
@@ -184,6 +257,64 @@ export default function CurrencyPage() {
         });
       } else {
         logger.info("International transfer", { amount: intlAmount, country: intlCountry }); // <-- ADD LOGGER
+        
+        // Generate blockchain proof before submission
+        if (!userId) throw new Error("Not signed in");
+        if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
+        
+        let burnTxHash: string;
+        const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+        
+        if (secret) {
+          const localPubKey = Keypair.fromSecret(secret).publicKey();
+          if (stellarAddress && localPubKey !== stellarAddress) {
+            throw new Error(
+              `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+            );
+          }
+          const submit = await submitBurnRedeemSingleClient({
+            userAddress: stellarAddress,
+            amountAcbu: intlAmount,
+            currency: intlCurrency,
+            userSecret: secret,
+          });
+          burnTxHash = submit.transactionHash;
+        } else {
+          if (!kit) {
+            throw new Error(
+              "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+            );
+          }
+          const address = await new Promise<string>((resolve, reject) => {
+            kit
+              .openModal({
+                onWalletSelected: async (selectedOption: { id: string }) => {
+                  try {
+                    kit.setWallet(selectedOption.id);
+                    const { address } = await kit.getAddress();
+                    resolve(address);
+                  } catch (err) {
+                    reject(err);
+                  }
+                },
+              })
+              .catch(reject);
+          });
+          if (stellarAddress && address !== stellarAddress) {
+            throw new Error(
+              `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+            );
+          }
+          const submit = await submitBurnRedeemSingleClient({
+            userAddress: stellarAddress,
+            amountAcbu: intlAmount,
+            currency: intlCurrency,
+            external: { kit, address },
+          });
+          burnTxHash = submit.transactionHash;
+        }
+        
+        // Submit international transfer with blockchain proof
         const res: BurnResponse = await burnApi.burnAcbu(
           intlAmount,
           intlCurrency,
@@ -193,6 +324,7 @@ export default function CurrencyPage() {
             account_name: intlAccountName.trim(),
           },
           opts,
+          burnTxHash,
         );
         setLastTxId(res.transaction_id);
         setLastResponse(res);
@@ -306,7 +438,7 @@ export default function CurrencyPage() {
               </Card>
 
               <div className="mb-4">
-                <Label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="form-label">
                   Amount to Mint
                 </Label>
                 <div className="flex gap-2">
@@ -332,7 +464,7 @@ export default function CurrencyPage() {
               </div>
 
               <div>
-                <Label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="form-label">
                   Destination Wallet Address
                 </Label>
                 <Input
@@ -400,7 +532,7 @@ export default function CurrencyPage() {
               </Card>
 
               <div>
-                <Label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="form-label">
                   Amount to Burn
                 </Label>
                 <div className="flex gap-2">
@@ -516,7 +648,7 @@ export default function CurrencyPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+                  <label className="form-label">
                     Recipient Country
                   </label>
                   <select
@@ -533,7 +665,7 @@ export default function CurrencyPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+                  <label className="form-label">
                     Currency
                   </label>
                   <select
@@ -550,7 +682,7 @@ export default function CurrencyPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+                  <label className="form-label">
                     Amount (ACBU)
                   </label>
                   <div className="flex gap-2">

@@ -189,9 +189,9 @@ export default function WalletPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <div className="page-header">
         <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-foreground">Wallet Management</h1>
+          <h1 className="page-title">Wallet Management</h1>
           <p className="text-xs text-muted-foreground">Manage your Stellar wallet</p>
         </div>
       </div>

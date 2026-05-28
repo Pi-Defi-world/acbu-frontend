@@ -20,6 +20,7 @@ import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
+import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import * as transactionsApi from '@/lib/api/transactions';
 import * as fiatApi from '@/lib/api/fiat';
 import * as ratesApi from '@/lib/api/rates';
@@ -112,6 +113,7 @@ export default function Home() {
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [ratesLoading, setRatesLoading] = useState(true);
 
+<<<<<<< HEAD:app/[locale]/page.tsx
   const t = useTranslations('home');
   const format = useFormatter();
 
@@ -121,6 +123,9 @@ export default function Home() {
     { title: t('features.simulated_bank.title'), description: t('features.simulated_bank.description'), icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
     { title: t('features.rates.title'), description: t('features.rates.description'), icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
   ];
+=======
+  useScrollRestoration('/', !loading);
+>>>>>>> origin/dev:app/page.tsx
 
   useEffect(() => {
     let cancelled = false;
@@ -180,7 +185,7 @@ export default function Home() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <header className="page-header">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1">

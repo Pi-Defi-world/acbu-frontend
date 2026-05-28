@@ -27,6 +27,12 @@ import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
+<<<<<<< HEAD
+=======
+import { useApiError } from "@/hooks/use-api-error";
+import { useI18n } from "@/contexts/i18n-context";
+import { mapApiError } from "@/lib/api/client";
+>>>>>>> origin/dev
 import { useBalance } from "@/hooks/use-balance";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
@@ -65,6 +71,7 @@ function formatDate(iso: string) {
 export default function SendPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
+  const { t } = useI18n();
   const kit = useStellarWalletsKit();
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const [activeTab, setActiveTab] = useState("send");
@@ -122,9 +129,24 @@ export default function SendPage() {
     setLoadError("");
     userApi.getContacts(opts).then((data) => {
       setContacts(data.contacts ?? []);
+<<<<<<< HEAD
       setLoadError("");
     }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
   }, [opts]);
+=======
+    } catch (e) {
+      const message = e instanceof Error ? e.message : t('common.errorDefault');
+      setContactsError(message);
+      toast({
+        title: t('common.errorDefault'),
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingContacts(false);
+    }
+  }, [opts, toast, t]);
+>>>>>>> origin/dev
 
   useEffect(() => {
     loadTransfers();
@@ -272,7 +294,7 @@ export default function SendPage() {
       return (
         <div className="rounded-lg border border-border bg-card p-6 text-center">
           <p className="text-sm text-muted-foreground">
-            No transfers yet
+            {t('send.noTransfersYet')}
           </p>
         </div>
       );
@@ -287,7 +309,7 @@ export default function SendPage() {
           >
             <div className="flex-1 min-w-0">
               <p className="font-medium text-foreground truncate">
-                Transfer
+                {t('send.transferLabel')}
               </p>
               <p className="text-xs text-muted-foreground">
                 {formatDate(t.created_at)}
@@ -307,7 +329,7 @@ export default function SendPage() {
                 {t.status === "pending" && (
                   <AlertCircle className="mr-1 h-3 w-3" />
                 )}
-                {t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : "Unknown"}
+                {t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : t('common.unknown')}
               </Badge>
             </div>
           </Link>
@@ -317,12 +339,18 @@ export default function SendPage() {
   }, [transfers, loadingTransfers]);
 
   return (
+<<<<<<< HEAD
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+=======
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <header className="page-header">
+>>>>>>> origin/dev
         <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-foreground mb-3">
-            Send Money
+          <h1 className="page-title mb-3">
+            {t('send.title')}
           </h1>
+<<<<<<< HEAD
           <div className="flex gap-2" role="tablist" aria-label="Send money options">
             <button
               id="tab-send"
@@ -353,6 +381,16 @@ export default function SendPage() {
               History
             </button>
           </div>
+=======
+          <TabsList className="bg-muted inline-flex h-10 items-center justify-start rounded-lg p-1 text-muted-foreground">
+            <TabsTrigger value="send" className="px-4 py-1.5 rounded-md font-medium text-sm transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              {t('send.send')}
+            </TabsTrigger>
+            <TabsTrigger value="history" className="px-4 py-1.5 rounded-md font-medium text-sm transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              {t('send.history')}
+            </TabsTrigger>
+          </TabsList>
+>>>>>>> origin/dev
         </div>
       </header>
       
@@ -375,7 +413,7 @@ export default function SendPage() {
               className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4"
             >
               <Plus className="mb-2 h-5 w-5" />
-              <span>New Transfer</span>
+              <span>{t('send.newTransfer')}</span>
             </Button>
             <Button
               asChild
@@ -384,12 +422,13 @@ export default function SendPage() {
             >
               <Link href="/me/settings/contacts">
                 <Plus className="mb-2 h-5 w-5" />
-                <span>Add Contact</span>
+                <span>{t('send.addContact')}</span>
               </Link>
             </Button>
           </div>
         </TabsContent>
 
+<<<<<<< HEAD
           <TabsContent 
             value="history" 
             id="panel-history"
@@ -450,12 +489,23 @@ export default function SendPage() {
             </div>
           </TabsContent>
         </Tabs>
+=======
+        <TabsContent value="history" className="space-y-3 outline-none mt-0">
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">
+              {t('send.recentTransfers')}
+            </h3>
+            {transfersList}
+          </div>
+        </TabsContent>
+>>>>>>> origin/dev
       </div>
 
       {/* Send Dialog */}
       <Dialog open={showSendDialog} onOpenChange={handleSendDialogChange}>
         <DialogContent className="max-w-md border-border">
           <DialogHeader>
+<<<<<<< HEAD
             <DialogTitle id="send-dialog-title">Send Money</DialogTitle>
             <DialogDescription id="send-dialog-description">
               Transfer ACBU securely to another wallet
@@ -466,25 +516,38 @@ export default function SendPage() {
               <Label htmlFor="recipient-type" className="text-foreground">
                 Recipient
               </Label>
+=======
+            <DialogTitle>{t('send.title')}</DialogTitle>
+            <DialogDescription>{t('send.dialogDescription')}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-foreground">{t('send.recipient')}</Label>
+>>>>>>> origin/dev
               <Tabs
                 value={useContact ? "contact" : "custom"}
                 onValueChange={handleUseContactChange}
               >
                 <TabsList className="grid w-full grid-cols-2 bg-muted">
-                  <TabsTrigger value="contact">From Contacts</TabsTrigger>
-                  <TabsTrigger value="custom">New Address</TabsTrigger>
+                  <TabsTrigger value="contact">{t('send.fromContacts')}</TabsTrigger>
+                  <TabsTrigger value="custom">{t('send.newAddress')}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="contact" className="mt-3">
                   <Select
                     value={selectedContact?.id || ""}
                     onValueChange={handleContactSelect}
                   >
+<<<<<<< HEAD
                     <SelectTrigger 
                       className="border-border"
                       id="contact-select"
                       aria-label="Select a contact"
                     >
                       <SelectValue placeholder="Select a contact" />
+=======
+                    <SelectTrigger className="border-border">
+                      <SelectValue placeholder={t('send.selectContact')} />
+>>>>>>> origin/dev
                     </SelectTrigger>
                     <SelectContent>
                       <div
@@ -502,9 +565,13 @@ export default function SendPage() {
                 </TabsContent>
                 <TabsContent value="custom">
                   <Input
+<<<<<<< HEAD
                     id="custom-recipient"
                     name="custom-recipient"
                     placeholder="Wallet address or email"
+=======
+                    placeholder={t('send.walletAddressOrEmail')}
+>>>>>>> origin/dev
                     value={customRecipient}
                     onChange={handleCustomRecipientChange}
                     className="border-border"
@@ -518,9 +585,13 @@ export default function SendPage() {
             </div>
 
             <div className="space-y-2">
+<<<<<<< HEAD
               <Label htmlFor="amount-input" className="text-foreground">
                 Amount
               </Label>
+=======
+              <Label className="text-foreground">{t('send.amount')}</Label>
+>>>>>>> origin/dev
               <div className="flex gap-2">
                 <span className="flex items-center text-muted-foreground font-medium">
                   ACBU
@@ -539,6 +610,7 @@ export default function SendPage() {
                   aria-invalid={exceedsBalance}
                 />
               </div>
+<<<<<<< HEAD
               {exceedsBalance && (
                 <p id="amount-error" className="text-xs text-destructive" role="alert">
                   Insufficient balance.
@@ -546,10 +618,16 @@ export default function SendPage() {
               )}
               <p id="amount-hint" className="text-xs text-muted-foreground">
                 Available: ACBU {balanceLoading ? '...' : formatAmount(balance)}
+=======
+              {exceedsBalance && <p className="text-xs text-destructive">{t('send.insufficientBalance')}</p>}
+              <p className="text-xs text-muted-foreground">
+                {t('send.available')}: ACBU {balanceLoading ? "..." : formatAmount(balance)}
+>>>>>>> origin/dev
               </p>
             </div>
 
             <div className="space-y-2">
+<<<<<<< HEAD
               <Label htmlFor="note-input" className="text-foreground">
                 Note (Optional)
               </Label>
@@ -557,6 +635,11 @@ export default function SendPage() {
                 id="note-input"
                 name="note"
                 placeholder="Add a message..."
+=======
+              <Label className="text-foreground">{t('send.note')}</Label>
+              <Input
+                placeholder={t('send.addMessage')}
+>>>>>>> origin/dev
                 value={note}
                 onChange={handleNoteChange}
                 className="border-border"
@@ -569,8 +652,8 @@ export default function SendPage() {
 
             <Card className="border-border bg-muted p-3">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Network Fee</span>
-                <span className="font-medium text-foreground">Free</span>
+                  <span className="text-muted-foreground">{t('send.networkFee')}</span>
+                  <span className="font-medium text-foreground">{t('send.free')}</span>
               </div>
             </Card>
 
@@ -581,7 +664,7 @@ export default function SendPage() {
                 className="flex-1 border-border"
                 aria-label="Cancel transfer"
               >
-                Cancel
+                {t('send.cancel')}
               </Button>
               <Button
                 onClick={handleShowConfirmDialog}
@@ -589,7 +672,7 @@ export default function SendPage() {
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                 aria-label="Continue to confirmation"
               >
-                Continue
+                {t('send.continue')}
               </Button>
             </div>
           </div>
@@ -599,9 +682,15 @@ export default function SendPage() {
       <AlertDialog open={showConfirmDialog} onOpenChange={handleConfirmDialogChange}>
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
+<<<<<<< HEAD
             <AlertDialogTitle id="confirm-dialog-title">Confirm Transfer</AlertDialogTitle>
             <AlertDialogDescription id="confirm-dialog-description">
               Review the details before confirming
+=======
+            <AlertDialogTitle>{t('send.confirmTransfer')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('send.reviewDetails')}
+>>>>>>> origin/dev
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-4">
@@ -611,7 +700,7 @@ export default function SendPage() {
               </p>
             )}
             <div className="rounded-lg border border-border bg-muted p-4">
-              <p className="text-xs text-muted-foreground">To</p>
+              <p className="text-xs text-muted-foreground">{t('send.to')}</p>
               <p className="font-semibold text-foreground truncate">
                 {selectedContact?.alias ||
                   selectedContact?.pay_uri ||
@@ -625,22 +714,29 @@ export default function SendPage() {
               </div>
             </div>
             <div className="rounded-lg border border-border bg-muted p-4">
+<<<<<<< HEAD
               <p className="text-xs text-muted-foreground">Amount</p>
               <p className="text-2xl font-bold text-foreground">
                 ACBU {formatAmount(amount)}
+=======
+              <p className="text-xs text-muted-foreground">{t('send.amountLabel')}</p>
+              <p className="text-2xl font-bold text-foreground" data-testid="confirm-amount">
+                ACBU {formatAmount(confirmedAmount)}
+>>>>>>> origin/dev
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Network Fee: Free
+                {t('send.networkFeeLabel')}: {t('send.free')}
               </p>
             </div>
             {note && (
               <div className="rounded-lg border border-border bg-muted p-4">
-                <p className="text-xs text-muted-foreground">Note</p>
+                <p className="text-xs text-muted-foreground">{t('send.noteLabel')}</p>
                 <p className="text-sm text-foreground break-words">{note}</p>
               </div>
             )}
           </div>
           <div className="flex gap-3">
+<<<<<<< HEAD
             <AlertDialogCancel 
               className="flex-1 border-border" 
               disabled={sending}
@@ -654,6 +750,10 @@ export default function SendPage() {
             >
               {sending ? "Sending..." : `Send ACBU ${confirmedAmount}`}
             </AlertDialogAction>
+=======
+            <AlertDialogCancel className="flex-1 border-border" disabled={sending}>{t('send.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmTransfer} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={sending || isSubmitDisabled}>{sending ? t('send.sending') : t('send.sendAcbu', { amount })}</AlertDialogAction>
+>>>>>>> origin/dev
           </div>
         </AlertDialogContent>
       </AlertDialog>
@@ -665,9 +765,10 @@ export default function SendPage() {
               <Check className="h-8 w-8 text-green-600 dark:text-green-300" aria-hidden="true" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">
-              Transfer Sent!
+              {t('send.transferSent')}
             </h2>
             <p className="text-muted-foreground mb-4">
+<<<<<<< HEAD
               Your transfer for ACBU {formatAmount(lastSentAmount)}{" "}
               is being processed.
             </p>
@@ -676,6 +777,12 @@ export default function SendPage() {
               className={`mb-4 ${getStatusBadgeClassName("pending")}`}
             >
               Pending
+=======
+              {t('send.transferSentDescription', { amount: formatAmount(lastSentAmount) })}
+            </p>
+            <Badge variant="secondary" className="mb-4">
+              {t('send.pending')}
+>>>>>>> origin/dev
             </Badge>
           </div>
         </DialogContent>

@@ -4,8 +4,13 @@ const withNextIntl = createNextIntlPlugin();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+<<<<<<< HEAD
   images: {
     unoptimized: true,
+=======
+  typescript: {
+    ignoreBuildErrors: true,
+>>>>>>> origin/dev
   },
   // Don't advertise the framework to reduce attack surface
   poweredByHeader: false,
