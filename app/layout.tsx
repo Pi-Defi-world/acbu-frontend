@@ -84,7 +84,7 @@ export default async function RootLayout({
   const lang = "en";
 
   return (
-    <html lang={lang}>
+    <html lang={lang} dir="ltr">
       <body className={`font-sans antialiased`}>
         <GlobalErrorHandler />
         <OfflineIndicator />

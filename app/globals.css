@@ -173,3 +173,29 @@
     @apply flex items-center justify-center min-w-[44px] min-h-[44px] -m-2;
   }
 }
+
+/* ─── RTL support ──────────────────────────────────────────────────────────── */
+/*
+  Most directional fixes are handled inline via Tailwind rtl: variants.
+  These global rules cover cases where Tailwind variants can't reach
+  (e.g. third-party component internals, pseudo-elements, inherited direction).
+*/
+@layer utilities {
+  /* Flip directional icons (ArrowLeft, ChevronLeft, etc.) in RTL.
+     Apply .icon-directional to any icon that implies a horizontal direction. */
+  [dir='rtl'] .icon-directional {
+    transform: scaleX(-1);
+  }
+
+  /* Ensure numeric/currency values stay LTR inside RTL layouts */
+  [dir='rtl'] .numeric {
+    direction: ltr;
+    unicode-bidi: embed;
+  }
+
+  /* Page header row: reverse flex order so back-button stays on the
+     visual "start" edge (right in RTL) */
+  [dir='rtl'] .page-header-row {
+    flex-direction: row-reverse;
+  }
+}
