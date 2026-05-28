@@ -15,7 +15,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <main className={`flex-1 ${!isPublic ? 'pb-24' : ''}`}>{children}</main>
+      <main id="main-content" className={`flex-1 ${!isPublic ? 'pb-24' : ''}`}>{children}</main>
       {!isPublic && <MobileNav />}
     </div>
   );
