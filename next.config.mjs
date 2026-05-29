@@ -5,7 +5,8 @@ validateEnv(process.env);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    ignoreBuildErrors: true,
+    // F-001: TypeScript errors must fail the build to prevent shipping broken code
+    ignoreBuildErrors: false,
   },
   // Don't advertise the framework to reduce attack surface
   poweredByHeader: false,
