@@ -172,4 +172,19 @@
   .touch-target {
     @apply flex items-center justify-center min-w-[44px] min-h-[44px] -m-2;
   }
+
+  /*
+   * Style isolation container for third-party widgets.
+   * Apply to the wrapper element that hosts the injected widget DOM:
+   *   <div class="widget-isolate" ref={widgetContainerRef} />
+   *
+   * Resets all inherited preflight styles so the widget renders
+   * with browser defaults, unaffected by Tailwind's global reset.
+   */
+  .widget-isolate {
+    all: initial;
+  }
+  .widget-isolate * {
+    all: revert;
+  }
 }
