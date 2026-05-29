@@ -52,7 +52,7 @@ export function MobileNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 border-t border-border bg-card z-40 transition-[bottom] duration-150 ease-out"
+      className="fixed bottom-0 left-0 right-0 border-t border-border bg-card z-40 transition-[bottom] duration-150 ease-out md:h-auto"
       role="navigation"
       aria-label="Mobile navigation"
       style={{ bottom: `${bottomOffset}px` }}
@@ -78,9 +78,11 @@ export function MobileNav() {
               }`}
               aria-current={isActive ? "page" : undefined}
             >
-              {item.icon}
+              <span className="md:w-7 md:h-7 flex items-center justify-center">
+                {item.icon}
+              </span>
               {showLabels ? (
-                <span className="text-xs font-medium text-center">
+                <span className="text-xs font-medium text-center md:text-sm">
                   {item.name}
                 </span>
               ) : (
