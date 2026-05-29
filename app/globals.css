@@ -2,6 +2,22 @@
 @import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant motion-reduce (@media (prefers-reduced-motion: reduce));
+
+/* Animations respect prefers-reduced-motion */
+@layer utilities {
+  /* Disable all animations when motion is reduced */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
 
 :root {
   --background: oklch(0.98 0 0);
@@ -121,5 +137,55 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .page-header {
+    @apply sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm;
+  }
+
+  .page-header-row {
+    @apply px-4 py-3 flex items-center gap-3;
+  }
+
+  .page-title {
+    @apply text-lg font-bold text-foreground;
+  }
+
+  .form-label {
+    @apply text-sm font-medium text-foreground mb-2 block;
+  }
+
+  .error-state {
+    @apply flex min-h-[400px] flex-col items-center justify-center gap-4 p-6 text-center;
+  }
+
+  .error-icon-wrapper {
+    @apply rounded-full bg-red-100 dark:bg-red-900/30 p-3;
+  }
+
+  .error-icon {
+    @apply h-8 w-8 text-red-600 dark:text-red-400;
+  }
+
+  .touch-target {
+    @apply flex items-center justify-center min-w-[44px] min-h-[44px] -m-2;
+  }
+
+  /* Tablet-specific responsive adjustments (768px-1024px) */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .page-header-row {
+      @apply px-6 py-4;
+    }
+
+    .page-title {
+      @apply text-xl;
+    }
+
+    /* Increase touch targets for tablet */
+    .touch-target {
+      @apply min-w-[48px] min-h-[48px];
+    }
   }
 }

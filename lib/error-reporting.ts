@@ -10,7 +10,7 @@ export interface ErrorReport {
   userAgent: string;
   url: string;
   level: 'app' | 'page' | 'component';
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 export class ErrorReporter {
@@ -48,21 +48,18 @@ export class ErrorReporter {
     }
 
     try {
-      // In production, you would send this to your error reporting service
-      // Examples:
-      // - Sentry: Sentry.captureException(error, { extra: report });
-      // - LogRocket: LogRocket.captureException(error);
-      // - Bugsnag: Bugsnag.notify(error, event => { event.addMetadata('context', report); });
-      // - Custom API: await fetch('/api/errors', { method: 'POST', body: JSON.stringify(report) });
-
-      // For now, we'll just store it locally for debugging
       if (typeof window !== 'undefined') {
         const errors = this.getStoredErrors();
         errors.push(report);
-        
-        // Keep only the last 50 errors to prevent storage bloat
         const recentErrors = errors.slice(-50);
         localStorage.setItem('app_errors', JSON.stringify(recentErrors));
+
+        fetch('/api/errors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(report),
+          signal: AbortSignal.timeout(5000),
+        }).catch(() => {});
       }
     } catch (reportingError) {
       if (process.env.NODE_ENV !== 'production') {

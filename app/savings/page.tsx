@@ -157,13 +157,13 @@ export default function SavingsPage() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <header className="page-header">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
           <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Savings</h1>
+            <h1 className="page-title">Savings</h1>
             <p className="text-xs text-muted-foreground">Grow your wealth</p>
           </div>
         </div>
@@ -180,7 +180,7 @@ export default function SavingsPage() {
 
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-foreground">Savings balance (API)</h2>
+              <h2 className="page-title">Savings balance (API)</h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-3xl font-bold text-foreground mb-1">
@@ -199,7 +199,7 @@ export default function SavingsPage() {
           {/* Overview Card */}
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-foreground">
+              <h2 className="page-title">
                 Total Savings
               </h2>
               <PiggyBank className="w-5 h-5 text-green-600" />

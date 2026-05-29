@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Send, Coins, Briefcase, User, Wallet } from "lucide-react";
@@ -26,14 +26,38 @@ const navItems: NavItem[] = [
 
 export function MobileNav() {
   const pathname = usePathname();
+  const [bottomOffset, setBottomOffset] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+
+    const handleViewportChange = () => {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const offset = window.innerHeight - (vv.height + vv.offsetTop);
+      setBottomOffset(Math.max(0, offset));
+    };
+
+    const vv = window.visualViewport;
+    vv.addEventListener("resize", handleViewportChange);
+    vv.addEventListener("scroll", handleViewportChange);
+
+    handleViewportChange();
+
+    return () => {
+      vv.removeEventListener("resize", handleViewportChange);
+      vv.removeEventListener("scroll", handleViewportChange);
+    };
+  }, []);
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 border-t border-border bg-card z-40"
+      className="fixed bottom-0 left-0 right-0 border-t border-border bg-card z-40 transition-[bottom] duration-150 ease-out md:h-auto"
       role="navigation"
       aria-label="Mobile navigation"
+      style={{ bottom: `${bottomOffset}px` }}
     >
-      <div className="flex justify-between items-center h-20 px-1">
+      <div className="flex justify-between items-center h-20 px-1 md:h-24 md:px-4 md:max-w-4xl md:mx-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const showLabels = true;
@@ -42,16 +66,18 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               aria-label={item.name}
-              className={`flex flex-col items-center justify-center flex-1 h-20 gap-1 transition-colors ${
+              className={`flex flex-col items-center justify-center flex-1 h-20 gap-1 transition-colors md:h-24 md:gap-2 md:min-w-[80px] ${
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               }`}
               aria-current={isActive ? "page" : undefined}
             >
-              {item.icon}
+              <span className="md:w-7 md:h-7 flex items-center justify-center">
+                {item.icon}
+              </span>
               {showLabels ? (
-                <span className="text-xs font-medium text-center">
+                <span className="text-xs font-medium text-center md:text-sm">
                   {item.name}
                 </span>
               ) : (

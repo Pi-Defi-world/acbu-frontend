@@ -1,8 +1,10 @@
 import React from "react"
+import dynamic from 'next/dynamic'
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
+import { I18nProvider } from '@/contexts/i18n-context'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { GlobalErrorHandler } from '@/components/global-error-handler'
 import './globals.css'
@@ -10,6 +12,11 @@ import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
 import { Toaster } from '@/components/ui/toaster';
+
+const OfflineIndicator = dynamic(
+  () => import('@/components/offline-indicator').then((m) => ({ default: m.OfflineIndicator })),
+  { ssr: false },
+)
 
 const apiBaseUrl =
   typeof process !== 'undefined'
@@ -70,18 +77,19 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const nonce = (await headers()).get('x-nonce') || undefined;
-  const lang = "en";
   // Read the nonce injected by middleware so Next.js can apply it to
   // inline scripts/styles it generates (e.g. __NEXT_DATA__).
   const headersList = await headers();
   const nonce = headersList.get('x-nonce') ?? undefined;
+  const lang = "en";
 
   return (
     <html lang={lang}>
       <body className={`font-sans antialiased`}>
         <GlobalErrorHandler />
+        <OfflineIndicator />
         <ErrorBoundary level="app">
+          <I18nProvider>
           <AuthProvider>
            {/*  <AuthGuard>*/}
               <AppLayout>{children}</AppLayout>
@@ -107,6 +115,7 @@ export default async function RootLayout({
             */}
             <Analytics nonce={nonce} />
           </AuthProvider>
+          </I18nProvider>
         </ErrorBoundary>
       </body>
     </html>
