@@ -27,7 +27,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
-import { useApiOpts, useApiError } from "@/hooks/use-api";
+import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { useI18n } from "@/contexts/i18n-context";
 import { mapApiError } from "@/lib/api/client";
 import { useBalance } from "@/hooks/use-balance";
 import { useAuth } from "@/contexts/auth-context";
@@ -272,7 +274,7 @@ export default function SendPage() {
       return (
         <div className="rounded-lg border border-border bg-card p-6 text-center">
           <p className="text-sm text-muted-foreground">
-            No transfers yet
+            {t('send.noTransfersYet')}
           </p>
         </div>
       );
@@ -287,7 +289,7 @@ export default function SendPage() {
           >
             <div className="flex-1 min-w-0">
               <p className="font-medium text-foreground truncate">
-                Transfer
+                {t('send.transferLabel')}
               </p>
               <p className="text-xs text-muted-foreground">
                 {formatDate(t.created_at)}
@@ -307,7 +309,7 @@ export default function SendPage() {
                 {t.status === "pending" && (
                   <AlertCircle className="mr-1 h-3 w-3" />
                 )}
-                {t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : "Unknown"}
+                {t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : t('common.unknown')}
               </Badge>
             </div>
           </Link>
@@ -321,14 +323,14 @@ export default function SendPage() {
       <header className="page-header">
         <div className="px-4 py-3">
           <h1 className="page-title mb-3">
-            Send Money
+            {t('send.title')}
           </h1>
           <TabsList className="bg-muted inline-flex h-10 items-center justify-start rounded-lg p-1 text-muted-foreground">
             <TabsTrigger value="send" className="px-4 py-1.5 rounded-md font-medium text-sm transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              Send
+              {t('send.send')}
             </TabsTrigger>
             <TabsTrigger value="history" className="px-4 py-1.5 rounded-md font-medium text-sm transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              History
+              {t('send.history')}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -349,7 +351,7 @@ export default function SendPage() {
               className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4"
             >
               <Plus className="mb-2 h-5 w-5" />
-              <span>New Transfer</span>
+              <span>{t('send.newTransfer')}</span>
             </Button>
             <Button
               asChild
@@ -358,7 +360,7 @@ export default function SendPage() {
             >
               <Link href="/me/settings/contacts">
                 <Plus className="mb-2 h-5 w-5" />
-                <span>Add Contact</span>
+                <span>{t('send.addContact')}</span>
               </Link>
             </Button>
           </div>
@@ -367,7 +369,7 @@ export default function SendPage() {
         <TabsContent value="history" className="space-y-3 outline-none mt-0">
           <div>
             <h3 className="mb-3 text-sm font-semibold text-foreground">
-              Recent Transfers
+              {t('send.recentTransfers')}
             </h3>
             {transfersList}
           </div>
@@ -378,19 +380,19 @@ export default function SendPage() {
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
         <DialogContent className="max-w-md border-border">
           <DialogHeader>
-            <DialogTitle>Send Money</DialogTitle>
-            <DialogDescription>Transfer ACBU securely to another wallet</DialogDescription>
+            <DialogTitle>{t('send.title')}</DialogTitle>
+            <DialogDescription>{t('send.dialogDescription')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-foreground">Recipient</Label>
+              <Label className="text-foreground">{t('send.recipient')}</Label>
               <Tabs
                 value={useContact ? "contact" : "custom"}
                 onValueChange={(v) => setUseContact(v === "contact")}
               >
                 <TabsList className="grid w-full grid-cols-2 bg-muted">
-                  <TabsTrigger value="contact">From Contacts</TabsTrigger>
-                  <TabsTrigger value="custom">New Address</TabsTrigger>
+                  <TabsTrigger value="contact">{t('send.fromContacts')}</TabsTrigger>
+                  <TabsTrigger value="custom">{t('send.newAddress')}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="contact" className="mt-3">
                   <Select
@@ -401,7 +403,7 @@ export default function SendPage() {
                     }}
                   >
                     <SelectTrigger className="border-border">
-                      <SelectValue placeholder="Select a contact" />
+                      <SelectValue placeholder={t('send.selectContact')} />
                     </SelectTrigger>
                     <SelectContent>
                       <div
@@ -438,7 +440,7 @@ export default function SendPage() {
                 </TabsContent>
                 <TabsContent value="custom" className="mt-3">
                   <Input
-                    placeholder="Wallet address or email"
+                    placeholder={t('send.walletAddressOrEmail')}
                     value={customRecipient}
                     onChange={(e) => setCustomRecipient(e.target.value)}
                     className="border-border"
@@ -448,7 +450,7 @@ export default function SendPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-foreground">Amount</Label>
+              <Label className="text-foreground">{t('send.amount')}</Label>
               <div className="flex gap-2">
                 <span className="flex items-center text-muted-foreground font-medium">
                   ACBU
@@ -468,16 +470,16 @@ export default function SendPage() {
                   className="border-border text-lg font-semibold"
                 />
               </div>
-              {exceedsBalance && <p className="text-xs text-destructive">Insufficient balance.</p>}
+              {exceedsBalance && <p className="text-xs text-destructive">{t('send.insufficientBalance')}</p>}
               <p className="text-xs text-muted-foreground">
-                Available: ACBU {balanceLoading ? "..." : formatAmount(balance)}
+                {t('send.available')}: ACBU {balanceLoading ? "..." : formatAmount(balance)}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-foreground">Note (Optional)</Label>
+              <Label className="text-foreground">{t('send.note')}</Label>
               <Input
-                placeholder="Add a message..."
+                placeholder={t('send.addMessage')}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="border-border"
@@ -486,8 +488,8 @@ export default function SendPage() {
 
             <Card className="border-border bg-muted p-3">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Network Fee</span>
-                <span className="font-medium text-foreground">Free</span>
+                  <span className="text-muted-foreground">{t('send.networkFee')}</span>
+                  <span className="font-medium text-foreground">{t('send.free')}</span>
               </div>
             </Card>
 
@@ -498,7 +500,7 @@ export default function SendPage() {
                 className="flex-1 border-border"
                 disabled={sending}
               >
-                Cancel
+                {t('send.cancel')}
               </Button>
               <Button
                 onClick={() => {
@@ -508,7 +510,7 @@ export default function SendPage() {
                 disabled={!isFormValid()}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                Continue
+                {t('send.continue')}
               </Button>
             </div>
           </div>
@@ -524,9 +526,9 @@ export default function SendPage() {
       }}>
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Transfer</AlertDialogTitle>
+            <AlertDialogTitle>{t('send.confirmTransfer')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Review the details before confirming
+              {t('send.reviewDetails')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-4">
@@ -534,7 +536,7 @@ export default function SendPage() {
               <ApiErrorDisplay error={uiError} onDismiss={clearError} />
             )}
             <div className="rounded-lg border border-border bg-muted p-4">
-              <p className="text-xs text-muted-foreground">To</p>
+              <p className="text-xs text-muted-foreground">{t('send.to')}</p>
               <p className="font-semibold text-foreground truncate">
                 {selectedContact?.alias ||
                   selectedContact?.pay_uri ||
@@ -548,24 +550,24 @@ export default function SendPage() {
               </div>
             </div>
             <div className="rounded-lg border border-border bg-muted p-4">
-              <p className="text-xs text-muted-foreground">Amount</p>
+              <p className="text-xs text-muted-foreground">{t('send.amountLabel')}</p>
               <p className="text-2xl font-bold text-foreground" data-testid="confirm-amount">
                 ACBU {formatAmount(confirmedAmount)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Network Fee: Free
+                {t('send.networkFeeLabel')}: {t('send.free')}
               </p>
             </div>
             {note && (
               <div className="rounded-lg border border-border bg-muted p-4">
-                <p className="text-xs text-muted-foreground">Note</p>
+                <p className="text-xs text-muted-foreground">{t('send.noteLabel')}</p>
                 <p className="text-sm text-foreground break-words">{note}</p>
               </div>
             )}
           </div>
           <div className="flex gap-3">
-            <AlertDialogCancel className="flex-1 border-border" disabled={sending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmTransfer} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={sending || isSubmitDisabled}>{sending ? 'Sending...' : `Send ACBU ${amount}`}</AlertDialogAction>
+            <AlertDialogCancel className="flex-1 border-border" disabled={sending}>{t('send.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmTransfer} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={sending || isSubmitDisabled}>{sending ? t('send.sending') : t('send.sendAcbu', { amount })}</AlertDialogAction>
           </div>
         </AlertDialogContent>
       </AlertDialog>
@@ -577,13 +579,13 @@ export default function SendPage() {
               <Check className="h-8 w-8 text-green-600 dark:text-green-300" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">
-              Transfer Sent!
+              {t('send.transferSent')}
             </h2>
             <p className="text-muted-foreground mb-4">
-              Your transfer for ACBU {formatAmount(lastSentAmount)} is being processed.
+              {t('send.transferSentDescription', { amount: formatAmount(lastSentAmount) })}
             </p>
             <Badge variant="secondary" className="mb-4">
-              Pending
+              {t('send.pending')}
             </Badge>
           </div>
         </DialogContent>

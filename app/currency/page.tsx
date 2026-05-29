@@ -26,6 +26,7 @@ import * as burnApi from "@/lib/api/burn";
 import type { MintResponse, BurnResponse, CurrencyPreference } from "@/types/api";
 import { logger } from "@/lib/logger";
 import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
 import { Keypair } from "@stellar/stellar-sdk";
@@ -67,6 +68,7 @@ export default function CurrencyPage() {
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
+  const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",

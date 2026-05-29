@@ -96,9 +96,10 @@ async function request<T>(
     );
   }
   const url = path.startsWith('http') ? path : `${BASE}${path.startsWith('/') ? path : `/${path}`}`;
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const headers: Record<string, string> = {};
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
   // CSRF cookie logic removed: backend does not guarantee XSRF-TOKEN pairing
 
   const token = opts.token !== undefined ? opts.token : currentToken;
@@ -124,6 +125,12 @@ async function request<T>(
     timedOut = true;
     controller.abort();
   }, DEFAULT_TIMEOUT);
+
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    throw new Error(
+      'You appear to be offline. Please check your internet connection and try again.',
+    );
+  }
 
   let res: Response;
   try {
