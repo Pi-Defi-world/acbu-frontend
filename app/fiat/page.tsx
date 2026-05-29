@@ -24,10 +24,9 @@ export default function FiatSimPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
-  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+  const { uiError, setApiError, clearError, isSubmitDisabled, handleError } = useApiError();
   const [accounts, setAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [loading, setLoading] = useState(true);
-  const { error, clearError, handleError } = useApiError();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [lastFaucetTx, setLastFaucetTx] = useState<string | null>(null);
 

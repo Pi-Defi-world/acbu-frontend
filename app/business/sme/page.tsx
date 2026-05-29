@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Briefcase, Mail, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Briefcase, Mail } from 'lucide-react';
 
 export default function SmePage() {
   const smeEmail = 'sme@acbu.io';
