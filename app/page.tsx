@@ -182,14 +182,14 @@ export default function Home() {
   return (
     <>
       <header className="page-header">
-        <div className="px-4 py-3">
+        <div className="px-4 py-3 md:px-6 md:py-4 md:max-w-4xl md:mx-auto">
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1">
-              <h1 className="text-base font-bold text-foreground">Welcome back</h1>
-              <p className="text-xs text-muted-foreground">Manage your finances</p>
+              <h1 className="text-base font-bold text-foreground md:text-lg">Welcome back</h1>
+              <p className="text-xs text-muted-foreground md:text-sm">Manage your finances</p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <div className="w-7 h-7 rounded-full bg-primary" />
+            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 md:w-12 md:h-12">
+              <div className="w-7 h-7 rounded-full bg-primary md:w-10 md:h-10" />
             </div>
           </div>
         </div>
@@ -197,22 +197,22 @@ export default function Home() {
 
       <PageContainer>
         <div className="space-y-5">
-          <div className="rounded-lg border border-border bg-gradient-to-br from-primary/20 via-secondary/10 to-transparent p-5 relative overflow-hidden">
+          <div className="rounded-lg border border-border bg-gradient-to-br from-primary/20 via-secondary/10 to-transparent p-5 relative overflow-hidden md:p-6">
             <button
               type="button"
               onClick={() => setShowBalance(!showBalance)}
-              className="absolute top-4 right-4 p-1.5 hover:bg-muted rounded-full transition-colors flex-shrink-0 z-10"
+              className="absolute top-4 right-4 p-1.5 hover:bg-muted rounded-full transition-colors flex-shrink-0 z-10 md:p-2 md:top-5 md:right-5"
               aria-label={showBalance ? 'Hide balances' : 'Show balances'}
             >
-              {showBalance ? <Eye className="w-4 h-4 text-muted-foreground" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+              {showBalance ? <Eye className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" /> : <EyeOff className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" />}
             </button>
-            <div className="flex items-start gap-3 pr-12 mb-1">
-              <div className="flex-1 min-w-0 border-r border-border/60 pr-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+            <div className="flex items-start gap-3 pr-12 mb-1 md:gap-6 md:pr-16">
+              <div className="flex-1 min-w-0 border-r border-border/60 pr-3 md:pr-6">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
                   ACBU
                 </p>
-                <p className="text-[10px] text-muted-foreground mb-1">Wallet balance</p>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
+                <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">Wallet balance</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums md:text-4xl">
                   {!showBalance
                     ? '••••••'
                     : balanceLoading
@@ -220,23 +220,23 @@ export default function Home() {
                       : `ACBU ${formatAmount(balance)}`}
                 </h2>
                 {!showBalance ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">••••••</p>
+                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">••••••</p>
                 ) : balanceLoading || ratesLoading ? (
-                  <p className="text-sm text-muted-foreground mt-1.5"><BalanceSkeleton variant="compact" /></p>
+                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base"><BalanceSkeleton variant="compact" /></p>
                 ) : acbuUsd != null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
+                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">
                     ≈ USD {formatAmount(acbuUsd, 2)}
                   </p>
                 ) : (
-                  <p className="text-sm text-muted-foreground mt-1.5">≈ USD —</p>
+                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base">≈ USD —</p>
                 )}
               </div>
               <div className="flex-1 min-w-0 text-right">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
                   Fiat
                 </p>
-                <p className="text-[10px] text-muted-foreground mb-1">Simulated · USD equivalent</p>
-                <div className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums space-y-1">
+                <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">Simulated · USD equivalent</p>
+                <div className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums space-y-1 md:text-4xl">
                   {!showBalance ? (
                     <p>••••••</p>
                   ) : fiatLoading || ratesLoading ? (
@@ -248,12 +248,12 @@ export default function Home() {
                         {formatAmount(fiatUsdInfo?.usd ?? 0, 2)}
                       </p>
                       {fiatUsdInfo?.partial && fiatAccounts.length > 0 && (
-                        <p className="text-[10px] font-normal text-muted-foreground">
+                        <p className="text-[10px] font-normal text-muted-foreground md:text-xs">
                           Some currencies missing a rate
                         </p>
                       )}
                       {!fiatAccounts.length && (
-                        <p className="text-sm font-normal text-muted-foreground mt-1">
+                        <p className="text-sm font-normal text-muted-foreground mt-1 md:text-base">
                           <Link href="/fiat" className="text-primary font-medium underline-offset-2 hover:underline">
                             Add demo funds
                           </Link>
@@ -265,31 +265,31 @@ export default function Home() {
               </div>
             </div>
             {showBalance && balanceError && (
-              <div className="flex items-center gap-1 text-xs text-destructive mt-2">
+              <div className="flex items-center gap-1 text-xs text-destructive mt-2 md:text-sm">
                 <span>{balanceError}</span>
               </div>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
                 <Link key={feature.href} href={feature.href} className="block">
-                  <div className={`${feature.color} rounded-lg border border-border/50 p-4 h-full transition-all active:scale-95`}>
-                    <Icon className={`w-6 h-6 ${feature.iconColor} mb-2`} />
-                    <h3 className="text-sm font-semibold text-foreground mb-0.5">{feature.title}</h3>
-                    <p className="text-xs text-muted-foreground">{feature.description}</p>
+                  <div className={`${feature.color} rounded-lg border border-border/50 p-4 h-full transition-all active:scale-95 md:p-5`}>
+                    <Icon className={`w-6 h-6 ${feature.iconColor} mb-2 md:w-7 md:h-7 md:mb-3`} />
+                    <h3 className="text-sm font-semibold text-foreground mb-0.5 md:text-base">{feature.title}</h3>
+                    <p className="text-xs text-muted-foreground md:text-sm">{feature.description}</p>
                   </div>
                 </Link>
               );
             })}
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 md:space-y-4">
             <div className="flex items-center justify-between px-1">
-              <h3 className="text-sm font-semibold text-foreground">Recent Activity</h3>
-              <Link href="/activity" className="text-xs text-primary font-medium">View all</Link>
+              <h3 className="text-sm font-semibold text-foreground md:text-base">Recent Activity</h3>
+              <Link href="/activity" className="text-xs text-primary font-medium md:text-sm">View all</Link>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             {loading ? (
@@ -305,12 +305,12 @@ export default function Home() {
                 }
               />
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2 md:space-y-3">
                 {transactions.slice(0, 5).map((t) => (
-                  <Link key={t.transaction_id} href={`/transactions/${t.transaction_id}`} className="block rounded-lg border border-border bg-card p-3 transition-colors active:bg-muted">
+                  <Link key={t.transaction_id} href={`/transactions/${t.transaction_id}`} className="block rounded-lg border border-border bg-card p-3 transition-colors active:bg-muted md:p-4">
                     <div className="flex items-center gap-3 mb-2">
                       <div
-                        className={`p-2 rounded-full flex-shrink-0 ${
+                        className={`p-2 rounded-full flex-shrink-0 md:p-3 ${
                           t.type === 'mint'
                             ? 'bg-green-100 dark:bg-green-900/30'
                             : t.type === 'burn'
@@ -319,7 +319,7 @@ export default function Home() {
                         }`}
                       >
                         <ArrowUpRight
-                          className={`w-4 h-4 ${
+                          className={`w-4 h-4 md:w-5 md:h-5 ${
                             t.type === 'mint'
                               ? 'text-green-600 dark:text-green-400'
                               : t.type === 'burn'
@@ -329,14 +329,14 @@ export default function Home() {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
+                        <p className="text-sm font-medium text-foreground truncate md:text-base">
                           {t.type === 'mint' ? 'Mint' : t.type === 'burn' ? 'Burn' : 'Transfer'}
                         </p>
-                        <p className="text-xs text-muted-foreground">{formatDate(t.created_at)}</p>
+                        <p className="text-xs text-muted-foreground md:text-sm">{formatDate(t.created_at)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between pl-11">
-                      <p className="text-sm font-semibold text-foreground">
+                    <div className="flex items-center justify-between pl-11 md:pl-14">
+                      <p className="text-sm font-semibold text-foreground md:text-base">
                         {t.type === 'burn'
                           ? `- ACBU ${formatAcbu(t.acbu_amount_burned ?? t.amount_acbu)}`
                           : t.type === 'mint'
@@ -347,7 +347,7 @@ export default function Home() {
                                 : '—'
                             : `ACBU ${formatAcbu(t.amount_acbu)}`}
                       </p>
-                      <Badge variant="outline" className="text-xs">{t.status}</Badge>
+                      <Badge variant="outline" className="text-xs md:text-sm">{t.status}</Badge>
                     </div>
                   </Link>
                 ))}
