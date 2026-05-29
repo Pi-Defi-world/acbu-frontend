@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
-import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -22,343 +21,337 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from "@/components/ui/form";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const burnSchema = z.object({
-  acbuAmount: z.string().refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-    message: "Amount must be greater than 0",
-  }),
-  currency: z.string().length(3, "Currency must be exactly 3 uppercase letters"),
-  accountNumber: z.string()
-    .min(5, "Account number is too short")
-    .max(20, "Account number is too long")
-    .regex(/^\d+$/, "Account number must contain only digits"),
-  bankCode: z.string()
-    .min(3, "Bank code is too short")
-    .max(10, "Bank code is too long")
-    .regex(/^[A-Za-z0-9]+$/, "Bank code must be alphanumeric"),
-  accountName: z.string()
-    .min(3, "Account name is too short")
-    .max(100, "Account name is too long"),
+    acbuAmount: z
+        .string()
+        .refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
+            message: "Amount must be greater than 0",
+        }),
+    currency: z.string().length(3, "Currency must be exactly 3 uppercase letters"),
+    accountNumber: z
+        .string()
+        .min(5, "Account number is too short")
+        .max(20, "Account number is too long")
+        .regex(/^\d+$/, "Account number must contain only digits"),
+    bankCode: z
+        .string()
+        .min(3, "Bank code is too short")
+        .max(10, "Bank code is too long")
+        .regex(/^[A-Za-z0-9]+$/, "Bank code must be alphanumeric"),
+    accountName: z.string().min(3, "Account name is too short").max(100, "Account name is too long"),
 });
 
 type BurnFormValues = z.infer<typeof burnSchema>;
 
 const formatCurrency = (amount: string, currency: string) => {
-  const value = parseFloat(amount);
-  if (isNaN(value)) return "";
-
-  try {
-    // Use current browser locale for proper grouping separators
-    return new Intl.NumberFormat(navigator.language || 'en-US', {
-      style: "currency",
-      currency,
-    }).format(value);
-  } catch {
-    return `${value} ${currency}`;
-  }
+    const value = parseFloat(amount);
+    if (isNaN(value)) return "";
+    try {
+        return new Intl.NumberFormat(navigator.language || "en-US", {
+            style: "currency",
+            currency,
+        }).format(value);
+    } catch {
+        return `${value} ${currency}`;
+    }
 };
 
-function BurnPageContent() {
-  const opts = useApiOpts();
-  const searchParams = useSearchParams();
-  const { userId, stellarAddress } = useAuth();
-  const kit = useStellarWalletsKit();
-  
-  const [loading, setLoading] = useState(false);
-  const [txId, setTxId] = useState<string | null>(null);
+export function BurnPageContent() {
+    const opts = useApiOpts();
+    const searchParams = useSearchParams();
+    const { userId, stellarAddress } = useAuth();
+    const kit = useStellarWalletsKit();
 
-  const form = useForm<BurnFormValues>({
-    resolver: zodResolver(burnSchema),
-    defaultValues: {
-      acbuAmount: searchParams.get("amount") || "",
-      currency: searchParams.get("currency") || "NGN",
-      accountNumber: "",
-      bankCode: "",
-      accountName: "",
-    },
-    mode: "onChange",
-  });
+    const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+    const [loading, setLoading] = useState(false);
+    const [txId, setTxId] = useState<string | null>(null);
 
-  const values = form.watch();
-  const currency = values.currency || "NGN";
-  const isValid = form.formState.isValid;
-  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+    const form = useForm<BurnFormValues>({
+        resolver: zodResolver(burnSchema),
+        defaultValues: {
+            acbuAmount: searchParams.get("amount") || "",
+            currency: searchParams.get("currency") || "NGN",
+            accountNumber: "",
+            bankCode: "",
+            accountName: "",
+        },
+        mode: "onChange",
+    });
 
-  const onSubmit = async (data: BurnFormValues) => {
-    clearError();
-    setLoading(true);
-    setTxId(null);
-    
-    try {
-      if (!userId) throw new Error("Not signed in");
-      if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
-      
-      const recipientAccount: BurnRecipientAccount = {
-        account_number: data.accountNumber.trim(),
-        bank_code: data.bankCode.trim(),
-        account_name: data.accountName.trim(),
-        type: "bank",
-      };
+    const { handleSubmit, reset, formState, watch } = form;
+    const currency = watch("currency");
 
-      const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
-      let burnTxHash: string;
-      
-      if (secret) {
-        const localPubKey = Keypair.fromSecret(secret).publicKey();
-        if (stellarAddress && localPubKey !== stellarAddress) {
-          throw new Error(
-            `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
-          );
-        }
-        const submit = await submitBurnRedeemSingleClient({
-          userAddress: stellarAddress,
-          amountAcbu: data.acbuAmount,
-          currency: data.currency,
-          userSecret: secret,
-        });
-        burnTxHash = submit.transactionHash;
-      } else {
-        if (!kit) {
-          throw new Error(
-            "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
-          );
-        }
-        const address = await new Promise<string>((resolve, reject) => {
-          kit
-            .openModal({
-              onWalletSelected: async (selectedOption: { id: string }) => {
-                try {
-                  kit.setWallet(selectedOption.id);
-                  const { address } = await kit.getAddress();
-                  resolve(address);
-                } catch (err) {
-                  reject(err);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [pendingValues, setPendingValues] = useState<BurnFormValues | null>(null);
+
+    const performSubmit = async (values: BurnFormValues) => {
+        clearError();
+        setLoading(true);
+        setTxId(null);
+        try {
+            if (!userId) throw new Error("Not signed in");
+            if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
+
+            const recipientAccount: BurnRecipientAccount = {
+                account_number: values.accountNumber.trim(),
+                bank_code: values.bankCode.trim(),
+                account_name: values.accountName.trim(),
+                type: "bank",
+            };
+
+            const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+            let burnTxHash: string;
+
+            if (secret) {
+                const localPubKey = Keypair.fromSecret(secret).publicKey();
+                if (stellarAddress && localPubKey !== stellarAddress) {
+                    throw new Error(
+                        `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+                    );
                 }
-              },
-            })
-            .catch(reject);
-        });
-        if (stellarAddress && address !== stellarAddress) {
-          throw new Error(
-            `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
-          );
+                const submit = await submitBurnRedeemSingleClient({
+                    userAddress: stellarAddress,
+                    amountAcbu: values.acbuAmount,
+                    currency: values.currency,
+                    userSecret: secret,
+                });
+                burnTxHash = submit.transactionHash;
+            } else {
+                if (!kit) throw new Error("Wallet connector not ready");
+                const address = await new Promise<string>((resolve, reject) => {
+                    kit
+                        .openModal({
+                            onWalletSelected: async (selectedOption: { id: string }) => {
+                                try {
+                                    kit.setWallet(selectedOption.id);
+                                    const { address } = await kit.getAddress();
+                                    resolve(address);
+                                } catch (err) {
+                                    reject(err);
+                                }
+                            },
+                        })
+                        .catch(reject);
+                });
+                if (stellarAddress && address !== stellarAddress) {
+                    throw new Error("Connected wallet doesn't match linked account");
+                }
+                const submit = await submitBurnRedeemSingleClient({
+                    userAddress: stellarAddress,
+                    amountAcbu: values.acbuAmount,
+                    currency: values.currency,
+                    external: { kit, address },
+                });
+                burnTxHash = submit.transactionHash;
+            }
+
+            const res = await burnApi.burnAcbu(values.acbuAmount, values.currency, recipientAccount, opts, burnTxHash);
+            setTxId(res.transaction_id);
+            reset({ ...values, acbuAmount: "" });
+        } catch (e) {
+            setApiError(e);
+        } finally {
+            setLoading(false);
         }
-        const submit = await submitBurnRedeemSingleClient({
-          userAddress: stellarAddress,
-          amountAcbu: data.acbuAmount,
-          currency: data.currency,
-          external: { kit, address },
-        });
-        burnTxHash = submit.transactionHash;
-      }
+    };
 
-      const res = await burnApi.burnAcbu(
-        data.acbuAmount,
-        data.currency,
-        recipientAccount,
-        opts,
-        burnTxHash,
-      );
-      setTxId(res.transaction_id);
-      form.reset({ ...data, acbuAmount: "" });
-    } catch (e) {
-      setApiError(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const onSubmit = (values: BurnFormValues) => {
+        setPendingValues(values);
+        setShowConfirmDialog(true);
+    };
 
-  return (
-    <>
-      <div className="page-header">
-        <div className="page-header-row">
-          <Link
-            href="/mint"
-            aria-label="Go back to Mint page" 
-            className="touch-target"
-          >
-            <ArrowLeft className="w-5 h-5 text-primary" />
-          </Link>
-          <h1 className="page-title">Withdraw (Burn)</h1>
-        </div>
-      </div>
-      <PageContainer>
-        <Card className="border-border p-4 space-y-4">
-          <p className="text-muted-foreground text-sm">
-            Burn ACBU and withdraw to your bank or mobile money account.
-          </p>
-          {uiError && (
-            <ApiErrorDisplay error={uiError} onDismiss={clearError} />
-          )}
-          
-          {txId && (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
-              <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
-              <p className="text-green-600 text-sm font-medium">
-                Transaction submitted successfully! ID: {txId}
-              </p>
+    const confirmBurn = async () => {
+        if (!pendingValues) return;
+        setShowConfirmDialog(false);
+        await performSubmit(pendingValues);
+        setPendingValues(null);
+    };
+
+    return (
+        <>
+            <div className="page-header">
+                <div className="page-header-row">
+                    <Link href="/mint" aria-label="Go back to Mint page" className="touch-target">
+                        <ArrowLeft className="w-5 h-5 text-primary" />
+                    </Link>
+                    <h1 className="page-title">Withdraw (Burn)</h1>
+                </div>
             </div>
-          )}
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="acbuAmount"
-                render={({ field }: { field: any }) => (
-                  <FormItem>
-                    <FormLabel>ACBU amount</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="0.00"
-                        min="0"
-                        step="any"
-                        {...field}
-                        className="border-border"
-                      />
-                    </FormControl>
-                    {field.value && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        ≈ {formatCurrency(field.value, currency)}
-                      </p>
+            <PageContainer>
+                <Card className="border-border p-4 space-y-4">
+                    <p className="text-muted-foreground text-sm">Burn ACBU and withdraw to your bank or mobile money account.</p>
+
+                    {uiError && <ApiErrorDisplay error={uiError} onDismiss={clearError} />}
+
+                    {txId && <p className="text-green-600 text-sm">Transaction submitted: {txId}</p>}
+
+                    {txId && (
+                        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                            <p className="text-green-600 text-sm font-medium">Transaction submitted successfully! ID: {txId}</p>
+                        </div>
                     )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-              <FormField
-                control={form.control}
-                name="currency"
-                render={({ field }: { field: any }) => (
-                  <FormItem>
-                    <FormLabel>Currency (3 letters)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="NGN"
-                        {...field}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          const val = e.target.value.toUpperCase().slice(0, 3);
-                          field.onChange(val);
-                        }}
-                        className="border-border"
-                        maxLength={3}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      The target currency for your withdrawal (e.g., NGN, KES).
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    <Form {...form}>
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="acbuAmount"
+                                render={({ field }: { field: any }) => (
+                                    <FormItem>
+                                        <FormLabel>ACBU amount</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" placeholder="0.00" min="0" step="any" {...field} className="border-border" />
+                                        </FormControl>
+                                        {field.value && <p className="text-sm text-muted-foreground mt-1">≈ {formatCurrency(field.value, currency)}</p>}
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
-              <FormField
-                control={form.control}
-                name="accountNumber"
-                render={({ field }: { field: any }) => (
-                  <FormItem>
-                    <FormLabel>Account number</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="1234567890"
-                        {...field}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          const val = e.target.value.replace(/\D/g, "");
-                          field.onChange(val);
-                        }}
-                        className="border-border"
-                        maxLength={20}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      {currency === "NGN" ? "Nigerian bank accounts are typically 10 digits." : "Standard bank account number."}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                            <FormField
+                                control={form.control}
+                                name="currency"
+                                render={({ field }: { field: any }) => (
+                                    <FormItem>
+                                        <FormLabel>Currency (3 letters)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="NGN"
+                                                {...field}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value.toUpperCase().slice(0, 3))}
+                                                className="border-border"
+                                                maxLength={3}
+                                            />
+                                        </FormControl>
+                                        <FormDescription>The target currency for your withdrawal (e.g., NGN, KES).</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
-              <FormField
-                control={form.control}
-                name="bankCode"
-                render={({ field }: { field: any }) => (
-                  <FormItem>
-                    <FormLabel>Bank code</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="Enter bank code"
-                        {...field}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          const val = e.target.value.toUpperCase().slice(0, 10);
-                          field.onChange(val);
-                        }}
-                        className="border-border"
-                        maxLength={10}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Sort code, SWIFT/BIC, or local bank routing code.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                            <FormField
+                                control={form.control}
+                                name="accountNumber"
+                                render={({ field }: { field: any }) => (
+                                    <FormItem>
+                                        <FormLabel>Account number</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="text"
+                                                inputMode="numeric"
+                                                placeholder="1234567890"
+                                                {...field}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value.replace(/\D/g, ""))}
+                                                className="border-border"
+                                                maxLength={20}
+                                            />
+                                        </FormControl>
+                                        <FormDescription>{currency === "NGN" ? "Nigerian bank accounts are typically 10 digits." : "Standard bank account number."}</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
-              <FormField
-                control={form.control}
-                name="accountName"
-                render={({ field }: { field: any }) => (
-                  <FormItem>
-                    <FormLabel>Account name</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="John Doe"
-                        {...field}
-                        className="border-border"
-                        maxLength={100}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      The official name registered with the bank.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                            <FormField
+                                control={form.control}
+                                name="bankCode"
+                                render={({ field }: { field: any }) => (
+                                    <FormItem>
+                                        <FormLabel>Bank code</FormLabel>
+                                        <FormControl>
+                                            <Input type="text" placeholder="Enter bank code" {...field} onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value.toUpperCase().slice(0, 10))} className="border-border" maxLength={10} />
+                                        </FormControl>
+                                        <FormDescription>Sort code, SWIFT/BIC, or local bank routing code.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
-              <Button
-                type="submit"
-                disabled={!isValid || loading || isSubmitDisabled}
-                className="w-full"
-              >
-                {loading ? "Submitting..." : "Burn & Withdraw"}
-              </Button>
-            </form>
-          </Form>
-        </Card>
-      </PageContainer>
-    </>
-  );
+                            <FormField
+                                control={form.control}
+                                name="accountName"
+                                render={({ field }: { field: any }) => (
+                                    <FormItem>
+                                        <FormLabel>Account name</FormLabel>
+                                        <FormControl>
+                                            <Input type="text" placeholder="John Doe" {...field} className="border-border" maxLength={100} />
+                                        </FormControl>
+                                        <FormDescription>The official name registered with the bank.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <Button type="submit" disabled={!formState.isValid || loading || isSubmitDisabled} className="w-full">
+                                {loading ? "Submitting..." : "Burn & Withdraw"}
+                            </Button>
+                        </form>
+                    </Form>
+                </Card>
+            </PageContainer>
+
+            <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+                <AlertDialogContent className="max-w-md border-border">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm burn and withdraw</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action will burn ACBU and withdraw funds to the specified bank account. This operation is irreversible — please review the details below.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <div className="space-y-3 py-4">
+                        {uiError && <ApiErrorDisplay error={uiError} onDismiss={clearError} />}
+
+                        <div className="rounded-lg border border-border bg-muted p-4">
+                            <p className="text-xs text-muted-foreground">Amount</p>
+                            <p className="font-semibold text-foreground">ACBU {pendingValues ? pendingValues.acbuAmount : "—"}</p>
+                        </div>
+
+                        <div className="rounded-lg border border-border bg-muted p-4">
+                            <p className="text-xs text-muted-foreground">Recipient</p>
+                            <p className="font-semibold text-foreground break-words">{pendingValues ? `${pendingValues.accountName} • ${pendingValues.accountNumber} (${pendingValues.bankCode})` : "—"}</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <AlertDialogCancel className="flex-1 border-border" disabled={loading}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmBurn} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={loading || isSubmitDisabled}>
+                            {loading ? "Submitting..." : "Confirm and Burn"}
+                        </AlertDialogAction>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    );
 }
 
 export default function BurnPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <BurnPageContent />
-    </Suspense>
-  );
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <BurnPageContent />
+        </Suspense>
+    );
 }
