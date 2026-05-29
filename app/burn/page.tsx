@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Burn Tokens | ACBU',
+  description: 'Burn ACBU tokens to redeem fiat currency. Convert your digital assets back to traditional money.',
+};
+
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
