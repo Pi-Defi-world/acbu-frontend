@@ -7,9 +7,10 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { useApiOpts, useApiError } from "@/hooks/use-api";
+import { ArrowLeft, CheckCircle } from "lucide-react";
+import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -29,7 +30,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { cn } from "@/lib/utils";
 
 const burnSchema = z.object({
   acbuAmount: z.string().refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -72,22 +72,14 @@ function BurnPageContent() {
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
   
-  // Initialize from search params if available
-  const [acbuAmount, setAcbuAmount] = useState(searchParams.get("amount") || "");
-  const [currency, setCurrency] = useState(searchParams.get("currency") || "NGN");
-  
-  const [accountNumber, setAccountNumber] = useState("");
-  const [bankCode, setBankCode] = useState("");
-  const [accountName, setAccountName] = useState("");
-  const { error, clearError, handleError } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
 
   const form = useForm<BurnFormValues>({
     resolver: zodResolver(burnSchema),
     defaultValues: {
-      acbuAmount: "",
-      currency: "NGN",
+      acbuAmount: searchParams.get("amount") || "",
+      currency: searchParams.get("currency") || "NGN",
       accountNumber: "",
       bankCode: "",
       accountName: "",
@@ -95,20 +87,12 @@ function BurnPageContent() {
     mode: "onChange",
   });
 
-  const isValid =
-    acbuAmount &&
-    parseFloat(acbuAmount) > 0 &&
-    currency.length === 3 &&
-    accountNumber.trim().length >= 5 &&
-    accountNumber.trim().length <= 20 &&
-    bankCode.trim().length >= 3 &&
-    bankCode.trim().length <= 10 &&
-    accountName.trim().length >= 3 &&
-    accountName.trim().length <= 100;
+  const values = form.watch();
+  const currency = values.currency || "NGN";
+  const isValid = form.formState.isValid;
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isValid) return;
+  const onSubmit = async (data: BurnFormValues) => {
     clearError();
     setLoading(true);
     setTxId(null);
@@ -118,9 +102,9 @@ function BurnPageContent() {
       if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
       
       const recipientAccount: BurnRecipientAccount = {
-        account_number: values.accountNumber.trim(),
-        bank_code: values.bankCode.trim(),
-        account_name: values.accountName.trim(),
+        account_number: data.accountNumber.trim(),
+        bank_code: data.bankCode.trim(),
+        account_name: data.accountName.trim(),
         type: "bank",
       };
 
@@ -136,8 +120,8 @@ function BurnPageContent() {
         }
         const submit = await submitBurnRedeemSingleClient({
           userAddress: stellarAddress,
-          amountAcbu: values.acbuAmount,
-          currency: values.currency,
+          amountAcbu: data.acbuAmount,
+          currency: data.currency,
           userSecret: secret,
         });
         burnTxHash = submit.transactionHash;
@@ -169,24 +153,24 @@ function BurnPageContent() {
         }
         const submit = await submitBurnRedeemSingleClient({
           userAddress: stellarAddress,
-          amountAcbu: values.acbuAmount,
-          currency: values.currency,
+          amountAcbu: data.acbuAmount,
+          currency: data.currency,
           external: { kit, address },
         });
         burnTxHash = submit.transactionHash;
       }
 
       const res = await burnApi.burnAcbu(
-        values.acbuAmount,
-        values.currency,
+        data.acbuAmount,
+        data.currency,
         recipientAccount,
         opts,
         burnTxHash,
       );
       setTxId(res.transaction_id);
-      form.reset({ ...values, acbuAmount: "" }); // Reset amount but keep details for convenience? Or full reset?
+      form.reset({ ...data, acbuAmount: "" });
     } catch (e) {
-      handleError(e);
+      setApiError(e);
     } finally {
       setLoading(false);
     }
@@ -214,11 +198,6 @@ function BurnPageContent() {
           {uiError && (
             <ApiErrorDisplay error={uiError} onDismiss={clearError} />
           )}
-          {txId && (
-            <p className="text-green-600 text-sm">
-              Transaction submitted: {txId}
-            </p>
-          )}
           
           {txId && (
             <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
@@ -230,7 +209,7 @@ function BurnPageContent() {
           )}
 
           <Form {...form}>
-            <form onSubmit={formHandleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="acbuAmount"
@@ -360,15 +339,16 @@ function BurnPageContent() {
                   </FormItem>
                 )}
               />
-            </div>
-            <Button
-              type="submit"
-              disabled={!isValid || loading || isSubmitDisabled}
-              className="w-full"
-            >
-              {loading ? "Submitting..." : "Burn & Withdraw"}
-            </Button>
-          </form>
+
+              <Button
+                type="submit"
+                disabled={!isValid || loading || isSubmitDisabled}
+                className="w-full"
+              >
+                {loading ? "Submitting..." : "Burn & Withdraw"}
+              </Button>
+            </form>
+          </Form>
         </Card>
       </PageContainer>
     </>
