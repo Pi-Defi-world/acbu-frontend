@@ -17,6 +17,6 @@ const nextConfig = {
       { source: '/account/recovery', destination: '/recovery', permanent: false },
     ];
   },
-}
+};
 
-export default nextConfig
+export default withBundleAnalyzer(nextConfig);

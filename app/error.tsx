@@ -1,8 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, startTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { logger } from '@/lib/logger';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { errorReporter } from '@/lib/error-reporting';
+
+function getUserId(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return sessionStorage.getItem('acbu_user_id');
+  } catch {
+    return null;
+  }
+}
 
 export default function Error({
   error,
@@ -11,8 +22,17 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const router = useRouter();
+
   useEffect(() => {
-    logger.error('Application error:', error);
+    errorReporter.reportError(error, {
+      level: 'page',
+      context: {
+        route: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+        digest: error.digest,
+        userId: getUserId(),
+      },
+    });
   }, [error]);
 
   const handleGoHome = () => {
@@ -21,12 +41,19 @@ export default function Error({
     }
   };
 
+  const handleReset = () => {
+    startTransition(() => {
+      router.refresh();
+      reset();
+    });
+  };
+
   return (
     <div className="error-state">
       <div className="error-icon-wrapper">
         <AlertTriangle className="error-icon" />
       </div>
-      
+
       <div className="space-y-2">
         <h2 className="text-xl font-semibold text-foreground">Page Error</h2>
         <p className="text-sm text-muted-foreground max-w-md">
@@ -37,7 +64,7 @@ export default function Error({
             Error ID: {error.digest}
           </p>
         )}
-        
+
         {process.env.NODE_ENV === 'development' && (
           <details className="mt-4 text-left">
             <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
@@ -58,7 +85,7 @@ export default function Error({
       </div>
 
       <div className="flex gap-2">
-        <Button onClick={reset} variant="outline" size="sm">
+        <Button onClick={handleReset} variant="outline" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
           Try again
         </Button>
