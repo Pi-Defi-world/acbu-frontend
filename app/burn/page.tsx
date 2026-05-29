@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Burn Tokens | ACBU',
+  description: 'Burn ACBU tokens to redeem fiat currency. Convert your digital assets back to traditional money.',
+};
+
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -23,31 +30,33 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from "@/components/ui/form";
 
 const burnSchema = z.object({
-  acbuAmount: z.string().refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-    message: "Amount must be greater than 0",
-  }),
-  currency: z.string().length(3, "Currency must be exactly 3 uppercase letters"),
-  accountNumber: z.string()
-    .min(5, "Account number is too short")
-    .max(20, "Account number is too long")
-    .regex(/^\d+$/, "Account number must contain only digits"),
-  bankCode: z.string()
-    .min(3, "Bank code is too short")
-    .max(10, "Bank code is too long")
-    .regex(/^[A-Za-z0-9]+$/, "Bank code must be alphanumeric"),
-  accountName: z.string()
-    .min(3, "Account name is too short")
-    .max(100, "Account name is too long"),
+    acbuAmount: z
+        .string()
+        .refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
+            message: "Amount must be greater than 0",
+        }),
+    currency: z.string().length(3, "Currency must be exactly 3 uppercase letters"),
+    accountNumber: z
+        .string()
+        .min(5, "Account number is too short")
+        .max(20, "Account number is too long")
+        .regex(/^\d+$/, "Account number must contain only digits"),
+    bankCode: z
+        .string()
+        .min(3, "Bank code is too short")
+        .max(10, "Bank code is too long")
+        .regex(/^[A-Za-z0-9]+$/, "Bank code must be alphanumeric"),
+    accountName: z.string().min(3, "Account name is too short").max(100, "Account name is too long"),
 });
 
 type BurnFormValues = z.infer<typeof burnSchema>;
@@ -137,14 +146,49 @@ function BurnPageContent() {
                 } catch (err) {
                   reject(err);
                 }
-              },
-            })
-            .catch(reject);
-        });
-        if (stellarAddress && address !== stellarAddress) {
-          throw new Error(
-            `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
-          );
+                const submit = await submitBurnRedeemSingleClient({
+                    userAddress: stellarAddress,
+                    amountAcbu: values.acbuAmount,
+                    currency: values.currency,
+                    userSecret: secret,
+                });
+                burnTxHash = submit.transactionHash;
+            } else {
+                if (!kit) throw new Error("Wallet connector not ready");
+                const address = await new Promise<string>((resolve, reject) => {
+                    kit
+                        .openModal({
+                            onWalletSelected: async (selectedOption: { id: string }) => {
+                                try {
+                                    kit.setWallet(selectedOption.id);
+                                    const { address } = await kit.getAddress();
+                                    resolve(address);
+                                } catch (err) {
+                                    reject(err);
+                                }
+                            },
+                        })
+                        .catch(reject);
+                });
+                if (stellarAddress && address !== stellarAddress) {
+                    throw new Error("Connected wallet doesn't match linked account");
+                }
+                const submit = await submitBurnRedeemSingleClient({
+                    userAddress: stellarAddress,
+                    amountAcbu: values.acbuAmount,
+                    currency: values.currency,
+                    external: { kit, address },
+                });
+                burnTxHash = submit.transactionHash;
+            }
+
+            const res = await burnApi.burnAcbu(values.acbuAmount, values.currency, recipientAccount, opts, burnTxHash);
+            setTxId(res.transaction_id);
+            reset({ ...values, acbuAmount: "" });
+        } catch (e) {
+            setApiError(e);
+        } finally {
+            setLoading(false);
         }
         const submit = await submitBurnRedeemSingleClient({
           userAddress: stellarAddress,

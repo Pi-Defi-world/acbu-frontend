@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Account Recovery | ACBU',
+  description: 'Recover access to your ACBU account using your recovery code and guardian assistance.',
+};
+
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

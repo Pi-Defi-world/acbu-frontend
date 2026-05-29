@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Mint & Burn | ACBU',
+  description: 'Create new ACBU tokens by minting with fiat currency or burn ACBU tokens to redeem fiat.',
+};
+
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';

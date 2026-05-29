@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Simulated Bank | ACBU',
+  description: 'Manage your simulated fiat bank accounts for testing ACBU minting and burning operations.',
+};
+
 import React, { useState, useEffect } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
