@@ -81,7 +81,7 @@ function BurnPageContent() {
     resolver: zodResolver(burnSchema),
     defaultValues: {
       acbuAmount: searchParams?.get("amount") || "",
-      currency: searchParams?.get("currency") || "NGN",
+      currency: (searchParams?.get("currency") || "NGN").toUpperCase().slice(0, 3),
       accountNumber: "",
       bankCode: "",
       accountName: "",

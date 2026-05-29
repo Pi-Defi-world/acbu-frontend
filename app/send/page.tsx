@@ -36,7 +36,7 @@ import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
 import type { TransferItem, ContactItem } from "@/types/api";
-import { formatAcbu, formatAmount, parseUtcDate } from "@/lib/utils";
+import { formatAmount, parseUtcDate } from "@/lib/utils";
 import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import {

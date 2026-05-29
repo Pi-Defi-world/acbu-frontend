@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useApiOpts, useApiError } from "@/hooks/use-api";
+import { useApiOpts } from "@/hooks/use-api";
 import * as transactionsApi from "@/lib/api/transactions";
 import type { TransactionDetail } from "@/types/api";
 import { formatAmount, parseUtcDate } from "@/lib/utils";
@@ -27,7 +27,6 @@ export default function TransactionDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const opts = useApiOpts();
-  const { handleError } = useApiError();
   const [data, setData] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
