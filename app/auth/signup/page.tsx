@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Sign Up | ACBU',
+  description: 'Create a new ACBU account to start sending money, minting tokens, and managing your digital wallet.',
+};
+
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";

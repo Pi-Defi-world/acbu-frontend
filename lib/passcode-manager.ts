@@ -9,6 +9,7 @@
  */
 
 let inMemoryPasscode: string | null = null;
+let inMemoryTempPassphrase: string | null = null;
 
 /**
  * Store passcode in memory for the current session.
@@ -16,14 +17,14 @@ let inMemoryPasscode: string | null = null;
  * though active XSS can still access it while in memory.
  */
 export function setPasscode(passcode: string): void {
-  inMemoryPasscode = passcode;
+  passcodeHolder.set(passcode);
 }
 
 /**
  * Get the stored passcode from memory.
  */
 export function getPasscode(): string | null {
-  return inMemoryPasscode;
+  return passcodeHolder.get();
 }
 
 /**
@@ -31,12 +32,29 @@ export function getPasscode(): string | null {
  * Called on logout or when user explicitly clears it.
  */
 export function clearPasscode(): void {
-  inMemoryPasscode = null;
+  passcodeHolder.clear();
 }
 
 /**
  * Check if passcode is available in memory.
  */
 export function hasPasscode(): boolean {
-  return inMemoryPasscode !== null;
+  return passcodeHolder.has();
+}
+
+/**
+ * Store the backend-generated wallet passphrase in memory only.
+ * Never written to sessionStorage/localStorage to prevent XSS exfiltration.
+ * Cleared after wallet setup completes or on logout/refresh.
+ */
+export function setTempPassphrase(passphrase: string): void {
+  inMemoryTempPassphrase = passphrase;
+}
+
+export function getTempPassphrase(): string | null {
+  return inMemoryTempPassphrase;
+}
+
+export function clearTempPassphrase(): void {
+  inMemoryTempPassphrase = null;
 }

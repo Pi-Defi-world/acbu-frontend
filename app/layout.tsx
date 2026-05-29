@@ -84,7 +84,7 @@ export default async function RootLayout({
   const lang = "en";
 
   return (
-    <html lang={lang}>
+    <html lang={lang} dir="ltr">
       <body className={`font-sans antialiased`}>
         <GlobalErrorHandler />
         <OfflineIndicator />
@@ -113,7 +113,7 @@ export default async function RootLayout({
                 />
               SRI hashes can be generated at https://www.srihash.org/
             */}
-            <Analytics nonce={nonce} />
+            <Analytics nonce={nonce} crossOrigin="anonymous" />
           </AuthProvider>
           </I18nProvider>
         </ErrorBoundary>
