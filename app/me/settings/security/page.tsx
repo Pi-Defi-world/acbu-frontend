@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Security Settings | ACBU',
+  description: 'Manage your ACBU security settings including two-factor authentication, active sessions, and security preferences.',
+};
+
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';

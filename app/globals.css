@@ -173,6 +173,7 @@
     @apply flex items-center justify-center min-w-[44px] min-h-[44px] -m-2;
   }
 
+<<<<<<< fix/iframes
   /*
    * Style isolation container for third-party widgets.
    * Apply to the wrapper element that hosts the injected widget DOM:
@@ -186,5 +187,47 @@
   }
   .widget-isolate * {
     all: revert;
+=======
+  /* Tablet-specific responsive adjustments (768px-1024px) */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .page-header-row {
+      @apply px-6 py-4;
+    }
+
+    .page-title {
+      @apply text-xl;
+    }
+
+    /* Increase touch targets for tablet */
+    .touch-target {
+      @apply min-w-[48px] min-h-[48px];
+    }
+  }
+}
+
+/* ─── RTL support ──────────────────────────────────────────────────────────── */
+/*
+  Most directional fixes are handled inline via Tailwind rtl: variants.
+  These global rules cover cases where Tailwind variants can't reach
+  (e.g. third-party component internals, pseudo-elements, inherited direction).
+*/
+@layer utilities {
+  /* Flip directional icons (ArrowLeft, ChevronLeft, etc.) in RTL.
+     Apply .icon-directional to any icon that implies a horizontal direction. */
+  [dir='rtl'] .icon-directional {
+    transform: scaleX(-1);
+  }
+
+  /* Ensure numeric/currency values stay LTR inside RTL layouts */
+  [dir='rtl'] .numeric {
+    direction: ltr;
+    unicode-bidi: embed;
+  }
+
+  /* Page header row: reverse flex order so back-button stays on the
+     visual "start" edge (right in RTL) */
+  [dir='rtl'] .page-header-row {
+    flex-direction: row-reverse;
+>>>>>>> dev
   }
 }
