@@ -51,6 +51,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSessionGuard } from "@/hooks/use-session-guard";
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -81,7 +82,7 @@ function getStatusColor(status: string | undefined) {
 export default function SendPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
-  const { t } = useI18n();
+  const { ensureSession } = useSessionGuard();
   const kit = useStellarWalletsKit();
   const { toast } = useToast();
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
@@ -134,18 +135,15 @@ export default function SendPage() {
     try {
       const data = await userApi.getContacts(opts);
       setContacts(data.contacts ?? []);
+      setContactsError("");
     } catch (e) {
-      const message = e instanceof Error ? e.message : t('common.errorDefault');
+      const message = e instanceof Error ? e.message : "Failed to load contacts";
       setContactsError(message);
-      toast({
-        title: t('common.errorDefault'),
-        description: message,
-        variant: "destructive",
-      });
+      setLoadError(message);
     } finally {
       setLoadingContacts(false);
     }
-  }, [opts, toast, t]);
+  }, [opts]);
 
   useEffect(() => {
     loadTransfers();
@@ -163,6 +161,14 @@ export default function SendPage() {
     if (!amount || parseFloat(amount) <= 0 || !to) return;
     clearSubmitError();
     setSending(true);
+
+    // Pre-flight session check: validate the session is still active before
+    // making a write request (fixes #313 — silent 401 after session expiry).
+    const sessionOk = await ensureSession();
+    if (!sessionOk) {
+      setSending(false);
+      return;
+    }
     
     try {
       let blockchainTxHash: string | undefined;
@@ -248,7 +254,7 @@ export default function SendPage() {
     } finally {
       setSending(false);
     }
-  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance]);
+  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance, ensureSession]);
 
   const exceedsBalance =
     balance !== null && amount !== "" && parseFloat(amount) > balance;

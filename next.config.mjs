@@ -1,3 +1,7 @@
+import { validateEnv } from './lib/env-safety.js';
+
+validateEnv(process.env);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -13,6 +17,6 @@ const nextConfig = {
       { source: '/account/recovery', destination: '/recovery', permanent: false },
     ];
   },
-}
+};
 
-export default nextConfig
+export default withBundleAnalyzer(nextConfig);

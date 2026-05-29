@@ -172,4 +172,20 @@
   .touch-target {
     @apply flex items-center justify-center min-w-[44px] min-h-[44px] -m-2;
   }
+
+  /* Tablet-specific responsive adjustments (768px-1024px) */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .page-header-row {
+      @apply px-6 py-4;
+    }
+
+    .page-title {
+      @apply text-xl;
+    }
+
+    /* Increase touch targets for tablet */
+    .touch-target {
+      @apply min-w-[48px] min-h-[48px];
+    }
+  }
 }
