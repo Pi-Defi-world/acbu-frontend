@@ -25,6 +25,7 @@ export function middleware(request: NextRequest) {
     'style-src': ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"], // unsafe-inline often needed for Next.js internal styles
     'img-src': ["'self'", "blob:", "data:", "https://*"], // Allow external images
     'font-src': ["'self'"],
+    'manifest-src': ["'self'"],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
