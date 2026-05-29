@@ -113,7 +113,7 @@ export default async function RootLayout({
                 />
               SRI hashes can be generated at https://www.srihash.org/
             */}
-            <Analytics nonce={nonce} />
+            <Analytics nonce={nonce} crossOrigin="anonymous" />
           </AuthProvider>
           </I18nProvider>
         </ErrorBoundary>
