@@ -57,16 +57,21 @@ export function MobileNav() {
       aria-label="Mobile navigation"
       style={{ bottom: `${bottomOffset}px` }}
     >
-      <div className="flex justify-between items-center h-20 px-1 md:h-24 md:px-4 md:max-w-4xl md:mx-auto">
-        {navItems.map((item) => {
+      <div className="flex justify-between items-center h-20 px-1">
+        {navItems.map((item, idx) => {
           const isActive = pathname === item.href;
           const showLabels = true;
+          // Explicitly set tabIndex to match the visual left-to-right order.
+          // Using positive tabindex values here ensures keyboard focus
+          // follows the same sequence users see on screen.
+          const tabIndex = idx + 1;
           return (
             <Link
               key={item.href}
               href={item.href}
               aria-label={item.name}
-              className={`flex flex-col items-center justify-center flex-1 h-20 gap-1 transition-colors md:h-24 md:gap-2 md:min-w-[80px] ${
+              tabIndex={tabIndex}
+              className={`flex flex-col items-center justify-center flex-1 h-20 gap-1 transition-colors ${
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
