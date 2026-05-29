@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Sign In | ACBU',
+  description: 'Sign in to your ACBU account to access your wallet and manage your digital assets.',
+};
+
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -9,7 +16,12 @@ import { Card } from "@/components/ui/card";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import * as authApi from "@/lib/api/auth";
+<<<<<<< fix/temp-passphrase-xss
 import { setPasscode as storePasscode, setTempPassphrase } from "@/lib/passcode-manager";
+=======
+import { setPasscode as storePasscode } from "@/lib/passcode-manager";
+import { isSafeRedirect } from "@/lib/redirect";
+>>>>>>> dev
 
 export default function SignInPage() {
     return (
@@ -55,6 +67,7 @@ function SignInForm() {
 
             const result = await authApi.signin(identifier.trim(), passcode);
 
+<<<<<<< fix/temp-passphrase-xss
       if ('requires_2fa' in result && result.requires_2fa) {
         // Store passcode in memory BEFORE redirecting to 2FA
         storePasscode(passcode);
@@ -81,6 +94,40 @@ function SignInForm() {
           router.push("/");
         }
       }
+=======
+            // Read redirect parameter once and validate it before using
+            const redirectParam = searchParams.get("redirect");
+
+            if ('requires_2fa' in result && result.requires_2fa) {
+                // Store passcode in memory BEFORE redirecting to 2FA
+                storePasscode(passcode);
+
+                // Store challenge token securely in sessionStorage (not in URL)
+                // This prevents leaks via Referer headers, browser history, and server logs
+                if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('2fa_challenge_token', result.challenge_token);
+                    const safe = isSafeRedirect(redirectParam);
+                    if (safe) sessionStorage.setItem('post_auth_redirect', safe);
+                }
+                router.push('/auth/2fa');
+                return;
+            }
+
+            if ("user_id" in result) {
+                // Store passcode in memory for wallet operations (more secure than sessionStorage)
+                storePasscode(passcode);
+
+                login(result.user_id, result.stellar_address);
+
+                if (result.wallet_created && result.passphrase) {
+                    sessionStorage.setItem('temp_passphrase', result.passphrase);
+                    router.push('/auth/wallet-setup');
+                } else {
+                    const safe = isSafeRedirect(redirectParam);
+                    router.push(safe ?? "/");
+                }
+            }
+>>>>>>> dev
         } catch (err) {
             setError(err instanceof Error ? err.message : "Sign in failed");
         } finally {
@@ -137,34 +184,34 @@ function SignInForm() {
                             />
                         </div>
 
-            <div>
-              <label className="form-label">
-                Passcode
-              </label>
-              <div className="relative">
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  className="border-border pr-10"
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  disabled={loading}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
+                        <div>
+                            <label className="form-label">
+                                Passcode
+                            </label>
+                            <div className="relative">
+                                <Input
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder="••••••••"
+                                    value={passcode}
+                                    onChange={(e) => setPasscode(e.target.value)}
+                                    className="border-border pr-10"
+                                    disabled={loading}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    disabled={loading}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="w-4 h-4" />
+                                    ) : (
+                                        <Eye className="w-4 h-4" />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
 
                         <div className="text-right">
                             <Link

@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Two-Factor Authentication | ACBU',
+  description: 'Complete two-factor authentication to secure your ACBU account login.',
+};
+
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -10,8 +17,10 @@ import { AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import * as authApi from '@/lib/api/auth';
 import { getPasscode } from '@/lib/passcode-manager';
+import { isSafeRedirect } from '@/lib/redirect';
 
 const CHALLENGE_TOKEN_KEY = '2fa_challenge_token';
+const POST_AUTH_REDIRECT_KEY = 'post_auth_redirect';
 
 export default function TwoFactorPage() {
   return (
@@ -39,8 +48,12 @@ function TwoFactorForm() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const storedToken = sessionStorage.getItem(CHALLENGE_TOKEN_KEY);
-    if (storedToken) {
+    const passcode = getPasscode();
+    if (storedToken && passcode) {
       setChallengeToken(storedToken);
+    } else {
+      // Always require a fresh challenge — clear stale token on mount
+      sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
     }
     setChecked(true);
   }, []);
@@ -60,19 +73,15 @@ function TwoFactorForm() {
         return;
       }
 
-      // Guard: If passcode is missing after page refresh, require re-authentication
-      const passcode = getPasscode();
-      if (!passcode) {
-        setError("Session expired. Please sign in again.");
-        sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
-        setTimeout(() => router.push('/auth/signin'), 2000);
-        return;
-      }
-
       const result = await authApi.verify2fa(challengeToken, code);
       login(result.api_key!, result.user_id, result.stellar_address);
       sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
-      router.push('/');
+
+      // honor a stored safe post-auth redirect if present
+      const stored = typeof window !== 'undefined' ? sessionStorage.getItem(POST_AUTH_REDIRECT_KEY) : null;
+      if (typeof window !== 'undefined') sessionStorage.removeItem(POST_AUTH_REDIRECT_KEY);
+      const safe = isSafeRedirect(stored);
+      router.push(safe ?? '/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {

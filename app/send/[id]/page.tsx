@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Transfer Details | ACBU',
+  description: 'View detailed information about a specific ACBU transfer including recipient, amount, and status.',
+};
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";

@@ -1,7 +1,12 @@
+import { validateEnv } from './lib/env-safety.js';
+
+validateEnv(process.env);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    ignoreBuildErrors: true,
+    // F-001: TypeScript errors must fail the build to prevent shipping broken code
+    ignoreBuildErrors: false,
   },
   // Don't advertise the framework to reduce attack surface
   poweredByHeader: false,
@@ -13,6 +18,6 @@ const nextConfig = {
       { source: '/account/recovery', destination: '/recovery', permanent: false },
     ];
   },
-}
+};
 
-export default nextConfig
+export default withBundleAnalyzer(nextConfig);
