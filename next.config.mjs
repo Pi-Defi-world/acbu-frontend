@@ -1,8 +1,6 @@
-import bundleAnalyzer from '@next/bundle-analyzer';
+import { validateEnv } from './lib/env-safety.js';
 
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-});
+validateEnv(process.env);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
