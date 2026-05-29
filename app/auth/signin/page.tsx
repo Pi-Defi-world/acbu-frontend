@@ -16,8 +16,12 @@ import { Card } from "@/components/ui/card";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import * as authApi from "@/lib/api/auth";
+<<<<<<< fix/temp-passphrase-xss
+import { setPasscode as storePasscode, setTempPassphrase } from "@/lib/passcode-manager";
+=======
 import { setPasscode as storePasscode } from "@/lib/passcode-manager";
 import { isSafeRedirect } from "@/lib/redirect";
+>>>>>>> dev
 
 export default function SignInPage() {
     return (
@@ -63,6 +67,34 @@ function SignInForm() {
 
             const result = await authApi.signin(identifier.trim(), passcode);
 
+<<<<<<< fix/temp-passphrase-xss
+      if ('requires_2fa' in result && result.requires_2fa) {
+        // Store passcode in memory BEFORE redirecting to 2FA
+        storePasscode(passcode);
+        
+        // Store challenge token securely in sessionStorage (not in URL)
+        // This prevents leaks via Referer headers, browser history, and server logs
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('2fa_challenge_token', result.challenge_token);
+        }
+        router.push('/auth/2fa');
+        return;
+      }
+
+      if ("user_id" in result) {
+        // Store passcode in memory for wallet operations (more secure than sessionStorage)
+        storePasscode(passcode);
+        
+        login(result.user_id, result.stellar_address);
+        
+        if (result.wallet_created && result.passphrase) {
+          setTempPassphrase(result.passphrase);
+          router.push('/auth/wallet-setup');
+        } else {
+          router.push("/");
+        }
+      }
+=======
             // Read redirect parameter once and validate it before using
             const redirectParam = searchParams.get("redirect");
 
@@ -95,6 +127,7 @@ function SignInForm() {
                     router.push(safe ?? "/");
                 }
             }
+>>>>>>> dev
         } catch (err) {
             setError(err instanceof Error ? err.message : "Sign in failed");
         } finally {

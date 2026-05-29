@@ -8,17 +8,8 @@
  * It's cleared on logout or page refresh (user must re-authenticate).
  */
 
-
-// Passcode is stored in a closure, not on the module scope
-const passcodeHolder = (() => {
-  let passcode: string | null = null;
-  return {
-    set(pass: string) { passcode = pass; },
-    get() { return passcode; },
-    clear() { passcode = null; },
-    has() { return passcode !== null; }
-  };
-})();
+let inMemoryPasscode: string | null = null;
+let inMemoryTempPassphrase: string | null = null;
 
 /**
  * Store passcode in memory for the current session.
@@ -49,4 +40,21 @@ export function clearPasscode(): void {
  */
 export function hasPasscode(): boolean {
   return passcodeHolder.has();
+}
+
+/**
+ * Store the backend-generated wallet passphrase in memory only.
+ * Never written to sessionStorage/localStorage to prevent XSS exfiltration.
+ * Cleared after wallet setup completes or on logout/refresh.
+ */
+export function setTempPassphrase(passphrase: string): void {
+  inMemoryTempPassphrase = passphrase;
+}
+
+export function getTempPassphrase(): string | null {
+  return inMemoryTempPassphrase;
+}
+
+export function clearTempPassphrase(): void {
+  inMemoryTempPassphrase = null;
 }
