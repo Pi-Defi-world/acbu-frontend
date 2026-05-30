@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Send Money | ACBU',
+  description: 'Send ACBU tokens to other users securely. Transfer money using phone numbers, aliases, or Stellar addresses.',
+};
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import Link from "next/link";
@@ -26,11 +33,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
+import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/contexts/i18n-context";
-import { mapApiError } from "@/lib/api/client";
 import { useBalance } from "@/hooks/use-balance";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
@@ -51,6 +59,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSessionGuard } from "@/hooks/use-session-guard";
 
 function formatDate(iso: string) {
   const d = parseUtcDate(iso);
@@ -81,7 +90,7 @@ function getStatusColor(status: string | undefined) {
 export default function SendPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
-  const { t } = useI18n();
+  const { ensureSession } = useSessionGuard();
   const kit = useStellarWalletsKit();
   const { toast } = useToast();
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
@@ -134,18 +143,15 @@ export default function SendPage() {
     try {
       const data = await userApi.getContacts(opts);
       setContacts(data.contacts ?? []);
+      setContactsError("");
     } catch (e) {
-      const message = e instanceof Error ? e.message : t('common.errorDefault');
+      const message = e instanceof Error ? e.message : "Failed to load contacts";
       setContactsError(message);
-      toast({
-        title: t('common.errorDefault'),
-        description: message,
-        variant: "destructive",
-      });
+      setLoadError(message);
     } finally {
       setLoadingContacts(false);
     }
-  }, [opts, toast, t]);
+  }, [opts]);
 
   useEffect(() => {
     loadTransfers();
@@ -161,8 +167,16 @@ export default function SendPage() {
   const handleConfirmTransfer = useCallback(async () => {
     const to = getToValue();
     if (!amount || parseFloat(amount) <= 0 || !to) return;
-    clearSubmitError();
+    clearError();
     setSending(true);
+
+    // Pre-flight session check: validate the session is still active before
+    // making a write request (fixes #313 — silent 401 after session expiry).
+    const sessionOk = await ensureSession();
+    if (!sessionOk) {
+      setSending(false);
+      return;
+    }
     
     try {
       let blockchainTxHash: string | undefined;
@@ -244,11 +258,11 @@ export default function SendPage() {
       }, 2500);
       
     } catch (e) {
-      handleSubmitError(e);
+      setApiError(e);
     } finally {
       setSending(false);
     }
-  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance]);
+  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance, ensureSession]);
 
   const exceedsBalance =
     balance !== null && amount !== "" && parseFloat(amount) > balance;
@@ -389,6 +403,9 @@ export default function SendPage() {
                   <TabsTrigger value="custom">{t('send.newAddress')}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="contact" className="mt-3">
+                  {loadingContacts ? (
+                    <SkeletonList count={3} itemHeight="h-9" />
+                  ) : (
                   <Select
                     value={selectedContact?.id || ""}
                     onValueChange={(id: string) => {
@@ -431,6 +448,7 @@ export default function SendPage() {
                       </div>
                     </SelectContent>
                   </Select>
+                  )}
                 </TabsContent>
                 <TabsContent value="custom" className="mt-3">
                   <Input
@@ -466,7 +484,7 @@ export default function SendPage() {
               </div>
               {exceedsBalance && <p className="text-xs text-destructive">{t('send.insufficientBalance')}</p>}
               <p className="text-xs text-muted-foreground">
-                {t('send.available')}: ACBU {balanceLoading ? "..." : formatAmount(balance)}
+                {t('send.available')}: ACBU {balanceLoading ? <span className="inline-block h-3 w-16 bg-accent animate-pulse rounded align-middle" /> : formatAmount(balance)}
               </p>
             </div>
 
@@ -501,7 +519,7 @@ export default function SendPage() {
                   setConfirmedAmount(amount);
                   setShowConfirmDialog(true);
                 }}
-                disabled={!isFormValid()}
+                disabled={!isValid}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {t('send.continue')}

@@ -42,6 +42,7 @@ export const metadata: Metadata = {
   title: 'ACBU - P2P Transfers',
   description: 'Send and receive money securely with ACBU',
   generator: 'v0.app',
+  manifest: '/manifest.webmanifest',
   icons: {
     icon: [
       {
@@ -65,6 +66,10 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#1a0a2e' },
+  ],
 }
 
 export default async function RootLayout({
@@ -79,7 +84,7 @@ export default async function RootLayout({
   const lang = "en";
 
   return (
-    <html lang={lang}>
+    <html lang={lang} dir="ltr">
       <body className={`font-sans antialiased`}>
         <GlobalErrorHandler />
         <OfflineIndicator />
@@ -108,7 +113,7 @@ export default async function RootLayout({
                 />
               SRI hashes can be generated at https://www.srihash.org/
             */}
-            <Analytics nonce={nonce} />
+            <Analytics nonce={nonce} crossOrigin="anonymous" />
           </AuthProvider>
           </I18nProvider>
         </ErrorBoundary>

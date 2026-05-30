@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Savings | ACBU',
+  description: 'Grow your wealth with ACBU savings accounts. Earn competitive APY interest and set savings goals.',
+};
+
 import { logger } from "@/lib/logger";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
