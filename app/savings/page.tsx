@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Savings | ACBU',
+  description: 'Grow your wealth with ACBU savings accounts. Earn competitive APY interest and set savings goals.',
+};
+
 import { logger } from "@/lib/logger";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -28,7 +35,6 @@ import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
 import { resolveRecipient } from "@/lib/api/recipient";
 import { formatAmount } from "@/lib/utils";
-import { logger } from "@/lib/logger";
 
 /**
  * Resolve any user identifier (Stellar address, phone, alias, pay URI)

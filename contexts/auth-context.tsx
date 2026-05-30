@@ -2,7 +2,8 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
 import * as authApi from '@/lib/api/auth';
-import { onAuthError, setToken } from '@/lib/api/client';
+import { onAuthError } from '@/lib/api/client';
+import { clearPasscode } from '@/lib/passcode-manager';
 import { logger } from '@/lib/logger';
 
 const USER_ID_KEY = 'acbu_user_id';

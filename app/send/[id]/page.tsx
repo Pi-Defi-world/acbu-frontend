@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Transfer Details | ACBU',
+  description: 'View detailed information about a specific ACBU transfer including recipient, amount, and status.',
+};
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
@@ -10,10 +17,10 @@ import { ArrowLeft } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useApiOpts, useApiError } from "@/hooks/use-api";
 import * as transfersApi from "@/lib/api/transfers";
-import { formatAmount } from "@/lib/utils";
+import { formatAmount, parseUtcDate } from "@/lib/utils";
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
+  return parseUtcDate(iso).toLocaleString(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
   });
