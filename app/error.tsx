@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, startTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { errorReporter } from '@/lib/error-reporting';
@@ -21,6 +22,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const router = useRouter();
+
   useEffect(() => {
     errorReporter.reportError(error, {
       level: 'page',
@@ -32,6 +35,22 @@ export default function Error({
     });
   }, [error]);
 
+<<<<<<< HEAD
+=======
+  const handleGoHome = () => {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
+  };
+
+  const handleReset = () => {
+    startTransition(() => {
+      router.refresh();
+      reset();
+    });
+  };
+
+>>>>>>> upstream/dev
   return (
 <<<<<<< HEAD
     <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-4 text-center">
@@ -81,7 +100,7 @@ export default function Error({
       </div>
 
       <div className="flex gap-2">
-        <Button onClick={reset} variant="outline" size="sm">
+        <Button onClick={handleReset} variant="outline" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
           Try again
         </Button>

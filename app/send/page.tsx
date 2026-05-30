@@ -1,6 +1,18 @@
 "use client";
 
+<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from "react";
+=======
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Send Money | ACBU',
+  description: 'Send ACBU tokens to other users securely. Transfer money using phone numbers, aliases, or Stellar addresses.',
+};
+
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+>>>>>>> upstream/dev
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,14 +37,19 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 <<<<<<< HEAD
 =======
 import { useApiError } from "@/hooks/use-api-error";
+import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/contexts/i18n-context";
+<<<<<<< HEAD
 import { mapApiError } from "@/lib/api/client";
 >>>>>>> origin/dev
+=======
+>>>>>>> upstream/dev
 import { useBalance } from "@/hooks/use-balance";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
@@ -54,6 +71,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSessionGuard } from "@/hooks/use-session-guard";
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -71,7 +89,7 @@ function formatDate(iso: string) {
 export default function SendPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
-  const { t } = useI18n();
+  const { ensureSession } = useSessionGuard();
   const kit = useStellarWalletsKit();
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const [activeTab, setActiveTab] = useState("send");
@@ -130,23 +148,27 @@ export default function SendPage() {
     userApi.getContacts(opts).then((data) => {
       setContacts(data.contacts ?? []);
 <<<<<<< HEAD
+<<<<<<< HEAD
       setLoadError("");
     }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
   }, [opts]);
 =======
+=======
+      setContactsError("");
+>>>>>>> upstream/dev
     } catch (e) {
-      const message = e instanceof Error ? e.message : t('common.errorDefault');
+      const message = e instanceof Error ? e.message : "Failed to load contacts";
       setContactsError(message);
-      toast({
-        title: t('common.errorDefault'),
-        description: message,
-        variant: "destructive",
-      });
+      setLoadError(message);
     } finally {
       setLoadingContacts(false);
     }
+<<<<<<< HEAD
   }, [opts, toast, t]);
 >>>>>>> origin/dev
+=======
+  }, [opts]);
+>>>>>>> upstream/dev
 
   useEffect(() => {
     loadTransfers();
@@ -194,9 +216,24 @@ export default function SendPage() {
 
   const handleConfirmTransfer = async () => {
     const to = getToValue();
+<<<<<<< HEAD
     if (!confirmedAmount || parseFloat(confirmedAmount) <= 0 || !to) return;
     clearError();
     setSending(true);
+=======
+    if (!amount || parseFloat(amount) <= 0 || !to) return;
+    clearError();
+    setSending(true);
+
+    // Pre-flight session check: validate the session is still active before
+    // making a write request (fixes #313 — silent 401 after session expiry).
+    const sessionOk = await ensureSession();
+    if (!sessionOk) {
+      setSending(false);
+      return;
+    }
+    
+>>>>>>> upstream/dev
     try {
       let blockchainTxHash: string | undefined;
 
@@ -270,11 +307,19 @@ export default function SendPage() {
         setSelectedContact(null);
       }, 2500);
     } catch (e) {
+<<<<<<< HEAD
       setSubmitError(e instanceof Error ? e.message : "Transfer failed");
     } finally {
       setSending(false);
     }
   }, [confirmedAmount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance, clearError]);
+=======
+      setApiError(e);
+    } finally {
+      setSending(false);
+    }
+  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance, ensureSession]);
+>>>>>>> upstream/dev
 
   const exceedsBalance =
     balance !== null && debouncedAmount !== "" && parseFloat(debouncedAmount) > balance;
@@ -533,6 +578,9 @@ export default function SendPage() {
                   <TabsTrigger value="custom">{t('send.newAddress')}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="contact" className="mt-3">
+                  {loadingContacts ? (
+                    <SkeletonList count={3} itemHeight="h-9" />
+                  ) : (
                   <Select
                     value={selectedContact?.id || ""}
                     onValueChange={handleContactSelect}
@@ -562,6 +610,7 @@ export default function SendPage() {
                       </div>
                     </SelectContent>
                   </Select>
+                  )}
                 </TabsContent>
                 <TabsContent value="custom">
                   <Input
@@ -621,8 +670,12 @@ export default function SendPage() {
 =======
               {exceedsBalance && <p className="text-xs text-destructive">{t('send.insufficientBalance')}</p>}
               <p className="text-xs text-muted-foreground">
+<<<<<<< HEAD
                 {t('send.available')}: ACBU {balanceLoading ? "..." : formatAmount(balance)}
 >>>>>>> origin/dev
+=======
+                {t('send.available')}: ACBU {balanceLoading ? <span className="inline-block h-3 w-16 bg-accent animate-pulse rounded align-middle" /> : formatAmount(balance)}
+>>>>>>> upstream/dev
               </p>
             </div>
 
@@ -667,8 +720,16 @@ export default function SendPage() {
                 {t('send.cancel')}
               </Button>
               <Button
+<<<<<<< HEAD
                 onClick={handleShowConfirmDialog}
                 disabled={!isFormValid}
+=======
+                onClick={() => {
+                  setConfirmedAmount(amount);
+                  setShowConfirmDialog(true);
+                }}
+                disabled={!isValid}
+>>>>>>> upstream/dev
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                 aria-label="Continue to confirmation"
               >

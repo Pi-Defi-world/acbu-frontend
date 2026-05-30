@@ -42,7 +42,10 @@ export class ErrorReporter {
       ...context,
     };
 
-    console.error('Error Report:', report);
+    // Log to console in development only
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Error Report:', report);
+    }
 
     try {
       if (typeof window !== 'undefined') {
@@ -59,7 +62,9 @@ export class ErrorReporter {
         }).catch(() => {});
       }
     } catch (reportingError) {
-      console.error('Failed to report error:', reportingError);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to report error:', reportingError);
+      }
     }
   }
 

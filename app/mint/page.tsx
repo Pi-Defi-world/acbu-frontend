@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Mint & Burn | ACBU',
+  description: 'Create new ACBU tokens by minting with fiat currency or burn ACBU tokens to redeem fiat.',
+};
+
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
@@ -16,7 +23,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonList } from '@/components/ui/skeleton-list';
+import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
@@ -33,6 +41,11 @@ import { formatAmount } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
 import { logger } from '@/lib/logger';
 import { useI18n } from '@/contexts/i18n-context';
+
+function formatRate(rate: number | undefined): string {
+  if (rate == null || !Number.isFinite(rate)) return '—';
+  return rate.toLocaleString(undefined, { maximumFractionDigits: 4 });
+}
 
 /** `acbu_*` from API = local currency units per 1 ACBU → ACBU = fiat / localPerAcbu. */
 function estimateAcbuFromFiat(
@@ -70,6 +83,7 @@ export default function MintPage() {
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
   const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
+  const [fiatAccountsLoading, setFiatAccountsLoading] = useState(true);
   const [selectedFiatCurrency, setSelectedFiatCurrency] = useState('');
   const [fiatAmount, setFiatAmount] = useState('');
   const debouncedFiatAmount = useDebounce(fiatAmount, 300);
@@ -109,7 +123,8 @@ export default function MintPage() {
           setSelectedFiatCurrency(res.accounts[0].currency);
         }
       })
-      .catch((e) => logger.error('Failed to get fiat accounts', e));
+      .catch((e) => logger.error('Failed to get fiat accounts', e))
+      .finally(() => setFiatAccountsLoading(false));
   }, [opts.token]);
 
     useEffect(() => {
@@ -274,9 +289,13 @@ export default function MintPage() {
                         <p className="text-sm font-medium opacity-90">
                             {t('mint.acbuBalance')}
                         </p>
-                        <p className="text-3xl font-bold mb-2">
-                            {balanceLoading ? '...' : `ACBU ${formatAmount(balance)}`}
-                        </p>
+                        {balanceLoading ? (
+                            <BalanceSkeleton variant="compact" className="mb-2 opacity-60" />
+                        ) : (
+                            <p className="text-3xl font-bold mb-2">
+                                ACBU {formatAmount(balance)}
+                            </p>
+                        )}
                         <p className="text-xs opacity-75">
                             {balanceSource === "stellar"
                                 ? t('mint.balanceFromHorizon')
@@ -330,6 +349,9 @@ export default function MintPage() {
                                 >
                                     {t('mint.basketCurrency')}
                                 </label>
+                                {fiatAccountsLoading ? (
+                                    <SkeletonList count={1} itemHeight="h-10" />
+                                ) : (
                                 <select
                                     id="fiat-account"
                                     value={selectedFiatCurrency}
@@ -337,7 +359,7 @@ export default function MintPage() {
                                     className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                                 >
                                     {fiatAccounts.length === 0 ? (
-                                        <option value="" disabled>Loading currencies…</option>
+                                        <option value="" disabled>No currencies available</option>
                                     ) : (
                                         fiatAccounts.map(acc => (
                                             <option key={acc.id} value={acc.currency}>
@@ -346,6 +368,7 @@ export default function MintPage() {
                                         ))
                                     )}
                                 </select>
+                                )}
                             </div>
                             <div className="mt-4">
                                 <label
@@ -429,6 +452,9 @@ export default function MintPage() {
                                 >
                                     {t('mint.basketCurrency')}
                                 </label>
+                                {fiatAccountsLoading ? (
+                                    <SkeletonList count={1} itemHeight="h-10" />
+                                ) : (
                                 <select
                                     id="burn-fiat-account"
                                     value={selectedFiatCurrency}
@@ -436,7 +462,7 @@ export default function MintPage() {
                                     className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                                 >
                                     {fiatAccounts.length === 0 ? (
-                                        <option value="" disabled>Loading currencies…</option>
+                                        <option value="" disabled>No currencies available</option>
                                     ) : (
                                         fiatAccounts.map(acc => (
                                             <option key={acc.id} value={acc.currency}>
@@ -445,6 +471,7 @@ export default function MintPage() {
                                         ))
                                     )}
                                 </select>
+                                )}
                             </div>
                             <div className="mt-4">
                                 <label
@@ -470,7 +497,7 @@ export default function MintPage() {
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-2">
                                     {t('mint.available')}: ACBU{" "}
-                                    {balanceLoading ? '...' : formatAmount(balance)}
+                                    {balanceLoading ? <span className="inline-block h-3 w-16 bg-accent animate-pulse rounded align-middle" /> : formatAmount(balance)}
                                 </p>
                             </div>
                             <Card className="border-border bg-muted p-3 mt-4">
@@ -515,7 +542,7 @@ export default function MintPage() {
           <TabsContent value="rates" className="py-6 space-y-4">
             <div className="space-y-3">
               {ratesLoading ? (
-                <Skeleton className="h-20 w-full" />
+                <SkeletonList count={3} itemHeight="h-16" />
               ) : rateRows.length ? (
                 rateRows.map((r: { currency?: string; rate?: number }) => (
                   <Card key={r.currency ?? r.rate} className="border-border p-4">

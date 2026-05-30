@@ -94,20 +94,22 @@ function LocalKycBadge({ status, loading }: { status: KycStatus | undefined | nu
 >>>>>>> origin/dev
 
 const menuItems = [
-  { 
-    section: 'Account', 
+  {
+    section: 'Account',
     items: [
-      { title: 'Profile', icon: User, href: '/me/profile' }, 
-      { title: 'Settings', icon: Settings, href: '/me/settings' }, 
-      { title: 'Two-Factor Auth', icon: Shield, href: '/me/settings/security' }, 
-      { title: 'Wallet', icon: Eye, href: '/wallet' }, 
+      { title: 'Profile', icon: User, href: '/me/profile' },
+      { title: 'Settings', icon: Settings, href: '/me/settings' },
+      { title: 'Two-Factor Auth', icon: Shield, href: '/me/settings/security' },
+      { title: 'Wallet', icon: Eye, href: '/wallet' },
       { title: 'Simulated Bank', icon: Building2, href: '/fiat' }
-    ] 
+    ]
   },
-  { section: 'Support', items: [
-    { title: 'Activity History', icon: Clock, href: '/activity' },
-    { title: 'Help Center', icon: HelpCircle, href: '/help' }
-  ] },
+  {
+    section: 'Support', items: [
+      { title: 'Activity History', icon: Clock, href: '/activity' },
+      { title: 'Help Center', icon: HelpCircle, href: '/help' }
+    ]
+  },
 ];
 
 export default function MePage() {
@@ -184,7 +186,7 @@ export default function MePage() {
       try {
         const freshUserData = await userApi.getMe(opts);
         const nextStatus = freshUserData.kyc_status?.toLowerCase() || '';
-        
+
         setUser(freshUserData);
 
         if (TERMINAL_KYC_STATUSES.has(nextStatus)) {
@@ -242,14 +244,15 @@ export default function MePage() {
   return (
     <>
       <div className="bg-gradient-to-b from-primary/10 to-background border-b border-border">
-        <div className="px-4 py-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0 text-white text-lg font-bold">{initials}</div>
+        <div className="px-4 py-6 space-y-4 md:px-6 md:py-8 md:max-w-4xl md:mx-auto">
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0 text-white text-lg font-bold md:w-20 md:h-20 md:text-2xl">{initials}</div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <h1 className="page-title truncate">{displayName}</h1>
-                <KycBadge status={user?.kyc_status} />
+                <h1 className="page-title truncate md:text-2xl">{displayName}</h1>
+                <LocalKycBadge status={user?.kyc_status} loading={loading} />
               </div>
+<<<<<<< HEAD
               <p className="text-xs text-muted-foreground truncate">{user?.email || user?.phone_e164 || '—'}</p>
 <<<<<<< HEAD
               <div className="mt-1.5">
@@ -257,6 +260,9 @@ export default function MePage() {
               </div>
 =======
 >>>>>>> origin/dev
+=======
+              <p className="text-xs text-muted-foreground truncate md:text-sm">{user?.email || user?.phone_e164 || '—'}</p>
+>>>>>>> upstream/dev
             </div>
           </div>
         </div>
@@ -264,36 +270,36 @@ export default function MePage() {
 
       <PageContainer>
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-border bg-card p-4 text-center">
-              <p className="text-xs text-muted-foreground mb-2 font-medium">Total Balance</p>
-              <p className="text-2xl font-bold text-foreground">
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
+            <div className="rounded-lg border border-border bg-card p-4 text-center md:p-6">
+              <p className="text-xs text-muted-foreground mb-2 font-medium md:text-sm">Total Balance</p>
+              <p className="text-2xl font-bold text-foreground md:text-3xl">
                 {balanceLoading ? '...' : `ACBU ${formatAmount(balance)}`}
               </p>
             </div>
-            <div className="rounded-lg border border-border bg-card p-4 text-center">
-              <p className="text-xs text-muted-foreground mb-2 font-medium">This Month</p>
-              <p className={`text-2xl font-bold ${monthlyNetPositive ? 'text-accent' : 'text-destructive'}`}>
+            <div className="rounded-lg border border-border bg-card p-4 text-center md:p-6">
+              <p className="text-xs text-muted-foreground mb-2 font-medium md:text-sm">This Month</p>
+              <p className={`text-2xl font-bold md:text-3xl ${monthlyNetPositive ? 'text-accent' : 'text-destructive'}`}>
                 {loading ? '...' : monthlyNet === null ? '—' : `${monthlyNetPositive ? '+' : '-'}ACBU ${formatAmount(Math.abs(monthlyNet))}`}
               </p>
             </div>
           </div>
 
           {menuItems.map((section) => (
-            <div key={section.section} className="space-y-2">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">{section.section}</h3>
-              <div className="space-y-2">
+            <div key={section.section} className="space-y-2 md:space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 md:text-sm">{section.section}</h3>
+              <div className="space-y-2 md:space-y-3">
                 {section.items.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <Link key={item.href} href={item.href} className="w-full text-left transition-colors active:bg-muted">
+                    <Link key={item.href} href={item.href} prefetch={false} className="w-full text-left transition-colors active:bg-muted">
                       <div className="rounded-lg border border-border bg-card p-4 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <Icon className="w-5 h-5 text-primary flex-shrink-0" />
                           <span className="font-medium text-foreground text-sm truncate">{item.title}</span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                          <ArrowRight className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" />
                         </div>
                       </div>
                     </Link>

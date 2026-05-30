@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Simulated Bank | ACBU',
+  description: 'Manage your simulated fiat bank accounts for testing ACBU minting and burning operations.',
+};
+
 import React, { useState, useEffect } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
@@ -18,7 +25,7 @@ export default function FiatSimPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
-  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+  const { uiError, setApiError, clearError, isSubmitDisabled, handleError } = useApiError();
   const [accounts, setAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
