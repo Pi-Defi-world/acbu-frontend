@@ -1,4 +1,4 @@
-import createMiddleware from 'next-intl/middleware';
+it import createMiddleware from 'next-intl/middleware';
 
 <<<<<<< HEAD
 export default createMiddleware({
@@ -29,6 +29,7 @@ export function middleware(request: NextRequest) {
     'style-src': ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"], // unsafe-inline often needed for Next.js internal styles
     'img-src': ["'self'", "blob:", "data:", "https://*"], // Allow external images
     'font-src': ["'self'"],
+    'manifest-src': ["'self'"],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
@@ -49,6 +50,26 @@ export function middleware(request: NextRequest) {
 });
 
 export const config = {
+<<<<<<< HEAD
   // Match only internationalized pathnames
   matcher: ['/', '/(en|en-NG|en-KE)/:path*']
 };
+=======
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico and other public static assets (images, fonts, icons)
+     */
+    {
+      source: '/((?!api|_next/static|_next/image|.*\\.(?:ico|png|jpg|jpeg|svg|webp|gif|woff2?|ttf|otf|map)).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
+  ],
+};
+>>>>>>> upstream/dev

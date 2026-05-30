@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Pay Bill | ACBU',
+  description: 'Complete your bill payment transaction using ACBU tokens.',
+};
+
 import React from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';

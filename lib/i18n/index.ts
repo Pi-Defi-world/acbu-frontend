@@ -3,7 +3,20 @@ import { en } from './locales/en';
 type TranslationValue = string | Record<string, unknown>;
 type Translations = Record<string, TranslationValue>;
 
+// Locales that read right-to-left
+const RTL_LOCALES = new Set(['ar', 'he', 'fa', 'ur', 'ps', 'sd', 'ug', 'yi']);
+
+export function isRTL(locale: string): boolean {
+  return RTL_LOCALES.has(locale);
+}
+
+export function getDir(locale: string): 'rtl' | 'ltr' {
+  return isRTL(locale) ? 'rtl' : 'ltr';
+}
+
 const locales: Record<string, Translations> = { en: en as unknown as Translations };
+
+export { RTL_LOCALES };
 
 export function registerLocale(locale: string, translations: Translations): void {
   locales[locale] = translations;

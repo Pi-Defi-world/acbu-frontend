@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Deposit to Savings | ACBU',
+  description: 'Deposit ACBU tokens into your savings account to start earning interest on your balance.',
+};
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
