@@ -40,6 +40,7 @@ import { useApiError } from "@/hooks/use-api-error";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/contexts/i18n-context";
 import { useBalance } from "@/hooks/use-balance";
+import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
@@ -93,7 +94,12 @@ export default function SendPage() {
   const { ensureSession } = useSessionGuard();
   const kit = useStellarWalletsKit();
   const { toast } = useToast();
-  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const {
+    balance,
+    loading: balanceLoading,
+    error: balanceError,
+    refetch: refetchBalance,
+  } = useBalance();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [activeTab, setActiveTab] = useState("send");
   const [showSendDialog, setShowSendDialog] = useState(false);
@@ -242,7 +248,7 @@ export default function SendPage() {
       );
       
       loadTransfers();
-      refreshBalance();
+      refetchBalance();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
       setLastSentAmount(confirmedAmount);
@@ -262,7 +268,7 @@ export default function SendPage() {
     } finally {
       setSending(false);
     }
-  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance, ensureSession]);
+  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refetchBalance]);
 
   const exceedsBalance =
     balance !== null && amount !== "" && parseFloat(amount) > balance;
@@ -486,6 +492,11 @@ export default function SendPage() {
               <p className="text-xs text-muted-foreground">
                 {t('send.available')}: ACBU {balanceLoading ? <span className="inline-block h-3 w-16 bg-accent animate-pulse rounded align-middle" /> : formatAmount(balance)}
               </p>
+              <RetryErrorBlock
+                message={balanceError}
+                onRetry={refetchBalance}
+                className="mt-2 text-xs"
+              />
             </div>
 
             <div className="space-y-2">
