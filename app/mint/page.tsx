@@ -27,6 +27,12 @@ import { SkeletonList } from '@/components/ui/skeleton-list';
 import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
+<<<<<<< HEAD
+=======
+import { useApiError } from '@/hooks/use-api-error';
+import { ApiErrorDisplay } from '@/components/ui/api-error-display';
+import { RetryErrorBlock } from '@/components/ui/retry-error-block';
+>>>>>>> upstream/dev
 import { useBalance } from '@/hooks/use-balance';
 import { useAuth } from '@/contexts/auth-context';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
@@ -34,7 +40,7 @@ import { ensureAcbuTrustlineClient } from '@/lib/stellar/trustlines';
 import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
 import { submitBurnRedeemSingleClient } from '@/lib/stellar/burning';
 import { Keypair } from '@stellar/stellar-sdk';
-import * as ratesApi from '@/lib/api/rates';
+import { useRates } from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
 import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
@@ -71,25 +77,50 @@ export default function MintPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const { t } = useI18n();
-  const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const {
+    balance,
+    balanceSource,
+    loading: balanceLoading,
+    error: balanceError,
+    refetch: refetchBalance,
+  } = useBalance();
   const kit = useStellarWalletsKit();
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
+<<<<<<< HEAD
   const [burnError, setBurnError] = useState('');
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [ratesLoading, setRatesLoading] = useState(false);
   const [mintError, setMintError] = useState('');
+=======
+>>>>>>> upstream/dev
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
   const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [fiatAccountsLoading, setFiatAccountsLoading] = useState(true);
   const [selectedFiatCurrency, setSelectedFiatCurrency] = useState('');
   const [fiatAmount, setFiatAmount] = useState('');
+<<<<<<< HEAD
   const debouncedFiatAmount = useDebounce(fiatAmount, 300);
   const debouncedBurnAmount = useDebounce(burnAmount, 300);
   const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
+=======
+>>>>>>> upstream/dev
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
+
+  const {
+    data: mintQuoteRates,
+    error: mintQuoteRatesError,
+    refetch: refetchQuoteRates,
+  } = useRates(opts);
+
+  const {
+    data: rates,
+    loading: ratesLoading,
+    error: ratesError,
+    refetch: refetchRates,
+  } = useRates(activeTab === 'rates' ? opts : undefined);
   const rateRows = Array.isArray((rates as { rates?: Array<{ currency?: string; rate?: number }> } | null)?.rates)
     ? ((rates as { rates?: Array<{ currency?: string; rate?: number }> }).rates ?? [])
     : [];
@@ -98,21 +129,6 @@ export default function MintPage() {
     () => estimateAcbuFromFiat(debouncedFiatAmount, selectedFiatCurrency, mintQuoteRates),
     [debouncedFiatAmount, selectedFiatCurrency, mintQuoteRates],
   );
-
-  useEffect(() => {
-    let cancelled = false;
-    ratesApi
-      .getRates(opts)
-      .then((data) => {
-        if (!cancelled) setMintQuoteRates(data);
-      })
-      .catch(() => {
-        if (!cancelled) setMintQuoteRates(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
 
   useEffect(() => {
     fiatApi
@@ -126,16 +142,6 @@ export default function MintPage() {
       .catch((e) => logger.error('Failed to get fiat accounts', e))
       .finally(() => setFiatAccountsLoading(false));
   }, [opts.token]);
-
-    useEffect(() => {
-        if (activeTab !== "rates") return;
-        setRatesLoading(true);
-        ratesApi
-            .getRates(opts)
-            .then(setRates)
-            .catch(() => setRates(null))
-            .finally(() => setRatesLoading(false));
-    }, [activeTab, opts.token]);
 
     const handleMintConfirm = () => {
         if (!debouncedFiatAmount || parseFloat(debouncedFiatAmount) <= 0 || !selectedFiatCurrency) return;
@@ -245,7 +251,7 @@ export default function MintPage() {
             setMintAcbuReceived(
                 typeof acbu === "number" && Number.isFinite(acbu) ? acbu : null,
             );
-            refreshBalance();
+            refetchBalance();
             setStep("success");
         } catch (e) {
             setMintError(e instanceof Error ? e.message : "Mint failed");
@@ -301,6 +307,20 @@ export default function MintPage() {
                                 ? t('mint.balanceFromHorizon')
                                 : t('mint.linkWallet')}
                         </p>
+                        {balanceError && (
+                          <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
+                            <p className="font-medium">{balanceError}</p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 border-destructive/30 text-destructive hover:bg-destructive/10"
+                              onClick={refetchBalance}
+                            >
+                              Retry
+                            </Button>
+                          </div>
+                        )}
                     </Card>
                 </div>
 
@@ -409,6 +429,22 @@ export default function MintPage() {
                                         ≈ {formatAmount(estimatedMintAcbu)} ACBU
                                     </p>
                                 </Card>
+                            )}
+                            {mintQuoteRatesError && (
+                              <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive mt-3">
+                                <p className="font-medium">{mintQuoteRatesError}</p>
+                                <div className="mt-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                                    onClick={refetchQuoteRates}
+                                  >
+                                    Retry
+                                  </Button>
+                                </div>
+                              </div>
                             )}
                             <Card className="border-border bg-muted p-3 mt-4">
                                 <div className="flex justify-between text-sm">
@@ -541,6 +577,22 @@ export default function MintPage() {
 
           <TabsContent value="rates" className="py-6 space-y-4">
             <div className="space-y-3">
+              {ratesError && (
+                <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+                  <p className="font-medium">{ratesError}</p>
+                  <div className="mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                      onClick={refetchRates}
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                </div>
+              )}
               {ratesLoading ? (
                 <SkeletonList count={3} itemHeight="h-16" />
               ) : rateRows.length ? (

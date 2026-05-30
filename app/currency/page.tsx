@@ -33,18 +33,12 @@ import * as ratesApi from "@/lib/api/rates";
 import type { RatesResponse } from "@/types/api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
-import { useBalance } from "@/hooks/use-balance";
-import { useToast } from "@/hooks/use-toast";
-import * as ratesApi from "@/lib/api/rates";
+import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
-import type {
-  MintResponse,
-  BurnResponse,
-  CurrencyPreference,
-  QuoteResponse,
-  RatesResponse,
-} from "@/types/api";
+import * as ratesApi from "@/lib/api/rates";
+import { useBalance } from "@/hooks/use-balance";
+import type { MintResponse, BurnResponse, CurrencyPreference, RatesResponse } from "@/types/api";
 import { logger } from "@/lib/logger";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
@@ -100,7 +94,16 @@ export default function CurrencyPage() {
   const { toast } = useToast();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
+<<<<<<< HEAD
   const { toast } = useToast();
+>>>>>>> upstream/dev
+=======
+  const {
+    balance,
+    loading: balanceLoading,
+    error: balanceError,
+    refetch: refetchBalance,
+  } = useBalance();
 >>>>>>> upstream/dev
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
@@ -410,7 +413,7 @@ export default function CurrencyPage() {
         });
       }
       setStep("success");
-      refreshBalance();
+      refetchBalance();
     } catch (e) {
       logger.error(`Currency operation failed: ${activeTab}`, e); // <-- ADD LOGGER
       setApiError(e);
@@ -464,6 +467,11 @@ export default function CurrencyPage() {
                 ? "≈ ₦ —"
                 : `≈ ₦${formatAmount(balance * ngnPerAcbu, 0)}`}
             </p>
+            <RetryErrorBlock
+              message={balanceError}
+              onRetry={refetchBalance}
+              className="mt-3 bg-destructive/10 text-xs"
+            />
           </Card>
         </div>
 

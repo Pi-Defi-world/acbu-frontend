@@ -51,12 +51,17 @@ import { mapApiError } from "@/lib/api/client";
 =======
 >>>>>>> upstream/dev
 import { useBalance } from "@/hooks/use-balance";
+import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
 import type { TransferItem, ContactItem } from "@/types/api";
+<<<<<<< HEAD
 import { formatAmount } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
+=======
+import { formatAmount, parseUtcDate } from "@/lib/utils";
+>>>>>>> upstream/dev
 import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import {
@@ -74,7 +79,7 @@ import {
 import { useSessionGuard } from "@/hooks/use-session-guard";
 
 function formatDate(iso: string) {
-  const d = new Date(iso);
+  const d = parseUtcDate(iso);
   const today = new Date();
   if (d.toDateString() === today.toDateString()) return "Today";
   const yesterday = new Date(today);
@@ -91,7 +96,18 @@ export default function SendPage() {
   const { userId, stellarAddress } = useAuth();
   const { ensureSession } = useSessionGuard();
   const kit = useStellarWalletsKit();
+<<<<<<< HEAD
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+=======
+  const { toast } = useToast();
+  const {
+    balance,
+    loading: balanceLoading,
+    error: balanceError,
+    refetch: refetchBalance,
+  } = useBalance();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+>>>>>>> upstream/dev
   const [activeTab, setActiveTab] = useState("send");
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -294,7 +310,7 @@ export default function SendPage() {
         opts,
       );
       loadTransfers();
-      refreshBalance();
+      refetchBalance();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
       setLastSentAmount(amount);
@@ -318,7 +334,11 @@ export default function SendPage() {
     } finally {
       setSending(false);
     }
+<<<<<<< HEAD
   }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance, ensureSession]);
+>>>>>>> upstream/dev
+=======
+  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refetchBalance]);
 >>>>>>> upstream/dev
 
   const exceedsBalance =
@@ -677,6 +697,11 @@ export default function SendPage() {
                 {t('send.available')}: ACBU {balanceLoading ? <span className="inline-block h-3 w-16 bg-accent animate-pulse rounded align-middle" /> : formatAmount(balance)}
 >>>>>>> upstream/dev
               </p>
+              <RetryErrorBlock
+                message={balanceError}
+                onRetry={refetchBalance}
+                className="mt-2 text-xs"
+              />
             </div>
 
             <div className="space-y-2">

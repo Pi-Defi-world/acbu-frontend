@@ -10,15 +10,21 @@ import { useAuth } from '@/contexts/auth-context';
 import { useBalance } from '@/hooks/use-balance';
 import { useApiOpts } from '@/hooks/use-api';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { KycBadge } from '@/components/ui/kyc-badge';
 =======
 >>>>>>> origin/dev
 import { formatAmount } from '@/lib/utils';
+=======
+import { formatAmount, parseUtcDate } from '@/lib/utils';
+>>>>>>> upstream/dev
 import * as userApi from '@/lib/api/user';
 import * as transactionsApi from '@/lib/api/transactions';
 import type { UserMe } from '@/types/api';
 import type { TransactionListItem } from '@/types/api';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { RetryErrorBlock } from '@/components/ui/retry-error-block';
 
 // ---------------------------------------------------------------------------
 // KYC polling constants
@@ -115,13 +121,21 @@ const menuItems = [
 export default function MePage() {
   const router = useRouter();
   const { logout } = useAuth();
-  const { balance, loading: balanceLoading } = useBalance();
+  const {
+    balance,
+    loading: balanceLoading,
+    error: balanceError,
+    refetch: refetchBalance,
+  } = useBalance();
   const opts = useApiOpts();
   const [user, setUser] = useState<UserMe | null>(null);
   const [monthlyNet, setMonthlyNet] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [tick, setTick] = useState(0);
+
+  const refetch = () => setTick((t) => t + 1);
 
   // Backoff Polling States
   const [pollingDelay, setPollingDelay] = useState<number>(3000); // Start with 3 seconds
@@ -149,7 +163,7 @@ export default function MePage() {
       if (cancelled) return;
 
       const currentMonthTransactions = (transactionsData.transactions ?? []).filter((transaction) => {
-        const createdAt = new Date(transaction.created_at);
+        const createdAt = parseUtcDate(transaction.created_at);
         return createdAt.getMonth() === currentMonth && createdAt.getFullYear() === currentYear;
       });
 
@@ -167,7 +181,7 @@ export default function MePage() {
     });
 
     return () => { cancelled = true; };
-  }, [opts.token]);
+  }, [opts.token, tick]);
 
   // SMART POLL IMPLEMENTATION: Handles the dynamic KYC verification state loop
   useEffect(() => {
@@ -232,7 +246,7 @@ export default function MePage() {
   if (error) {
     return (
       <PageContainer>
-        <p className="text-destructive">{error}</p>
+        <RetryErrorBlock message={error} onRetry={refetch} className="p-4" />
       </PageContainer>
     );
   }
@@ -276,6 +290,11 @@ export default function MePage() {
               <p className="text-2xl font-bold text-foreground md:text-3xl">
                 {balanceLoading ? '...' : `ACBU ${formatAmount(balance)}`}
               </p>
+              <RetryErrorBlock
+                message={balanceError}
+                onRetry={refetchBalance}
+                className="mt-2 text-xs bg-destructive/5"
+              />
             </div>
             <div className="rounded-lg border border-border bg-card p-4 text-center md:p-6">
               <p className="text-xs text-muted-foreground mb-2 font-medium md:text-sm">This Month</p>

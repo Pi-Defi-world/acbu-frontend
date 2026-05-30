@@ -17,8 +17,9 @@ import { ArrowLeft } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useApiOpts } from "@/hooks/use-api";
 import * as transfersApi from "@/lib/api/transfers";
-import { formatAmount } from "@/lib/utils";
+import { formatAmount, parseUtcDate } from "@/lib/utils";
 
+<<<<<<< HEAD
 // Add safe date formatter
 function safeFormatDate(iso: string | undefined) {
   if (!iso) return '';
@@ -32,6 +33,13 @@ function safeFormatDate(iso: string | undefined) {
   } catch {
     return '';
   }
+=======
+function formatDate(iso: string) {
+  return parseUtcDate(iso).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+>>>>>>> upstream/dev
 }
 
 
