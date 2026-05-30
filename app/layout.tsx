@@ -1,5 +1,4 @@
 import React from "react"
-import dynamic from 'next/dynamic'
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
 import { Analytics } from '@vercel/analytics/next'

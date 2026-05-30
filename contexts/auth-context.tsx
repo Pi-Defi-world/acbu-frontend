@@ -21,6 +21,13 @@ interface AuthContextValue extends AuthState {
   logout: () => Promise<void>;
   setAuth: (userId: string | null, stellarAddress?: string | null) => void;
   refreshStellarAddress: () => Promise<void>;
+  /**
+   * Most recent session validation error (e.g. transient network failure).
+   * 401 clears auth state and does not surface here.
+   */
+  sessionError: string;
+  /** Re-run session validation. Useful for a Retry UI. */
+  refetchSession: () => Promise<void>;
 }
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -44,14 +51,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: false,
     isHydrated: false,
   });
+  const [sessionError, setSessionError] = useState('');
 
   // Validate session on mount by checking if the httpOnly cookie is still valid
-  useEffect(() => {
-    const validateSession = async () => {
+  const validateSession = useCallback(async () => {
       const storedAuth = getStoredAuth();
       
       // If no userId in storage, definitely not authenticated
       if (!storedAuth.userId) {
+        setSessionError('');
         setState({ 
           userId: null,
           stellarAddress: null,
@@ -63,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Validate the httpOnly cookie by making an API call
       try {
+        setSessionError('');
         const { getMe } = await import('@/lib/api/user');
         await getMe(); // If this succeeds, the cookie is valid
         
@@ -84,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
           }
           clearPasscode();
+          setSessionError('');
           setState({
             userId: null,
             stellarAddress: null,
@@ -93,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           // Network error or other transient failure
           // Keep stored data but mark as not authenticated until retry succeeds
+          setSessionError(error instanceof Error ? error.message : 'Failed to validate session');
           setState({
             userId: storedAuth.userId,
             stellarAddress: storedAuth.stellarAddress,
@@ -101,10 +112,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
         }
       }
-    };
+    }, []);
 
-    validateSession();
-  }, []);
+  useEffect(() => {
+    void validateSession();
+  }, [validateSession]);
 
   const setAuth = useCallback((userId: string | null, stellarAddress: string | null = null) => {
     if (typeof window !== 'undefined') {
@@ -182,8 +194,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       setAuth,
       refreshStellarAddress,
+      sessionError,
+      refetchSession: validateSession,
     }),
-    [state, login, logout, setAuth, refreshStellarAddress]
+    [state, login, logout, setAuth, refreshStellarAddress, sessionError, validateSession]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

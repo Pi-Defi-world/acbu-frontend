@@ -1,27 +1,19 @@
 "use client";
 
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Exchange Rates | ACBU',
-  description: 'View current ACBU exchange rates for multiple currencies including USD, EUR, GBP, and more.',
-};
-
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { SkeletonList } from "@/components/ui/skeleton-list";
+import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import { ArrowLeft } from "lucide-react";
-import { useApiOpts, useApiError } from "@/hooks/use-api";
-import * as ratesApi from "@/lib/api/rates";
+import { useApiOpts } from "@/hooks/use-api";
+import { useRates } from "@/lib/api/rates";
 import type { RatesResponse } from "@/types/api";
 
 export default function RatesPage() {
   const opts = useApiOpts();
-  const { error, handleError } = useApiError();
-  const [rates, setRates] = useState<RatesResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: rates, loading, error, refetch } = useRates(opts);
 
   const formatRate = (rate: number | undefined): string => {
     if (rate == null) return "—";
@@ -39,24 +31,6 @@ export default function RatesPage() {
     });
   };
 
-  useEffect(() => {
-    let cancelled = false;
-    ratesApi
-      .getRates(opts)
-      .then((data) => {
-        if (!cancelled) setRates(data);
-      })
-      .catch((e) => {
-        if (!cancelled) handleError(e);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
-
   return (
     <>
       <div className="page-header">
@@ -72,7 +46,7 @@ export default function RatesPage() {
         </div>
       </div>
       <PageContainer>
-        {error && <p className="text-destructive text-sm mb-3">{error}</p>}
+        <RetryErrorBlock message={error} onRetry={refetch} className="mb-3" />
         {loading ? (
           <SkeletonList count={2} itemHeight="h-20" />
         ) : rates ? (
