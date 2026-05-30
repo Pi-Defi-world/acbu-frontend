@@ -22,8 +22,11 @@ import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 import { SkeletonList } from "@/components/ui/skeleton-list";
+>>>>>>> upstream/dev
+=======
 >>>>>>> upstream/dev
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
@@ -162,6 +165,7 @@ export default function BurnPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
+  
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
@@ -169,8 +173,8 @@ export default function BurnPage() {
   const form = useForm<BurnFormValues>({
     resolver: zodResolver(burnSchema),
     defaultValues: {
-      acbuAmount: searchParams.get("amount") || "",
-      currency: searchParams.get("currency") || "NGN",
+      acbuAmount: searchParams?.get("amount") || "",
+      currency: (searchParams?.get("currency") || "NGN").toUpperCase().slice(0, 3),
       accountNumber: "",
       bankCode: "",
       accountName: "",
@@ -179,10 +183,16 @@ export default function BurnPage() {
   });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   const currency = form.watch("currency");
   const isValid = form.formState.isValid;
 
 =======
+>>>>>>> upstream/dev
+=======
+  const { isValid } = form.formState;
+  const currency = form.watch("currency");
+
 >>>>>>> upstream/dev
   const onSubmit = async (values: BurnFormValues) => {
     clearError();
@@ -509,6 +519,7 @@ export default function BurnPage() {
                   </FormItem>
                 )}
               />
+<<<<<<< HEAD
 
               <Button
                 type="submit"
@@ -545,6 +556,18 @@ function BurnPageSkeleton() {
           <SkeletonList count={5} itemHeight="h-14" />
 >>>>>>> upstream/dev
         </Card>
+=======
+            <Button
+              type="submit"
+              disabled={!isValid || loading || isSubmitDisabled}
+              className="w-full"
+            >
+              {loading ? "Submitting..." : "Burn & Withdraw"}
+            </Button>
+          </form>
+        </Form>
+      </Card>
+>>>>>>> upstream/dev
       </PageContainer>
     </>
   );

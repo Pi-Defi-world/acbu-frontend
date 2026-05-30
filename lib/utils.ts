@@ -78,3 +78,16 @@ export function formatAcbu(
 export const normalizeUsername = (input: string) => {
   return input.toLowerCase().trim();
 }
+
+/**
+ * Safe conversion of UTC timestamp strings from the API (which may lack a trailing Z or timezone indicator)
+ * into a local Date object, ensuring the user's local timezone offset is applied.
+ */
+export function parseUtcDate(iso: string | null | undefined): Date {
+  if (!iso) return new Date();
+  const trimmed = String(iso).trim();
+  const hasTimezone = /Z|[+-]\d{2}:?\d{2}$/.test(trimmed);
+  const utcString = hasTimezone ? trimmed : (trimmed.includes(' ') ? trimmed.replace(' ', 'T') : trimmed) + 'Z';
+  return new Date(utcString);
+}
+

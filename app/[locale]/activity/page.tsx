@@ -18,10 +18,10 @@ import { useApiOpts } from '@/hooks/use-api';
 import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import * as transactionsApi from '@/lib/api/transactions';
 import type { TransactionListItem } from '@/types/api';
-import { formatAcbu, formatAmount } from '@/lib/utils';
+import { formatAcbu, formatAmount, parseUtcDate } from '@/lib/utils';
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+  return parseUtcDate(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
 }
 
 /**
