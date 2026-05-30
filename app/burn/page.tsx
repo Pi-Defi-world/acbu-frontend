@@ -18,7 +18,6 @@ import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
-import { SkeletonList } from "@/components/ui/skeleton-list";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -80,6 +79,7 @@ function BurnPageContent() {
   const searchParams = useSearchParams();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
+  
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
@@ -87,14 +87,17 @@ function BurnPageContent() {
   const form = useForm<BurnFormValues>({
     resolver: zodResolver(burnSchema),
     defaultValues: {
-      acbuAmount: searchParams.get("amount") || "",
-      currency: searchParams.get("currency") || "NGN",
+      acbuAmount: searchParams?.get("amount") || "",
+      currency: (searchParams?.get("currency") || "NGN").toUpperCase().slice(0, 3),
       accountNumber: "",
       bankCode: "",
       accountName: "",
     },
     mode: "onChange",
   });
+
+  const { isValid } = form.formState;
+  const currency = form.watch("currency");
 
   const onSubmit = async (values: BurnFormValues) => {
     clearError();
@@ -379,35 +382,16 @@ function BurnPageContent() {
                   </FormItem>
                 )}
               />
-
-              <Button
-                type="submit"
-                disabled={!form.formState.isValid || loading || isSubmitDisabled}
-                className="w-full"
-              >
-                {loading ? "Submitting..." : "Burn & Withdraw"}
-              </Button>
-            </form>
-          </Form>
-        </Card>
-      </PageContainer>
-    </>
-  );
-}
-
-function BurnPageSkeleton() {
-  return (
-    <>
-      <div className="page-header">
-        <div className="page-header-row">
-          <div className="w-9 h-9" />
-          <div className="h-6 w-40 bg-accent animate-pulse rounded-md" />
-        </div>
-      </div>
-      <PageContainer>
-        <Card className="border-border p-4 space-y-4">
-          <SkeletonList count={5} itemHeight="h-14" />
-        </Card>
+            <Button
+              type="submit"
+              disabled={!isValid || loading || isSubmitDisabled}
+              className="w-full"
+            >
+              {loading ? "Submitting..." : "Burn & Withdraw"}
+            </Button>
+          </form>
+        </Form>
+      </Card>
       </PageContainer>
     </>
   );

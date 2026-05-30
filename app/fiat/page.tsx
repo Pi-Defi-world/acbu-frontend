@@ -12,7 +12,9 @@ import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useApiOpts, useApiError } from '@/hooks/use-api';
+import { useApiOpts } from '@/hooks/use-api';
+import { useApiError } from '@/hooks/use-api-error';
+import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import * as fiatApi from '@/lib/api/fiat';
 import { useAuth } from '@/contexts/auth-context';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
@@ -38,7 +40,7 @@ export default function FiatSimPage() {
       const data = await fiatApi.getFiatAccounts(opts);
       setAccounts(data.accounts || []);
     } catch (e: unknown) {
-      handleError(e);
+      setApiError(e);
     } finally {
       setLoading(false);
     }
@@ -95,7 +97,7 @@ export default function FiatSimPage() {
       setLastFaucetTx(res.transaction_hash);
       setFaucetAmount('');
     } catch (e: unknown) {
-      handleError(e);
+      setApiError(e);
     } finally {
       setActionLoading(null);
     }

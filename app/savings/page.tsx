@@ -35,7 +35,6 @@ import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
 import { resolveRecipient } from "@/lib/api/recipient";
 import { formatAmount } from "@/lib/utils";
-import { logger } from "@/lib/logger";
 
 /**
  * Resolve any user identifier (Stellar address, phone, alias, pay URI)

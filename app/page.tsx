@@ -31,7 +31,7 @@ import * as transactionsApi from '@/lib/api/transactions';
 import * as fiatApi from '@/lib/api/fiat';
 import * as ratesApi from '@/lib/api/rates';
 import type { TransactionListItem, RatesResponse } from '@/types/api';
-import { formatAcbu, formatAmount } from '@/lib/utils';
+import { formatAcbu, formatAmount, parseUtcDate } from '@/lib/utils';
 
 function parsePositiveNumber(v: string | number | null | undefined): number | null {
   if (v === null || v === undefined) return null;
@@ -103,7 +103,7 @@ const features = [
 ];
 
 function formatDate(iso: string) {
-  const d = new Date(iso);
+  const d = parseUtcDate(iso);
   const today = new Date();
   if (d.toDateString() === today.toDateString()) return 'Today';
   const yesterday = new Date(today);
