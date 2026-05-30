@@ -173,7 +173,6 @@
     @apply flex items-center justify-center min-w-[44px] min-h-[44px] -m-2;
   }
 
-<<<<<<< fix/iframes
   /*
    * Style isolation container for third-party widgets.
    * Apply to the wrapper element that hosts the injected widget DOM:
@@ -187,7 +186,8 @@
   }
   .widget-isolate * {
     all: revert;
-=======
+  }
+
   /* Tablet-specific responsive adjustments (768px-1024px) */
   @media (min-width: 768px) and (max-width: 1024px) {
     .page-header-row {
@@ -228,6 +228,5 @@
      visual "start" edge (right in RTL) */
   [dir='rtl'] .page-header-row {
     flex-direction: row-reverse;
->>>>>>> dev
   }
 }
