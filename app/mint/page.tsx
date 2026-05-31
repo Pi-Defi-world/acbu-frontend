@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,6 +100,8 @@ export default function MintPage() {
   const { userId, stellarAddress } = useAuth();
   const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const kit = useStellarWalletsKit();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
@@ -203,11 +206,24 @@ export default function MintPage() {
             .finally(() => setRatesLoading(false));
     }, [activeTab, opts.token]);
 
+    useEffect(() => {
+        const stepParam = searchParams.get("step");
+        if (stepParam === "confirm" || stepParam === "success") {
+            setStep(stepParam);
+        } else {
+            setStep("input");
+        }
+    }, [searchParams]);
+
     const handleMintConfirm = () => {
         setMintError("");
+        router.push("/mint?step=confirm", { scroll: false });
         setStep("confirm");
     };
-    const handleBurnConfirm = () => setStep("confirm");
+    const handleBurnConfirm = () => {
+        router.push("/mint?step=confirm", { scroll: false });
+        setStep("confirm");
+    };
     const handleExecuteMint = async () => {
         if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
             return;
@@ -308,6 +324,7 @@ export default function MintPage() {
                 typeof acbu === "number" && Number.isFinite(acbu) ? acbu : null,
             );
             refreshBalance();
+            router.replace("/mint?step=success", { scroll: false });
             setStep("success");
         } catch (e) {
             setMintError(e instanceof Error ? e.message : "Mint failed");
@@ -384,6 +401,7 @@ export default function MintPage() {
                 opts,
             );
             setTxId(res.transaction_id || res.transactionId || null);
+            router.replace("/mint?step=success", { scroll: false });
             setStep("success");
         } catch (e) {
             setBurnError(e instanceof Error ? e.message : "Burn failed");
@@ -400,6 +418,7 @@ export default function MintPage() {
     };
     const resetForm = () => {
         setStep("input");
+        router.replace("/mint", { scroll: false });
         setFiatAmount("");
         setBurnAmount("");
         setBurnError("");
@@ -692,7 +711,15 @@ export default function MintPage() {
         </Tabs>
       </PageContainer>
 
-            <AlertDialog open={step === "confirm"}>
+            <AlertDialog
+                open={step === "confirm"}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        router.replace("/mint", { scroll: false });
+                    }
+                    setStep(open ? "confirm" : "input");
+                }}
+            >
                 <AlertDialogContent className="max-w-md border-border">
                     <AlertDialogHeader>
                         <AlertDialogTitle>
@@ -725,7 +752,10 @@ export default function MintPage() {
                     </div>
                     <div className="flex gap-2">
                         <AlertDialogCancel
-                            onClick={() => setStep("input")}
+                            onClick={() => {
+                                setStep("input");
+                                router.replace("/mint", { scroll: false });
+                            }}
                             disabled={executing}
                         >
                             Cancel
@@ -741,7 +771,14 @@ export default function MintPage() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <AlertDialog open={step === "success"}>
+            <AlertDialog
+                open={step === "success"}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        router.replace("/mint", { scroll: false });
+                    }
+                }}
+            >
                 <AlertDialogContent className="max-w-md border-border">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Operation Complete</AlertDialogTitle>

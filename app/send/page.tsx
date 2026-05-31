@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -87,6 +88,41 @@ export default function SendPage() {
   const [contactsError, setContactsError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const step = searchParams.get("step");
+    setShowConfirmDialog(step === "confirm");
+    setShowSuccessDialog(step === "success");
+
+    if (step === "confirm") {
+      setShowSendDialog(true);
+    }
+    if (step === "success") {
+      setShowSendDialog(false);
+    }
+  }, [searchParams]);
+
+  const openConfirmDialog = () => {
+    setShowConfirmDialog(true);
+    router.push("/send?step=confirm", { scroll: false });
+  };
+
+  const closeConfirmDialog = () => {
+    setShowConfirmDialog(false);
+    router.replace("/send", { scroll: false });
+  };
+
+  const openSuccessDialog = () => {
+    setShowSuccessDialog(true);
+    router.replace("/send?step=success", { scroll: false });
+  };
+
+  const closeSuccessDialog = () => {
+    setShowSuccessDialog(false);
+    router.replace("/send", { scroll: false });
+  };
 
   const loadTransfers = useCallback(() => {
     setLoadingTransfers(true);
@@ -201,7 +237,7 @@ export default function SendPage() {
       setShowConfirmDialog(false);
       setShowSendDialog(false);
       setLastSentAmount(amount);
-      setShowSuccessDialog(true);
+      openSuccessDialog();
       setTimeout(() => {
         setShowSuccessDialog(false);
         setAmount("");
@@ -472,7 +508,7 @@ const getStatusColor = (status: string) => {
                 Cancel
               </Button>
               <Button
-                onClick={() => setShowConfirmDialog(true)}
+                onClick={openConfirmDialog}
                 disabled={!isFormValid()}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
@@ -484,7 +520,15 @@ const getStatusColor = (status: string) => {
       </Dialog>
 
       {/* Confirm Dialog */}
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+      <AlertDialog
+        open={showConfirmDialog}
+        onOpenChange={(open) => {
+          setShowConfirmDialog(open);
+          if (!open) {
+            router.replace("/send", { scroll: false });
+          }
+        }}
+      >
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Transfer</AlertDialogTitle>
@@ -527,8 +571,20 @@ const getStatusColor = (status: string) => {
             )}
           </div>
           <div className="flex gap-3">
-            <AlertDialogCancel className="flex-1 border-border" disabled={sending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmTransfer} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={sending}>{sending ? 'Sending...' : `Send ACBU ${amount}`}</AlertDialogAction>
+            <AlertDialogCancel
+              className="flex-1 border-border"
+              disabled={sending}
+              onClick={closeConfirmDialog}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmTransfer}
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={sending}
+            >
+              {sending ? 'Sending...' : `Send ACBU ${amount}`}
+            </AlertDialogAction>
           </div>
         </AlertDialogContent>
       </AlertDialog>
@@ -536,7 +592,12 @@ const getStatusColor = (status: string) => {
 
             <Dialog
                 open={showSuccessDialog}
-                onOpenChange={setShowSuccessDialog}
+                onOpenChange={(open) => {
+                  setShowSuccessDialog(open);
+                  if (!open) {
+                    router.replace("/send", { scroll: false });
+                  }
+                }}
             >
                 <DialogContent className="max-w-md border-border">
                     <div className="flex flex-col items-center text-center py-6">
