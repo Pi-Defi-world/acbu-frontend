@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -75,6 +76,7 @@ export default function SendPage() {
     null,
   );
   const [amount, setAmount] = useState("");
+  const [confirmedAmount, setConfirmedAmount] = useState("");
   const [lastSentAmount, setLastSentAmount] = useState("");
   const [note, setNote] = useState("");
   const [customRecipient, setCustomRecipient] = useState("");
@@ -86,6 +88,44 @@ export default function SendPage() {
   const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const clearError = useCallback(() => setSubmitError(""), []);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const step = searchParams.get("step");
+    setShowConfirmDialog(step === "confirm");
+    setShowSuccessDialog(step === "success");
+
+    if (step === "confirm") {
+      setShowSendDialog(true);
+    }
+    if (step === "success") {
+      setShowSendDialog(false);
+    }
+  }, [searchParams]);
+
+  const openConfirmDialog = useCallback(() => {
+    setConfirmedAmount(amount);
+    setShowConfirmDialog(true);
+    router.push("/send?step=confirm", { scroll: false });
+  }, [amount, router]);
+
+  const closeConfirmDialog = useCallback(() => {
+    setShowConfirmDialog(false);
+    setConfirmedAmount("");
+    router.replace("/send", { scroll: false });
+  }, [router]);
+
+  const openSuccessDialog = useCallback(() => {
+    setShowSuccessDialog(true);
+    router.replace("/send?step=success", { scroll: false });
+  }, [router]);
+
+  const closeSuccessDialog = useCallback(() => {
+    setShowSuccessDialog(false);
+    router.replace("/send", { scroll: false });
+  }, [router]);
 
   const virtualizedContacts = useMemo(() => {
     return virtualizer.getVirtualItems().map((virtualRow) => {
@@ -134,12 +174,18 @@ export default function SendPage() {
   const handleShowSendDialog = useCallback(() => setShowSendDialog(true), []);
   const handleSendDialogChange = useCallback((open: boolean) => setShowSendDialog(open), []);
   const handleConfirmDialogChange = useCallback((open: boolean) => {
-    if (!open && !sending) {
+    if (!open) {
       setConfirmedAmount("");
+      router.replace("/send", { scroll: false });
     }
     setShowConfirmDialog(open);
-  }, [sending]);
-  const handleSuccessDialogChange = useCallback((open: boolean) => setShowSuccessDialog(open), []);
+  }, [sending, router]);
+  const handleSuccessDialogChange = useCallback((open: boolean) => {
+    if (!open) {
+      router.replace("/send", { scroll: false });
+    }
+    setShowSuccessDialog(open);
+  }, [router]);
   const handleTabChange = useCallback((value: string) => setActiveTab(value), []);
   const handleUseContactChange = useCallback((v: string) => setUseContact(v === "contact"), []);
   const handleContactSelect = useCallback((id: string) => {
@@ -158,8 +204,9 @@ export default function SendPage() {
   const handleSendDialogClose = useCallback(() => setShowSendDialog(false), []);
   const handleShowConfirmDialog = useCallback(() => {
     setConfirmedAmount(amount);
+    router.push("/send?step=confirm", { scroll: false });
     setShowConfirmDialog(true);
-  }, [amount]);
+  }, [amount, router]);
   const handleConfirmAction = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     handleConfirmTransfer();
@@ -239,7 +286,7 @@ export default function SendPage() {
       setShowConfirmDialog(false);
       setShowSendDialog(false);
       setLastSentAmount(amount);
-      setShowSuccessDialog(true);
+      openSuccessDialog();
       setTimeout(() => {
         setShowSuccessDialog(false);
         setAmount("");
