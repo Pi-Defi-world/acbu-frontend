@@ -1,11 +1,11 @@
 import { post } from './client';
 import type { RequestOptions } from './client';
-import type { MintFromUsdcBody, MintResponse } from '@/types/api';
+import type { MintFromUsdcBody, MintResponse, CurrencyPreference } from '@/types/api';
 
 export async function mintFromUsdc(
   usdcAmount: string,
   walletAddress: string,
-  currencyPreference?: 'auto',
+  currencyPreference?: CurrencyPreference,
   opts?: RequestOptions
 ): Promise<MintResponse> {
   const body: MintFromUsdcBody = { usdc_amount: usdcAmount, wallet_address: walletAddress };

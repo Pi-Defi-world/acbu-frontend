@@ -6,6 +6,7 @@ import {
   allowAllModules,
 } from '@creit.tech/stellar-wallets-kit';
 import { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 
 // Create a singleton instance if we are in the browser
 let swkInstance: StellarWalletsKit | null = null;
@@ -33,7 +34,7 @@ export function useStellarWalletsKit() {
     try {
       setKit(getStellarWalletsKit());
     } catch (e) {
-      console.warn(e);
+      logger.warn('Failed to initialize StellarWalletsKit', e);
     }
   }, []);
 

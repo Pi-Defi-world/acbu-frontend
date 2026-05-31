@@ -1,4 +1,4 @@
-import { get, post, patch, put, del, getToken } from './client';
+import { get, post, patch, put, del } from './client';
 import type { RequestOptions } from './client';
 import type { UserMe, PatchMeBody, ReceiveResponse, BalanceResponse, ContactItem, GuardianItem } from '@/types/api';
 
@@ -22,16 +22,12 @@ export async function getReceiveQrcode(opts?: RequestOptions): Promise<Blob | { 
   const base = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL
     ? process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, '')
     : '';
-  const token = opts?.token || getToken();
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-    headers['x-api-key'] = token;
-  }
+  
   const res = await fetch(`${base}/users/me/receive/qrcode`, {
-    headers,
+    credentials: 'include', // Use httpOnly cookie authentication
     signal: opts?.signal,
   });
+  
   if (!res.ok) {
     const data = res.headers.get('content-type')?.includes('application/json') ? await res.json() : {};
     throw new Error((data as { message?: string }).message || `HTTP ${res.status}`);

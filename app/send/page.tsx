@@ -1,6 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Send Money | ACBU',
+  description: 'Send ACBU tokens to other users securely. Transfer money using phone numbers, aliases, or Stellar addresses.',
+};
+
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -26,14 +34,19 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
+import { useApiError } from "@/hooks/use-api-error";
+import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/contexts/i18n-context";
 import { useBalance } from "@/hooks/use-balance";
+import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
 import type { TransferItem, ContactItem } from "@/types/api";
-import { formatAcbu, formatAmount } from "@/lib/utils";
+import { formatAmount, parseUtcDate } from "@/lib/utils";
 import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import {
@@ -48,9 +61,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { useSessionGuard } from "@/hooks/use-session-guard";
+
 function formatDate(iso: string) {
-  const d = new Date(iso);
+  const d = parseUtcDate(iso);
   const today = new Date();
   if (d.toDateString() === today.toDateString()) return "Today";
   const yesterday = new Date(today);
@@ -59,23 +73,42 @@ function formatDate(iso: string) {
   return d.toLocaleDateString();
 }
 
+function getStatusColor(status: string | undefined) {
+  switch (status) {
+    case "completed":
+      return "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800";
+    case "pending":
+      return "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
+    case "failed":
+      return "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800";
+    default:
+      return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700";
+  }
+}
+
 /**
  * Page component for sending ACBU tokens.
  */
 export default function SendPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
+  const { ensureSession } = useSessionGuard();
   const kit = useStellarWalletsKit();
   const { toast } = useToast();
-  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const {
+    balance,
+    loading: balanceLoading,
+    error: balanceError,
+    refetch: refetchBalance,
+  } = useBalance();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [activeTab, setActiveTab] = useState("send");
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [selectedContact, setSelectedContact] = useState<ContactItem | null>(
-    null,
-  );
+  const [selectedContact, setSelectedContact] = useState<ContactItem | null>(null);
   const [amount, setAmount] = useState("");
+  const [confirmedAmount, setConfirmedAmount] = useState("");
   const [lastSentAmount, setLastSentAmount] = useState("");
   const [note, setNote] = useState("");
   const [customRecipient, setCustomRecipient] = useState("");
@@ -124,62 +157,68 @@ export default function SendPage() {
     router.replace("/send", { scroll: false });
   };
 
-  const loadTransfers = useCallback(() => {
-    setLoadingTransfers(true);
-    setTransfersError("");
-    transfersApi.getTransfers(opts).then((data) => {
+  const loadTransfers = useCallback(async () => {
+    setLoadError("");
+    try {
+      const data = await transfersApi.getTransfers(opts);
       setTransfers(data.transfers ?? []);
-      setTransfersError("");
-    }).catch((e) => {
-      const message = e instanceof Error ? e.message : "Failed to load transfers";
-      setTransfersError(message);
-      toast({
-        title: "Could not load transfers",
-        description: message,
-        variant: "destructive",
-      });
-    }).finally(() => setLoadingTransfers(false));
-  }, [opts, toast]);
+      setLoadError("");
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Failed to load transfers");
+    } finally {
+      setLoadingTransfers(false);
+    }
+  }, [opts]);
 
-  const loadContacts = useCallback(() => {
-    setLoadingContacts(true);
-    setContactsError("");
-    userApi.getContacts(opts).then((data) => {
+  const loadContacts = useCallback(async () => {
+    setLoadError("");
+    try {
+      const data = await userApi.getContacts(opts);
       setContacts(data.contacts ?? []);
       setContactsError("");
-    }).catch((e) => {
+    } catch (e) {
       const message = e instanceof Error ? e.message : "Failed to load contacts";
       setContactsError(message);
-      toast({
-        title: "Could not load contacts",
-        description: message,
-        variant: "destructive",
-      });
-    }).finally(() => setLoadingContacts(false));
-  }, [opts, toast]);
+      setLoadError(message);
+    } finally {
+      setLoadingContacts(false);
+    }
+  }, [opts]);
 
   useEffect(() => {
     loadTransfers();
     loadContacts();
-  }, [loadTransfers, loadContacts, opts.token]);
+  }, [loadTransfers, loadContacts]);
 
-  const getToValue = () =>
+  const getToValue = useCallback(() =>
     useContact && selectedContact
       ? selectedContact.pay_uri || selectedContact.alias || selectedContact.id
-      : customRecipient.trim();
+      : customRecipient.trim(),
+  [useContact, selectedContact, customRecipient]);
 
-  const handleConfirmTransfer = async () => {
+  const handleConfirmTransfer = useCallback(async () => {
     const to = getToValue();
     if (!amount || parseFloat(amount) <= 0 || !to) return;
-    setSubmitError("");
+    clearError();
     setSending(true);
+
+    // Pre-flight session check: validate the session is still active before
+    // making a write request (fixes #313 — silent 401 after session expiry).
+    const sessionOk = await ensureSession();
+    if (!sessionOk) {
+      setSending(false);
+      return;
+    }
+    
     try {
       let blockchainTxHash: string | undefined;
 
       // Client-signed path for direct Stellar addresses.
       if (looksLikeStellarAddress(to)) {
         if (!userId) throw new Error("Not logged in");
+        
         const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+        
         if (secret) {
           const sourceAddress = Keypair.fromSecret(secret).publicKey();
           if (stellarAddress && sourceAddress !== stellarAddress) {
@@ -189,7 +228,7 @@ export default function SendPage() {
           }
           const submit = await submitAcbuPaymentClient({
             destination: to,
-            amount,
+            amount: confirmedAmount,
             userSecret: secret,
           });
           blockchainTxHash = submit.transactionHash;
@@ -214,6 +253,7 @@ export default function SendPage() {
               })
               .catch(reject);
           });
+          
           if (stellarAddress && address !== stellarAddress) {
             throw new Error(
               `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
@@ -221,7 +261,7 @@ export default function SendPage() {
           }
           const submit = await submitAcbuPaymentClient({
             destination: to,
-            amount,
+            amount: confirmedAmount,
             external: { kit, address },
           });
           blockchainTxHash = submit.transactionHash;
@@ -229,223 +269,224 @@ export default function SendPage() {
       }
 
       await transfersApi.createTransfer(
-        { to, amount_acbu: amount, note, ...(blockchainTxHash ? { blockchain_tx_hash: blockchainTxHash } : {}) },
+        { to, amount_acbu: confirmedAmount, note, ...(blockchainTxHash ? { blockchain_tx_hash: blockchainTxHash } : {}) },
         opts,
       );
+      
       loadTransfers();
-      refreshBalance();
+      refetchBalance();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
       setLastSentAmount(amount);
       openSuccessDialog();
+      setLastSentAmount(confirmedAmount);
+      setShowSuccessDialog(true);
+      
       setTimeout(() => {
         setShowSuccessDialog(false);
         setAmount("");
+        setConfirmedAmount("");
         setNote("");
         setCustomRecipient("");
         setSelectedContact(null);
       }, 2500);
+      
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Transfer failed");
+      setApiError(e);
     } finally {
       setSending(false);
     }
-  };
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "completed":
-      return "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800";
-    case "pending":
-      return "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
-    case "failed":
-      return "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800";
-    default:
-      return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700";
-  }
-};
+  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refetchBalance]);
 
   const exceedsBalance =
     balance !== null && amount !== "" && parseFloat(amount) > balance;
 
-  const isFormValid = () =>
-    amount &&
-    parseFloat(amount) > 0 &&
-    !exceedsBalance &&
-    ((useContact && selectedContact) ||
-      (!useContact && customRecipient.trim()));
+  const isValid = useMemo(() => {
+    return amount &&
+      parseFloat(amount) > 0 &&
+      !exceedsBalance &&
+      ((useContact && selectedContact) || (!useContact && customRecipient.trim()));
+  }, [amount, exceedsBalance, useContact, selectedContact, customRecipient]);
 
+  const transfersList = useMemo(() => {
+    if (loadingTransfers) {
+      return <SkeletonList count={2} itemHeight="h-14" />;
+    }
+    if (transfers.length === 0) {
+      return (
+        <div className="rounded-lg border border-border bg-card p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            {t('send.noTransfersYet')}
+          </p>
+        </div>
+      );
+    }
     return (
-        <>
-            <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-                <div className="px-4 py-3">
-                    <h1 className="text-lg font-bold text-foreground mb-3">
-                        Send Money
-                    </h1>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setActiveTab("send")}
-                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === "send" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-                        >
-                            Send
-                        </button>
-                        <button
-                            onClick={() => setActiveTab("history")}
-                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === "history" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-                        >
-                            History
-                        </button>
-                    </div>
-                </div>
-            </header>
-        <div className="px-4 py-4">
-                  {(transfersError || contactsError) && (
-            <div className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-                      <div className="flex-1">
-                        <p className="font-medium">Some send data could not be loaded.</p>
-                        <p className="text-xs text-destructive/80">
-                          Retry the affected section to continue.
-                        </p>
-                      </div>
+      <div className="space-y-2">
+        {transfers.map((t: TransferItem) => (
+          <Link
+            key={t.transaction_id}
+            href={`/send/${t.transaction_id}`}
+            className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-foreground truncate">
+                {t('send.transferLabel')}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatDate(t.created_at)}
+              </p>
             </div>
-          )}
+            <div className="text-right">
+              <p className="font-semibold text-foreground">
+                ACBU {formatAmount(t.amount_acbu)}
+              </p>
+              <Badge
+                variant="outline"
+                className={`mt-1 text-xs ${getStatusColor(t.status)}`}
+              >
+                {t.status === "completed" && (
+                  <Check className="mr-1 h-3 w-3" />
+                )}
+                {t.status === "pending" && (
+                  <AlertCircle className="mr-1 h-3 w-3" />
+                )}
+                {t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : t('common.unknown')}
+              </Badge>
+            </div>
+          </Link>
+        ))}
+      </div>
+    );
+  }, [transfers, loadingTransfers]);
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsContent value="send" className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Button onClick={() => setShowSendDialog(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4">
-                <Plus className="mb-2 h-5 w-5" /><span>New Transfer</span>
-              </Button>
-              <Button asChild variant="outline" className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full">
-                <Link href="/me/settings/contacts">
-                  <Plus className="mb-2 h-5 w-5" /><span>Add Contact</span>
-                </Link>
-              </Button>
-            </div>
-          </TabsContent>
+  return (
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <header className="page-header">
+        <div className="px-4 py-3">
+          <h1 className="page-title mb-3">
+            {t('send.title')}
+          </h1>
+          <TabsList className="bg-muted inline-flex h-10 items-center justify-start rounded-lg p-1 text-muted-foreground">
+            <TabsTrigger value="send" className="px-4 py-1.5 rounded-md font-medium text-sm transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              {t('send.send')}
+            </TabsTrigger>
+            <TabsTrigger value="history" className="px-4 py-1.5 rounded-md font-medium text-sm transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              {t('send.history')}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+      </header>
 
-          <TabsContent value="history" className="space-y-3">
-            <div>
-              <h3 className="mb-3 text-sm font-semibold text-foreground">
-                Recent Transfers
-              </h3>
-              {loadingTransfers ? (
-                <SkeletonList count={2} itemHeight="h-14" />
-              ) : transfersError ? (
-                <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
-                  <p className="font-medium">{transfersError}</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="mt-3 border-destructive/30 text-destructive hover:bg-destructive/10"
-                    onClick={loadTransfers}
-                  >
-                    Retry transfers
-                  </Button>
-                </div>
-              ) : transfers.length === 0 ? (
-                <div className="rounded-lg border border-border bg-card p-6 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    No transfers yet
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {transfers.map((t: TransferItem) => (
-                    <Link
-                      key={t.transaction_id}
-                      href={`/send/${t.transaction_id}`}
-                      className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">
-                          Transfer
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(t.created_at)}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-foreground">
-                          ACBU {formatAcbu(t.amount_acbu)}
-                        </p>
-                        <Badge
-                          variant="outline"
-                          className={`mt-1 text-xs ${getStatusColor(t.status)}`}
-                        >
-                          {t.status === "completed" && (
-                            <Check className="mr-1 h-3 w-3" />
-                          )}
-                          {t.status === "pending" && (
-                            <AlertCircle className="mr-1 h-3 w-3" />
-                          )}
-                          {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
-                        </Badge>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+      <div className="px-4 py-4">
+        {loadError && (
+          <div className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <p className="font-medium">{loadError}</p>
+          </div>
+        )}
+
+        <TabsContent value="send" className="space-y-4 outline-none mt-0">
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              onClick={() => setShowSendDialog(true)}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4"
+            >
+              <Plus className="mb-2 h-5 w-5" />
+              <span>{t('send.newTransfer')}</span>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="border-border hover:bg-muted h-auto flex-col py-4 bg-transparent w-full"
+            >
+              <Link href="/me/settings/contacts">
+                <Plus className="mb-2 h-5 w-5" />
+                <span>{t('send.addContact')}</span>
+              </Link>
+            </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-3 outline-none mt-0">
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">
+              {t('send.recentTransfers')}
+            </h3>
+            {transfersList}
+          </div>
+        </TabsContent>
       </div>
 
       {/* Send Dialog */}
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
         <DialogContent className="max-w-md border-border">
-          <DialogHeader><DialogTitle>Send Money</DialogTitle><DialogDescription>Transfer ACBU securely to another wallet</DialogDescription></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{t('send.title')}</DialogTitle>
+            <DialogDescription>{t('send.dialogDescription')}</DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-foreground">Recipient</Label>
+              <Label className="text-foreground">{t('send.recipient')}</Label>
               <Tabs
                 value={useContact ? "contact" : "custom"}
                 onValueChange={(v) => setUseContact(v === "contact")}
               >
                 <TabsList className="grid w-full grid-cols-2 bg-muted">
-                  <TabsTrigger value="contact">From Contacts</TabsTrigger>
-                  <TabsTrigger value="custom">New Address</TabsTrigger>
+                  <TabsTrigger value="contact">{t('send.fromContacts')}</TabsTrigger>
+                  <TabsTrigger value="custom">{t('send.newAddress')}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="contact" className="mt-3">
                   {loadingContacts ? (
-                    <SkeletonList count={1} itemHeight="h-10" />
-                  ) : contactsError ? (
-                    <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
-                      <p className="font-medium">{contactsError}</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="mt-3 border-destructive/30 text-destructive hover:bg-destructive/10"
-                        onClick={loadContacts}
-                      >
-                        Retry contacts
-                      </Button>
-                    </div>
+                    <SkeletonList count={3} itemHeight="h-9" />
                   ) : (
-                    <Select
-                      value={selectedContact?.id || ""}
-                      onValueChange={(id: string) => {
-                        const c = contacts.find((x: ContactItem) => x.id === id);
-                        if (c) setSelectedContact(c);
-                      }}
-                    >
-                      <SelectTrigger className="border-border">
-                        <SelectValue placeholder="Select a contact" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {contacts.map((c: ContactItem) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.alias ?? c.pay_uri ?? c.id}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <Select
+                    value={selectedContact?.id || ""}
+                    onValueChange={(id: string) => {
+                      const c = contacts.find((x: ContactItem) => x.id === id);
+                      if (c) setSelectedContact(c);
+                    }}
+                  >
+                    <SelectTrigger className="border-border">
+                      <SelectValue placeholder={t('send.selectContact')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div
+                        ref={contactsParentRef}
+                        style={{
+                          height: `${virtualizer.getTotalSize()}px`,
+                          width: '100%',
+                          position: 'relative',
+                        }}
+                      >
+                        {virtualizer.getVirtualItems().map((virtualRow) => {
+                          const c = contacts[virtualRow.index];
+                          return (
+                            <div
+                              key={virtualRow.key}
+                              style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: `${virtualRow.size}px`,
+                                transform: `translateY(${virtualRow.start}px)`,
+                              }}
+                            >
+                              <SelectItem value={c.id}>
+                                {c.alias ?? c.pay_uri ?? c.id}
+                              </SelectItem>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </SelectContent>
+                  </Select>
                   )}
                 </TabsContent>
-                <TabsContent value="custom">
+                <TabsContent value="custom" className="mt-3">
                   <Input
-                    placeholder="Wallet address or email"
+                    placeholder={t('send.walletAddressOrEmail')}
                     value={customRecipient}
                     onChange={(e) => setCustomRecipient(e.target.value)}
                     className="border-border"
@@ -455,37 +496,41 @@ const getStatusColor = (status: string) => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-foreground">Amount</Label>
+              <Label className="text-foreground">{t('send.amount')}</Label>
               <div className="flex gap-2">
                 <span className="flex items-center text-muted-foreground font-medium">
                   ACBU
                 </span>
                 <Input
                   type="number"
+                  inputMode="decimal"
                   placeholder="0.00"
-                  min="0"
+                  min={0}
                   value={amount}
                   onChange={(e) => {
                     const v = e.target.value;
-                    if (v === "" || parseFloat(v) >= 0) setAmount(v);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "-" || e.key === "e" || e.key === "E")
-                      e.preventDefault();
+                    if (v === "" || /^\d*\.?\d*$/.test(v)) {
+                      setAmount(v);
+                    }
                   }}
                   className="border-border text-lg font-semibold"
                 />
               </div>
-              {exceedsBalance && <p className="text-xs text-destructive">Insufficient balance.</p>}
+              {exceedsBalance && <p className="text-xs text-destructive">{t('send.insufficientBalance')}</p>}
               <p className="text-xs text-muted-foreground">
-                Available: ACBU {balanceLoading ? '...' : formatAmount(balance)}
+                {t('send.available')}: ACBU {balanceLoading ? <span className="inline-block h-3 w-16 bg-accent animate-pulse rounded align-middle" /> : formatAmount(balance)}
               </p>
+              <RetryErrorBlock
+                message={balanceError}
+                onRetry={refetchBalance}
+                className="mt-2 text-xs"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-foreground">Note (Optional)</Label>
+              <Label className="text-foreground">{t('send.note')}</Label>
               <Input
-                placeholder="Add a message..."
+                placeholder={t('send.addMessage')}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="border-border"
@@ -494,8 +539,8 @@ const getStatusColor = (status: string) => {
 
             <Card className="border-border bg-muted p-3">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Network Fee</span>
-                <span className="font-medium text-foreground">Free</span>
+                  <span className="text-muted-foreground">{t('send.networkFee')}</span>
+                  <span className="font-medium text-foreground">{t('send.free')}</span>
               </div>
             </Card>
 
@@ -504,15 +549,21 @@ const getStatusColor = (status: string) => {
                 variant="outline"
                 onClick={() => setShowSendDialog(false)}
                 className="flex-1 border-border"
+                disabled={sending}
               >
-                Cancel
+                {t('send.cancel')}
               </Button>
               <Button
                 onClick={openConfirmDialog}
                 disabled={!isFormValid()}
+                onClick={() => {
+                  setConfirmedAmount(amount);
+                  setShowConfirmDialog(true);
+                }}
+                disabled={!isValid}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                Continue
+                {t('send.continue')}
               </Button>
             </div>
           </div>
@@ -531,17 +582,17 @@ const getStatusColor = (status: string) => {
       >
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Transfer</AlertDialogTitle>
+            <AlertDialogTitle>{t('send.confirmTransfer')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Review the details before confirming
+              {t('send.reviewDetails')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-4">
-            {submitError && (
-              <p className="text-sm text-destructive">{submitError}</p>
+            {uiError && (
+              <ApiErrorDisplay error={uiError} onDismiss={clearError} />
             )}
             <div className="rounded-lg border border-border bg-muted p-4">
-              <p className="text-xs text-muted-foreground">To</p>
+              <p className="text-xs text-muted-foreground">{t('send.to')}</p>
               <p className="font-semibold text-foreground truncate">
                 {selectedContact?.alias ||
                   selectedContact?.pay_uri ||
@@ -555,17 +606,17 @@ const getStatusColor = (status: string) => {
               </div>
             </div>
             <div className="rounded-lg border border-border bg-muted p-4">
-              <p className="text-xs text-muted-foreground">Amount</p>
-              <p className="text-2xl font-bold text-foreground">
-                ACBU {formatAmount(amount)}
+              <p className="text-xs text-muted-foreground">{t('send.amountLabel')}</p>
+              <p className="text-2xl font-bold text-foreground" data-testid="confirm-amount">
+                ACBU {formatAmount(confirmedAmount)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Network Fee: Free
+                {t('send.networkFeeLabel')}: {t('send.free')}
               </p>
             </div>
             {note && (
               <div className="rounded-lg border border-border bg-muted p-4">
-                <p className="text-xs text-muted-foreground">Note</p>
+                <p className="text-xs text-muted-foreground">{t('send.noteLabel')}</p>
                 <p className="text-sm text-foreground break-words">{note}</p>
               </div>
             )}

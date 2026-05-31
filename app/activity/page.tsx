@@ -1,6 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Activity | ACBU',
+  description: 'View your complete transaction history including mints, burns, and transfers on the ACBU platform.',
+};
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
@@ -9,12 +15,13 @@ import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ArrowLeft, Clock } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
+import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import * as transactionsApi from '@/lib/api/transactions';
 import type { TransactionListItem } from '@/types/api';
-import { formatAcbu, formatAmount } from '@/lib/utils';
+import { formatAcbu, formatAmount, parseUtcDate } from '@/lib/utils';
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+  return parseUtcDate(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
 }
 
 /**
@@ -25,6 +32,8 @@ export default function ActivityPage() {
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  useScrollRestoration('/activity', !loading);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,10 +49,10 @@ export default function ActivityPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3 flex items-center gap-3">
+      <div className="page-header">
+        <div className="page-header-row">
           <Link href="/me"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
-          <h1 className="text-lg font-bold text-foreground">Activity</h1>
+          <h1 className="page-title">Activity</h1>
         </div>
       </div>
       <PageContainer>

@@ -71,8 +71,13 @@ export async function submitAcbuPaymentClient(params: {
   }
 
   const sourceAccount = await server.loadAccount(sourceAddress);
+  // Use current network base fee instead of a hardcoded value to avoid
+  // transactions getting stuck during congestion. Apply a multiplier to
+  // increase the chance of timely inclusion.
+  const baseFee = await server.fetchBaseFee();
+  const fee = String(Math.max(100, Math.ceil(baseFee * 2)));
   const tx = new TransactionBuilder(sourceAccount, {
-    fee: "100",
+    fee,
     networkPassphrase,
   })
     .addOperation(
@@ -92,7 +97,26 @@ export async function submitAcbuPaymentClient(params: {
     });
     const signed = TransactionBuilder.fromXDR(signedTxXdr, networkPassphrase);
     const res = await server.submitTransaction(signed);
-    return { transactionHash: res.hash, sourceAddress };
+    const txHash = res.hash;
+    // Poll Horizon briefly for the transaction to be included in a ledger.
+    try {
+      const timeoutMs = 60000;
+      const started = Date.now();
+      let found = false;
+      while (Date.now() - started < timeoutMs) {
+        try {
+          await server.transactions().transaction(txHash).call();
+          found = true;
+          break;
+        } catch (err) {
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      }
+      if (!found) console.warn(`Stellar tx ${txHash} submitted but not found within ${timeoutMs}ms`);
+    } catch (e) {
+      console.warn('Error polling Horizon for tx confirmation', e);
+    }
+    return { transactionHash: txHash, sourceAddress };
   }
 
   if (!params.userSecret) {
@@ -101,5 +125,23 @@ export async function submitAcbuPaymentClient(params: {
   const kp = Keypair.fromSecret(params.userSecret);
   tx.sign(kp);
   const res = await server.submitTransaction(tx);
-  return { transactionHash: res.hash, sourceAddress };
+  const txHash = res.hash;
+  try {
+    const timeoutMs = 60000;
+    const started = Date.now();
+    let found = false;
+    while (Date.now() - started < timeoutMs) {
+      try {
+        await server.transactions().transaction(txHash).call();
+        found = true;
+        break;
+      } catch (err) {
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    }
+    if (!found) console.warn(`Stellar tx ${txHash} submitted but not found within ${timeoutMs}ms`);
+  } catch (e) {
+    console.warn('Error polling Horizon for tx confirmation', e);
+  }
+  return { transactionHash: txHash, sourceAddress };
 }
