@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import React, { useRef, useState, useEffect, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Home, Send, Coins, Briefcase, User, Wallet } from "lucide-react";
 
 interface NavItem {
@@ -26,7 +25,14 @@ const navItems: NavItem[] = [
 
 export function MobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const navigatingTo = useRef<string | null>(null);
   const [bottomOffset, setBottomOffset] = useState(0);
+
+  useEffect(() => {
+    navigatingTo.current = null;
+  }, [pathname]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport) return;
@@ -50,6 +56,14 @@ export function MobileNav() {
     };
   }, []);
 
+  function handleNav(href: string) {
+    if (isPending || navigatingTo.current !== null || pathname === href) return;
+    navigatingTo.current = href;
+    startTransition(() => {
+      router.push(href);
+    });
+  }
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 border-t border-border bg-card z-40 transition-[bottom] duration-150 ease-out md:h-auto"
@@ -66,10 +80,11 @@ export function MobileNav() {
           // follows the same sequence users see on screen.
           const tabIndex = idx + 1;
           return (
-            <Link
+            <button
               key={item.href}
-              href={item.href}
+              onClick={() => handleNav(item.href)}
               aria-label={item.name}
+              disabled={isPending}
               tabIndex={tabIndex}
               className={`flex flex-col items-center justify-center flex-1 h-20 gap-1 transition-colors ${
                 isActive
@@ -88,7 +103,7 @@ export function MobileNav() {
               ) : (
                 <span className="sr-only">{item.name}</span>
               )}
-            </Link>
+            </button>
           );
         })}
       </div>
