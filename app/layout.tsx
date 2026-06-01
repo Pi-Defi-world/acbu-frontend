@@ -9,7 +9,6 @@ import './globals.css'
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
-import { Toaster } from '@/components/ui/toaster';
 
 const apiBaseUrl =
   typeof process !== 'undefined'
@@ -72,5 +71,5 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return <AuthProvider>{children}</AuthProvider>;
 }

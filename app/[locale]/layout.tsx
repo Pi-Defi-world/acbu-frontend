@@ -7,6 +7,7 @@ import '../globals.css'
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
+import { Toaster } from '@/components/ui/toaster';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 
@@ -59,6 +60,7 @@ export default async function RootLayout({
                 <AppLayout>{children}</AppLayout>
               </AuthGuard>
               <WalletSetupModal />
+              <Toaster />
               <Analytics />
             </AuthProvider>
           </ErrorBoundary>
