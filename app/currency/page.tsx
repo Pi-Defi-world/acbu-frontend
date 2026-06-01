@@ -1,12 +1,5 @@
 "use client";
 
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Currency Management | ACBU',
-  description: 'Manage supported currencies, view exchange rates, and configure your preferred currency settings.',
-};
-
 import React, { useEffect, useMemo, useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
@@ -34,7 +27,7 @@ import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
 import * as ratesApi from "@/lib/api/rates";
 import { useBalance } from "@/hooks/use-balance";
-import type { MintResponse, BurnResponse, CurrencyPreference, RatesResponse } from "@/types/api";
+import type { MintResponse, BurnResponse, CurrencyPreference, RatesResponse, QuoteResponse } from "@/types/api";
 import { logger } from "@/lib/logger";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
@@ -77,21 +70,23 @@ function estimateLocalFromAcbu(
 export default function CurrencyPage() {
   const opts = useApiOpts();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
-  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { balance, loading: balanceLoading, error: balanceError, refetch: refetchBalance } = useBalance();
   const { toast } = useToast();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
-  const {
-    balance,
-    loading: balanceLoading,
-    error: balanceError,
-    refetch: refetchBalance,
-  } = useBalance();
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
   );
-  const [step, setStep] = useState<"input" | "confirm" | "success">("input");
+  type TabStep = "input" | "confirm" | "success";
+  const [tabSteps, setTabSteps] = useState<Record<"mint" | "burn" | "international", TabStep>>({
+    mint: "input",
+    burn: "input",
+    international: "input",
+  });
+  const step = tabSteps[activeTab];
+  const setStep = (s: TabStep) =>
+    setTabSteps((prev) => ({ ...prev, [activeTab]: s }));
   const [submitting, setSubmitting] = useState(false);
   const [lastTxId, setLastTxId] = useState("");
   const [lastResponse, setLastResponse] = useState<
@@ -386,7 +381,7 @@ export default function CurrencyPage() {
       refetchBalance();
     } catch (e) {
       logger.error(`Currency operation failed: ${activeTab}`, e); // <-- ADD LOGGER
-      setSubmitError(e instanceof Error ? e.message : "Operation failed");
+      setApiError(e);
     } finally {
       setSubmitting(false);
     }
@@ -394,16 +389,20 @@ export default function CurrencyPage() {
 
   const resetForm = () => {
     setStep("input");
-    setMintAmount("");
-    setMintWalletAddress("");
-    setBurnAmount("");
-    setBurnAccountNumber("");
-    setBurnBankCode("");
-    setBurnAccountName("");
-    setIntlAmount("");
-    setIntlAccountNumber("");
-    setIntlBankCode("");
-    setIntlAccountName("");
+    if (activeTab === "mint") {
+      setMintAmount("");
+      setMintWalletAddress("");
+    } else if (activeTab === "burn") {
+      setBurnAmount("");
+      setBurnAccountNumber("");
+      setBurnBankCode("");
+      setBurnAccountName("");
+    } else {
+      setIntlAmount("");
+      setIntlAccountNumber("");
+      setIntlBankCode("");
+      setIntlAccountName("");
+    }
     clearError();
     setLastTxId("");
     setLastResponse(null);
@@ -447,7 +446,7 @@ export default function CurrencyPage() {
 
         {/* Tabs */}
         <Tabs
-          defaultValue="mint"
+          value={activeTab}
           className="w-full"
           onValueChange={(v) =>
             setActiveTab(v as "mint" | "burn" | "international")
