@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,7 +61,12 @@ export default function MintPage() {
   const { userId, stellarAddress } = useAuth();
   const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const kit = useStellarWalletsKit();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
+  
+  // Derive step from URL parameters for proper browser history management
+  const flowStep = searchParams.get("flowStep") || "input"; // 'input' | 'confirm' | 'success'
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
   const [burnError, setBurnError] = useState('');
@@ -122,14 +128,19 @@ export default function MintPage() {
             .finally(() => setRatesLoading(false));
     }, [activeTab, opts.token]);
 
+    // Sync flowStep from URL to component step for proper browser history management
+    useEffect(() => {
+        setStep(flowStep as 'input' | 'confirm' | 'success');
+    }, [flowStep]);
+
     const handleMintConfirm = () => {
         if (!debouncedFiatAmount || parseFloat(debouncedFiatAmount) <= 0 || !selectedFiatCurrency) return;
         setMintError("");
-        setStep("confirm");
+        router.push("?flowStep=confirm");
     };
     const handleBurnConfirm = () => {
         if (!debouncedBurnAmount || parseFloat(debouncedBurnAmount) <= 0 || !selectedFiatCurrency) return;
-        setStep("confirm");
+        router.push("?flowStep=confirm");
     };
     const handleExecuteMint = async () => {
         if (!fiatAmount || parseFloat(fiatAmount) <= 0 || !selectedFiatCurrency)
@@ -231,7 +242,8 @@ export default function MintPage() {
                 typeof acbu === "number" && Number.isFinite(acbu) ? acbu : null,
             );
             refreshBalance();
-            setStep("success");
+            // Use router.replace() for success page so browser back skips the confirm step
+            router.replace("?flowStep=success");
         } catch (e) {
             setMintError(e instanceof Error ? e.message : "Mint failed");
         } finally {
@@ -307,7 +319,8 @@ export default function MintPage() {
                 opts,
             );
             setTxId(res.transaction_id || res.transactionId || null);
-            setStep("success");
+            // Use router.replace() for success page so browser back skips the confirm step
+            router.replace("?flowStep=success");
         } catch (e) {
             setBurnError(e instanceof Error ? e.message : "Burn failed");
         } finally {
@@ -322,7 +335,7 @@ export default function MintPage() {
         }
     };
     const resetForm = () => {
-        setStep("input");
+        router.push("");
         setFiatAmount("");
         setBurnAmount("");
         setBurnError("");
@@ -636,7 +649,7 @@ export default function MintPage() {
                     </div>
                     <div className="flex gap-2">
                         <AlertDialogCancel
-                            onClick={() => setStep("input")}
+                            onClick={() => router.push("")}
                             disabled={executing}
                         >
                             Cancel

@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -66,8 +67,13 @@ export default function SendPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const [activeTab, setActiveTab] = useState("send");
+  
+  // Derive dialog states from URL parameters for proper browser history management
+  const flowStep = searchParams.get("flowStep") || "closed"; // 'closed' | 'form' | 'confirm' | 'success'
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -75,6 +81,7 @@ export default function SendPage() {
     null,
   );
   const [amount, setAmount] = useState("");
+  const [confirmedAmount, setConfirmedAmount] = useState("");
   const [lastSentAmount, setLastSentAmount] = useState("");
   const [note, setNote] = useState("");
   const [customRecipient, setCustomRecipient] = useState("");
@@ -131,15 +138,39 @@ export default function SendPage() {
     loadContacts();
   }, [loadTransfers, loadContacts, opts.token]);
 
-  const handleShowSendDialog = useCallback(() => setShowSendDialog(true), []);
-  const handleSendDialogChange = useCallback((open: boolean) => setShowSendDialog(open), []);
+  // Sync flowStep from URL to dialog states for proper browser history management
+  useEffect(() => {
+    setShowSendDialog(flowStep === "form");
+    setShowConfirmDialog(flowStep === "confirm");
+    setShowSuccessDialog(flowStep === "success");
+  }, [flowStep]);
+
+  const handleShowSendDialog = useCallback(() => {
+    router.push("?flowStep=form");
+  }, [router]);
+  
+  const handleSendDialogChange = useCallback((open: boolean) => {
+    if (!open) {
+      router.push("");
+    }
+  }, [router]);
+  
   const handleConfirmDialogChange = useCallback((open: boolean) => {
     if (!open && !sending) {
       setConfirmedAmount("");
+      router.push("?flowStep=form");
     }
-    setShowConfirmDialog(open);
-  }, [sending]);
-  const handleSuccessDialogChange = useCallback((open: boolean) => setShowSuccessDialog(open), []);
+  }, [sending, router]);
+  
+  const handleSuccessDialogChange = useCallback((open: boolean) => {
+    if (!open) {
+      router.push("");
+      setAmount("");
+      setNote("");
+      setCustomRecipient("");
+      setSelectedContact(null);
+    }
+  }, [router]);
   const handleTabChange = useCallback((value: string) => setActiveTab(value), []);
   const handleUseContactChange = useCallback((v: string) => setUseContact(v === "contact"), []);
   const handleContactSelect = useCallback((id: string) => {
@@ -155,11 +186,14 @@ export default function SendPage() {
   }, []);
   const debouncedAmount = useDebounce(amount, 300);
   const handleNoteChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNote(e.target.value), []);
-  const handleSendDialogClose = useCallback(() => setShowSendDialog(false), []);
+  const handleSendDialogClose = useCallback(() => router.push(""), [router]);
+  
+  const clearError = useCallback(() => setSubmitError(""), []);
+  
   const handleShowConfirmDialog = useCallback(() => {
     setConfirmedAmount(amount);
-    setShowConfirmDialog(true);
-  }, [amount]);
+    router.push("?flowStep=confirm");
+  }, [amount, router]);
   const handleConfirmAction = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     handleConfirmTransfer();
@@ -236,12 +270,11 @@ export default function SendPage() {
       );
       loadTransfers();
       refreshBalance();
-      setShowConfirmDialog(false);
-      setShowSendDialog(false);
       setLastSentAmount(amount);
-      setShowSuccessDialog(true);
+      // Use router.replace() for success page so browser back skips the confirm step
+      router.replace("?flowStep=success");
       setTimeout(() => {
-        setShowSuccessDialog(false);
+        router.push("");
         setAmount("");
         setNote("");
         setCustomRecipient("");
