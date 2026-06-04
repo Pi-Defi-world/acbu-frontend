@@ -22,13 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  ArrowLeft,
-  PiggyBank,
-  TrendingUp,
-  Plus,
-  AlertCircle,
-} from "lucide-react";
+import { ArrowLeft, PiggyBank, TrendingUp, Plus, AlertCircle } from "lucide-react";
+import type { LucideIcon } from 'lucide-react';
 import { PageContainer } from "@/components/layout/page-container";
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
@@ -65,6 +60,11 @@ interface SavingsAccount {
     description: string;
     color: string;
 }
+
+
+const SAVINGS_ACCOUNT_TYPES: Array<{ id: string; name: string; apy: number; balance: number; icon: LucideIcon; description: string; color: string }> = [
+  { id: "high-yield", name: "High-Yield Savings", apy: 8, balance: 0, icon: PiggyBank, description: "Earn 8% APY on your savings", color: "text-green-600" },
+];
 
 interface SavingsGoal {
   id: string;
@@ -103,6 +103,10 @@ export default function SavingsPage() {
   const [receiveError, setReceiveError] = useState("");
   const [goals, setGoals] = useState<SavingsGoal[]>(initialGoals);
 
+  const [selectedAccount, setSelectedAccount] = useState<(typeof SAVINGS_ACCOUNT_TYPES)[0] | null>(null);
+  const [showDialog, setShowDialog] = useState(false);
+  const [showDepositDialog, setShowDepositDialog] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
   const [showNewGoalDialog, setShowNewGoalDialog] = useState(false);
   const [newGoalName, setNewGoalName] = useState("");
   const [newGoalTarget, setNewGoalTarget] = useState("");

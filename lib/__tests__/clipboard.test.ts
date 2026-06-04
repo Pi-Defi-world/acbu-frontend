@@ -23,7 +23,7 @@ describe('copyToClipboard', () => {
       vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
         const el = originalCreateElement(tagName);
         if (tagName === 'textarea') {
-          vi.spyOn(el, 'select').mockImplementation(() => {});
+          Object.defineProperty(el, 'select', { value: vi.fn(), writable: true });
         }
         return el;
       });

@@ -1,10 +1,24 @@
+<<<<<<< HEAD
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin();
+=======
 import { validateEnv } from './lib/env-safety.js';
 
 validateEnv(process.env);
+>>>>>>> upstream/dev
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+<<<<<<< HEAD
+  images: {
+    unoptimized: true,
+=======
   typescript: {
+<<<<<<< HEAD
+    ignoreBuildErrors: true,
+>>>>>>> origin/dev
+=======
     // F-001: TypeScript errors must fail the build to prevent shipping broken code
     ignoreBuildErrors: false,
   },
@@ -20,6 +34,7 @@ const nextConfig = {
         preventFullImport: true,
       },
     },
+>>>>>>> upstream/dev
   },
   // Don't advertise the framework to reduce attack surface
   poweredByHeader: false,
@@ -33,4 +48,8 @@ const nextConfig = {
   },
 };
 
+<<<<<<< HEAD
+export default withNextIntl(nextConfig)
+=======
 export default withBundleAnalyzer(nextConfig);
+>>>>>>> upstream/dev

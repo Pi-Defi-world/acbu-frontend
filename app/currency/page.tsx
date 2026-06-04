@@ -27,6 +27,10 @@ import { ArrowDown, ArrowUp, TrendingUp } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useApiOpts } from "@/hooks/use-api";
+import { useBalance } from "@/hooks/use-balance";
+import { useToast } from "@/hooks/use-toast";
+import * as ratesApi from "@/lib/api/rates";
+import type { RatesResponse } from "@/types/api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { RetryErrorBlock } from "@/components/ui/retry-error-block";
@@ -77,16 +81,30 @@ function estimateLocalFromAcbu(
 export default function CurrencyPage() {
   const opts = useApiOpts();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+<<<<<<< HEAD
+<<<<<<< HEAD
+  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { toast } = useToast();
+=======
+  const { userId, stellarAddress } = useAuth();
+  const kit = useStellarWalletsKit();
+>>>>>>> origin/dev
+=======
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const { toast } = useToast();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
+<<<<<<< HEAD
+  const { toast } = useToast();
+>>>>>>> upstream/dev
+=======
   const {
     balance,
     loading: balanceLoading,
     error: balanceError,
     refetch: refetchBalance,
   } = useBalance();
+>>>>>>> upstream/dev
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
@@ -102,11 +120,17 @@ export default function CurrencyPage() {
 
   // Mint state
   const [mintAmount, setMintAmount] = useState("");
+<<<<<<< HEAD
+  const debouncedMintAmount = useDebounce(mintAmount, 300);
+  const [mintSource, setMintSource] = useState("stellar");
+=======
   const [mintSource, setMintSource] = useState<Exclude<CurrencyPreference, "auto">>("usdc");
+>>>>>>> origin/dev
   const [mintWalletAddress, setMintWalletAddress] = useState("");
 
   // Burn state
   const [burnAmount, setBurnAmount] = useState("");
+  const debouncedBurnAmount = useDebounce(burnAmount, 300);
   const [burnDestination, setBurnDestination] = useState("bank");
   const [burnAccountNumber, setBurnAccountNumber] = useState("");
   const [burnBankCode, setBurnBankCode] = useState("");
@@ -180,8 +204,14 @@ export default function CurrencyPage() {
   const ngnPerAcbu = useMemo(() => localPerAcbu("NGN", rates), [rates]);
 
   const availableBalance = balance ?? 0;
+<<<<<<< HEAD
+  const burnNumeric = parseFloat(debouncedBurnAmount || "0");
+  const intlNumeric = parseFloat(debouncedIntlAmount || "0");
+  const mintNumeric = parseFloat(debouncedMintAmount || "0");
+=======
   const burnNumeric = parseFloat(burnAmount || "0");
   const mintNumeric = parseFloat(mintAmount || "0");
+>>>>>>> upstream/dev
 
   const estimatedMintAcbu = estimateAcbuFromUsd(mintNumeric, rates);
   const estimatedBurnNgn = estimateLocalFromAcbu(burnNumeric, "NGN", rates);
@@ -386,7 +416,7 @@ export default function CurrencyPage() {
       refetchBalance();
     } catch (e) {
       logger.error(`Currency operation failed: ${activeTab}`, e); // <-- ADD LOGGER
-      setSubmitError(e instanceof Error ? e.message : "Operation failed");
+      setApiError(e);
     } finally {
       setSubmitting(false);
     }
@@ -487,8 +517,7 @@ export default function CurrencyPage() {
                   onChange={(e) => setMintSource(e.target.value)}
                   className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                 >
-                  <option value="usdc">USDC (Ethereum)</option>
-                  <option value="usdc-polygon">USDC (Polygon)</option>
+                  <option value="stellar">USDC (Stellar)</option>
                 </select>
               </Card>
 
@@ -508,7 +537,7 @@ export default function CurrencyPage() {
                     className="border-border text-lg font-semibold"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-xs text-muted-foreground mt-2 break-words">
                   You'll receive:{" "}
                   {estimatedMintAcbu != null
                     ? `ACBU ${formatAmount(estimatedMintAcbu)}`
@@ -553,8 +582,8 @@ export default function CurrencyPage() {
               <Button
                 onClick={handleMintConfirm}
                 disabled={
-                  !mintAmount ||
-                  parseFloat(mintAmount) <= 0 ||
+                  !debouncedMintAmount ||
+                  parseFloat(debouncedMintAmount) <= 0 ||
                   !mintWalletAddress.trim()
                 }
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
@@ -679,7 +708,7 @@ export default function CurrencyPage() {
               <Button
                 onClick={handleBurnConfirm}
                 disabled={
-                  !burnAmount ||
+                  !debouncedBurnAmount ||
                   burnNumeric <= 0 ||
                   (balance != null && burnNumeric > availableBalance) ||
                   !burnAccountNumber.trim() ||
@@ -848,7 +877,7 @@ export default function CurrencyPage() {
               {activeTab === "burn" && "Confirm Burn & Withdrawal"}
               {activeTab === "international" && "Confirm Transfer"}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="break-words">
               {activeTab === 'mint' &&
                 (estimatedMintAcbu != null
                   ? `Mint ACBU ${formatAmount(estimatedMintAcbu)} from USDC`
@@ -862,7 +891,7 @@ export default function CurrencyPage() {
           <div className="py-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Amount:</span>
-              <span className="font-medium text-foreground">
+              <span className="font-medium text-foreground break-words">
                 {activeTab === 'mint' && `$${mintAmount}`}
                 {activeTab === 'burn' && `ACBU ${formatAmount(burnAmount)}`}
                 {activeTab === 'international' && `ACBU ${formatAmount(intlAmount)}`}

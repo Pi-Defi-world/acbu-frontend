@@ -1,6 +1,10 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+it import createMiddleware from 'next-intl/middleware';
 
+<<<<<<< HEAD
+export default createMiddleware({
+  // A list of all locales that are supported
+  locales: ['en', 'en-NG', 'en-KE'],
+=======
 export function middleware(request: NextRequest) {
   // Block direct access to any markdown files served from public/
   if (request.nextUrl.pathname.endsWith('.md')) {
@@ -39,34 +43,18 @@ export function middleware(request: NextRequest) {
     ].filter(Boolean),
     'upgrade-insecure-requests': [],
   };
+>>>>>>> origin/dev
 
-  const cspHeaderValue = Object.entries(cspDirectives)
-    .map(([key, values]) => {
-      if (values.length === 0) return key;
-      return `${key} ${values.join(' ')}`;
-    })
-    .join('; ');
-
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-nonce', nonce);
-  
-  // Start with Report-Only as per requirements
-  const headerName = process.env.CSP_ENFORCE === 'true' 
-    ? 'Content-Security-Policy' 
-    : 'Content-Security-Policy-Report-Only';
-
-  const response = NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
-
-  response.headers.set(headerName, cspHeaderValue);
-
-  return response;
-}
+  // Used when no locale matches
+  defaultLocale: 'en'
+});
 
 export const config = {
+<<<<<<< HEAD
+  // Match only internationalized pathnames
+  matcher: ['/', '/(en|en-NG|en-KE)/:path*']
+};
+=======
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
@@ -84,3 +72,4 @@ export const config = {
     },
   ],
 };
+>>>>>>> upstream/dev

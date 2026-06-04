@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 };
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { useTranslations, useFormatter } from 'next-intl';
 import {
   Send,
   TrendingUp,
@@ -23,9 +24,12 @@ import {
 import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
+<<<<<<< HEAD:app/[locale]/page.tsx
+=======
 import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { Button } from '@/components/ui/button';
 import { RetryErrorBlock } from '@/components/ui/retry-error-block';
+>>>>>>> upstream/dev:app/page.tsx
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
 import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
@@ -96,14 +100,6 @@ function sumSimulatedFiatUsd(
   return { usd: total, partial };
 }
 
-const features = [
-  { title: 'Send', description: 'Transfer money', icon: Send, href: '/send', color: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
-  { title: 'Mint', description: 'Create ACBU', icon: Coins, href: '/mint', color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
-  { title: 'Simulated Bank', description: 'Demo Fiat', icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
-  { title: 'Rates', description: 'Market rates', icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
-  { title: 'Lending', description: 'Apply for a loan', icon: HandCoins, href: '/lending', color: 'bg-orange-100 dark:bg-orange-900/30', iconColor: 'text-orange-600 dark:text-orange-400' },
-];
-
 function formatDate(iso: string) {
   const d = parseUtcDate(iso);
   const today = new Date();
@@ -138,7 +134,19 @@ export default function Home() {
     refetch: refetchRates,
   } = useRates(opts);
 
+<<<<<<< HEAD:app/[locale]/page.tsx
+  const t = useTranslations('home');
+  const format = useFormatter();
+
+  const features = [
+    { title: t('features.send.title'), description: t('features.send.description'), icon: Send, href: '/send', color: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
+    { title: t('features.mint.title'), description: t('features.mint.description'), icon: Coins, href: '/mint', color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
+    { title: t('features.simulated_bank.title'), description: t('features.simulated_bank.description'), icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
+    { title: t('features.rates.title'), description: t('features.rates.description'), icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
+  ];
+=======
   useScrollRestoration('/', !loading);
+>>>>>>> origin/dev:app/page.tsx
 
   useEffect(() => {
     let cancelled = false;
@@ -204,6 +212,15 @@ export default function Home() {
             >
               {showBalance ? <Eye className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" /> : <EyeOff className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" />}
             </button>
+<<<<<<< HEAD:app/[locale]/page.tsx
+            <div className="flex items-start gap-3 pr-12 mb-1">
+              <div className="flex-1 min-w-0 border-r border-border/60 pr-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                  {t('acbu')}
+                </p>
+                <p className="text-[10px] text-muted-foreground mb-1">{t('wallet_balance')}</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
+=======
             <div className="flex items-start gap-3 pr-12 mb-1 md:gap-6 md:pr-16">
               <div className="flex-1 min-w-0 border-r border-border/60 pr-3 md:pr-6">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
@@ -211,15 +228,35 @@ export default function Home() {
                 </p>
                 <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">Wallet balance</p>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums md:text-4xl">
+>>>>>>> upstream/dev:app/page.tsx
                   {!showBalance
                     ? '••••••'
                     : balanceLoading
-                      ? <BalanceSkeleton variant="compact" />
-                      : `ACBU ${formatAmount(balance)}`}
+                      ? '...'
+                      : `ACBU ${balance != null ? format.number(balance, { minimumFractionDigits: 0, maximumFractionDigits: 7 }) : '—'}`}
                 </h2>
                 {!showBalance ? (
                   <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">••••••</p>
                 ) : balanceLoading || ratesLoading ? (
+<<<<<<< HEAD:app/[locale]/page.tsx
+                  <p className="text-sm text-muted-foreground mt-1.5">{t('approx_usd')} ...</p>
+                ) : balance == null ? (
+                  <p className="text-sm text-muted-foreground mt-1.5">{t('approx_usd')} —</p>
+                ) : acbuUsd != null ? (
+                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
+                    {t('approx_usd')} {format.number(acbuUsd, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-1.5">{t('approx_usd')} —</p>
+                )}
+              </div>
+              <div className="flex-1 min-w-0 text-right">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                  {t('fiat')}
+                </p>
+                <p className="text-[10px] text-muted-foreground mb-1">{t('simulated_usd_equivalent')}</p>
+                <div className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums space-y-1">
+=======
                   <p className="text-sm text-muted-foreground mt-1.5 md:text-base"><BalanceSkeleton variant="compact" /></p>
                 ) : acbuUsd != null ? (
                   <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">
@@ -235,6 +272,7 @@ export default function Home() {
                 </p>
                 <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">Simulated · USD equivalent</p>
                 <div className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums space-y-1 md:text-4xl">
+>>>>>>> upstream/dev:app/page.tsx
                   {!showBalance ? (
                     <p>••••••</p>
                   ) : fiatLoading || ratesLoading ? (
@@ -242,18 +280,23 @@ export default function Home() {
                   ) : (
                     <>
                       <p>
-                        ≈ USD{' '}
-                        {formatAmount(fiatUsdInfo?.usd ?? 0, 2)}
+                        {t('approx_usd')}{' '}
+                        {format.number(fiatUsdInfo?.usd ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                       </p>
                       {fiatUsdInfo?.partial && fiatAccounts.length > 0 && (
+<<<<<<< HEAD:app/[locale]/page.tsx
+                        <p className="text-[10px] font-normal text-muted-foreground">
+                          {t('some_currencies_missing_rate')}
+=======
                         <p className="text-[10px] font-normal text-muted-foreground md:text-xs">
                           Some currencies missing a rate
+>>>>>>> upstream/dev:app/page.tsx
                         </p>
                       )}
                       {!fiatAccounts.length && (
                         <p className="text-sm font-normal text-muted-foreground mt-1 md:text-base">
                           <Link href="/fiat" className="text-primary font-medium underline-offset-2 hover:underline">
-                            Add demo funds
+                            {t('add_demo_funds')}
                           </Link>
                         </p>
                       )}
@@ -291,8 +334,13 @@ export default function Home() {
 
           <div className="space-y-3 md:space-y-4">
             <div className="flex items-center justify-between px-1">
+<<<<<<< HEAD:app/[locale]/page.tsx
+              <h3 className="text-sm font-semibold text-foreground">{t('recent_activity')}</h3>
+              <Link href="/activity" className="text-xs text-primary font-medium">{t('view_all')}</Link>
+=======
               <h3 className="text-sm font-semibold text-foreground md:text-base">Recent Activity</h3>
               <Link href="/activity" className="text-xs text-primary font-medium md:text-sm">View all</Link>
+>>>>>>> upstream/dev:app/page.tsx
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             {loading ? (
@@ -300,10 +348,10 @@ export default function Home() {
             ) : transactions.length === 0 ? (
               <EmptyState
                 icon={<Clock className="w-10 h-10" />}
-                title="No recent activity"
+                title={t('no_recent_activity')}
                 action={
                   <Link href="/send" className="text-xs text-primary font-medium">
-                    Send money
+                    {t('send_money')}
                   </Link>
                 }
               />

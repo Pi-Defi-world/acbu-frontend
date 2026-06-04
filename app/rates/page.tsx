@@ -13,7 +13,13 @@ import type { RatesResponse } from "@/types/api";
 
 export default function RatesPage() {
   const opts = useApiOpts();
+<<<<<<< HEAD
+  const { uiError: error, setApiError: handleError } = useApiError();
+  const [rates, setRates] = useState<RatesResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+=======
   const { data: rates, loading, error, refetch } = useRates(opts);
+>>>>>>> upstream/dev
 
   const formatRate = (rate: number | undefined): string => {
     if (rate == null) return "—";
@@ -46,7 +52,11 @@ export default function RatesPage() {
         </div>
       </div>
       <PageContainer>
+<<<<<<< HEAD
+        {error && <p className="text-destructive text-sm mb-3">{error.message}</p>}
+=======
         <RetryErrorBlock message={error} onRetry={refetch} className="mb-3" />
+>>>>>>> upstream/dev
         {loading ? (
           <SkeletonList count={2} itemHeight="h-20" />
         ) : rates ? (

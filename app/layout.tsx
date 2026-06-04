@@ -67,18 +67,30 @@ export const metadata: Metadata = {
   },
 }
 
+// FIXED: Removed maximumScale to allow zooming
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+<<<<<<< HEAD
+  // Remove maximumScale to allow users to zoom
+  userScalable: true,
+=======
   maximumScale: 1,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#1a0a2e' },
   ],
+>>>>>>> upstream/dev
 }
 
 export default async function RootLayout({
   children,
+<<<<<<< HEAD
+}: {
+  children: React.ReactNode;
+}) {
+  return children;
+=======
 }: Readonly<{
   children: React.ReactNode
 }>) {
@@ -145,4 +157,5 @@ export default async function RootLayout({
       </body>
     </html>
   )
+>>>>>>> origin/dev
 }
