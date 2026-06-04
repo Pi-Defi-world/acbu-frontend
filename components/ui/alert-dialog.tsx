@@ -50,7 +50,7 @@ function AlertDialogContent({
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
   const contentRef = React.useRef<HTMLDivElement>(null)
-  useFocusTrap(contentRef, { isActive: true })
+  useFocusTrap(contentRef as React.RefObject<HTMLElement>, { isActive: true })
 
   return (
     <AlertDialogPortal>

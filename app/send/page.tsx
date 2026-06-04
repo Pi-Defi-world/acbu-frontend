@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -59,6 +59,28 @@ function formatDate(iso: string) {
   return d.toLocaleDateString();
 }
 
+function getStatusColor(status: string): string {
+  switch (status) {
+    case "completed":
+      return "text-green-600";
+    case "pending":
+      return "text-amber-600";
+    default:
+      return "text-gray-600";
+  }
+}
+
+function getStatusBadgeClassName(status: string): string {
+  switch (status) {
+    case "completed":
+      return "border-green-600 text-green-600";
+    case "pending":
+      return "border-amber-600 text-amber-600";
+    default:
+      return "border-gray-600 text-gray-600";
+  }
+}
+
 /**
  * Page component for sending ACBU tokens.
  */
@@ -75,6 +97,7 @@ export default function SendPage() {
     null,
   );
   const [amount, setAmount] = useState("");
+  const [confirmedAmount, setConfirmedAmount] = useState("");
   const [lastSentAmount, setLastSentAmount] = useState("");
   const [note, setNote] = useState("");
   const [customRecipient, setCustomRecipient] = useState("");
@@ -88,27 +111,12 @@ export default function SendPage() {
   const [loadError, setLoadError] = useState("");
 
   const virtualizedContacts = useMemo(() => {
-    return virtualizer.getVirtualItems().map((virtualRow) => {
-      const c = contacts[virtualRow.index];
-      return (
-        <div
-          key={virtualRow.key}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: `${virtualRow.size}px`,
-            transform: `translateY(${virtualRow.start}px)`,
-          }}
-        >
-          <SelectItem value={c.id}>
-            {c.alias ?? c.pay_uri ?? c.id}
-          </SelectItem>
-        </div>
-      );
-    });
-  }, [virtualizer, contacts]);
+    return contacts.map((c) => (
+      <SelectItem key={c.id} value={c.id}>
+        {c.alias ?? c.pay_uri ?? c.id}
+      </SelectItem>
+    ));
+  }, [contacts]);
 
   const loadTransfers = useCallback(async () => {
     setLoadError("");
@@ -160,20 +168,18 @@ export default function SendPage() {
     setConfirmedAmount(amount);
     setShowConfirmDialog(true);
   }, [amount]);
-  const handleConfirmAction = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    handleConfirmTransfer();
-  }, [handleConfirmTransfer]);
 
   const getToValue = useCallback(() =>
     useContact && selectedContact
       ? selectedContact.pay_uri || selectedContact.alias || selectedContact.id
-      : customRecipient.trim();
+      : customRecipient.trim(),
+    [useContact, selectedContact, customRecipient]
+  );
 
-  const handleConfirmTransfer = async () => {
+  const handleConfirmTransfer = useCallback(async () => {
     const to = getToValue();
     if (!confirmedAmount || parseFloat(confirmedAmount) <= 0 || !to) return;
-    clearError();
+    setSubmitError("");
     setSending(true);
     try {
       let blockchainTxHash: string | undefined;
@@ -252,7 +258,7 @@ export default function SendPage() {
     } finally {
       setSending(false);
     }
-  }, [confirmedAmount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance, clearError]);
+  }, [confirmedAmount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance]);
 
   const exceedsBalance =
     balance !== null && debouncedAmount !== "" && parseFloat(debouncedAmount) > balance;
@@ -317,7 +323,8 @@ export default function SendPage() {
   }, [transfers, loadingTransfers]);
 
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+    <>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3">
           <h1 className="text-lg font-bold text-foreground mb-3">
@@ -449,8 +456,8 @@ export default function SendPage() {
               )}
             </div>
           </TabsContent>
-        </Tabs>
-      </div>
+        </div>
+      </Tabs>
 
       {/* Send Dialog */}
       <Dialog open={showSendDialog} onOpenChange={handleSendDialogChange}>
@@ -487,16 +494,7 @@ export default function SendPage() {
                       <SelectValue placeholder="Select a contact" />
                     </SelectTrigger>
                     <SelectContent>
-                      <div
-                        ref={contactsParentRef}
-                        style={{
-                          height: `${virtualizer.getTotalSize()}px`,
-                          width: '100%',
-                          position: 'relative',
-                        }}
-                      >
-                        {virtualizedContacts}
-                      </div>
+                      {virtualizedContacts}
                     </SelectContent>
                   </Select>
                 </TabsContent>
@@ -650,7 +648,7 @@ export default function SendPage() {
             <AlertDialogAction 
               onClick={handleConfirmTransfer} 
               className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" 
-              disabled={sending || isSubmitDisabled}
+              disabled={sending || !confirmedAmount}
             >
               {sending ? "Sending..." : `Send ACBU ${confirmedAmount}`}
             </AlertDialogAction>

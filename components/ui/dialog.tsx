@@ -56,7 +56,7 @@ function DialogContent({
   showCloseButton?: boolean
 }) {
   const contentRef = React.useRef<HTMLDivElement>(null)
-  useFocusTrap(contentRef, { isActive: true })
+  useFocusTrap(contentRef as React.RefObject<HTMLElement>, { isActive: true })
 
   return (
     <DialogPortal data-slot="dialog-portal">

@@ -19,7 +19,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (apiKey: string, userId: string, stellarAddress?: string | null) => void;
+  login: (userId: string, stellarAddress?: string | null) => void;
   logout: () => Promise<void>;
   setAuth: (apiKey: string | null, userId: string | null, stellarAddress?: string | null) => void;
   refreshStellarAddress: () => Promise<void>;
@@ -109,8 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [state.isAuthenticated, state.apiKey, state.userId, setAuth]);
 
   const login = useCallback(
-    (apiKey: string, userId: string, stellarAddress: string | null = null) => {
-      setAuth(apiKey, userId, stellarAddress);
+    (userId: string, stellarAddress: string | null = null) => {
+      setAuth(null, userId, stellarAddress);
     },
     [setAuth]
   );
