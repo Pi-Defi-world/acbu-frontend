@@ -32,23 +32,22 @@ export function WalletSetupModal() {
       return;
     }
     
-    // Check if we have an auto-generated passphrase from signin
     const autoGenPassphrase = sessionStorage.getItem("temp_passphrase");
-    
-    // Check if user has removed their local wallet from settings
-    // If they have no stellarAddress, we definitely show it.
-    // If they have a stellarAddress, but want to re-import, we need a way to trigger it.
-    // Let's check `hasStoredWallet` if they have a stellarAddress.
-    // But since WalletKit might be used without local storage, we shouldn't force the modal
-    // just because they lack local storage. 
-    // However, if the user specifically clears the wallet (which reloads the page) 
-    // AND they have no `stellarAddress` OR we want them to re-setup, we should show it.
-    // For now, if `!stellarAddress || autoGenPassphrase` it shows up.
-    // If they clicked "Remove Local Wallet", they probably want to re-import, but if stellarAddress is still there,
-    // they can't. Let's add a flag in localStorage "force_wallet_setup".
     const forceSetup = localStorage.getItem("force_wallet_setup");
 
-    if (!stellarAddress || autoGenPassphrase || forceSetup) {
+    // Auto-generated wallet from signup — store locally, don't show modal
+    if (autoGenPassphrase && stellarAddress && userId) {
+      try {
+        const kp = Keypair.fromSecret(autoGenPassphrase);
+        if (kp.publicKey() === stellarAddress) {
+          storeWalletSecretLocalPlaintext(userId, autoGenPassphrase, stellarAddress);
+          sessionStorage.removeItem("temp_passphrase");
+          return;
+        }
+      } catch { /* invalid passphrase, fall through to modal */ }
+    }
+
+    if (!stellarAddress || forceSetup) {
       setOpen(true);
       
       if (autoGenPassphrase) {
