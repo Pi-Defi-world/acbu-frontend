@@ -1,0 +1,9 @@
+ignoredBuiltDependencies:
+  - blake-hash
+  - bufferutil
+  - protobufjs
+  - secp256k1
+  - sharp
+  - tiny-secp256k1
+  - usb
+  - utf-8-validate
