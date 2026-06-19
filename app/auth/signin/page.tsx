@@ -72,8 +72,10 @@ function SignInForm() {
         login(result.api_key!, result.user_id, result.stellar_address);
         
         if (result.wallet_created && result.passphrase) {
+          // Store passphrase for local wallet ops, then go straight to home
+          // The wallet was already synced to the backend during signup
           sessionStorage.setItem('temp_passphrase', result.passphrase);
-          router.push('/auth/wallet-setup');
+          router.push("/");
         } else {
           router.push("/");
         }
