@@ -12,6 +12,7 @@ import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
 import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const OfflineIndicator = dynamic(
   () => import('@/components/offline-indicator').then((m) => ({ default: m.OfflineIndicator })),
@@ -84,11 +85,12 @@ export default async function RootLayout({
   const lang = "en";
 
   return (
-    <html lang={lang}>
+    <html lang={lang} suppressHydrationWarning>
       <body className={`font-sans antialiased`}>
-        <GlobalErrorHandler />
-        <OfflineIndicator />
-        <ErrorBoundary level="app">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <GlobalErrorHandler />
+          <OfflineIndicator />
+          <ErrorBoundary level="app">
           <I18nProvider>
           <AuthProvider>
            {/*  <AuthGuard>*/}
@@ -117,6 +119,7 @@ export default async function RootLayout({
           </AuthProvider>
           </I18nProvider>
         </ErrorBoundary>
+        </ThemeProvider>
       </body>
     </html>
   )
