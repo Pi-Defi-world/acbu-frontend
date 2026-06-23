@@ -146,21 +146,6 @@ export async function storeWalletSecretLocalPlaintext(
       secret,
     );
   }
-  // Fallback: IndexedDB can be unavailable in some browser modes; keep a copy in localStorage.
-  // (Still per-origin; this is not meant as a security measure.)
-  try {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(userKey, secret);
-      if (stellarAddress) {
-        window.localStorage.setItem(
-          `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`,
-          secret,
-        );
-      }
-    }
-  } catch {
-    // ignore
-  }
 }
 
 /**
@@ -182,40 +167,19 @@ export async function getWalletSecretLocalPlaintext(
     const byAddress = await localforage.getItem<string>(addressKey);
     if (byAddress) return byAddress;
   }
-  try {
-    if (typeof window !== 'undefined') {
-      const lsByUser = window.localStorage.getItem(userKey);
-      if (lsByUser) return lsByUser;
-      if (addressKey) return window.localStorage.getItem(addressKey);
-    }
-  } catch {
-    // ignore
-  }
   return null;
 }
 
 /**
-<<<<<<< HEAD
- * Best-effort wallet secret lookup (dev/test flows only).
- *
- * Returns the plaintext secret from the dev storage slot.
- * The former sessionStorage passcode path has been intentionally removed (F-003):
- * passcodes must be held in memory only and passed explicitly to `getWalletSecret()`
- * by callers that perform authenticated decryption.
-=======
  * Best-effort wallet secret lookup:
  * - plaintext slot (dev/test flows and wallet-setup modal)
  * - encrypted slot decrypted with passcode from memory (wallet page flow)
->>>>>>> origin/dev
  */
 export async function getWalletSecretAnyLocal(
   userId: string,
   stellarAddress?: string | null,
 ): Promise<string | null> {
   assertDevOnly();
-<<<<<<< HEAD
-  return getWalletSecretLocalPlaintext(userId, stellarAddress);
-=======
   const plaintext = await getWalletSecretLocalPlaintext(userId, stellarAddress);
   if (plaintext) return plaintext;
 
@@ -229,7 +193,6 @@ export async function getWalletSecretAnyLocal(
     // ignore
   }
   return null;
->>>>>>> origin/dev
 }
 
 export async function hasStoredWallet(userId: string): Promise<boolean> {
