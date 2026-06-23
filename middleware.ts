@@ -1,5 +1,4 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+it import createMiddleware from 'next-intl/middleware';
 
 export function middleware(request: NextRequest) {
   // Block direct access to any markdown files served from public/
@@ -25,6 +24,7 @@ export function middleware(request: NextRequest) {
     'style-src': ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"], // unsafe-inline often needed for Next.js internal styles
     'img-src': ["'self'", "blob:", "data:", "https://*"], // Allow external images
     'font-src': ["'self'"],
+    'manifest-src': ["'self'"],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
@@ -39,31 +39,9 @@ export function middleware(request: NextRequest) {
     'upgrade-insecure-requests': [],
   };
 
-  const cspHeaderValue = Object.entries(cspDirectives)
-    .map(([key, values]) => {
-      if (values.length === 0) return key;
-      return `${key} ${values.join(' ')}`;
-    })
-    .join('; ');
-
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-nonce', nonce);
-  
-  // Start with Report-Only as per requirements
-  const headerName = process.env.CSP_ENFORCE === 'true' 
-    ? 'Content-Security-Policy' 
-    : 'Content-Security-Policy-Report-Only';
-
-  const response = NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
-
-  response.headers.set(headerName, cspHeaderValue);
-
-  return response;
-}
+  // Used when no locale matches
+  defaultLocale: 'en'
+});
 
 export const config = {
   matcher: [
@@ -72,10 +50,10 @@ export const config = {
      * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * - favicon.ico and other public static assets (images, fonts, icons)
      */
     {
-      source: '/((?!api|_next/static|_next/image|favicon.ico).*)',
+      source: '/((?!api|_next/static|_next/image|.*\\.(?:ico|png|jpg|jpeg|svg|webp|gif|woff2?|ttf|otf|map)).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },

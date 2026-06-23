@@ -74,6 +74,7 @@ export function mapApiError(e: unknown): string {
 
 export interface RequestOptions {
   signal?: AbortSignal;
+  /** @deprecated Auth is via httpOnly cookies; this field is unused. */
   token?: string;
 }
 
@@ -96,17 +97,9 @@ async function request<T>(
     );
   }
   const url = path.startsWith('http') ? path : `${BASE}${path.startsWith('/') ? path : `/${path}`}`;
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  // CSRF cookie logic removed: backend does not guarantee XSRF-TOKEN pairing
-
-  const token = opts.token !== undefined ? opts.token : currentToken;
-  if (token) {
-    // Send only the Authorization header per backend contract.
-    // The former x-api-key duplicate has been removed to eliminate the redundant
-    // secret channel that could surface in proxy logs (F-007).
-    headers['Authorization'] = `Bearer ${token}`;
+  const headers: Record<string, string> = {};
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
   }
 
   // Create our own AbortController for timeout, independent of caller's signal
@@ -198,8 +191,4 @@ export function put<T>(path: string, body?: unknown, opts?: RequestOptions): Pro
 
 export function del<T>(path: string, opts?: RequestOptions): Promise<T> {
   return request<T>('DELETE', path, undefined, opts);
-}
-
-export function apiOpts(token: string | null | undefined): RequestOptions {
-  return { token: token || undefined };
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { ApiError } from "@/lib/api/client";
 
 /**
@@ -93,6 +93,24 @@ export function mapApiError(err: unknown): UIError | null {
 export function useApiError() {
   const [uiError, setUiError] = useState<UIError | null>(null);
   const [submitDisabledUntil, setSubmitDisabledUntil] = useState<number>(0);
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
+
+  useEffect(() => {
+    if (submitDisabledUntil <= 0) {
+      setIsSubmitDisabled(false);
+      return;
+    }
+    const now = Date.now();
+    if (submitDisabledUntil <= now) {
+      setIsSubmitDisabled(false);
+      return;
+    }
+    setIsSubmitDisabled(true);
+    const timeout = setTimeout(() => {
+      setIsSubmitDisabled(false);
+    }, submitDisabledUntil - now);
+    return () => clearTimeout(timeout);
+  }, [submitDisabledUntil]);
 
   const setApiError = useCallback((err: unknown) => {
     const mapped = mapApiError(err);
@@ -106,8 +124,6 @@ export function useApiError() {
     setUiError(null);
     setSubmitDisabledUntil(0);
   }, []);
-
-  const isSubmitDisabled = submitDisabledUntil > Date.now();
 
   return { uiError, setApiError, clearError, isSubmitDisabled };
 }

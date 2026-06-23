@@ -89,7 +89,6 @@ describe('MintPage', () => {
       logout: vi.fn(),
       setAuth: vi.fn(),
       refreshStellarAddress: vi.fn(),
-      apiKey: 'key',
     })
 
     vi.mocked(useBalanceHook.useBalance).mockReturnValue({
@@ -101,11 +100,10 @@ describe('MintPage', () => {
     })
 
     vi.mocked(useApiHook.useApiOpts).mockReturnValue({
-      token: 'test-token',
     })
 
     vi.mocked(ratesApi.getRates).mockResolvedValue({ acbu_usd: '1.0' })
-    vi.mocked(fiatApi.getFiatAccounts).mockResolvedValue({ accounts: [{ id: '1', currency: 'USD', bank_name: 'Test Bank' }] })
+    vi.mocked(fiatApi.getFiatAccounts).mockResolvedValue({ accounts: [{ id: 'acc1', currency: 'NGN', bank_name: 'Test Bank', balance: '0', account_number: '0000000000', account_name: 'Test', ledger_entries: [] }] })
   })
 
   it('renders the mint page', async () => {
