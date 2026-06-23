@@ -24,31 +24,85 @@ function assertDevOnly(): void {
 }
 
 /**
- * Simulates AES encryption for the local storage.
- * In a production app, use SubtleCrypto or a library like 'crypto-js' to encrypt/decrypt
- * using the user's passcode or a derived key.
+ * Helper to derive an AES-GCM key from the passcode using PBKDF2.
  */
-function encryptSecret(secret: string, passcode: string): string {
-  // Mock encryption: simple base64 encode with passcode for demo.
-  // DO NOT use this in real production without real AES encryption.
-  return btoa(`${passcode}:${secret}`);
+async function deriveKey(passcode: string, salt: Uint8Array): Promise<CryptoKey> {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(passcode),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
 }
 
-function decryptSecret(encrypted: string, passcode: string): string | null {
+/**
+ * Encrypts a secret using AES-GCM and the user's passcode.
+ * Returns a base64 string formatted as: salt_base64:iv_base64:ciphertext_base64
+ */
+async function encryptSecret(secret: string, passcode: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(passcode, salt);
+  const enc = new TextEncoder();
+  
+  const cipherBuffer = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    enc.encode(secret)
+  );
+
+  const salt64 = btoa(String.fromCharCode(...salt));
+  const iv64 = btoa(String.fromCharCode(...iv));
+  const cipher64 = btoa(String.fromCharCode(...new Uint8Array(cipherBuffer)));
+  
+  return `${salt64}:${iv64}:${cipher64}`;
+}
+
+/**
+ * Decrypts a secret using AES-GCM and the user's passcode.
+ */
+async function decryptSecret(encrypted: string, passcode: string): Promise<string | null> {
   try {
-    const decoded = atob(encrypted);
-    const [p, secret] = decoded.split(':');
-    if (p === passcode) {
-      return secret;
-    }
-    return null;
-  } catch {
+    const parts = encrypted.split(':');
+    if (parts.length !== 3) return null;
+    
+    const [salt64, iv64, cipher64] = parts;
+    
+    const salt = new Uint8Array(atob(salt64).split('').map(c => c.charCodeAt(0)));
+    const iv = new Uint8Array(atob(iv64).split('').map(c => c.charCodeAt(0)));
+    const cipherText = new Uint8Array(atob(cipher64).split('').map(c => c.charCodeAt(0)));
+    
+    const key = await deriveKey(passcode, salt);
+    
+    const decryptedBuffer = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      cipherText
+    );
+    
+    return new TextDecoder().decode(decryptedBuffer);
+  } catch (err) {
+    console.warn("Wallet decryption failed", err);
     return null;
   }
 }
 
 export async function storeWalletSecret(userId: string, secret: string, passcode: string): Promise<void> {
-  const encrypted = encryptSecret(secret, passcode);
+  const encrypted = await encryptSecret(secret, passcode);
   await localforage.setItem(`${KEY_STORE_PREFIX}${userId}`, encrypted);
 }
 
@@ -56,7 +110,7 @@ export async function getWalletSecret(userId: string, passcode: string): Promise
   const encrypted = await localforage.getItem<string>(`${KEY_STORE_PREFIX}${userId}`);
   if (!encrypted) return null;
   
-  return decryptSecret(encrypted, passcode);
+  return await decryptSecret(encrypted, passcode);
 }
 
 /**
@@ -78,21 +132,6 @@ export async function storeWalletSecretLocalPlaintext(
       secret,
     );
   }
-  // Fallback: IndexedDB can be unavailable in some browser modes; keep a copy in localStorage.
-  // (Still per-origin; this is not meant as a security measure.)
-  try {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(userKey, secret);
-      if (stellarAddress) {
-        window.localStorage.setItem(
-          `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`,
-          secret,
-        );
-      }
-    }
-  } catch {
-    // ignore
-  }
 }
 
 /**
@@ -113,15 +152,6 @@ export async function getWalletSecretLocalPlaintext(
   if (addressKey) {
     const byAddress = await localforage.getItem<string>(addressKey);
     if (byAddress) return byAddress;
-  }
-  try {
-    if (typeof window !== 'undefined') {
-      const lsByUser = window.localStorage.getItem(userKey);
-      if (lsByUser) return lsByUser;
-      if (addressKey) return window.localStorage.getItem(addressKey);
-    }
-  } catch {
-    // ignore
   }
   return null;
 }
