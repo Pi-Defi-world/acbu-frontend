@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
-import { storeWalletSecretLocalPlaintext } from "@/lib/wallet-storage";
-import { AlertCircle, ChevronLeft } from "lucide-react";
+import { storeWalletSecret } from "@/lib/wallet-storage";
+import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
+import { AlertCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 
 export function WalletSetupModal() {
@@ -24,7 +25,7 @@ export function WalletSetupModal() {
 
   // For importing seed
   const [importSeed, setImportSeed] = useState("");
-  // Plaintext local storage mode: no passcode prompt
+  // Wallet secret is encrypted with the account passcode via storeWalletSecret
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -33,7 +34,7 @@ export function WalletSetupModal() {
     }
     
     // Check if we have an auto-generated passphrase from signin
-    const autoGenPassphrase = sessionStorage.getItem("temp_passphrase");
+    const autoGenPassphrase = getTempPassphrase();
     
     // Check if user has removed their local wallet from settings
     // If they have no stellarAddress, we definitely show it.
@@ -61,7 +62,7 @@ export function WalletSetupModal() {
   }, [isAuthenticated, stellarAddress]);
 
   const handleFinish = async () => {
-    sessionStorage.removeItem("temp_passphrase");
+    clearTempPassphrase();
     localStorage.removeItem("force_wallet_setup");
     await refreshStellarAddress();
     setOpen(false);
@@ -80,6 +81,12 @@ export function WalletSetupModal() {
    */
   const syncWalletToBackend = async (secret: string): Promise<void> => {
     if (!userId) throw new Error("Not logged in");
+    
+    const passcode = getPasscode();
+    if (!passcode) {
+      throw new Error("Passcode not available. Please log in again to set up your wallet.");
+    }
+
     const kp = Keypair.fromSecret(secret);
     const publicKey = kp.publicKey();
 
@@ -91,8 +98,8 @@ export function WalletSetupModal() {
       );
     }
 
-    // Step 2: Store secret locally
-    await storeWalletSecretLocalPlaintext(userId, secret, publicKey);
+    // Step 2: Store secret encrypted with passcode
+    await storeWalletSecret(userId, secret, passcode);
 
     // Step 3: Confirm wallet activation on backend
     try {
@@ -186,7 +193,7 @@ export function WalletSetupModal() {
   return (
     <Dialog open={open} onOpenChange={(val) => {
       // Prevent closing the modal if the user doesn't have a wallet or needs to confirm passphrase
-      const hasTempPassphrase = sessionStorage.getItem("temp_passphrase");
+      const hasTempPassphrase = getTempPassphrase();
       if (isAuthenticated && (!stellarAddress || hasTempPassphrase)) return;
       setOpen(val);
     }}>
@@ -261,6 +268,14 @@ export function WalletSetupModal() {
             {option === 1 && (
               <form onSubmit={handleGenerateConfirm} className="space-y-4">
                 <h2 className="text-lg font-semibold">Your New Wallet</h2>
+                
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                  <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-800 dark:text-blue-300">
+                    Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                  </p>
+                </div>
+
                 <p className="text-sm text-muted-foreground">
                   Please save this secret key somewhere safe. It is required to
                   recover your wallet if you switch devices.
@@ -278,9 +293,17 @@ export function WalletSetupModal() {
             {option === 2 && (
               <form onSubmit={handleImportSeed} className="space-y-4">
                 <h2 className="text-lg font-semibold">Import Seed</h2>
+                
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                  <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-800 dark:text-blue-300">
+                    Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                  </p>
+                </div>
+
                 <p className="text-sm text-muted-foreground">
                   Enter your Stellar secret key (starts with 'S'). It will be stored
-                  securely on this device.
+                  encrypted on this device.
                 </p>
 
                 <Input

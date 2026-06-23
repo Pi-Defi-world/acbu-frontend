@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Contacts | ACBU',
+  description: 'Manage your ACBU contacts for quick and easy money transfers to frequently used recipients.',
+};
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
@@ -29,7 +36,7 @@ export default function ContactsPage() {
     }).catch((e) => {
       setError(e instanceof Error ? e.message : 'Failed to load contacts');
     }).finally(() => setLoading(false));
-  }, [opts.token]);
+  }, [opts]);
 
   useEffect(() => {
     setLoading(true);
@@ -65,10 +72,10 @@ export default function ContactsPage() {
   if (loading) {
     return (
       <>
-        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-          <div className="px-4 py-3 flex items-center gap-3">
+        <div className="page-header">
+          <div className="page-header-row">
             <Link href="/me/settings"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
-            <h1 className="text-lg font-bold text-foreground">Contacts</h1>
+            <h1 className="page-title">Contacts</h1>
           </div>
         </div>
         <PageContainer>
@@ -80,10 +87,10 @@ export default function ContactsPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3 flex items-center gap-3">
+      <div className="page-header">
+        <div className="page-header-row">
           <Link href="/me/settings"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
-          <h1 className="text-lg font-bold text-foreground">Contacts</h1>
+          <h1 className="page-title">Contacts</h1>
         </div>
       </div>
       <PageContainer>

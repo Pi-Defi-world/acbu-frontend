@@ -1,66 +1,62 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { SkeletonList } from "@/components/ui/skeleton-list";
+import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import { ArrowLeft } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
-import * as ratesApi from "@/lib/api/rates";
+import { useRates } from "@/lib/api/rates";
 import type { RatesResponse } from "@/types/api";
 
 export default function RatesPage() {
   const opts = useApiOpts();
+<<<<<<< HEAD
+  const { uiError: error, setApiError: handleError } = useApiError();
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+=======
+  const { data: rates, loading, error, refetch } = useRates(opts);
+>>>>>>> upstream/dev
 
   const formatRate = (rate: number | undefined): string => {
     if (rate == null) return "—";
+    if (rate === 0) return "0.00";
 
-    return new Intl.NumberFormat(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6,
+    // F-058: Significant digits policy
+    // Use toPrecision(4) to get the most important digits, 
+    // then Number() to strip trailing zeros, then toLocaleString for commas.
+    const precision = 4;
+    const formatted = Number(rate.toPrecision(precision));
+
+    return formatted.toLocaleString(undefined, {
       useGrouping: true,
-    }).format(rate);
+      maximumFractionDigits: 8, // Allow decimals for small numbers
+    });
   };
-
-  useEffect(() => {
-    let cancelled = false;
-    ratesApi
-      .getRates(opts)
-      .then((data) => {
-        if (!cancelled) setRates(data);
-      })
-      .catch((e) => {
-        if (!cancelled)
-          setError(e instanceof Error ? e.message : "Failed to load rates");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3 flex items-center gap-3">
+      <div className="page-header">
+        <div className="page-header-row">
           <Link
             href="/me"
             aria-label="Go back" 
-            className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2"
+            className="touch-target"
           >
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
-          <h1 className="text-lg font-bold text-foreground">Rates</h1>
+          <h1 className="page-title">Rates</h1>
         </div>
       </div>
       <PageContainer>
-        {error && <p className="text-destructive text-sm mb-3">{error}</p>}
+<<<<<<< HEAD
+        {error && <p className="text-destructive text-sm mb-3">{error.message}</p>}
+=======
+        <RetryErrorBlock message={error} onRetry={refetch} className="mb-3" />
+>>>>>>> upstream/dev
         {loading ? (
           <SkeletonList count={2} itemHeight="h-20" />
         ) : rates ? (
@@ -81,8 +77,8 @@ export default function RatesPage() {
               { currency: "XOF", rate: rates.acbu_xof },
             ]
               .filter(r => r.rate != null)
-              .map((r, i) => (
-                <Card key={i} className="border-border p-4">
+              .map((r) => (
+                <Card key={r.currency} className="border-border p-4">
                   <div className="flex justify-between items-center">
                     <p className="font-semibold text-foreground">
                       ACBU/{r.currency}

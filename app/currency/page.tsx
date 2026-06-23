@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Currency Management | ACBU',
+  description: 'Manage supported currencies, view exchange rates, and configure your preferred currency settings.',
+};
+
+import React, { useEffect, useMemo, useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,32 +25,112 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ArrowDown, ArrowUp, TrendingUp } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
+import { useDebounce } from "@/hooks/use-debounce";
 import { useApiOpts } from "@/hooks/use-api";
+import { useBalance } from "@/hooks/use-balance";
+import { useToast } from "@/hooks/use-toast";
+import * as ratesApi from "@/lib/api/rates";
+import type { RatesResponse } from "@/types/api";
+import { useApiError } from "@/hooks/use-api-error";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
+import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
-import type { MintResponse, BurnResponse } from "@/types/api";
+import * as ratesApi from "@/lib/api/rates";
+import { useBalance } from "@/hooks/use-balance";
+import type { MintResponse, BurnResponse, CurrencyPreference, RatesResponse } from "@/types/api";
+import { logger } from "@/lib/logger";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
+import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
+import { Keypair } from "@stellar/stellar-sdk";
+import { submitBurnRedeemSingleClient } from "@/lib/stellar/burning";
+
+/** Local currency units per 1 ACBU from the `/rates` oracle, or null if missing. */
+function localPerAcbu(currency: string, rates: RatesResponse | null): number | null {
+  if (!rates || !currency) return null;
+  const key = `acbu_${currency.trim().toLowerCase()}` as keyof RatesResponse;
+  const raw = rates[key];
+  if (raw == null || raw === "") return null;
+  const n = parseFloat(String(raw));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** ACBU received when minting `usd` dollars: usd / (USD per ACBU). */
+function estimateAcbuFromUsd(usd: number, rates: RatesResponse | null): number | null {
+  const perAcbu = localPerAcbu("USD", rates);
+  if (perAcbu == null || !(usd > 0)) return null;
+  return usd / perAcbu;
+}
+
+/** Local currency received when burning `acbu` units to `currency`. */
+function estimateLocalFromAcbu(
+  acbu: number,
+  currency: string,
+  rates: RatesResponse | null,
+): number | null {
+  const perAcbu = localPerAcbu(currency, rates);
+  if (perAcbu == null || !(acbu > 0)) return null;
+  return acbu * perAcbu;
+}
 
 /**
  * Currency management hub.
  */
 export default function CurrencyPage() {
   const opts = useApiOpts();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+<<<<<<< HEAD
+<<<<<<< HEAD
+  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { toast } = useToast();
+=======
+  const { userId, stellarAddress } = useAuth();
+  const kit = useStellarWalletsKit();
+>>>>>>> origin/dev
+=======
+  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { toast } = useToast();
+  const { userId, stellarAddress } = useAuth();
+  const kit = useStellarWalletsKit();
+<<<<<<< HEAD
+  const { toast } = useToast();
+>>>>>>> upstream/dev
+=======
+  const {
+    balance,
+    loading: balanceLoading,
+    error: balanceError,
+    refetch: refetchBalance,
+  } = useBalance();
+>>>>>>> upstream/dev
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
   );
   const [step, setStep] = useState<"input" | "confirm" | "success">("input");
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
   const [lastTxId, setLastTxId] = useState("");
+  const [lastResponse, setLastResponse] = useState<
+    MintResponse | BurnResponse | null
+  >(null);
+
+  const [rates, setRates] = useState<RatesResponse | null>(null);
 
   // Mint state
   const [mintAmount, setMintAmount] = useState("");
-  const [mintSource, setMintSource] = useState("usdc");
+<<<<<<< HEAD
+  const debouncedMintAmount = useDebounce(mintAmount, 300);
+  const [mintSource, setMintSource] = useState("stellar");
+=======
+  const [mintSource, setMintSource] = useState<Exclude<CurrencyPreference, "auto">>("usdc");
+>>>>>>> origin/dev
   const [mintWalletAddress, setMintWalletAddress] = useState("");
 
   // Burn state
   const [burnAmount, setBurnAmount] = useState("");
+  const debouncedBurnAmount = useDebounce(burnAmount, 300);
   const [burnDestination, setBurnDestination] = useState("bank");
   const [burnAccountNumber, setBurnAccountNumber] = useState("");
   const [burnBankCode, setBurnBankCode] = useState("");
@@ -51,39 +138,185 @@ export default function CurrencyPage() {
 
   // International state
   const [intlAmount, setIntlAmount] = useState("");
+  const debouncedIntlAmount = useDebounce(intlAmount, 300);
   const [intlCurrency, setIntlCurrency] = useState("USD");
   const [intlCountry, setIntlCountry] = useState("US");
   const [intlAccountNumber, setIntlAccountNumber] = useState("");
   const [intlBankCode, setIntlBankCode] = useState("");
   const [intlAccountName, setIntlAccountName] = useState("");
+  const [intlQuote, setIntlQuote] = useState<QuoteResponse | null>(null);
+  const [intlQuoteLoading, setIntlQuoteLoading] = useState(false);
+  const [intlQuoteError, setIntlQuoteError] = useState(false);
 
-  const mockBalance = 5280.5;
-  const mockRate = 1620;
-  const exchangeRate = 0.82;
+  useEffect(() => {
+    let cancelled = false;
+    ratesApi
+      .getRates(opts)
+      .then((data) => {
+        if (!cancelled) setRates(data);
+      })
+      .catch(() => {
+        if (!cancelled) setRates(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [opts.token]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const amount = parseFloat(debouncedIntlAmount || "0");
+
+    if (!(amount > 0)) {
+      setIntlQuote(null);
+      setIntlQuoteLoading(false);
+      setIntlQuoteError(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setIntlQuoteLoading(true);
+    setIntlQuoteError(false);
+
+    ratesApi
+      .getQuote(debouncedIntlAmount, intlCurrency, opts)
+      .then((data) => {
+        if (!cancelled) {
+          setIntlQuote(data);
+          setIntlQuoteLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIntlQuote(null);
+          setIntlQuoteError(true);
+          setIntlQuoteLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedIntlAmount, intlCurrency, opts]);
+
+  const usdPerAcbu = useMemo(() => localPerAcbu("USD", rates), [rates]);
+  const ngnPerAcbu = useMemo(() => localPerAcbu("NGN", rates), [rates]);
+
+  const availableBalance = balance ?? 0;
+<<<<<<< HEAD
+  const burnNumeric = parseFloat(debouncedBurnAmount || "0");
+  const intlNumeric = parseFloat(debouncedIntlAmount || "0");
+  const mintNumeric = parseFloat(debouncedMintAmount || "0");
+=======
+  const burnNumeric = parseFloat(burnAmount || "0");
+  const mintNumeric = parseFloat(mintAmount || "0");
+>>>>>>> upstream/dev
+
+  const estimatedMintAcbu = estimateAcbuFromUsd(mintNumeric, rates);
+  const estimatedBurnNgn = estimateLocalFromAcbu(burnNumeric, "NGN", rates);
+  const intlPayoutAmount =
+    intlQuote?.payout_amount ??
+    intlQuote?.receive_amount ??
+    intlQuote?.local_amount ??
+    null;
+  const intlFeeAmount =
+    intlQuote?.total_fee ?? intlQuote?.fee_amount ?? intlQuote?.fee ?? null;
+  const payoutFormatted =
+    intlPayoutAmount != null
+      ? `${intlCurrency} ${formatAmount(intlPayoutAmount)}`
+      : `${intlCurrency} —`;
 
   const handleMintConfirm = () => setStep("confirm");
   const handleBurnConfirm = () => setStep("confirm");
 
   const handleExecute = async () => {
-    setSubmitError("");
+    clearError();
     setSubmitting(true);
+    logger.info(`Starting ${activeTab} operation`); // <-- ADD LOGGER
+
     try {
       if (activeTab === "mint") {
+        logger.info("Minting ACBU", { amount: mintAmount }); // <-- ADD LOGGER
         const res: MintResponse = await mintApi.mintFromUsdc(
           mintAmount,
           mintWalletAddress.trim(),
-          "auto",
+          mintSource,
           opts,
         );
         setLastTxId(res.transaction_id);
+        setLastResponse(res);
+        toast({
+          title: "Mint submitted",
+          description: `Transaction ${res.transaction_id} · status ${res.status}`,
+        });
       } else if (activeTab === "burn") {
+        logger.info("Burning ACBU", { amount: burnAmount, destination: burnDestination }); // <-- ADD LOGGER
+        
+        // Generate blockchain proof before submission
+        if (!userId) throw new Error("Not signed in");
+        if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
+        
+        let burnTxHash: string;
+        const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+        
+        if (secret) {
+          const localPubKey = Keypair.fromSecret(secret).publicKey();
+          if (stellarAddress && localPubKey !== stellarAddress) {
+            throw new Error(
+              `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+            );
+          }
+          const submit = await submitBurnRedeemSingleClient({
+            userAddress: stellarAddress,
+            amountAcbu: burnAmount,
+            currency: "NGN",
+            userSecret: secret,
+          });
+          burnTxHash = submit.transactionHash;
+        } else {
+          if (!kit) {
+            throw new Error(
+              "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+            );
+          }
+          const address = await new Promise<string>((resolve, reject) => {
+            kit
+              .openModal({
+                onWalletSelected: async (selectedOption: { id: string }) => {
+                  try {
+                    kit.setWallet(selectedOption.id);
+                    const { address } = await kit.getAddress();
+                    resolve(address);
+                  } catch (err) {
+                    reject(err);
+                  }
+                },
+              })
+              .catch(reject);
+          });
+          if (stellarAddress && address !== stellarAddress) {
+            throw new Error(
+              `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+            );
+          }
+          const submit = await submitBurnRedeemSingleClient({
+            userAddress: stellarAddress,
+            amountAcbu: burnAmount,
+            currency: "NGN",
+            external: { kit, address },
+          });
+          burnTxHash = submit.transactionHash;
+        }
+        
+        // Submit burn with blockchain proof
         const recipientType =
           burnDestination === "bank"
             ? "bank"
             : burnDestination === "mobile"
               ? "mobile_money"
               : undefined;
-        const res: BurnResponse = await burnApi.burnAcbu(
+        const res = await burnApi.burnAcbu(
           burnAmount,
           "NGN",
           {
@@ -93,9 +326,74 @@ export default function CurrencyPage() {
             account_name: burnAccountName.trim(),
           },
           opts,
+          burnTxHash,
         );
         setLastTxId(res.transaction_id);
+        setLastResponse(res);
+        toast({
+          title: "Burn submitted",
+          description: `Transaction ${res.transaction_id} · status ${res.status}`,
+        });
       } else {
+        logger.info("International transfer", { amount: intlAmount, country: intlCountry }); // <-- ADD LOGGER
+        
+        // Generate blockchain proof before submission
+        if (!userId) throw new Error("Not signed in");
+        if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
+        
+        let burnTxHash: string;
+        const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+        
+        if (secret) {
+          const localPubKey = Keypair.fromSecret(secret).publicKey();
+          if (stellarAddress && localPubKey !== stellarAddress) {
+            throw new Error(
+              `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+            );
+          }
+          const submit = await submitBurnRedeemSingleClient({
+            userAddress: stellarAddress,
+            amountAcbu: intlAmount,
+            currency: intlCurrency,
+            userSecret: secret,
+          });
+          burnTxHash = submit.transactionHash;
+        } else {
+          if (!kit) {
+            throw new Error(
+              "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+            );
+          }
+          const address = await new Promise<string>((resolve, reject) => {
+            kit
+              .openModal({
+                onWalletSelected: async (selectedOption: { id: string }) => {
+                  try {
+                    kit.setWallet(selectedOption.id);
+                    const { address } = await kit.getAddress();
+                    resolve(address);
+                  } catch (err) {
+                    reject(err);
+                  }
+                },
+              })
+              .catch(reject);
+          });
+          if (stellarAddress && address !== stellarAddress) {
+            throw new Error(
+              `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+            );
+          }
+          const submit = await submitBurnRedeemSingleClient({
+            userAddress: stellarAddress,
+            amountAcbu: intlAmount,
+            currency: intlCurrency,
+            external: { kit, address },
+          });
+          burnTxHash = submit.transactionHash;
+        }
+        
+        // Submit international transfer with blockchain proof
         const res: BurnResponse = await burnApi.burnAcbu(
           intlAmount,
           intlCurrency,
@@ -105,12 +403,20 @@ export default function CurrencyPage() {
             account_name: intlAccountName.trim(),
           },
           opts,
+          burnTxHash,
         );
         setLastTxId(res.transaction_id);
+        setLastResponse(res);
+        toast({
+          title: "International transfer submitted",
+          description: `Transaction ${res.transaction_id} · status ${res.status}`,
+        });
       }
       setStep("success");
+      refetchBalance();
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Operation failed");
+      logger.error(`Currency operation failed: ${activeTab}`, e); // <-- ADD LOGGER
+      setApiError(e);
     } finally {
       setSubmitting(false);
     }
@@ -128,8 +434,9 @@ export default function CurrencyPage() {
     setIntlAccountNumber("");
     setIntlBankCode("");
     setIntlAccountName("");
-    setSubmitError("");
+    clearError();
     setLastTxId("");
+    setLastResponse(null);
   };
 
   return (
@@ -151,11 +458,20 @@ export default function CurrencyPage() {
           <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
             <p className="text-sm font-medium opacity-90">ACBU Balance</p>
             <p className="text-3xl font-bold mb-2">
-              ACBU {formatAmount(mockBalance)}
+              {balanceLoading || balance == null
+                ? "ACBU —"
+                : `ACBU ${formatAmount(balance)}`}
             </p>
             <p className="text-xs opacity-75">
-              ≈ ₦{formatAmount(mockBalance * mockRate, 0)}
+              {balanceLoading || balance == null || ngnPerAcbu == null
+                ? "≈ ₦ —"
+                : `≈ ₦${formatAmount(balance * ngnPerAcbu, 0)}`}
             </p>
+            <RetryErrorBlock
+              message={balanceError}
+              onRetry={refetchBalance}
+              className="mt-3 bg-destructive/10 text-xs"
+            />
           </Card>
         </div>
 
@@ -201,13 +517,12 @@ export default function CurrencyPage() {
                   onChange={(e) => setMintSource(e.target.value)}
                   className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                 >
-                  <option value="usdc">USDC (Ethereum)</option>
-                  <option value="usdc-polygon">USDC (Polygon)</option>
+                  <option value="stellar">USDC (Stellar)</option>
                 </select>
               </Card>
 
               <div className="mb-4">
-                <Label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="form-label">
                   Amount to Mint
                 </Label>
                 <div className="flex gap-2">
@@ -222,16 +537,18 @@ export default function CurrencyPage() {
                     className="border-border text-lg font-semibold"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  You'll receive: ACBU{" "}
-                  {mintAmount
-                    ? formatAmount(parseFloat(mintAmount) * exchangeRate)
-                    : "0.00"}
+                <p className="text-xs text-muted-foreground mt-2 break-words">
+                  You'll receive:{" "}
+                  {estimatedMintAcbu != null
+                    ? `ACBU ${formatAmount(estimatedMintAcbu)}`
+                    : mintNumeric > 0
+                      ? "ACBU — (rate unavailable)"
+                      : "ACBU 0.00"}
                 </p>
               </div>
 
               <div>
-                <Label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="form-label">
                   Destination Wallet Address
                 </Label>
                 <Input
@@ -246,15 +563,18 @@ export default function CurrencyPage() {
               <Card className="border-border bg-muted p-3 mt-4">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-muted-foreground">Fee</span>
-                  <span className="font-medium text-foreground">$2.50</span>
+                  <span className="font-medium text-foreground">
+                    Calculated at confirmation
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total</span>
-                  <span className="font-bold text-foreground">
-                    $
-                    {mintAmount
-                      ? (parseFloat(mintAmount) + 2.5).toFixed(2)
-                      : "2.50"}
+                  <span className="text-muted-foreground">
+                    Rate (ACBU per USD)
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {usdPerAcbu != null
+                      ? formatAmount(1 / usdPerAcbu, 4)
+                      : "—"}
                   </span>
                 </div>
               </Card>
@@ -262,8 +582,8 @@ export default function CurrencyPage() {
               <Button
                 onClick={handleMintConfirm}
                 disabled={
-                  !mintAmount ||
-                  parseFloat(mintAmount) <= 0 ||
+                  !debouncedMintAmount ||
+                  parseFloat(debouncedMintAmount) <= 0 ||
                   !mintWalletAddress.trim()
                 }
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
@@ -296,7 +616,7 @@ export default function CurrencyPage() {
               </Card>
 
               <div>
-                <Label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="form-label">
                   Amount to Burn
                 </Label>
                 <div className="flex gap-2">
@@ -312,9 +632,12 @@ export default function CurrencyPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Available: ACBU {formatAmount(mockBalance)}
+                  Available:{" "}
+                  {balanceLoading || balance == null
+                    ? "—"
+                    : `ACBU ${formatAmount(balance)}`}
                 </p>
-                {parseFloat(burnAmount || "0") > mockBalance && (
+                {balance != null && burnNumeric > availableBalance && (
                   <p className="text-xs text-destructive mt-1">
                     Insufficient balance
                   </p>
@@ -367,23 +690,27 @@ export default function CurrencyPage() {
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-muted-foreground">You'll receive</span>
                   <span className="font-medium text-foreground">
-                    $
-                    {burnAmount
-                      ? (parseFloat(burnAmount) / exchangeRate).toFixed(2)
-                      : "0.00"}
+                    {estimatedBurnNgn != null
+                      ? `₦${formatAmount(estimatedBurnNgn, 2)}`
+                      : burnNumeric > 0
+                        ? "₦ — (rate unavailable)"
+                        : "₦0.00"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Fee</span>
-                  <span className="font-medium text-foreground">$1.00</span>
+                  <span className="font-medium text-foreground">
+                    Calculated at confirmation
+                  </span>
                 </div>
               </Card>
 
               <Button
                 onClick={handleBurnConfirm}
                 disabled={
-                  !burnAmount ||
-                  parseFloat(burnAmount) > mockBalance ||
+                  !debouncedBurnAmount ||
+                  burnNumeric <= 0 ||
+                  (balance != null && burnNumeric > availableBalance) ||
                   !burnAccountNumber.trim() ||
                   !burnBankCode.trim() ||
                   !burnAccountName.trim()
@@ -405,7 +732,7 @@ export default function CurrencyPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+                  <label className="form-label">
                     Recipient Country
                   </label>
                   <select
@@ -422,7 +749,7 @@ export default function CurrencyPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+                  <label className="form-label">
                     Currency
                   </label>
                   <select
@@ -439,7 +766,7 @@ export default function CurrencyPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+                  <label className="form-label">
                     Amount (ACBU)
                   </label>
                   <div className="flex gap-2">
@@ -503,25 +830,30 @@ export default function CurrencyPage() {
                     <TrendingUp className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
                     <div className="text-sm">
                       <p className="font-medium text-foreground">
-                        {intlAmount
-                          ? `${intlCurrency} ${formatAmount(parseFloat(intlAmount) * 1.8)}`
-                          : `${intlCurrency} 0.00`}
+                        {intlQuoteLoading
+                          ? "Fetching live quote..."
+                          : intlQuoteError
+                            ? "Quote unavailable — try again"
+                            : intlPayoutAmount != null
+                              ? `Recipient gets: ${intlCurrency} ${formatAmount(intlPayoutAmount)}`
+                              : `Recipient gets: ${intlCurrency} 0.00`}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        at {intlCurrency} 1.80 per ACBU
+                        Includes all fees: ACBU{" "}
+                        {intlFeeAmount != null ? formatAmount(intlFeeAmount) : "—"}
                       </p>
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Fee: {intlCurrency} 0.50
+                    Live quote from backend — includes intermediary & settlement fees
                   </div>
                 </Card>
 
                 <Button
                   onClick={() => setStep("confirm")}
                   disabled={
-                    !intlAmount ||
-                    parseFloat(intlAmount) <= 0 ||
+                    !debouncedIntlAmount ||
+                    parseFloat(debouncedIntlAmount) <= 0 ||
                     !intlAccountNumber.trim() ||
                     !intlBankCode.trim() ||
                     !intlAccountName.trim()
@@ -545,19 +877,21 @@ export default function CurrencyPage() {
               {activeTab === "burn" && "Confirm Burn & Withdrawal"}
               {activeTab === "international" && "Confirm Transfer"}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="break-words">
               {activeTab === 'mint' &&
-                `Mint ACBU ${formatAmount(parseFloat(mintAmount || '0') * exchangeRate)} from USDC`}
+                (estimatedMintAcbu != null
+                  ? `Mint ACBU ${formatAmount(estimatedMintAcbu)} from USDC`
+                  : `Mint from $${mintAmount || '0'} USDC (ACBU amount calculated by backend)`)}
               {activeTab === 'burn' &&
                 `Burn ACBU ${formatAmount(burnAmount)} and withdraw to ${burnDestination}`}
               {activeTab === 'international' &&
-                `Send ACBU ${formatAmount(intlAmount)} to ${intlCountry} (${intlCurrency})`}
+                `Send ACBU ${formatAmount(intlAmount)} to ${intlCountry}. Recipient receives ${payoutFormatted} after all fees.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Amount:</span>
-              <span className="font-medium text-foreground">
+              <span className="font-medium text-foreground break-words">
                 {activeTab === 'mint' && `$${mintAmount}`}
                 {activeTab === 'burn' && `ACBU ${formatAmount(burnAmount)}`}
                 {activeTab === 'international' && `ACBU ${formatAmount(intlAmount)}`}
@@ -566,9 +900,7 @@ export default function CurrencyPage() {
             <div className="flex justify-between text-sm border-t border-border pt-2">
               <span className="text-muted-foreground">Processing fee:</span>
               <span className="font-medium text-foreground">
-                {activeTab === "mint" && "$2.50"}
-                {activeTab === "burn" && "$1.00"}
-                {activeTab === "international" && `${intlCurrency} 0.50`}
+                Calculated by backend
               </span>
             </div>
           </div>
@@ -581,14 +913,14 @@ export default function CurrencyPage() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleExecute}
-              disabled={submitting}
+              disabled={submitting || isSubmitDisabled}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {submitting ? "Processing..." : "Confirm"}
             </AlertDialogAction>
           </div>
-          {submitError && (
-            <p className="text-sm text-destructive mt-2">{submitError}</p>
+          {uiError && (
+            <ApiErrorDisplay error={uiError} onDismiss={clearError} className="mt-2" />
           )}
         </AlertDialogContent>
       </AlertDialog>
@@ -597,15 +929,48 @@ export default function CurrencyPage() {
       <AlertDialog open={step === "success"}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Operation Complete</AlertDialogTitle>
+            <AlertDialogTitle>Operation Submitted</AlertDialogTitle>
             <AlertDialogDescription>
-              Your {activeTab} operation has been processed successfully.
+              The backend accepted your {activeTab} request.
+              {lastResponse?.status &&
+                ` Current status: ${lastResponse.status}.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Transaction ID: {lastTxId}
-            </p>
+          <div className="py-4 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Transaction ID:</span>
+              <span className="font-mono text-foreground truncate max-w-[60%]">
+                {lastTxId}
+              </span>
+            </div>
+            {lastResponse && "fee" in lastResponse && lastResponse.fee && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Fee:</span>
+                <span className="font-medium text-foreground">
+                  {lastResponse.fee}
+                </span>
+              </div>
+            )}
+            {lastResponse &&
+              "acbu_amount" in lastResponse &&
+              lastResponse.acbu_amount && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">ACBU received:</span>
+                  <span className="font-medium text-foreground">
+                    ACBU {formatAmount(lastResponse.acbu_amount)}
+                  </span>
+                </div>
+              )}
+            {lastResponse &&
+              "local_amount" in lastResponse &&
+              lastResponse.local_amount && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">You'll receive:</span>
+                  <span className="font-medium text-foreground">
+                    {lastResponse.currency} {lastResponse.local_amount}
+                  </span>
+                </div>
+              )}
           </div>
           <AlertDialogAction
             onClick={resetForm}

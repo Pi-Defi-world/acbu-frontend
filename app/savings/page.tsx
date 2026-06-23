@@ -1,5 +1,13 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Savings | ACBU',
+  description: 'Grow your wealth with ACBU savings accounts. Earn competitive APY interest and set savings goals.',
+};
+
+import { logger } from "@/lib/logger";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -14,21 +22,34 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  ArrowLeft,
-  PiggyBank,
-  TrendingUp,
-  Target,
-  Zap,
-  Plus,
-  AlertCircle,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { ArrowLeft, PiggyBank, TrendingUp, Plus, AlertCircle } from "lucide-react";
+import type { LucideIcon } from 'lucide-react';
 import { PageContainer } from "@/components/layout/page-container";
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
+import { resolveRecipient } from "@/lib/api/recipient";
 import { formatAmount } from "@/lib/utils";
+
+/**
+ * Resolve any user identifier (Stellar address, phone, alias, pay URI)
+ * through the backend recipient resolver to obtain the canonical pay_uri.
+ * Falls back to the raw value when the resolver is unavailable so that
+ * Stellar-format addresses still work offline.
+ */
+async function resolveUserUri(
+  raw: string,
+  opts: Parameters<typeof resolveRecipient>[1],
+): Promise<string> {
+  try {
+    const resolved = await resolveRecipient(raw, opts);
+    if (resolved.pay_uri) return resolved.pay_uri;
+    if (resolved.alias) return resolved.alias;
+  } catch {
+    // Resolver unavailable — fall through to raw value.
+  }
+  return raw;
+}
 
 interface SavingsAccount {
     id: string;
@@ -40,6 +61,11 @@ interface SavingsAccount {
     color: string;
 }
 
+
+const SAVINGS_ACCOUNT_TYPES: Array<{ id: string; name: string; apy: number; balance: number; icon: LucideIcon; description: string; color: string }> = [
+  { id: "high-yield", name: "High-Yield Savings", apy: 8, balance: 0, icon: PiggyBank, description: "Earn 8% APY on your savings", color: "text-green-600" },
+];
+
 interface SavingsGoal {
   id: string;
   name: string;
@@ -47,37 +73,6 @@ interface SavingsGoal {
   currentAmount: number;
   deadline: string;
 }
-
-/**
- * Savings account type definitions used for display.
- * APY rates and descriptions are product constants; balance is derived from API.
- */
-const SAVINGS_ACCOUNT_TYPES: Omit<SavingsAccount, "balance">[] = [
-  {
-    id: "high-yield",
-    name: "High-Yield Savings",
-    apy: 8.0,
-    icon: TrendingUp,
-    description: "Best rates with instant access",
-    color: "from-green-500/10 to-green-600/10",
-  },
-  {
-    id: "goal-saver",
-    name: "Goal Saver",
-    apy: 5.5,
-    icon: Target,
-    description: "Save for specific goals",
-    color: "from-blue-500/10 to-blue-600/10",
-  },
-  {
-    id: "flex-saver",
-    name: "Flex Saver",
-    apy: 4.2,
-    icon: Zap,
-    description: "Flexible with quick withdrawals",
-    color: "from-amber-500/10 to-amber-600/10",
-  },
-];
 
 const initialGoals: SavingsGoal[] = [
   {
@@ -106,24 +101,27 @@ export default function SavingsPage() {
   const [positionsBalance, setPositionsBalance] = useState<string | number | null>(null);
   const [positionsLoading, setPositionsLoading] = useState(false);
   const [receiveError, setReceiveError] = useState("");
-  const [selectedAccount, setSelectedAccount] = useState<SavingsAccount | null>(null);
-  const [showDialog, setShowDialog] = useState(false);
-  const [depositAmount, setDepositAmount] = useState("");
-  const [showDepositDialog, setShowDepositDialog] = useState(false);
   const [goals, setGoals] = useState<SavingsGoal[]>(initialGoals);
 
+  const [selectedAccount, setSelectedAccount] = useState<(typeof SAVINGS_ACCOUNT_TYPES)[0] | null>(null);
+  const [showDialog, setShowDialog] = useState(false);
+  const [showDepositDialog, setShowDepositDialog] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
   const [showNewGoalDialog, setShowNewGoalDialog] = useState(false);
   const [newGoalName, setNewGoalName] = useState("");
   const [newGoalTarget, setNewGoalTarget] = useState("");
   const [newGoalDeadline, setNewGoalDeadline] = useState("");
 
-  useEffect(() => {
+ useEffect(() => {
     setReceiveError("");
-    userApi.getReceive(opts).then((data) => {
+    userApi.getReceive(opts).then(async (data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
       if (uri && typeof uri === "string") setApiUser(uri);
       setReceiveError("");
-    }).catch((e) => setReceiveError(e instanceof Error ? e.message : "Failed to load user info"));
+    }).catch((e) => {
+      logger.error("Failed to load user info", e); // <-- ADD LOGGER
+      setReceiveError(e instanceof Error ? e.message : "Failed to load user info");
+    });
   }, [opts.token]);
 
   useEffect(() => {
@@ -134,6 +132,7 @@ export default function SavingsPage() {
       setPositionsBalance(res.balance);
       setReceiveError("");
     }).catch((e) => {
+      logger.error("Failed to load savings balance", e); // <-- ADD LOGGER
       setPositionsBalance(null);
       setReceiveError(e instanceof Error ? e.message : "Failed to load savings balance");
     }).finally(() => setPositionsLoading(false));
@@ -159,6 +158,8 @@ export default function SavingsPage() {
 
   const handleConfirmDeposit = () => {
     if (depositAmount && parseFloat(depositAmount) > 0) {
+      // safely log the transaction attempt
+      logger.info("Confirming savings deposit", { accountId: selectedAccount?.id, amount: depositAmount }); 
       setShowDepositDialog(false);
       setDepositAmount("");
     }
@@ -166,13 +167,13 @@ export default function SavingsPage() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <header className="page-header">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
           <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Savings</h1>
+            <h1 className="page-title">Savings</h1>
             <p className="text-xs text-muted-foreground">Grow your wealth</p>
           </div>
         </div>
@@ -189,7 +190,7 @@ export default function SavingsPage() {
 
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-foreground">Savings balance (API)</h2>
+              <h2 className="page-title">Savings balance (API)</h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-3xl font-bold text-foreground mb-1">
@@ -208,7 +209,7 @@ export default function SavingsPage() {
           {/* Overview Card */}
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-foreground">
+              <h2 className="page-title">
                 Total Savings
               </h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
@@ -225,42 +226,6 @@ export default function SavingsPage() {
             <span>+ACBU {formatAmount((totalSavings * 0.08) / 12)} this month</span>
             </div>
           </Card>
-
-          {/* Savings Accounts */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Savings Accounts</h3>
-            {savingsAccounts.map((account) => {
-              const AccountIcon = account.icon;
-
-              return (
-                <button
-                  key={account.id}
-                  type="button"
-                  onClick={() => handleSelectAccount(account)}
-                  className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
-                  aria-label={`Select ${account.name} account`}
-                >
-                  <Card className={`border-border bg-gradient-to-br ${account.color} p-4 cursor-pointer hover:border-primary/50 transition-all`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-background/50">
-                          <AccountIcon className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-foreground">{account.name}</h4>
-                          <p className="text-xs text-muted-foreground">{account.description}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-foreground">ACBU {formatAmount(account.balance)}</p>
-                        <p className="text-[10px] text-green-600 font-medium">{account.apy}% APY</p>
-                      </div>
-                    </div>
-                  </Card>
-                </button>
-              );
-            })}
-          </div>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -295,55 +260,6 @@ export default function SavingsPage() {
           </div>
         </div>
       </PageContainer>
-
-      {selectedAccount && (
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent className="max-w-md border-border">
-            <DialogHeader>
-              <DialogTitle>{selectedAccount.name}</DialogTitle>
-              <DialogDescription>{selectedAccount.description}</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <Card className="border-border bg-muted p-3">
-                  <p className="text-xs text-muted-foreground mb-1">APY</p>
-                  <p className="text-2xl font-bold text-foreground">{selectedAccount.apy}%</p>
-                </Card>
-                <Card className="border-border bg-muted p-3">
-                  <p className="text-xs text-muted-foreground mb-1">Balance</p>
-                  <p className="text-2xl font-bold text-foreground">ACBU {formatAmount(selectedAccount.balance)}</p>
-                </Card>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setShowDialog(false)} className="flex-1 border-border">Close</Button>
-                <Button onClick={() => { setShowDialog(false); handleDeposit(selectedAccount); }} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">Deposit Now</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <Dialog open={showDepositDialog} onOpenChange={setShowDepositDialog}>
-        <DialogContent className="max-w-md border-border">
-          <DialogHeader>
-            <DialogTitle>Deposit to {selectedAccount?.name}</DialogTitle>
-            <DialogDescription>Add funds to earn interest at {selectedAccount?.apy}% APY</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="deposit-amount" className="text-foreground">Amount to Deposit</Label>
-              <div className="flex gap-2">
-                <span className="flex items-center text-muted-foreground">ACBU</span>
-                <Input id="deposit-amount" type="number" placeholder="0.00" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} className="border-border text-lg font-semibold" />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setShowDepositDialog(false)} className="flex-1 border-border">Cancel</Button>
-              <Button onClick={handleConfirmDeposit} disabled={!depositAmount || parseFloat(depositAmount) <= 0} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">Confirm Deposit</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={showNewGoalDialog} onOpenChange={setShowNewGoalDialog}>
         <DialogContent className="max-w-md border-border">

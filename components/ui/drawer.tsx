@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Drawer as DrawerPrimitive } from 'vaul'
 
 import { cn } from '@/lib/utils'
+import { useFocusTrap } from '@/hooks/use-focus-trap'
 
 function Drawer({
   ...props
@@ -50,10 +51,14 @@ function DrawerContent({
   children,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+  const contentRef = React.useRef<HTMLDivElement>(null)
+  useFocusTrap(contentRef, { isActive: true })
+
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
       <DrawerPrimitive.Content
+        ref={contentRef}
         data-slot="drawer-content"
         className={cn(
           'group/drawer-content bg-background fixed z-50 flex h-auto flex-col',
@@ -77,7 +82,7 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="drawer-header"
       className={cn(
-        'flex flex-col gap-0.5 p-4 group-data-[vaul-drawer-direction=bottom]/drawer-content:text-center group-data-[vaul-drawer-direction=top]/drawer-content:text-center md:gap-1.5 md:text-left',
+        'flex flex-col gap-0.5 p-4 group-data-[vaul-drawer-direction=bottom]/drawer-content:text-center group-data-[vaul-drawer-direction=top]/drawer-content:text-center md:gap-1.5 md:text-left rtl:md:text-right',
         className,
       )}
       {...props}
