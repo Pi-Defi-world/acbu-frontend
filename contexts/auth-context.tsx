@@ -3,7 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
 import * as authApi from '@/lib/api/auth';
 import { onAuthError } from '@/lib/api/client';
-import { clearPasscode } from '@/lib/passcode-manager';
+import { clearPasscode, clearTempPassphrase } from '@/lib/passcode-manager';
 import { logger } from '@/lib/logger';
 
 const USER_ID_KEY = 'acbu_user_id';
@@ -171,6 +171,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // ignore network errors; clear local state anyway
     }
+    clearPasscode();
+    clearTempPassphrase();
     setAuth(null, null);
   }, [setAuth]);
 
