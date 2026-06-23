@@ -74,6 +74,7 @@ export function mapApiError(e: unknown): string {
 
 export interface RequestOptions {
   signal?: AbortSignal;
+  /** @deprecated Auth is via httpOnly cookies; this field is unused. */
   token?: string;
 }
 
@@ -99,15 +100,6 @@ async function request<T>(
   const headers: Record<string, string> = {};
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
-  }
-  // CSRF cookie logic removed: backend does not guarantee XSRF-TOKEN pairing
-
-  const token = opts.token ?? undefined;
-  if (token) {
-    // Send only the Authorization header per backend contract.
-    // The former x-api-key duplicate has been removed to eliminate the redundant
-    // secret channel that could surface in proxy logs (F-007).
-    headers['Authorization'] = `Bearer ${token}`;
   }
 
   // Create our own AbortController for timeout, independent of caller's signal
@@ -199,18 +191,4 @@ export function put<T>(path: string, body?: unknown, opts?: RequestOptions): Pro
 
 export function del<T>(path: string, opts?: RequestOptions): Promise<T> {
   return request<T>('DELETE', path, undefined, opts);
-}
-
-export function apiOpts(token: string | null | undefined): RequestOptions {
-  return { token: token || undefined };
-}
-
-/**
- * No-op: auth is now handled via httpOnly cookies set by the backend.
- * Kept for backward compatibility with callers that haven't been updated yet.
- * @deprecated Remove call sites; token is no longer stored client-side.
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function setToken(_token: string | null): void {
-  // intentional no-op
 }
