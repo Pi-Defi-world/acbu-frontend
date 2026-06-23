@@ -83,7 +83,6 @@ describe('SendPage', () => {
       logout: vi.fn(),
       setAuth: vi.fn(),
       refreshStellarAddress: vi.fn(),
-      apiKey: 'key',
     })
 
     vi.mocked(useBalanceHook.useBalance).mockReturnValue({
@@ -94,7 +93,6 @@ describe('SendPage', () => {
     })
 
     vi.mocked(useApiHook.useApiOpts).mockReturnValue({
-      token: 'test-token',
     })
 
     vi.mocked(transfersApi.getTransfers).mockResolvedValue({ transfers: [] })

@@ -96,12 +96,13 @@ async function request<T>(
     );
   }
   const url = path.startsWith('http') ? path : `${BASE}${path.startsWith('/') ? path : `/${path}`}`;
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const headers: Record<string, string> = {};
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
   // CSRF cookie logic removed: backend does not guarantee XSRF-TOKEN pairing
 
-  const token = opts.token !== undefined ? opts.token : currentToken;
+  const token = opts.token ?? undefined;
   if (token) {
     // Send only the Authorization header per backend contract.
     // The former x-api-key duplicate has been removed to eliminate the redundant
@@ -202,4 +203,14 @@ export function del<T>(path: string, opts?: RequestOptions): Promise<T> {
 
 export function apiOpts(token: string | null | undefined): RequestOptions {
   return { token: token || undefined };
+}
+
+/**
+ * No-op: auth is now handled via httpOnly cookies set by the backend.
+ * Kept for backward compatibility with callers that haven't been updated yet.
+ * @deprecated Remove call sites; token is no longer stored client-side.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function setToken(_token: string | null): void {
+  // intentional no-op
 }

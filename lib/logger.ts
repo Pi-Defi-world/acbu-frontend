@@ -3,7 +3,7 @@ const isDebug = process.env.NEXT_PUBLIC_DEBUG === 'true' || process.env.NODE_ENV
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
 function logMessage(level: LogLevel, message: string, data?: any) {
-  if (!isDebug && level !== 'error') return;
+  if (!isDebug) return;
 
   const logEntry = {
     timestamp: new Date().toISOString(),
@@ -12,7 +12,6 @@ function logMessage(level: LogLevel, message: string, data?: any) {
     ...(data !== undefined && { data })
   };
 
-  // In debug mode, or for errors, output structured logs to console
   if (level === 'error') {
     console.error(JSON.stringify(logEntry));
   } else if (level === 'warn') {

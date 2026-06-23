@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Deposit to Savings | ACBU',
+  description: 'Deposit ACBU tokens into your savings account to start earning interest on your balance.',
+};
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
@@ -7,10 +14,23 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
-import { useApiOpts, useApiError } from "@/hooks/use-api";
+import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
+import { resolveRecipient } from "@/lib/api/recipient";
 import { logger } from "@/lib/logger";
+
+async function resolveUserUri(
+  raw: string,
+  opts: Parameters<typeof resolveRecipient>[1],
+): Promise<string> {
+  try {
+    const resolved = await resolveRecipient(raw, opts);
+    return resolved.pay_uri ?? resolved.alias ?? raw;
+  } catch {
+    return raw;
+  }
+}
 
 export default function SavingsDepositPage() {
     const opts = useApiOpts();
@@ -18,36 +38,28 @@ export default function SavingsDepositPage() {
     const [amount, setAmount] = useState("");
     const [termSeconds, setTermSeconds] = useState("0");
     const [loading, setLoading] = useState(false);
-    const { error, clearError, handleError } = useApiError();
+    const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
   useEffect(() => {
     let cancelled = false;
-    setResolving(true);
-    setError("");
-
     userApi.getReceive(opts).then(async (data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
-      if (!uri || typeof uri !== 'string') {
-        if (!cancelled) setResolving(false);
-        return;
-      }
-
-      // Resolve through backend recipient resolver so phone-based IDs,
-      // aliases, and other non-Stellar identifiers are accepted.
+      if (!uri || typeof uri !== 'string') return;
       const resolved = await resolveUserUri(uri, opts);
       if (!cancelled) setUser(resolved);
     }).catch((e) => {
       logger.error(e instanceof Error ? e.message : 'Failed to load receive address');
+    }).finally(() => {
+      if (cancelled) return;
     });
-
     return () => { cancelled = true; };
   }, [opts.token]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user.trim() || !amount || parseFloat(amount) <= 0) return;
-        clearError();
+        setError("");
         setLoading(true);
         try {
             await savingsApi.savingsDeposit(
@@ -60,7 +72,7 @@ export default function SavingsDepositPage() {
             );
             setSuccess("Deposit submitted.");
         } catch (e) {
-            handleError(e);
+            setError(e instanceof Error ? e.message : "Deposit failed");
         } finally {
             setLoading(false);
         }
@@ -81,10 +93,7 @@ export default function SavingsDepositPage() {
             <PageContainer>
                 <Card className="border-border p-4 space-y-4">
                     {error && (
-                        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
-                            <AlertCircle className="h-4 w-4 shrink-0" />
-                            <p>{error}</p>
-                        </div>
+                        <p className="text-destructive text-sm">{error}</p>
                     )}
                     {success && (
                         <p className="text-green-600 text-sm">{success}</p>
@@ -99,15 +108,10 @@ export default function SavingsDepositPage() {
                             </label>
                             <Input
                                 id="deposit-account"
-                                value={resolving ? "Resolving…" : user}
+                                value={user}
                                 readOnly
                                 className="border-border font-mono text-sm bg-muted"
                             />
-                            {resolving && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Verifying account identifier…
-                                </p>
-                            )}
                         </div>
                         <div>
                             <label
@@ -144,9 +148,9 @@ export default function SavingsDepositPage() {
                         </div>
                         <Button
                             type="submit"
-                            disabled={loading || resolving || !user.trim() || !amount}
+                            disabled={loading || !user.trim() || !amount}
                         >
-                            {loading ? "Depositing…" : "Deposit"}
+                            Deposit
                         </Button>
                     </form>
                 </Card>

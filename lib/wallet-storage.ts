@@ -23,80 +23,94 @@ function assertDevOnly(): void {
   }
 }
 
-/**
- * Helper to derive an AES-GCM key from the passcode using PBKDF2.
- */
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+const SALT_SIZE = 16;
+const IV_SIZE = 12;
+const PBKDF2_ITERATIONS = 200_000;
+
+function toBase64(buffer: ArrayBuffer | Uint8Array): string {
+  const bytes = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i += 1) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function fromBase64(value: string): Uint8Array {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
 async function deriveKey(passcode: string, salt: Uint8Array): Promise<CryptoKey> {
-  const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
+  const baseKey = await crypto.subtle.importKey(
     'raw',
-    enc.encode(passcode),
-    { name: 'PBKDF2' },
+    textEncoder.encode(passcode),
+    'PBKDF2',
     false,
-    ['deriveKey']
+    ['deriveKey'],
   );
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
       salt,
-      iterations: 100000,
+      iterations: PBKDF2_ITERATIONS,
       hash: 'SHA-256',
     },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
+    baseKey,
+    {
+      name: 'AES-GCM',
+      length: 256,
+    },
     false,
-    ['encrypt', 'decrypt']
+    ['encrypt', 'decrypt'],
   );
 }
 
-/**
- * Encrypts a secret using AES-GCM and the user's passcode.
- * Returns a base64 string formatted as: salt_base64:iv_base64:ciphertext_base64
- */
 async function encryptSecret(secret: string, passcode: string): Promise<string> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_SIZE));
+  const iv = crypto.getRandomValues(new Uint8Array(IV_SIZE));
   const key = await deriveKey(passcode, salt);
-  const enc = new TextEncoder();
-  
-  const cipherBuffer = await crypto.subtle.encrypt(
+  const ciphertext = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
     key,
-    enc.encode(secret)
+    textEncoder.encode(secret),
   );
 
-  const salt64 = btoa(String.fromCharCode(...salt));
-  const iv64 = btoa(String.fromCharCode(...iv));
-  const cipher64 = btoa(String.fromCharCode(...new Uint8Array(cipherBuffer)));
-  
-  return `${salt64}:${iv64}:${cipher64}`;
+  return JSON.stringify({
+    version: 1,
+    salt: toBase64(salt),
+    iv: toBase64(iv),
+    ciphertext: toBase64(ciphertext),
+  });
 }
 
-/**
- * Decrypts a secret using AES-GCM and the user's passcode.
- */
 async function decryptSecret(encrypted: string, passcode: string): Promise<string | null> {
   try {
-    const parts = encrypted.split(':');
-    if (parts.length !== 3) return null;
-    
-    const [salt64, iv64, cipher64] = parts;
-    
-    const salt = new Uint8Array(atob(salt64).split('').map(c => c.charCodeAt(0)));
-    const iv = new Uint8Array(atob(iv64).split('').map(c => c.charCodeAt(0)));
-    const cipherText = new Uint8Array(atob(cipher64).split('').map(c => c.charCodeAt(0)));
-    
+    const payload = JSON.parse(encrypted) as {
+      version: number;
+      salt: string;
+      iv: string;
+      ciphertext: string;
+    };
+    if (payload.version !== 1) return null;
+
+    const salt = fromBase64(payload.salt);
+    const iv = fromBase64(payload.iv);
+    const ciphertext = fromBase64(payload.ciphertext);
     const key = await deriveKey(passcode, salt);
-    
-    const decryptedBuffer = await crypto.subtle.decrypt(
+    const decrypted = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv },
       key,
-      cipherText
+      ciphertext,
     );
-    
-    return new TextDecoder().decode(decryptedBuffer);
-  } catch (err) {
-    console.warn("Wallet decryption failed", err);
+    return textDecoder.decode(decrypted);
+  } catch {
     return null;
   }
 }

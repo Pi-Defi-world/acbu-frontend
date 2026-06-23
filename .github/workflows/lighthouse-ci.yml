@@ -1,0 +1,39 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [ dev ]
+  push:
+    branches: [ dev ]
+
+jobs:
+  lhci:
+    name: Run Lighthouse CI
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser
+
+      - name: Run LHCI
+        env:
+          CHROME_BIN: /usr/bin/chromium-browser
+        run: npx @lhci/cli@0.11.0 autorun --config=.lighthouseci/config.js

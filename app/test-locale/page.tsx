@@ -1,10 +1,17 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Locale Test | ACBU',
+  description: 'Test page for locale and currency formatting functionality.',
+};
+
 import React, { useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
+
 
 export default function TestLocalePage() {
   const [currentLocale, setCurrentLocale] = useState("en-US");

@@ -1,6 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Activity | ACBU',
+  description: 'View your complete transaction history including mints, burns, and transfers on the ACBU platform.',
+};
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
@@ -12,10 +18,10 @@ import { useApiOpts } from '@/hooks/use-api';
 import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import * as transactionsApi from '@/lib/api/transactions';
 import type { TransactionListItem } from '@/types/api';
-import { formatAcbu, formatAmount } from '@/lib/utils';
+import { formatAcbu, formatAmount, parseUtcDate } from '@/lib/utils';
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+  return parseUtcDate(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
 }
 
 /**

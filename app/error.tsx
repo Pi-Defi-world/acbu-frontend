@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, startTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { errorReporter } from '@/lib/error-reporting';
@@ -21,6 +22,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const router = useRouter();
+
   useEffect(() => {
     errorReporter.reportError(error, {
       level: 'page',
@@ -32,13 +35,35 @@ export default function Error({
     });
   }, [error]);
 
+<<<<<<< HEAD
+=======
   const handleGoHome = () => {
     if (typeof window !== 'undefined') {
       window.location.href = '/';
     }
   };
 
+  const handleReset = () => {
+    startTransition(() => {
+      router.refresh();
+      reset();
+    });
+  };
+
+>>>>>>> upstream/dev
   return (
+<<<<<<< HEAD
+    <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-4 text-center">
+      <div className="rounded-full bg-red-100 p-3">
+        <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Something went wrong</h2>
+        <p className="text-sm text-muted-foreground mt-1">An unexpected error occurred</p>
+        {error.digest && <p className="text-xs text-muted-foreground mt-2">Error ID: {error.digest}</p>}
+=======
     <div className="error-state">
       <div className="error-icon-wrapper">
         <AlertTriangle className="error-icon" />
@@ -75,7 +100,7 @@ export default function Error({
       </div>
 
       <div className="flex gap-2">
-        <Button onClick={reset} variant="outline" size="sm">
+        <Button onClick={handleReset} variant="outline" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
           Try again
         </Button>
@@ -83,7 +108,11 @@ export default function Error({
           <Home className="w-4 h-4 mr-2" />
           Go home
         </Button>
+>>>>>>> origin/dev
       </div>
+      <Button onClick={reset} variant="outline">
+        Try again
+      </Button>
     </div>
   );
 }
