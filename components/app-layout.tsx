@@ -1,6 +1,7 @@
 'use client';
 
 import { MobileNav } from './mobile-nav';
+import { PageTransition } from './page-transition';
 import { usePathname } from 'next/navigation';
 
 const PUBLIC_PATHS = ['/auth/signin', '/auth/signup', '/auth/2fa', '/recovery'];
@@ -15,7 +16,9 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <main className={`flex-1 ${!isPublic ? 'pb-24' : ''}`}>{children}</main>
+      <main className={`flex-1 ${!isPublic ? 'pb-24' : ''}`}>
+        <PageTransition>{children}</PageTransition>
+      </main>
       {!isPublic && <MobileNav />}
     </div>
   );
