@@ -263,11 +263,11 @@ export default function MePage() {
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0 text-white text-lg font-bold md:w-20 md:h-20 md:text-2xl">{initials}</div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <h1 className="page-title truncate md:text-2xl">{displayName}</h1>
+                <h1 className="page-title truncate md:text-2xl" title={displayName}>{displayName}</h1>
                 <LocalKycBadge status={user?.kyc_status} loading={loading} />
               </div>
 <<<<<<< HEAD
-              <p className="text-xs text-muted-foreground truncate">{user?.email || user?.phone_e164 || '—'}</p>
+              <p className="text-xs text-muted-foreground truncate" title={user?.email || user?.phone_e164 || '—'}>{user?.email || user?.phone_e164 || '—'}</p>
 <<<<<<< HEAD
               <div className="mt-1.5">
                 <KycBadge status={user?.kyc_status} />
@@ -275,7 +275,7 @@ export default function MePage() {
 =======
 >>>>>>> origin/dev
 =======
-              <p className="text-xs text-muted-foreground truncate md:text-sm">{user?.email || user?.phone_e164 || '—'}</p>
+              <p className="text-xs text-muted-foreground truncate md:text-sm" title={user?.email || user?.phone_e164 || '—'}>{user?.email || user?.phone_e164 || '—'}</p>
 >>>>>>> upstream/dev
             </div>
           </div>
@@ -315,7 +315,7 @@ export default function MePage() {
                       <div className="rounded-lg border border-border bg-card p-4 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <Icon className="w-5 h-5 text-primary flex-shrink-0" />
-                          <span className="font-medium text-foreground text-sm truncate">{item.title}</span>
+                          <span className="font-medium text-foreground text-sm truncate" title={item.title}>{item.title}</span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <ArrowRight className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" />

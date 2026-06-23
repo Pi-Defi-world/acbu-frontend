@@ -373,7 +373,7 @@ export default function SendPage() {
             className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
           >
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-foreground truncate">
+              <p className="font-medium text-foreground truncate" title={t('send.transferLabel')}>
                 {t('send.transferLabel')}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -523,7 +523,7 @@ export default function SendPage() {
                       aria-label={`Transfer of ${t.amount_acbu} ACBU, status ${t.status}, created ${formatDate(t.created_at)}`}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">
+                        <p className="font-medium text-foreground truncate" title="Transfer">
                           Transfer
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -787,7 +787,7 @@ export default function SendPage() {
             )}
             <div className="rounded-lg border border-border bg-muted p-4">
               <p className="text-xs text-muted-foreground">{t('send.to')}</p>
-              <p className="font-semibold text-foreground truncate">
+              <p className="font-semibold text-foreground truncate" title={selectedContact?.alias || selectedContact?.pay_uri || customRecipient || "—"}>
                 {selectedContact?.alias ||
                   selectedContact?.pay_uri ||
                   customRecipient ||

@@ -136,15 +136,15 @@ export default function LendingAdminPage() {
 
                     <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                       <dt className="text-muted-foreground">Applicant</dt>
-                      <dd className="text-foreground truncate">
-                        {app.applicantUser ?? '—'}
+                      <dd className="text-foreground truncate" title={app.applicantUser ?? "—"}>
+                        {app.applicantUser ?? "—"}
                       </dd>
                       <dt className="text-muted-foreground">Submitted</dt>
                       <dd className="text-foreground">
                         {new Date(app.submittedAt).toLocaleString()}
                       </dd>
                       <dt className="text-muted-foreground">Reference</dt>
-                      <dd className="text-foreground font-mono truncate">{app.id}</dd>
+                      <dd className="text-foreground font-mono truncate" title={app.id}>{app.id}</dd>
                       {app.purpose && (
                         <>
                           <dt className="text-muted-foreground">Purpose</dt>
