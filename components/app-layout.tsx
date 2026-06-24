@@ -1,6 +1,7 @@
 'use client';
 
 import { MobileNav } from './mobile-nav';
+import { PageTransition } from './page-transition';
 import { usePathname } from 'next/navigation';
 import { SessionExpiryWarning } from '@/components/session-expiry-warning';
 import { useSessionGuard } from '@/hooks/use-session-guard';
@@ -18,6 +19,11 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+
+      <main className={`flex-1 ${!isPublic ? 'pb-24' : ''}`}>
+        <PageTransition>{children}</PageTransition>
+      </main>
+
       {!isPublic && (
         <SessionExpiryWarning
           status={status}
@@ -26,6 +32,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         />
       )}
       <main className={`flex-1 ${!isPublic ? 'pb-24' : ''}`}>{children}</main>
+
       {!isPublic && <MobileNav />}
     </div>
   );

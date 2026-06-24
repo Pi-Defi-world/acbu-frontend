@@ -425,7 +425,7 @@ export default function LendingPage() {
                         <p className="text-xs text-muted-foreground">
                           ACBU {formatAmount(app.amount)} · {app.term} months
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 truncate">
+                        <p className="text-[10px] text-muted-foreground mt-1 truncate" title={`Ref: ${app.id}`}>
                           Ref: {app.id}
                         </p>
                       </div>

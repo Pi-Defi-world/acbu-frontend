@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { getRequestConfig } from 'next-intl/server';
 
 // Can be imported from a shared config
-export const locales = ['en', 'en-NG', 'en-KE'] as const;
+export const locales = ['en', 'en-NG', 'en-KE', 'ar', 'ru', 'pl'] as const;
 export const defaultLocale = 'en';
 
  // @ts-ignore

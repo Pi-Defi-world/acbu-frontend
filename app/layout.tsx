@@ -72,7 +72,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   userScalable: true,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: light)', color: '#433875' },
     { media: '(prefers-color-scheme: dark)', color: '#1a0a2e' },
   ],
 }
@@ -89,6 +89,7 @@ export default async function RootLayout({
   return (
     <html lang={lang} dir="ltr" suppressHydrationWarning>
       <head>
+        <link rel="preload" href="/placeholder-logo.svg" as="image" type="image/svg+xml" />
         {/*
           Print stylesheet is deferred until the browser enters print mode.
           media="print" prevents the browser from downloading and parsing

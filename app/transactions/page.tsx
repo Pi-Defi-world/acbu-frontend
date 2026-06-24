@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useDeferredValue } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
@@ -23,6 +23,15 @@ export default function TransactionsPage() {
   const [items, setItems] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
+  const filtered = deferredQuery
+    ? items.filter((t) =>
+        t.type.includes(deferredQuery.toLowerCase()) ||
+        t.status.includes(deferredQuery.toLowerCase()) ||
+        t.transaction_id.toLowerCase().includes(deferredQuery.toLowerCase())
+      )
+    : items;
 
   useScrollRestoration('/transactions', !loading);
 
@@ -50,17 +59,26 @@ export default function TransactionsPage() {
       </div>
       <PageContainer>
         {error && <p className="text-destructive text-sm mb-3">{error}</p>}
+        {!loading && items.length > 0 && (
+          <input
+            type="search"
+            placeholder="Filter by type, status, or ID…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full mb-3 px-3 py-2 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        )}
         {loading ? (
           <SkeletonList count={5} />
-        ) : items.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <EmptyState
             icon={<Clock className="w-10 h-10" />}
-            title="No transactions yet"
-            description="Your transaction history will appear here once you make your first transfer, mint, or burn."
+            title={query ? 'No matching transactions' : 'No transactions yet'}
+            description={query ? 'Try a different search term.' : 'Your transaction history will appear here once you make your first transfer, mint, or burn.'}
           />
         ) : (
           <div className="space-y-2">
-            {items.map((t) => (
+            {filtered.map((t) => (
               <Link key={t.transaction_id} href={`/transactions/${t.transaction_id}`} className="block">
                 <Card className="border-border p-4 flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
