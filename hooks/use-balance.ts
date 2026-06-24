@@ -10,6 +10,12 @@ interface UseBalanceReturn {
   balanceSource?: string;
   loading: boolean;
   error: string;
+  /**
+   * Triggers a re-fetch of the balance.
+   * `refetch` is preferred in UI; `refresh` kept for backwards-compat.
+   */
+  refetch: () => void;
+  /** @deprecated Prefer `refetch()` */
   refresh: () => void;
 }
 
@@ -25,7 +31,8 @@ export function useBalance(): UseBalanceReturn {
   const [error, setError] = useState('');
   const [tick, setTick] = useState(0);
 
-  const refresh = useCallback(() => setTick((t) => t + 1), []);
+  const refetch = useCallback(() => setTick((t) => t + 1), []);
+  const refresh = refetch;
 
   // Auto-refresh balance every 30 seconds to catch external transactions.
   // No stale closure risk: `interval` is captured in the same effect scope, so
@@ -33,23 +40,23 @@ export function useBalance(): UseBalanceReturn {
   // (useCallback with no deps) because setTick uses a functional updater.
   useEffect(() => {
     const interval = setInterval(() => {
-      refresh();
+      refetch();
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [refresh]);
+  }, [refetch]);
 
   // Refresh balance when tab/window regains focus
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        refresh();
+        refetch();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [refresh]);
+  }, [refetch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,5 +87,5 @@ export function useBalance(): UseBalanceReturn {
     };
   }, [opts.token, tick]);
 
-  return { balance, balanceSource, loading, error, refresh };
+  return { balance, balanceSource, loading, error, refetch, refresh };
 }

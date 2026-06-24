@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Wallet | ACBU',
+  description: 'Manage your ACBU wallet, view your Stellar address, and configure wallet connections.',
+};
+
 import React, { useEffect, useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
@@ -7,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
+import { useRouter } from "next/navigation";
 import * as userApi from "@/lib/api/user";
 import { storeWalletSecret } from "@/lib/wallet-storage";
 import { getPasscode } from "@/lib/passcode-manager";
@@ -15,11 +23,14 @@ import { Keypair } from "@stellar/stellar-sdk";
 import { useApiOpts, useApiError } from "@/hooks/use-api";
 
 export default function WalletPage() {
-  const { userId, stellarAddress, refreshStellarAddress } = useAuth();
+  const { userId, stellarAddress, refreshStellarAddress, logout } = useAuth();
   const opts = useApiOpts();
+  const router = useRouter();
   const kit = useStellarWalletsKit();
   const [passphrase, setPassphrase] = useState("");
-  const { error, clearError, handleError, setError } = useApiError();
+  const { uiError, setApiError: handleError, clearError } = useApiError();
+  const error = uiError?.message ?? "";
+  const setError = (msg: string) => handleError(new Error(msg));
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 

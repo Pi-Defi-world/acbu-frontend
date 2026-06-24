@@ -8,7 +8,7 @@ export default function NotFound() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-6 text-center">
       <Image
         src="/placeholder-logo.svg"
-        alt="ACBU"
+        alt="ACBU logo"
         width={120}
         height={27}
         priority

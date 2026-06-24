@@ -19,7 +19,7 @@ jobs:
           version: 10
 
       - name: Set up Node.js
-        uses: actions/node-js@v4
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
@@ -32,6 +32,9 @@ jobs:
 
       - name: Run lint
         run: pnpm lint
+
+      - name: Run build (F-001: ensures TypeScript errors fail CI)
+        run: pnpm build
 
       - name: Run component tests
         run: pnpm test

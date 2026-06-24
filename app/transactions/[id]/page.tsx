@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Transaction Details | ACBU',
+  description: 'View detailed information about a specific ACBU transaction including status, amount, and timestamps.',
+};
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
@@ -11,10 +18,10 @@ import { useParams } from "next/navigation";
 import { useApiOpts } from "@/hooks/use-api";
 import * as transactionsApi from "@/lib/api/transactions";
 import type { TransactionDetail } from "@/types/api";
-import { formatAmount } from "@/lib/utils";
+import { formatAmount, parseUtcDate } from "@/lib/utils";
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
+  return parseUtcDate(iso).toLocaleString(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
   });
@@ -27,7 +34,6 @@ export default function TransactionDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const opts = useApiOpts();
-  const { error, handleError } = useApiError();
   const [data, setData] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

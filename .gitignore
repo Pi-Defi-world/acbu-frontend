@@ -26,9 +26,15 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+<<<<<<< HEAD
+.pnpm-store/
+.history/*
+.env
+=======
 package-lock.json
 pnpm-lock.yaml
 
 # prevent documentation files from being accidentally served as static assets
 /public/**/*.md
 
+>>>>>>> origin/dev

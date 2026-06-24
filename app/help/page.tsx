@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Help & Support | ACBU',
+  description: 'Get help with ACBU. Browse FAQs, contact support, and find answers to common questions about using the platform.',
+};
+
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,6 +79,12 @@ const FAQ_ITEMS = [
   },
 ];
 
+type SupportSubmissionResponse = {
+  ticketId?: string;
+  status?: string;
+  error?: string;
+};
+
 export default function HelpPage() {
   const [formData, setFormData] = useState({
     name: "",
@@ -81,19 +94,50 @@ export default function HelpPage() {
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [ticketId, setTicketId] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
+    setSubmitted(false);
+    setTicketId("");
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch("/api/support", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          page: "/help",
+        }),
+      });
 
-    setSubmitted(true);
-    setLoading(false);
-    setFormData({ name: "", email: "", subject: "", message: "" });
+      const data = (await response.json()) as SupportSubmissionResponse;
 
-    setTimeout(() => setSubmitted(false), 5000);
+      if (!response.ok) {
+        throw new Error(
+          data.error ?? "We could not send your message right now.",
+        );
+      }
+
+      setTicketId(data.ticketId ?? "");
+      setSubmitted(true);
+      setFormData({ name: "", email: "", subject: "", message: "" });
+
+      setTimeout(() => setSubmitted(false), 5000);
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "We could not send your message right now.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -139,7 +183,11 @@ export default function HelpPage() {
           </div>
 
           <Accordion type="single" collapsible className="w-full">
+<<<<<<< HEAD
+            {FAQ_ITEMS.map((item, index) => (
+=======
             {FAQ_ITEMS.map((item) => (
+>>>>>>> origin/dev
               <AccordionItem key={item.question} value={item.question}>
                 <AccordionTrigger className="text-left">
                   {item.question}
@@ -227,8 +275,22 @@ export default function HelpPage() {
                   Message sent successfully!
                 </p>
                 <p className="text-sm text-green-600/80">
-                  We'll get back to you within 24 hours.
+                  {ticketId
+                    ? `Ticket ${ticketId} has been queued for support.`
+                    : "Your request has been queued for support."}
                 </p>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-6 p-4 rounded-lg border border-red-500/30 bg-red-500/10 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-700">
+                  We could not send your message.
+                </p>
+                <p className="text-sm text-red-700/80">{error}</p>
               </div>
             </div>
           )}

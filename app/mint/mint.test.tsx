@@ -64,6 +64,12 @@ vi.mock('@/components/ui/alert-dialog', () => ({
   AlertDialogCancel: ({ children, onClick }: { children: React.ReactNode, onClick: () => void }) => <button onClick={onClick}>{children}</button>,
 }))
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useParams: () => ({}),
+  usePathname: () => '/',
+}))
+
 vi.mock('next/link', () => ({
   default: ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>
@@ -83,7 +89,6 @@ describe('MintPage', () => {
       logout: vi.fn(),
       setAuth: vi.fn(),
       refreshStellarAddress: vi.fn(),
-      apiKey: 'key',
     })
 
     vi.mocked(useBalanceHook.useBalance).mockReturnValue({
@@ -95,11 +100,10 @@ describe('MintPage', () => {
     })
 
     vi.mocked(useApiHook.useApiOpts).mockReturnValue({
-      token: 'test-token',
     })
 
     vi.mocked(ratesApi.getRates).mockResolvedValue({ acbu_usd: '1.0' })
-    vi.mocked(fiatApi.getFiatAccounts).mockResolvedValue({ accounts: [{ id: '1', currency: 'USD', bank_name: 'Test Bank' }] })
+    vi.mocked(fiatApi.getFiatAccounts).mockResolvedValue({ accounts: [{ id: 'acc1', currency: 'NGN', bank_name: 'Test Bank', balance: '0', account_number: '0000000000', account_name: 'Test', ledger_entries: [] }] })
   })
 
   it('renders the mint page', async () => {
@@ -134,6 +138,6 @@ describe('MintPage', () => {
     const availableTexts = screen.getAllByText(/100/)
     expect(availableTexts.length).toBeGreaterThan(0)
     expect(screen.getByText(/Available: ACBU/)).toBeInTheDocument()
-    expect(screen.getByText('Burn & Redeem')).not.toBeDisabled()
+    expect(screen.getByText('Continue to Burn & Redeem')).not.toBeDisabled()
   })
 })

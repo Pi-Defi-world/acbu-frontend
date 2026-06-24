@@ -81,8 +81,11 @@ async function submitAndWaitSuccess(params: {
   timeoutMs?: number;
 }): Promise<{ txHash: string }> {
   const sendRes = await params.rpcServer.sendTransaction(params.tx);
-  if (sendRes.status === "ERROR" || sendRes.errorResultXdr) {
-    throw new Error(formatSorobanError(sendRes.errorResultXdr || "unknown"));
+  if (sendRes.status === "ERROR" || sendRes.errorResult) {
+    const errXdr = sendRes.errorResult
+      ? (sendRes.errorResult as unknown as { toXDR: (fmt: string) => string }).toXDR("base64")
+      : "unknown";
+    throw new Error(formatSorobanError(errXdr));
   }
   const txHash = sendRes.hash;
   const timeoutMs = params.timeoutMs ?? 120000;
@@ -91,7 +94,7 @@ async function submitAndWaitSuccess(params: {
     const status = await params.rpcServer.getTransaction(txHash);
     if (status.status === "SUCCESS") return { txHash };
     if (status.status === "FAILED") {
-      throw new Error(formatSorobanError(status.resultXdr));
+      throw new Error(formatSorobanError(String(status.resultXdr)));
     }
     await new Promise((r) => setTimeout(r, 1500));
   }
@@ -137,10 +140,13 @@ export async function submitBurnRedeemSingleClient(params: {
       }),
     ),
   });
-
   const rpcServer = new rpc.Server(rpcUrl);
+  // Fetch current network base fee and apply a small multiplier to reduce
+  // chance of a transaction being delayed due to low fee.
+  const baseFee = await server.fetchBaseFee();
+  const fee = String(Math.max(100, Math.ceil(baseFee * 2)));
   const tx = new TransactionBuilder(sourceAccount, {
-    fee: "100",
+    fee,
     networkPassphrase,
   })
     .addOperation(invokeOp)
