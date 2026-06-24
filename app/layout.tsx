@@ -27,6 +27,20 @@ const apiUrl =
     ? process.env.NEXT_PUBLIC_API_URL?.trim()
     : ''
 
+
+function getApiOrigin(): string | null {
+  const rawUrl = apiBaseUrl || apiUrl
+  if (!rawUrl) return null
+
+  try {
+    return new URL(rawUrl).origin
+  } catch {
+    return null
+  }
+}
+
+const apiOrigin = getApiOrigin()
+
 if (
   typeof process !== 'undefined' &&
   process.env.NODE_ENV === 'development' &&
@@ -90,6 +104,12 @@ export default async function RootLayout({
     <html lang={lang} dir="ltr" suppressHydrationWarning>
       <head>
         <link rel="preload" href="/placeholder-logo.svg" as="image" type="image/svg+xml" />
+        {apiOrigin && (
+          <>
+            <link rel="dns-prefetch" href={apiOrigin} />
+            <link rel="preconnect" href={apiOrigin} crossOrigin="anonymous" />
+          </>
+        )}
         {/*
           Print stylesheet is deferred until the browser enters print mode.
           media="print" prevents the browser from downloading and parsing

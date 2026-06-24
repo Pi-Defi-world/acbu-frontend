@@ -4,7 +4,13 @@
  */
 export async function copyToClipboard(text: string): Promise<void> {
   // 1. Try modern Clipboard API if available (requires secure context)
-  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+  if (
+    typeof window !== 'undefined' &&
+    window.isSecureContext &&
+    typeof navigator !== 'undefined' &&
+    navigator.clipboard &&
+    navigator.clipboard.writeText
+  ) {
     try {
       await navigator.clipboard.writeText(text);
       return;
