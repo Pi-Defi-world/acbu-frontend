@@ -21,14 +21,14 @@ Example scenario:
 ```typescript
 // next-env.d.ts  ← DO NOT EDIT
 declare const __COMMIT__: string;  // ← added by a developer
-```
+```text
 
 After the next `pnpm dev` or `pnpm build`, the file is regenerated. The declaration is
 gone. TypeScript then fails with:
 
-```
+```text
 TS2304: Cannot find name '__COMMIT__'
-```
+```text
 
 The failure can appear minutes or hours after the edit, and the developer may not connect
 the build step to the disappearing declaration. This is a silent footgun.
@@ -37,9 +37,9 @@ the build step to the disappearing declaration. This is a silent footgun.
 
 All manual ambient type declarations belong in:
 
-```
+```text
 types/custom.d.ts
-```
+```text
 
 This file lives in the `types/` directory at the project root. Next.js never touches this
 directory, so declarations here are permanent and version-controlled correctly. The file is
@@ -57,7 +57,7 @@ declare module "*.css" {
   const styles: { [className: string]: string };
   export default styles;
 }
-```
+```text
 
 CSS module class names resolve to `string`, not `any`. This means TypeScript will catch
 typos in class names when you use `styles.nonExistentClass` — it will be typed as `string`
@@ -71,7 +71,7 @@ declare module "*.svg" {
   const ReactComponent: React.FunctionComponent<React.SVGAttributes<SVGElement>>;
   export default ReactComponent;
 }
-```
+```text
 
 SVG files imported via `@svgr/webpack` or `next-svgr` resolve as a typed React functional
 component. This gives you full prop-type checking for SVG attributes (`width`, `height`,
@@ -135,7 +135,7 @@ The resulting `include` array is:
   ".next/types/**/*.ts",
   ".next/dev/types/**/*.ts"
 ]
-```
+```text
 
 No `compilerOptions` were changed.
 
@@ -145,13 +145,13 @@ Run the bug condition test suite:
 
 ```bash
 pnpm test
-```
+```text
 
 Or run just the bug condition file directly:
 
 ```bash
 pnpm vitest run __tests__/next-env-fix.bug-condition.test.ts
-```
+```text
 
 All five assertions should pass:
 
@@ -165,6 +165,6 @@ To confirm no TypeScript regressions were introduced:
 
 ```bash
 pnpm tsc --noEmit
-```
+```text
 
 This should exit with code 0.
