@@ -2,6 +2,7 @@ import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
+import { NavigationGuardProvider } from '@/contexts/navigation-guard-context'
 import { ErrorBoundary } from '@/components/error-boundary'
 import '../globals.css'
 import { AuthGuard } from '@/components/layout/auth-guard';
@@ -55,11 +56,13 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           <ErrorBoundary>
             <AuthProvider>
-              <AuthGuard>
-                <AppLayout>{children}</AppLayout>
-              </AuthGuard>
-              <WalletSetupModal />
-              <Analytics />
+              <NavigationGuardProvider>
+                <AuthGuard>
+                  <AppLayout>{children}</AppLayout>
+                </AuthGuard>
+                <WalletSetupModal />
+                <Analytics />
+              </NavigationGuardProvider>
             </AuthProvider>
           </ErrorBoundary>
         </NextIntlClientProvider>

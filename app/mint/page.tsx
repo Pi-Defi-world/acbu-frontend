@@ -37,6 +37,7 @@ import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { useI18n } from '@/contexts/i18n-context';
+import { useNavigationGuard } from '@/contexts/navigation-guard-context';
 
 function formatRate(rate: number | undefined): string {
   if (rate == null || !Number.isFinite(rate)) return '—';
@@ -83,6 +84,17 @@ export default function MintPage() {
   const [burnAmount, setBurnAmount] = useState('');
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
+  const { setHasUnsavedChanges } = useNavigationGuard();
+
+  // Track unsaved changes
+  const hasUnsavedChanges = useMemo(() => {
+    return (step === 'input' && (fiatAmount || burnAmount)) || step === 'confirm';
+  }, [step, fiatAmount, burnAmount]);
+
+  useEffect(() => {
+    setHasUnsavedChanges(hasUnsavedChanges);
+    return () => setHasUnsavedChanges(false);
+  }, [hasUnsavedChanges, setHasUnsavedChanges]);
   const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [fiatAccountsLoading, setFiatAccountsLoading] = useState(true);
   const [selectedFiatCurrency, setSelectedFiatCurrency] = useState('');
