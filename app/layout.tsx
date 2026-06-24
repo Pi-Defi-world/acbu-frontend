@@ -89,6 +89,7 @@ export default async function RootLayout({
   return (
     <html lang={lang} dir="ltr" suppressHydrationWarning>
       <head>
+        <link rel="preload" href="/placeholder-logo.svg" as="image" type="image/svg+xml" />
         {/*
           Print stylesheet is deferred until the browser enters print mode.
           media="print" prevents the browser from downloading and parsing
