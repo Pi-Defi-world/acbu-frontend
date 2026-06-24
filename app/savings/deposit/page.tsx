@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Deposit to Savings | ACBU',
+  description: 'Deposit ACBU tokens into your savings account to start earning interest on your balance.',
+};
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
@@ -10,6 +17,20 @@ import { ArrowLeft } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
+import { resolveRecipient } from "@/lib/api/recipient";
+import { logger } from "@/lib/logger";
+
+async function resolveUserUri(
+  raw: string,
+  opts: Parameters<typeof resolveRecipient>[1],
+): Promise<string> {
+  try {
+    const resolved = await resolveRecipient(raw, opts);
+    return resolved.pay_uri ?? resolved.alias ?? raw;
+  } catch {
+    return raw;
+  }
+}
 
 export default function SavingsDepositPage() {
     const opts = useApiOpts();
@@ -21,12 +42,18 @@ export default function SavingsDepositPage() {
     const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    userApi.getReceive(opts).then((data) => {
+    let cancelled = false;
+    userApi.getReceive(opts).then(async (data) => {
       const uri = (data.pay_uri ?? data.alias) as string | undefined;
-      if (uri && typeof uri === 'string') setUser(uri);
+      if (!uri || typeof uri !== 'string') return;
+      const resolved = await resolveUserUri(uri, opts);
+      if (!cancelled) setUser(resolved);
     }).catch((e) => {
-      console.error(e instanceof Error ? e.message : 'Failed to load receive address');
+      logger.error(e instanceof Error ? e.message : 'Failed to load receive address');
+    }).finally(() => {
+      if (cancelled) return;
     });
+    return () => { cancelled = true; };
   }, [opts.token]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -53,12 +80,12 @@ export default function SavingsDepositPage() {
 
     return (
         <>
-            <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-                <div className="px-4 py-3 flex items-center gap-3">
+            <div className="page-header">
+                <div className="page-header-row">
                     <Link href="/savings">
                         <ArrowLeft className="w-5 h-5 text-primary" />
                     </Link>
-                    <h1 className="text-lg font-bold text-foreground">
+                    <h1 className="page-title">
                         Deposit
                     </h1>
                 </div>
@@ -75,7 +102,7 @@ export default function SavingsDepositPage() {
                         <div>
                             <label
                                 htmlFor="deposit-account"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Your account
                             </label>
@@ -89,7 +116,7 @@ export default function SavingsDepositPage() {
                         <div>
                             <label
                                 htmlFor="deposit-amount"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Amount
                             </label>
@@ -106,7 +133,7 @@ export default function SavingsDepositPage() {
                         <div>
                             <label
                                 htmlFor="deposit-term"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Term (seconds)
                             </label>

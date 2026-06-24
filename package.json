@@ -4,9 +4,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build",
+    "build": "node scripts/generate-pwa-icons.mjs && next build",
     "dev": "next dev",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "generate:icons": "node scripts/generate-pwa-icons.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:a11y": "playwright test accessibility.spec.ts",
+    "test:a11y:ci": "playwright test accessibility.spec.ts --reporter=github",
+    "test:a11y:report": "playwright show-report",
+    "a11y": "playwright test",
     "start": "next start"
   },
   "dependencies": {
@@ -40,17 +50,20 @@
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
     "@stellar/stellar-sdk": "^15.0.1",
+    "@tanstack/react-virtual": "^3.13.26",
     "@vercel/analytics": "1.3.1",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
+    "dompurify": "3.2.6",
     "embla-carousel-react": "8.5.1",
     "input-otp": "1.4.1",
     "localforage": "^1.10.0",
     "lucide-react": "^0.454.0",
     "next": "16.0.10",
+    "next-intl": "^4.9.1",
     "next-themes": "^0.4.6",
     "react": "19.2.0",
     "react-day-picker": "9.8.0",
@@ -66,19 +79,45 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.2",
     "@eslint/js": "^10.0.1",
+    "@next/bundle-analyzer": "^16.2.6",
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.1.9",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/dompurify": "3.0.5",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.5",
     "eslint": "^10.2.0",
     "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "5.2.0",
     "globals": "^17.5.0",
+    "jsdom": "^29.0.2",
+    "playwright": "^1.59.1",
     "postcss": "^8.5",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
     "typescript": "^5",
-    "typescript-eslint": "^8.58.2"
+    "typescript-eslint": "^8.58.2",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.5"
   },
-  "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b"
+  "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b",
+  "pnpm": {
+    "overrides": {
+      "@stellar/stellar-sdk": "^15.0.1"
+    },
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "eslint-plugin-react>eslint": "^10",
+        "@trezor/connect-plugin-stellar>@stellar/stellar-sdk": "^15.0.1"
+      }
+    }
+  }
 }

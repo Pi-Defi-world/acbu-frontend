@@ -1,27 +1,15 @@
 /**
- * API client: base URL from env, Bearer token from opts.
+ * API client: base URL from env, authentication via httpOnly cookies.
  * All backend responses are JSON; errors throw with message/details.
  * 
  * 401 Handling: When API returns 401 (Unauthorized), a registered callback is invoked
  * to handle stale auth state (e.g., expired httpOnly cookie).
+ * 
+ * Timeout: Requests timeout after NEXT_PUBLIC_API_TIMEOUT ms (default 30000).
+ * If caller provides AbortSignal, it aborts on either timeout or caller's signal.
  */
 
 let authErrorHandler: ((error: ApiError) => void) | null = null;
-let currentToken: string | null = null;
-
-/**
- * Set the global API key to be used for all requests.
- */
-export function setToken(token: string | null): void {
-  currentToken = token;
-}
-
-/**
- * Get the global API key.
- */
-export function getToken(): string | null {
-  return currentToken;
-}
 
 /**
  * Register a callback to be invoked when API returns 401 (Unauthorized).
@@ -34,6 +22,10 @@ export function onAuthError(callback: (error: ApiError) => void): void {
 const BASE = typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL)
   ? (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL)!.replace(/\/$/, '')
   : '';
+
+const DEFAULT_TIMEOUT = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_TIMEOUT
+  ? parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT, 10) || 30000
+  : 30000;
 
 /** Backend often returns `{ error: { message, statusCode } }` (AppError); avoid `[object Object]`. */
 function messageFromErrorBody(
@@ -61,15 +53,29 @@ export function getApiErrorMessage(e: unknown): string {
   return 'Something went wrong';
 }
 
-function getCsrfToken(): string | undefined {
-  if (typeof document === 'undefined') return undefined;
-  const match = document.cookie.match(/(^|;\s*)XSRF-TOKEN=([^;]*)/);
-  return match ? decodeURIComponent(match[2]) : undefined;
+/**
+ * Maps HTTP status codes to user-friendly, actionable messages.
+ * Handles 429 (Rate Limit), 503 (Service Unavailable), and 402 (Payment Required)
+ * with specific guidance. Falls back to the raw error message for all other codes.
+ */
+export function mapApiError(e: unknown): string {
+  const status = (e as ApiError)?.status;
+  switch (status) {
+    case 429:
+      return 'Too many requests — please wait a moment and try again.';
+    case 503:
+      return 'Service temporarily unavailable. Please try again in a few minutes.';
+    case 402:
+      return 'Payment required — your account may need funding or a plan upgrade before proceeding.';
+    default:
+      return getApiErrorMessage(e);
+  }
 }
 
 export interface RequestOptions {
-  token?: string | null;
   signal?: AbortSignal;
+  /** @deprecated Auth is via httpOnly cookies; this field is unused. */
+  token?: string;
 }
 
 export interface ApiError extends Error {
@@ -91,26 +97,33 @@ async function request<T>(
     );
   }
   const url = path.startsWith('http') ? path : `${BASE}${path.startsWith('/') ? path : `/${path}`}`;
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  const csrfToken = getCsrfToken();
-  if (csrfToken) {
-    headers['X-XSRF-TOKEN'] = csrfToken;
-  }
-  
-  const token = opts.token !== undefined ? opts.token : currentToken;
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-    headers['x-api-key'] = token; // Also send as x-api-key for compatibility
+  const headers: Record<string, string> = { 'Accept-Encoding': 'gzip' };
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
   }
 
-  let signal = opts.signal;
-  if (!signal) {
-    const controller = new AbortController();
-    signal = controller.signal;
-    setTimeout(() => controller.abort(), 30000); // 30 second timeout
+  // Create our own AbortController for timeout, independent of caller's signal
+  const controller = new AbortController();
+  const signal = controller.signal;
+  let timedOut = false;
+
+  // If caller provides signal, abort our controller when caller's aborts
+  if (opts.signal) {
+    opts.signal.addEventListener('abort', () => controller.abort(), { once: true });
   }
+
+  // Set timeout
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, DEFAULT_TIMEOUT);
+
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    throw new Error(
+      'You appear to be offline. Please check your internet connection and try again.',
+    );
+  }
+
   let res: Response;
   try {
     res = await fetch(url, {
@@ -121,11 +134,17 @@ async function request<T>(
       credentials: 'include', // Include httpOnly cookies in all requests
     });
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError' && !opts.signal) {
-      throw new Error('Request timed out after 30 seconds', { cause: error });
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      if (timedOut) {
+        throw new Error(`Request timed out after ${DEFAULT_TIMEOUT / 1000} seconds`, { cause: error });
+      }
+      // If not timed out, it was aborted by caller's signal, rethrow
+      throw error;
     }
     throw error;
   }
+  clearTimeout(timeoutId);
   let data: { error?: string | { message?: string }; message?: string; details?: unknown };
   const ct = res.headers.get('content-type');
   if (ct?.includes('application/json')) {
@@ -172,8 +191,4 @@ export function put<T>(path: string, body?: unknown, opts?: RequestOptions): Pro
 
 export function del<T>(path: string, opts?: RequestOptions): Promise<T> {
   return request<T>('DELETE', path, undefined, opts);
-}
-
-export function apiOpts(token: string | null | undefined): RequestOptions {
-  return { token: token || undefined };
 }

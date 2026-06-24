@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Profile | ACBU',
+  description: 'View and edit your ACBU profile information including name, email, and contact details.',
+};
+
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -8,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { KycBadge } from "@/components/ui/kyc-badge";
+import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import { normalizeUsername } from "@/lib/utils";
@@ -77,9 +86,14 @@ export default function ProfilePage() {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState("");
+    const [tick, setTick] = useState(0);
+
+    const refetch = () => setTick((t) => t + 1);
 
     useEffect(() => {
         let cancelled = false;
+        setLoading(true);
+        setError("");
 
         userApi
             .getMe(opts)
@@ -111,7 +125,7 @@ export default function ProfilePage() {
         return () => {
             cancelled = true;
         };
-    }, [opts]);
+    }, [opts, tick]);
 
     const handleChange = (
         field: keyof FormData,
@@ -177,7 +191,7 @@ export default function ProfilePage() {
         return (
             <>
                 <div className="flex items-center gap-3 border-b border-border px-4 pb-6 pt-4">
-                    <Link href="/me">
+                    <Link href="/me" aria-label="Back to profile">
                         <ArrowLeft className="h-5 w-5 text-primary" />
                     </Link>
                     <h1 className="text-xl font-bold text-foreground">
@@ -196,7 +210,7 @@ export default function ProfilePage() {
         return (
             <>
                 <div className="flex items-center gap-3 border-b border-border px-4 pb-6 pt-4">
-                    <Link href="/me">
+                    <Link href="/me" aria-label="Back to profile">
                         <ArrowLeft className="h-5 w-5 text-primary" />
                     </Link>
                     <h1 className="text-xl font-bold text-foreground">
@@ -204,7 +218,7 @@ export default function ProfilePage() {
                     </h1>
                 </div>
                 <PageContainer>
-                    <p className="text-destructive">{error}</p>
+                    <RetryErrorBlock message={error} onRetry={refetch} className="p-4" />
                 </PageContainer>
             </>
         );
@@ -213,7 +227,7 @@ export default function ProfilePage() {
     return (
         <>
             <div className="flex items-center gap-3 border-b border-border px-4 pb-6 pt-4">
-                <Link href="/me">
+                <Link href="/me" aria-label="Back to profile">
                     <ArrowLeft className="h-5 w-5 text-primary hover:text-primary/80" />
                 </Link>
                 <h1 className="text-xl font-bold text-foreground">Profile</h1>
@@ -378,13 +392,11 @@ export default function ProfilePage() {
                                     {user?.phone_verified_at ? "Yes" : "No"}
                                 </span>
                             </div>
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between items-center text-sm">
                                 <span className="text-foreground">
                                     KYC status
                                 </span>
-                                <span className="text-foreground">
-                                    {user?.kyc_status ?? "-"}
-                                </span>
+                                <KycBadge status={user?.kyc_status} />
                             </div>
                         </div>
                     </Card>
