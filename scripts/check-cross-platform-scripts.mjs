@@ -4,7 +4,7 @@ const packageJson = JSON.parse(await readFile(new URL('../package.json', import.
 
 const unixOnlyPatterns = [
   {
-    pattern: /\brm\s+-rf\b/,
+    pattern: /\brm\s+(?:-rf|-fr|-r\s+-f|-f\s+-r)\b/,
     replacement: 'rimraf or a Node.js cleanup script',
   },
   {
