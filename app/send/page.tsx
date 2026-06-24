@@ -1,14 +1,6 @@
 "use client";
 
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Send Money | ACBU',
-  description: 'Send ACBU tokens to other users securely. Transfer money using phone numbers, aliases, or Stellar addresses.',
-};
-
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -73,16 +65,25 @@ function formatDate(iso: string) {
   return d.toLocaleDateString();
 }
 
-function getStatusColor(status: string | undefined) {
+function getStatusColor(status: string): string {
   switch (status) {
     case "completed":
-      return "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800";
+      return "text-green-600";
     case "pending":
-      return "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
-    case "failed":
-      return "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800";
+      return "text-amber-600";
     default:
-      return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700";
+      return "text-gray-600";
+  }
+}
+
+function getStatusBadgeClassName(status: string): string {
+  switch (status) {
+    case "completed":
+      return "border-green-600 text-green-600";
+    case "pending":
+      return "border-amber-600 text-amber-600";
+    default:
+      return "border-gray-600 text-gray-600";
   }
 }
 
@@ -123,16 +124,13 @@ export default function SendPage() {
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
 
-  useScrollRestoration('/send', !loadingTransfers);
-
-  const contactsParentRef = useRef<HTMLDivElement>(null);
-  
-  const virtualizer = useVirtualizer({
-    count: contacts.length,
-    getScrollElement: () => contactsParentRef.current?.parentElement as Element | null,
-    estimateSize: () => 36,
-    overscan: 5,
-  });
+  const virtualizedContacts = useMemo(() => {
+    return contacts.map((c) => (
+      <SelectItem key={c.id} value={c.id}>
+        {c.alias ?? c.pay_uri ?? c.id}
+      </SelectItem>
+    ));
+  }, [contacts]);
 
   const loadTransfers = useCallback(async () => {
     setLoadError("");
@@ -165,18 +163,49 @@ export default function SendPage() {
   useEffect(() => {
     loadTransfers();
     loadContacts();
-  }, [loadTransfers, loadContacts]);
+  }, [loadTransfers, loadContacts, opts.token]);
+
+  const handleShowSendDialog = useCallback(() => setShowSendDialog(true), []);
+  const handleSendDialogChange = useCallback((open: boolean) => setShowSendDialog(open), []);
+  const handleConfirmDialogChange = useCallback((open: boolean) => {
+    if (!open && !sending) {
+      setConfirmedAmount("");
+    }
+    setShowConfirmDialog(open);
+  }, [sending]);
+  const handleSuccessDialogChange = useCallback((open: boolean) => setShowSuccessDialog(open), []);
+  const handleTabChange = useCallback((value: string) => setActiveTab(value), []);
+  const handleUseContactChange = useCallback((v: string) => setUseContact(v === "contact"), []);
+  const handleContactSelect = useCallback((id: string) => {
+    const c = contacts.find((x: ContactItem) => x.id === id);
+    if (c) setSelectedContact(c);
+  }, [contacts]);
+  const handleCustomRecipientChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setCustomRecipient(e.target.value), []);
+  const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    if (v === "" || /^\d*\.?\d*$/.test(v)) {
+      setAmount(v);
+    }
+  }, []);
+  const debouncedAmount = useDebounce(amount, 300);
+  const handleNoteChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNote(e.target.value), []);
+  const handleSendDialogClose = useCallback(() => setShowSendDialog(false), []);
+  const handleShowConfirmDialog = useCallback(() => {
+    setConfirmedAmount(amount);
+    setShowConfirmDialog(true);
+  }, [amount]);
 
   const getToValue = useCallback(() =>
     useContact && selectedContact
       ? selectedContact.pay_uri || selectedContact.alias || selectedContact.id
       : customRecipient.trim(),
-  [useContact, selectedContact, customRecipient]);
+    [useContact, selectedContact, customRecipient]
+  );
 
   const handleConfirmTransfer = useCallback(async () => {
     const to = getToValue();
-    if (!amount || parseFloat(amount) <= 0 || !to) return;
-    clearError();
+    if (!confirmedAmount || parseFloat(confirmedAmount) <= 0 || !to) return;
+    setSubmitError("");
     setSending(true);
 
     // Pre-flight session check: validate the session is still active before
@@ -270,35 +299,7 @@ export default function SendPage() {
     } finally {
       setSending(false);
     }
-  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refetchBalance]);
-
-  const handleContactChange = useCallback((id: string) => {
-    const c = contacts.find((x: ContactItem) => x.id === id);
-    if (c) setSelectedContact(c);
-  }, [contacts]);
-
-  const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    if (v === "" || /^\d*\.?\d*$/.test(v)) setAmount(v);
-  }, []);
-
-  const handleNoteChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNote(e.target.value);
-  }, []);
-
-  const handleCustomRecipientChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCustomRecipient(e.target.value);
-  }, []);
-
-  const handleContinue = useCallback(() => {
-    setConfirmedAmount(amount);
-    setShowConfirmDialog(true);
-  }, [amount]);
-
-  const handleConfirmDialogOpenChange = useCallback((open: boolean) => {
-    if (!open && !sending) setConfirmedAmount("");
-    setShowConfirmDialog(open);
-  }, [sending]);
+  }, [confirmedAmount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance]);
 
   const exceedsBalance =
     balance !== null && amount !== "" && parseFloat(amount) > balance;
@@ -363,8 +364,9 @@ export default function SendPage() {
   }, [transfers, loadingTransfers]);
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <header className="page-header">
+    <>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3">
           <h1 className="page-title mb-3">
             {t('send.title')}
@@ -467,16 +469,8 @@ export default function SendPage() {
               )}
             </div>
           </TabsContent>
-        </Tabs>
-        <TabsContent value="history" className="space-y-3 outline-none mt-0">
-          <div>
-            <h3 className="mb-3 text-sm font-semibold text-foreground">
-              {t('send.recentTransfers')}
-            </h3>
-            {transfersList}
-          </div>
-        </TabsContent>
-      </div>
+        </div>
+      </Tabs>
 
       {/* Send Dialog */}
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
@@ -508,35 +502,7 @@ export default function SendPage() {
                       <SelectValue placeholder={t('send.selectContact')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <div
-                        ref={contactsParentRef}
-                        style={{
-                          height: `${virtualizer.getTotalSize()}px`,
-                          width: '100%',
-                          position: 'relative',
-                        }}
-                      >
-                        {virtualizer.getVirtualItems().map((virtualRow) => {
-                          const c = contacts[virtualRow.index];
-                          return (
-                            <div
-                              key={virtualRow.key}
-                              style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: `${virtualRow.size}px`,
-                                transform: `translateY(${virtualRow.start}px)`,
-                              }}
-                            >
-                              <SelectItem value={c.id}>
-                                {c.alias ?? c.pay_uri ?? c.id}
-                              </SelectItem>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      {virtualizedContacts}
                     </SelectContent>
                   </Select>
                   )}
@@ -661,8 +627,19 @@ export default function SendPage() {
             )}
           </div>
           <div className="flex gap-3">
-            <AlertDialogCancel className="flex-1 border-border" disabled={sending}>{t('send.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmTransfer} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={sending || isSubmitDisabled}>{sending ? t('send.sending') : t('send.sendAcbu', { amount })}</AlertDialogAction>
+            <AlertDialogCancel 
+              className="flex-1 border-border" 
+              disabled={sending}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmTransfer} 
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" 
+              disabled={sending || !confirmedAmount}
+            >
+              {sending ? "Sending..." : `Send ACBU ${confirmedAmount}`}
+            </AlertDialogAction>
           </div>
         </AlertDialogContent>
       </AlertDialog>

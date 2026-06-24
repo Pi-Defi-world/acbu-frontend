@@ -9,14 +9,6 @@ import { GlobalErrorHandler } from '@/components/global-error-handler'
 import './globals.css'
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
-import { Toaster } from '@/components/ui/toaster';
-import { ThemeProvider } from '@/components/theme-provider';
-import dynamic from 'next/dynamic';
-
-const OfflineIndicator = dynamic(
-  () => import('@/components/offline-indicator').then((m) => ({ default: m.OfflineIndicator })),
-  { ssr: false },
-)
 
 const apiBaseUrl =
   typeof process !== 'undefined'
@@ -79,62 +71,8 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
-  const headersList = await headers();
-  const nonce = headersList.get('x-nonce') ?? undefined;
-  const lang = "en";
-
-  return (
-    <html lang={lang} dir="ltr" suppressHydrationWarning>
-      <head>
-        <link rel="preload" href="/placeholder-logo.svg" as="image" type="image/svg+xml" />
-        {/*
-          Print stylesheet is deferred until the browser enters print mode.
-          media="print" prevents the browser from downloading and parsing
-          this resource on non-print (screen/mobile) page loads.
-        */}
-        <link rel="stylesheet" href="/print.css" media="print" />
-        <script
-          nonce={nonce}
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const mql = window.matchMedia('(prefers-color-scheme: dark)');
-                  function updateTheme(e) {
-                    document.documentElement.classList.toggle('dark', e.matches);
-                  }
-                  mql.addEventListener('change', updateTheme);
-                } catch (err) {}
-              })();
-            `,
-          }}
-        />
-      </head>
-      <body className={`font-sans antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <GlobalErrorHandler />
-          <OfflineIndicator />
-          <ErrorBoundary level="app">
-            <I18nProvider>
-              <AuthProvider>
-                <AppLayout>{children}</AppLayout>
-                <WalletSetupModal />
-                <Toaster />
-                {/*
-                  F-065 SRI review: the only third-party script injected here is
-                  @vercel/analytics/next, which is bundled at build time (first-party,
-                  no external CDN fetch). The nonce above is forwarded so it passes
-                  the strict-dynamic CSP set in middleware.ts.
-                */}
-                <Analytics nonce={nonce} crossOrigin="anonymous" />
-              </AuthProvider>
-            </I18nProvider>
-          </ErrorBoundary>
-        </ThemeProvider>
-      </body>
-    </html>
-  )
+}: {
+  children: React.ReactNode;
+}) {
+  return <AuthProvider>{children}</AuthProvider>;
 }

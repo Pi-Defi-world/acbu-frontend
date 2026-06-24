@@ -204,9 +204,9 @@ export default function BurnPage() {
       if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
 
       const recipientAccount: BurnRecipientAccount = {
-        account_number: data.accountNumber.trim(),
-        bank_code: data.bankCode.trim(),
-        account_name: data.accountName.trim(),
+        account_number: values.accountNumber.trim(),
+        bank_code: values.bankCode.trim(),
+        account_name: values.accountName.trim(),
         type: "bank",
       };
 
@@ -222,8 +222,8 @@ export default function BurnPage() {
         }
         const submit = await submitBurnRedeemSingleClient({
           userAddress: stellarAddress,
-          amountAcbu: data.acbuAmount,
-          currency: data.currency,
+          amountAcbu: values.acbuAmount,
+          currency: values.currency,
           userSecret: secret,
         });
         burnTxHash = submit.transactionHash;
@@ -290,16 +290,16 @@ export default function BurnPage() {
         }
         const submit = await submitBurnRedeemSingleClient({
           userAddress: stellarAddress,
-          amountAcbu: data.acbuAmount,
-          currency: data.currency,
+          amountAcbu: values.acbuAmount,
+          currency: values.currency,
           external: { kit, address },
         });
         burnTxHash = submit.transactionHash;
       }
 
       const res = await burnApi.burnAcbu(
-        data.acbuAmount,
-        data.currency,
+        values.acbuAmount,
+        values.currency,
         recipientAccount,
         opts,
         burnTxHash,

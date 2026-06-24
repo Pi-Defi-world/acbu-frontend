@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     (userId: string, stellarAddress: string | null = null) => {
-      setAuth(userId, stellarAddress);
+      setAuth(null, userId, stellarAddress);
     },
     [setAuth]
   );
