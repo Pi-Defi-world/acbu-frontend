@@ -24,12 +24,9 @@ import {
 import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
-<<<<<<< HEAD:app/[locale]/page.tsx
-=======
 import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { Button } from '@/components/ui/button';
 import { RetryErrorBlock } from '@/components/ui/retry-error-block';
->>>>>>> upstream/dev:app/page.tsx
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
 import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
@@ -212,54 +209,35 @@ export default function Home() {
             >
               {showBalance ? <Eye className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" /> : <EyeOff className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" />}
             </button>
-<<<<<<< HEAD:app/[locale]/page.tsx
-            <div className="flex items-start gap-3 pr-12 mb-1">
-              <div className="flex-1 min-w-0 border-r border-border/60 pr-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                  {t('acbu')}
-                </p>
-                <p className="text-[10px] text-muted-foreground mb-1">{t('wallet_balance')}</p>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
-=======
             <div className="flex items-start gap-3 pr-12 mb-1 md:gap-6 md:pr-16">
               <div className="flex-1 min-w-0 border-r border-border/60 pr-3 md:pr-6">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
                   ACBU
                 </p>
                 <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">Wallet balance</p>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums md:text-4xl">
->>>>>>> upstream/dev:app/page.tsx
+                <div
+                  aria-live="polite"
+                  aria-atomic="true"
+                  role="region"
+                  aria-label="Your ACBU wallet balance"
+                  className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums md:text-4xl"
+                >
                   {!showBalance
                     ? '••••••'
                     : balanceLoading
                       ? '...'
                       : `ACBU ${balance != null ? format.number(balance, { minimumFractionDigits: 0, maximumFractionDigits: 7 }) : '—'}`}
-                </h2>
+                </div>
                 {!showBalance ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">••••••</p>
+                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base">••••••</p>
                 ) : balanceLoading || ratesLoading ? (
-<<<<<<< HEAD:app/[locale]/page.tsx
-                  <p className="text-sm text-muted-foreground mt-1.5">{t('approx_usd')} ...</p>
-                ) : balance == null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5">{t('approx_usd')} —</p>
-                ) : acbuUsd != null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
-                    {t('approx_usd')} {format.number(acbuUsd, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground mt-1.5">{t('approx_usd')} —</p>
-                )}
-              </div>
-              <div className="flex-1 min-w-0 text-right">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                  {t('fiat')}
-                </p>
-                <p className="text-[10px] text-muted-foreground mb-1">{t('simulated_usd_equivalent')}</p>
-                <div className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums space-y-1">
-=======
                   <p className="text-sm text-muted-foreground mt-1.5 md:text-base"><BalanceSkeleton variant="compact" /></p>
                 ) : acbuUsd != null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">
+                  <p
+                    aria-live="polite"
+                    aria-atomic="true"
+                    className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base"
+                  >
                     ≈ USD {formatAmount(acbuUsd, 2)}
                   </p>
                 ) : (
@@ -271,8 +249,13 @@ export default function Home() {
                   Fiat
                 </p>
                 <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">Simulated · USD equivalent</p>
-                <div className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums space-y-1 md:text-4xl">
->>>>>>> upstream/dev:app/page.tsx
+                <div
+                  aria-live="polite"
+                  aria-atomic="true"
+                  role="region"
+                  aria-label="Simulated fiat account USD equivalent"
+                  className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums space-y-1 md:text-4xl"
+                >
                   {!showBalance ? (
                     <p>••••••</p>
                   ) : fiatLoading || ratesLoading ? (
@@ -280,23 +263,18 @@ export default function Home() {
                   ) : (
                     <>
                       <p>
-                        {t('approx_usd')}{' '}
+                        ≈ USD{' '}
                         {format.number(fiatUsdInfo?.usd ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                       </p>
                       {fiatUsdInfo?.partial && fiatAccounts.length > 0 && (
-<<<<<<< HEAD:app/[locale]/page.tsx
-                        <p className="text-[10px] font-normal text-muted-foreground">
-                          {t('some_currencies_missing_rate')}
-=======
                         <p className="text-[10px] font-normal text-muted-foreground md:text-xs">
                           Some currencies missing a rate
->>>>>>> upstream/dev:app/page.tsx
                         </p>
                       )}
                       {!fiatAccounts.length && (
                         <p className="text-sm font-normal text-muted-foreground mt-1 md:text-base">
                           <Link href="/fiat" className="text-primary font-medium underline-offset-2 hover:underline">
-                            {t('add_demo_funds')}
+                            Add demo funds
                           </Link>
                         </p>
                       )}

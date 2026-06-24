@@ -572,7 +572,13 @@ export default function SendPage() {
                 />
               </div>
               {exceedsBalance && <p className="text-xs text-destructive">{t('send.insufficientBalance')}</p>}
-              <p className="text-xs text-muted-foreground">
+              <p
+                aria-live="polite"
+                aria-atomic="true"
+                className="text-xs text-muted-foreground"
+                role="region"
+                aria-label="Available ACBU balance"
+              >
                 {t('send.available')}: ACBU {balanceLoading ? <span className="inline-block h-3 w-16 bg-accent animate-pulse rounded align-middle" /> : formatAmount(balance)}
               </p>
               <RetryErrorBlock
