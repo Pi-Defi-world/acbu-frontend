@@ -1,13 +1,6 @@
 "use client";
 
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Mint & Burn | ACBU',
-  description: 'Create new ACBU tokens by minting with fiat currency or burn ACBU tokens to redeem fiat.',
-};
-
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
@@ -129,6 +122,28 @@ export default function MintPage() {
       .catch((e) => logger.error('Failed to get fiat accounts', e))
       .finally(() => setFiatAccountsLoading(false));
   }, [opts.token]);
+
+    useEffect(() => {
+        if (activeTab !== "rates") return;
+        setRatesLoading(true);
+        ratesApi
+            .getRates(opts)
+            .then(setRates)
+            .catch(() => setRates(null))
+            .finally(() => setRatesLoading(false));
+    }, [activeTab, opts.token]);
+
+    const handleFiatCurrencyChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedFiatCurrency(e.target.value);
+    }, []);
+
+    const handleFiatAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setFiatAmount(e.target.value);
+    }, []);
+
+    const handleBurnAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setBurnAmount(e.target.value);
+    }, []);
 
     const handleMintConfirm = () => {
         clearMintError();
@@ -434,7 +449,7 @@ export default function MintPage() {
                                 <select
                                     id="fiat-account"
                                     value={selectedFiatCurrency}
-                                    onChange={(e) => setSelectedFiatCurrency(e.target.value)}
+                                    onChange={handleFiatCurrencyChange}
                                     className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                                 >
                                     {fiatAccounts.length === 0 ? (
@@ -468,9 +483,7 @@ export default function MintPage() {
                                         min="0"
                                         step="any"
                                         value={fiatAmount}
-                                        onChange={(e) =>
-                                            setFiatAmount(e.target.value)
-                                        }
+                                        onChange={handleFiatAmountChange}
                                         className="border-border text-lg font-semibold"
                                     />
                                 </div>
@@ -547,7 +560,7 @@ export default function MintPage() {
                                 <select
                                     id="burn-fiat-account"
                                     value={selectedFiatCurrency}
-                                    onChange={(e) => setSelectedFiatCurrency(e.target.value)}
+                                    onChange={handleFiatCurrencyChange}
                                     className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                                 >
                                     {fiatAccounts.length === 0 ? (
@@ -579,9 +592,7 @@ export default function MintPage() {
                                         inputMode="decimal"
                                         placeholder="0.00"
                                         value={burnAmount}
-                                        onChange={(e) =>
-                                            setBurnAmount(e.target.value)
-                                        }
+                                        onChange={handleBurnAmountChange}
                                         className="border-border text-lg font-semibold"
                                     />
                                 </div>

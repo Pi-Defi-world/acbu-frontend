@@ -273,6 +273,34 @@ export default function SendPage() {
     }
   }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refetchBalance]);
 
+  const handleContactChange = useCallback((id: string) => {
+    const c = contacts.find((x: ContactItem) => x.id === id);
+    if (c) setSelectedContact(c);
+  }, [contacts]);
+
+  const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    if (v === "" || /^\d*\.?\d*$/.test(v)) setAmount(v);
+  }, []);
+
+  const handleNoteChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNote(e.target.value);
+  }, []);
+
+  const handleCustomRecipientChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCustomRecipient(e.target.value);
+  }, []);
+
+  const handleContinue = useCallback(() => {
+    setConfirmedAmount(amount);
+    setShowConfirmDialog(true);
+  }, [amount]);
+
+  const handleConfirmDialogOpenChange = useCallback((open: boolean) => {
+    if (!open && !sending) setConfirmedAmount("");
+    setShowConfirmDialog(open);
+  }, [sending]);
+
   const exceedsBalance =
     balance !== null && amount !== "" && parseFloat(amount) > balance;
 
@@ -417,10 +445,7 @@ export default function SendPage() {
                   ) : (
                   <Select
                     value={selectedContact?.id || ""}
-                    onValueChange={(id: string) => {
-                      const c = contacts.find((x: ContactItem) => x.id === id);
-                      if (c) setSelectedContact(c);
-                    }}
+                    onValueChange={handleContactChange}
                   >
                     <SelectTrigger className="border-border">
                       <SelectValue placeholder={t('send.selectContact')} />
@@ -463,7 +488,7 @@ export default function SendPage() {
                   <Input
                     placeholder={t('send.walletAddressOrEmail')}
                     value={customRecipient}
-                    onChange={(e) => setCustomRecipient(e.target.value)}
+                  onChange={handleCustomRecipientChange}
                     className="border-border"
                   />
                 </TabsContent>
@@ -482,12 +507,7 @@ export default function SendPage() {
                   placeholder="0.00"
                   min={0}
                   value={amount}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === "" || /^\d*\.?\d*$/.test(v)) {
-                      setAmount(v);
-                    }
-                  }}
+                  onChange={handleAmountChange}
                   className="border-border text-lg font-semibold"
                 />
               </div>
@@ -507,7 +527,7 @@ export default function SendPage() {
               <Input
                 placeholder={t('send.addMessage')}
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
+                onChange={handleNoteChange}
                 className="border-border"
               />
             </div>
@@ -529,11 +549,8 @@ export default function SendPage() {
                 {t('send.cancel')}
               </Button>
               <Button
-                onClick={() => {
-                  setConfirmedAmount(amount);
-                  setShowConfirmDialog(true);
-                }}
-                disabled={!isValid}
+                onClick={handleContinue}
+                disabled={!isFormValid()}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {t('send.continue')}
@@ -544,12 +561,7 @@ export default function SendPage() {
       </Dialog>
 
       {/* Confirm Dialog */}
-      <AlertDialog open={showConfirmDialog} onOpenChange={(open) => {
-        if (!open && !sending) {
-          setConfirmedAmount("");
-        }
-        setShowConfirmDialog(open);
-      }}>
+      <AlertDialog open={showConfirmDialog} onOpenChange={handleConfirmDialogOpenChange}>
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>{t('send.confirmTransfer')}</AlertDialogTitle>
