@@ -939,9 +939,9 @@ export default function CurrencyPage() {
           <div className="py-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Transaction ID:</span>
-              <span className="font-mono text-foreground truncate max-w-[60%]">
-                {lastTxId}
-              </span>
+              <span className="font-mono text-foreground truncate max-w-[60%]" title={lastTxId}>
+                    {lastTxId}
+                  </span>
             </div>
             {lastResponse && "fee" in lastResponse && lastResponse.fee && (
               <div className="flex justify-between">

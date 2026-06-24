@@ -189,7 +189,7 @@ export default function SecurityPage() {
               </div>
               <div className="flex-1 min-w-0 space-y-3">
                 <div>
-                  <h2 className="text-base font-medium text-destructive truncate">Danger Zone</h2>
+                  <h2 className="text-base font-medium text-destructive truncate" title="Danger Zone">Danger Zone</h2>
                   <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data. This action cannot be undone.</p>
                 </div>
                 <Button variant="destructive" className="w-full sm:w-auto">
