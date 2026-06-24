@@ -37,7 +37,7 @@ export function OnboardingVideo({ src, poster, title }: OnboardingVideoProps) {
     // Render a safe fallback placeholder on the server
     return (
       <div className="relative w-full aspect-video overflow-hidden rounded-lg border border-border bg-muted flex items-center justify-center">
-        {poster && <img src={poster} alt={title || "Video poster"} className="object-cover w-full h-full opacity-50" />}
+        {poster && <img src={poster} alt={title || "Video poster"} fetchPriority="high" className="object-cover w-full h-full opacity-50" />}
       </div>
     );
   }
