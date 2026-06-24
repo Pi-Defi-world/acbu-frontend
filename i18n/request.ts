@@ -1,16 +1,20 @@
 import { notFound } from 'next/navigation';
 import { getRequestConfig } from 'next-intl/server';
+import { locales, defaultLocale, type Locale } from './locales';
 
-// Can be imported from a shared config
-export const locales = ['en', 'en-NG', 'en-KE', 'ar', 'ru', 'pl'] as const;
-export const defaultLocale = 'en';
+export { locales, defaultLocale };
 
- // @ts-ignore
+function isLocale(locale: string): locale is Locale {
+  return locales.includes(locale as Locale);
+}
+
 export default getRequestConfig(async ({ locale }) => {
+  const requestedLocale = locale ?? defaultLocale;
+
   // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(locale as any)) notFound();
+  if (!isLocale(requestedLocale)) notFound();
 
   return {
-    messages: (await import(`./messages/${locale}.json`)).default
+    messages: (await import(`./messages/${requestedLocale}.json`)).default,
   };
 });
