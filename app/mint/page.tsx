@@ -27,12 +27,9 @@ import { SkeletonList } from '@/components/ui/skeleton-list';
 import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
-<<<<<<< HEAD
-=======
 import { useApiError } from '@/hooks/use-api-error';
 import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import { RetryErrorBlock } from '@/components/ui/retry-error-block';
->>>>>>> upstream/dev
 import { useBalance } from '@/hooks/use-balance';
 import { useAuth } from '@/contexts/auth-context';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
@@ -88,25 +85,19 @@ export default function MintPage() {
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
-<<<<<<< HEAD
   const [burnError, setBurnError] = useState('');
   const [rates, setRates] = useState<RatesResponse | null>(null);
   const [ratesLoading, setRatesLoading] = useState(false);
   const [mintError, setMintError] = useState('');
-=======
->>>>>>> upstream/dev
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
   const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [fiatAccountsLoading, setFiatAccountsLoading] = useState(true);
   const [selectedFiatCurrency, setSelectedFiatCurrency] = useState('');
   const [fiatAmount, setFiatAmount] = useState('');
-<<<<<<< HEAD
   const debouncedFiatAmount = useDebounce(fiatAmount, 300);
   const debouncedBurnAmount = useDebounce(burnAmount, 300);
   const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
-=======
->>>>>>> upstream/dev
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
 
   const {
@@ -376,6 +367,7 @@ export default function MintPage() {
                                     id="fiat-account"
                                     value={selectedFiatCurrency}
                                     onChange={(e) => setSelectedFiatCurrency(e.target.value)}
+                                    autoComplete="transaction-currency"
                                     className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                                 >
                                     {fiatAccounts.length === 0 ? (
@@ -407,6 +399,7 @@ export default function MintPage() {
                                         placeholder="0.00"
                                         min="0"
                                         step="any"
+                                        autoComplete="transaction-amount"
                                         value={fiatAmount}
                                         onChange={(e) =>
                                             setFiatAmount(e.target.value)
@@ -417,13 +410,11 @@ export default function MintPage() {
                             </div>
                             {estimatedMintAcbu != null && (
                                 <Card className="border-border bg-muted/80 p-3 mt-3">
-<<<<<<< HEAD
                                     <p className="text-xs text-muted-foreground mb-1 break-words">
                                         Estimated ACBU (from latest rates)
-=======
+                                    </p>
                                     <p className="text-xs text-muted-foreground mb-1">
                                         {t('mint.estimatedAcbu')}
->>>>>>> origin/dev
                                     </p>
                                     <p className="text-lg font-semibold text-foreground break-words">
                                         ≈ {formatAmount(estimatedMintAcbu)} ACBU
@@ -495,6 +486,7 @@ export default function MintPage() {
                                     id="burn-fiat-account"
                                     value={selectedFiatCurrency}
                                     onChange={(e) => setSelectedFiatCurrency(e.target.value)}
+                                    autoComplete="transaction-currency"
                                     className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                                 >
                                     {fiatAccounts.length === 0 ? (
@@ -524,6 +516,7 @@ export default function MintPage() {
                                         id="burn-amount"
                                         type="number"
                                         placeholder="0.00"
+                                        autoComplete="transaction-amount"
                                         value={burnAmount}
                                         onChange={(e) =>
                                             setBurnAmount(e.target.value)
@@ -566,11 +559,8 @@ export default function MintPage() {
                                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
                             >
                                 <ArrowUp className="w-4 h-4 mr-2" />
-<<<<<<< HEAD
                                 Burn & Redeem
-=======
                                 {t('mint.continueToBurn')}
->>>>>>> origin/dev
                             </Button>
                         </div>
                     </TabsContent>

@@ -477,6 +477,7 @@ export default function SendPage() {
                     value={customRecipient}
                     onChange={handleCustomRecipientChange}
                     className="border-border"
+                    autoComplete="off"
                   />
                 </TabsContent>
               </Tabs>
@@ -493,6 +494,7 @@ export default function SendPage() {
                   placeholder="0.00"
                   min="0"
                   step="any"
+                  autoComplete="transaction-amount"
                   value={amount}
                   onChange={handleAmountChange}
                   className="border-border text-lg font-semibold"
@@ -519,6 +521,7 @@ export default function SendPage() {
                 value={note}
                 onChange={handleNoteChange}
                 className="border-border"
+                autoComplete="off"
               />
             </div>
 
