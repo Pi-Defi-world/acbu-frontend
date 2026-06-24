@@ -157,7 +157,7 @@ export default function SendPage() {
       setTransfers(data.transfers ?? []);
       setLoadError("");
     }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load transfers')).finally(() => setLoadingTransfers(false));
-  }, [opts]);
+  }, [opts.token]);
 
   const loadContacts = useCallback(() => {
     setLoadError("");
@@ -167,7 +167,7 @@ export default function SendPage() {
 <<<<<<< HEAD
       setLoadError("");
     }).catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load contacts')).finally(() => setLoadingContacts(false));
-  }, [opts]);
+  }, [opts.token]);
 =======
 =======
       setContactsError("");
@@ -180,10 +180,10 @@ export default function SendPage() {
       setLoadingContacts(false);
     }
 <<<<<<< HEAD
-  }, [opts, toast, t]);
+  }, [opts.token, toast, t]);
 >>>>>>> origin/dev
 =======
-  }, [opts]);
+  }, [opts.token]);
 >>>>>>> upstream/dev
 
   useEffect(() => {
@@ -328,17 +328,17 @@ export default function SendPage() {
     } finally {
       setSending(false);
     }
-  }, [confirmedAmount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance, clearError]);
+  }, [confirmedAmount, getToValue, note, userId, stellarAddress, kit, opts.token, loadTransfers, refreshBalance, clearError]);
 =======
       setApiError(e);
     } finally {
       setSending(false);
     }
 <<<<<<< HEAD
-  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refreshBalance, ensureSession]);
+  }, [amount, getToValue, note, userId, stellarAddress, kit, opts.token, loadTransfers, refreshBalance, ensureSession]);
 >>>>>>> upstream/dev
 =======
-  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refetchBalance]);
+  }, [amount, getToValue, note, userId, stellarAddress, kit, opts.token, loadTransfers, refetchBalance]);
 >>>>>>> upstream/dev
 
   const exceedsBalance =

@@ -36,7 +36,7 @@ export default function ContactsPage() {
     }).catch((e) => {
       setError(e instanceof Error ? e.message : 'Failed to load contacts');
     }).finally(() => setLoading(false));
-  }, [opts]);
+  }, [opts.token]);
 
   useEffect(() => {
     setLoading(true);

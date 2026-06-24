@@ -198,7 +198,7 @@ export default function CurrencyPage() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedIntlAmount, intlCurrency, opts]);
+  }, [debouncedIntlAmount, intlCurrency, opts.token]);
 
   const usdPerAcbu = useMemo(() => localPerAcbu("USD", rates), [rates]);
   const ngnPerAcbu = useMemo(() => localPerAcbu("NGN", rates), [rates]);

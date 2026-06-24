@@ -223,7 +223,7 @@ export default function MePage() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [user?.kyc_status, pollingDelay, loading, opts]);
+  }, [user?.kyc_status, pollingDelay, loading, opts.token]);
 
   const handleLogout = async () => {
     setShowLogoutConfirm(false);
