@@ -1,0 +1,28 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "app/**/{page,layout,loading,error,not-found,route,template,default}.{ts,tsx}",
+    "app/global-error.tsx",
+    "middleware.ts",
+    "i18n/request.ts"
+  ],
+  "project": [
+    "app/**/*.{ts,tsx}",
+    "components/**/*.{ts,tsx}",
+    "contexts/**/*.{ts,tsx}",
+    "hooks/**/*.{ts,tsx}",
+    "lib/**/*.{ts,tsx}",
+    "types/**/*.{ts,tsx}",
+    "i18n/**/*.{ts,tsx}"
+  ],
+  "ignoreDependencies": ["tw-animate-css", "tailwindcss-animate"],
+  "ignore": [
+    "**/*.test.{ts,tsx}",
+    "**/*.spec.{ts,tsx}",
+    "tests/**",
+    "e2e/**",
+    "playwright-report/**",
+    ".github/**"
+  ],
+  "github-actions": false
+}
