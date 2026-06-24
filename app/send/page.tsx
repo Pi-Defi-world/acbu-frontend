@@ -37,7 +37,7 @@ import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
-import { useToast } from "@/hooks/use-toast";
+
 import { useI18n } from "@/contexts/i18n-context";
 import { useBalance } from "@/hooks/use-balance";
 import { RetryErrorBlock } from "@/components/ui/retry-error-block";
@@ -94,13 +94,13 @@ export default function SendPage() {
   const { userId, stellarAddress } = useAuth();
   const { ensureSession } = useSessionGuard();
   const kit = useStellarWalletsKit();
-  const { toast } = useToast();
   const {
     balance,
     loading: balanceLoading,
     error: balanceError,
     refetch: refetchBalance,
   } = useBalance();
+  const { t } = useI18n();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [activeTab, setActiveTab] = useState("send");
   const [showSendDialog, setShowSendDialog] = useState(false);
@@ -117,9 +117,8 @@ export default function SendPage() {
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingTransfers, setLoadingTransfers] = useState(true);
   const [loadingContacts, setLoadingContacts] = useState(true);
-  const [transfersError, setTransfersError] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [contactsError, setContactsError] = useState("");
-  const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
 
@@ -319,51 +318,52 @@ export default function SendPage() {
       return (
         <div className="rounded-lg border border-border bg-card p-6 text-center">
           <p className="text-sm text-muted-foreground">
-            {t('send.noTransfersYet')}
-          </p>
-        </div>
-      );
-    }
-    return (
-      <div className="space-y-2">
-        {transfers.map((t: TransferItem) => (
-          <Link
-            key={t.transaction_id}
-            href={`/send/${t.transaction_id}`}
-            className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-foreground truncate" title={t('send.transferLabel')}>
-                {t('send.transferLabel')}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {formatDate(t.created_at)}
+                {t('send.noTransfersYet')}
               </p>
             </div>
-            <div className="text-right">
-              <p className="font-semibold text-foreground">
-                ACBU {formatAmount(t.amount_acbu)}
-              </p>
-              <Badge
-                variant="outline"
-                className={`mt-1 text-xs ${getStatusColor(t.status)}`}
+          );
+        }
+        return (
+          <div className="space-y-2">
+            {transfers.map((item: TransferItem) => (
+              <Link
+                key={item.transaction_id}
+                href={`/send/${item.transaction_id}`}
+                className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
               >
-                {t.status === "completed" && (
-                  <Check className="mr-1 h-3 w-3" />
-                )}
-                {t.status === "pending" && (
-                  <AlertCircle className="mr-1 h-3 w-3" />
-                )}
-                {t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : t('common.unknown')}
-              </Badge>
-            </div>
-          </Link>
-        ))}
-      </div>
-    );
-  }, [transfers, loadingTransfers]);
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate" title={t('send.transferLabel')}>
+                    {t('send.transferLabel')}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(item.created_at)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-foreground">
+                    ACBU {formatAmount(item.amount_acbu)}
+                  </p>
+                  <Badge
+                    variant="outline"
+                    className={`mt-1 text-xs ${getStatusColor(item.status)}`}
+                  >
+                    {item.status === "completed" && (
+                      <Check className="mr-1 h-3 w-3" />
+                    )}
+                    {item.status === "pending" && (
+                      <AlertCircle className="mr-1 h-3 w-3" />
+                    )}
+                    {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : t('common.unknown')}
+                  </Badge>
+                </div>
+              </Link>
+            ))}
+          </div>
+        );
+    }, [t, transfers, loadingTransfers]);
 
   return (
+    <>
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <header className="page-header">
         <div className="px-4 py-3">
@@ -411,66 +411,6 @@ export default function SendPage() {
           </div>
         </TabsContent>
 
-          <TabsContent 
-            value="history" 
-            id="panel-history"
-            role="tabpanel"
-            aria-labelledby="tab-history"
-            className="space-y-3"
-          >
-            <div>
-              <h3 className="mb-3 text-sm font-semibold text-foreground">
-                Recent Transfers
-              </h3>
-              {loadingTransfers ? (
-                <SkeletonList count={2} itemHeight="h-14" />
-              ) : transfers.length === 0 ? (
-                <div className="rounded-lg border border-border bg-card p-6 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    No transfers yet
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {transfers.map((t: TransferItem) => (
-                    <Link
-                      key={t.transaction_id}
-                      href={`/send/${t.transaction_id}`}
-                      className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                      aria-label={`Transfer of ${t.amount_acbu} ACBU, status ${t.status}, created ${formatDate(t.created_at)}`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate" title="Transfer">
-                          Transfer
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(t.created_at)}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-foreground">
-                          ACBU {formatAmount(t.amount_acbu)}
-                        </p>
-                        <Badge
-                          variant="outline"
-                          className={`mt-1 text-xs ${getStatusBadgeClassName(t.status)}`}
-                        >
-                          {t.status === "completed" && (
-                            <Check className="mr-1 h-3 w-3" aria-hidden="true" />
-                          )}
-                          {t.status === "pending" && (
-                            <AlertCircle className="mr-1 h-3 w-3" aria-hidden="true" />
-                          )}
-                          {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
-                        </Badge>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
         <TabsContent value="history" className="space-y-3 outline-none mt-0">
           <div>
             <h3 className="mb-3 text-sm font-semibold text-foreground">
@@ -480,6 +420,7 @@ export default function SendPage() {
           </div>
         </TabsContent>
       </div>
+    </Tabs>
 
       {/* Send Dialog */}
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
@@ -610,7 +551,7 @@ export default function SendPage() {
               </Button>
               <Button
                 onClick={handleContinue}
-                disabled={!isFormValid()}
+                disabled={!isValid}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {t('send.continue')}
@@ -688,6 +629,6 @@ export default function SendPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </Tabs>
+    </>
   );
 }
