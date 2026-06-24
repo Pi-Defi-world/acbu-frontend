@@ -27,7 +27,10 @@ export function useBalance(): UseBalanceReturn {
 
   const refresh = useCallback(() => setTick((t) => t + 1), []);
 
-  // Auto-refresh balance every 30 seconds to catch external transactions
+  // Auto-refresh balance every 30 seconds to catch external transactions.
+  // No stale closure risk: `interval` is captured in the same effect scope, so
+  // the cleanup always clears the correct interval ID. `refresh` is stable
+  // (useCallback with no deps) because setTick uses a functional updater.
   useEffect(() => {
     const interval = setInterval(() => {
       refresh();
