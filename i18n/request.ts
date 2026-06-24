@@ -5,7 +5,7 @@ import { getRequestConfig } from 'next-intl/server';
 export const locales = ['en', 'en-NG', 'en-KE', 'ar', 'ru', 'pl'] as const;
 export const defaultLocale = 'en';
 
- // @ts-ignore
+ // @ts-expect-error: Suppressing type incompatibility between next-intl and Next.js version
 export default getRequestConfig(async ({ locale }) => {
   // Validate that the incoming `locale` parameter is valid
   if (!locales.includes(locale as any)) notFound();
