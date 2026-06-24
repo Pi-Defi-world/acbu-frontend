@@ -283,3 +283,143 @@
     flex-direction: row-reverse;
   }
 }
+
+/* prefers-contrast: more support for high contrast mode */
+@media (prefers-contrast: more) {
+  :root {
+    --background: oklch(1 0 0); /* Pure White */
+    --foreground: oklch(0 0 0); /* Pure Black */
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0 0 0);
+    --primary: oklch(0.2 0.05 280); /* Darker blue for higher contrast */
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.9 0 0); /* Darker gray background */
+    --secondary-foreground: oklch(0 0 0);
+    --muted: oklch(0.95 0 0);
+    --muted-foreground: oklch(0.2 0 0); /* Darker gray text for high contrast */
+    --accent: oklch(0.2 0.08 160);
+    --accent-foreground: oklch(1 0 0);
+    --destructive: oklch(0.35 0.15 25);
+    --destructive-foreground: oklch(1 0 0);
+    --border: oklch(0.15 0 0); /* Dark gray/black border for high contrast! */
+    --input: oklch(0.15 0 0);
+    --ring: oklch(0 0 0);
+
+    --sidebar: oklch(1 0 0);
+    --sidebar-foreground: oklch(0 0 0);
+    --sidebar-primary: oklch(0.2 0.05 280);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.9 0 0);
+    --sidebar-accent-foreground: oklch(0 0 0);
+    --sidebar-border: oklch(0.15 0 0);
+    --sidebar-ring: oklch(0 0 0);
+
+    --status-success: oklch(0.95 0 0);
+    --status-success-foreground: oklch(0.15 0.08 160);
+    --status-success-border: oklch(0.15 0.08 160);
+    --status-warning: oklch(0.95 0 0);
+    --status-warning-foreground: oklch(0.25 0.07 95);
+    --status-warning-border: oklch(0.25 0.07 95);
+    --status-neutral-foreground: oklch(0 0 0);
+    --status-neutral-border: oklch(0.15 0 0);
+  }
+
+  .dark {
+    --background: oklch(0 0 0); /* Pure Black */
+    --foreground: oklch(1 0 0); /* Pure White */
+    --card: oklch(0 0 0);
+    --card-foreground: oklch(1 0 0);
+    --popover: oklch(0 0 0);
+    --popover-foreground: oklch(1 0 0);
+    --primary: oklch(0.85 0.05 280); /* Lighter blue for higher contrast */
+    --primary-foreground: oklch(0 0 0);
+    --secondary: oklch(0.15 0 0);
+    --secondary-foreground: oklch(1 0 0);
+    --muted: oklch(0.15 0 0);
+    --muted-foreground: oklch(0.85 0 0); /* Very light gray text for high contrast */
+    --accent: oklch(0.85 0.05 160);
+    --accent-foreground: oklch(0 0 0);
+    --destructive: oklch(0.85 0.1 25);
+    --destructive-foreground: oklch(0 0 0);
+    --border: oklch(0.9 0 0); /* Light gray border for high contrast! */
+    --input: oklch(0.9 0 0);
+    --ring: oklch(1 0 0);
+
+    --sidebar: oklch(0 0 0);
+    --sidebar-foreground: oklch(1 0 0);
+    --sidebar-primary: oklch(0.85 0.05 280);
+    --sidebar-primary-foreground: oklch(0 0 0);
+    --sidebar-accent: oklch(0.15 0 0);
+    --sidebar-accent-foreground: oklch(1 0 0);
+    --sidebar-border: oklch(0.9 0 0);
+    --sidebar-ring: oklch(1 0 0);
+
+    --status-success: oklch(0.05 0 0);
+    --status-success-foreground: oklch(0.85 0.08 160);
+    --status-success-border: oklch(0.85 0.08 160);
+    --status-warning: oklch(0.05 0 0);
+    --status-warning-foreground: oklch(0.85 0.07 95);
+    --status-warning-border: oklch(0.85 0.07 95);
+    --status-neutral-foreground: oklch(1 0 0);
+    --status-neutral-border: oklch(0.9 0 0);
+  }
+
+  /* Global element overrides for high contrast and solid backgrounds */
+  input, select, textarea {
+    background-color: var(--background) !important;
+  }
+  
+  .dark input, .dark select, .dark textarea {
+    background-color: var(--background) !important;
+  }
+
+  /* Disable backdrop-filter effects globally */
+  *, *::before, *::after {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Disable transparent and translucent backgrounds */
+  .bg-card\/95 {
+    background-color: var(--card) !important;
+  }
+  
+  .dark .dark\:bg-input\/30 {
+    background-color: var(--background) !important;
+  }
+  
+  .dark .dark\:hover\:bg-input\/50:hover {
+    background-color: var(--secondary) !important;
+  }
+
+  .bg-primary\/20, .bg-primary\/10, .bg-primary\/5 {
+    background-color: var(--muted) !important;
+    color: var(--foreground) !important;
+  }
+
+  .bg-destructive\/10, .bg-destructive\/5 {
+    background-color: var(--background) !important;
+    border: 2px solid var(--destructive) !important;
+  }
+
+  .bg-green-500\/10, .bg-green-500\/5 {
+    background-color: var(--background) !important;
+    border: 2px solid var(--status-success-border) !important;
+  }
+
+  .bg-amber-500\/10, .bg-amber-500\/5 {
+    background-color: var(--background) !important;
+    border: 2px solid var(--status-warning-border) !important;
+  }
+
+  .bg-blue-50, .dark .dark\:bg-blue-900\/20 {
+    background-color: var(--muted) !important;
+  }
+
+  .bg-gradient-to-br, .bg-gradient-to-b, .bg-gradient-to-t, .bg-gradient-to-r {
+    background-image: none !important;
+    background-color: var(--background) !important;
+  }
+}
