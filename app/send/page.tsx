@@ -61,6 +61,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSessionGuard } from "@/hooks/use-session-guard";
+import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 
 function formatDate(iso: string) {
   const d = parseUtcDate(iso);
@@ -121,7 +122,9 @@ export default function SendPage() {
   const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
-  
+
+  useScrollRestoration('/send', !loadingTransfers);
+
   const contactsParentRef = useRef<HTMLDivElement>(null);
   
   const virtualizer = useVirtualizer({
