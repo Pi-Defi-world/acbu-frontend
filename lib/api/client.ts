@@ -97,7 +97,7 @@ async function request<T>(
     );
   }
   const url = path.startsWith('http') ? path : `${BASE}${path.startsWith('/') ? path : `/${path}`}`;
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { 'Accept-Encoding': 'gzip' };
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }
