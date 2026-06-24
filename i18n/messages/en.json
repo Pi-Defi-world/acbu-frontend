@@ -11,7 +11,9 @@
     "send_money": "Send money",
     "some_currencies_missing_rate": "Some currencies missing a rate",
     "usd": "USD",
-    "approx_usd": "≈ USD"
+    "approx_usd": "≈ USD",
+    "transaction_count": "{count, plural, one {# transaction} other {# transactions}}",
+    "session_count": "{count, plural, one {# active session} other {# active sessions}}"
   },
   "features": {
     "send": {
