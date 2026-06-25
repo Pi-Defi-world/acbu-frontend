@@ -22,7 +22,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useApiOpts } from "@/hooks/use-api";
 import { useBalance } from "@/hooks/use-balance";
 import { useToast } from "@/hooks/use-toast";
-import * as ratesApi from "@/lib/api/rates";
+import { useRates } from "@/hooks/use-rates";
 import type { RatesResponse } from "@/types/api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
@@ -78,7 +78,7 @@ export default function CurrencyPage() {
     MintResponse | BurnResponse | null
   >(null);
 
-  const [rates, setRates] = useState<RatesResponse | null>(null);
+  const { rates } = useRates();
 
   // Mint state
   const [mintAmount, setMintAmount] = useState("");
@@ -102,21 +102,6 @@ export default function CurrencyPage() {
   const [intlAccountNumber, setIntlAccountNumber] = useState("");
   const [intlBankCode, setIntlBankCode] = useState("");
   const [intlAccountName, setIntlAccountName] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    ratesApi
-      .getRates(opts)
-      .then((data) => {
-        if (!cancelled) setRates(data);
-      })
-      .catch(() => {
-        if (!cancelled) setRates(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
 
   const usdPerAcbu = useMemo(() => localPerAcbu("USD", rates), [rates]);
   const ngnPerAcbu = useMemo(() => localPerAcbu("NGN", rates), [rates]);

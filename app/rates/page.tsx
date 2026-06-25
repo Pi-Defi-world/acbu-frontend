@@ -6,15 +6,10 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { SkeletonList } from "@/components/ui/skeleton-list";
 import { ArrowLeft } from "lucide-react";
-import { useApiOpts, useApiError } from "@/hooks/use-api";
-import * as ratesApi from "@/lib/api/rates";
-import type { RatesResponse } from "@/types/api";
+import { useRates } from "@/hooks/use-rates";
 
 export default function RatesPage() {
-  const opts = useApiOpts();
-  const { uiError: error, setApiError: handleError } = useApiError();
-  const [rates, setRates] = useState<RatesResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { rates, loading, error } = useRates();
 
   const formatRate = (rate: number | undefined): string => {
     if (rate == null) return "—";
@@ -32,24 +27,6 @@ export default function RatesPage() {
     });
   };
 
-  useEffect(() => {
-    let cancelled = false;
-    ratesApi
-      .getRates(opts)
-      .then((data) => {
-        if (!cancelled) setRates(data);
-      })
-      .catch((e) => {
-        if (!cancelled) handleError(e);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
-
   return (
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
@@ -65,7 +42,7 @@ export default function RatesPage() {
         </div>
       </div>
       <PageContainer>
-        {error && <p className="text-destructive text-sm mb-3">{error.message}</p>}
+        {error && <p className="text-destructive text-sm mb-3">{error}</p>}
         {loading ? (
           <SkeletonList count={2} itemHeight="h-20" />
         ) : rates ? (

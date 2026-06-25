@@ -30,10 +30,30 @@ function AccordionTrigger({
   children,
   ...props
 }: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {
+  const ref = React.useRef<HTMLButtonElement>(null)
+  const [isExpanded, setIsExpanded] = React.useState(false)
+
+  React.useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    // Sync initial state
+    setIsExpanded(el.getAttribute('data-state') === 'open')
+
+    const observer = new MutationObserver(() => {
+      setIsExpanded(el.getAttribute('data-state') === 'open')
+    })
+
+    observer.observe(el, { attributes: true, attributeFilter: ['data-state'] })
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <AccordionPrimitive.Header className="flex">
       <AccordionPrimitive.Trigger
+        ref={ref}
         data-slot="accordion-trigger"
+        aria-expanded={isExpanded}
         className={cn(
           'focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180',
           className,

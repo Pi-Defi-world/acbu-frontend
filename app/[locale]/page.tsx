@@ -20,9 +20,9 @@ import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
+import { useRates } from '@/hooks/use-rates';
 import * as transactionsApi from '@/lib/api/transactions';
 import * as fiatApi from '@/lib/api/fiat';
-import * as ratesApi from '@/lib/api/rates';
 import type { TransactionListItem, RatesResponse } from '@/types/api';
 import { formatAcbu, formatAmount } from '@/lib/utils';
 
@@ -109,8 +109,7 @@ export default function Home() {
   const [error, setError] = useState('');
   const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [fiatLoading, setFiatLoading] = useState(true);
-  const [rates, setRates] = useState<RatesResponse | null>(null);
-  const [ratesLoading, setRatesLoading] = useState(true);
+  const { rates, loading: ratesLoading } = useRates();
 
   const t = useTranslations('home');
   const format = useFormatter();
@@ -121,25 +120,6 @@ export default function Home() {
     { title: t('features.simulated_bank.title'), description: t('features.simulated_bank.description'), icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
     { title: t('features.rates.title'), description: t('features.rates.description'), icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
   ];
-
-  useEffect(() => {
-    let cancelled = false;
-    setRatesLoading(true);
-    ratesApi
-      .getRates(opts)
-      .then((data) => {
-        if (!cancelled) setRates(data);
-      })
-      .catch(() => {
-        if (!cancelled) setRates(null);
-      })
-      .finally(() => {
-        if (!cancelled) setRatesLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
 
   useEffect(() => {
     let cancelled = false;

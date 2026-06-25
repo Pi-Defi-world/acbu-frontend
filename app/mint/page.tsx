@@ -20,13 +20,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowDown, ArrowUp, ArrowLeft } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
+import { useRates } from '@/hooks/use-rates';
 import { useAuth } from '@/contexts/auth-context';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureAcbuTrustlineClient } from '@/lib/stellar/trustlines';
 import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
 import { submitBurnRedeemSingleClient } from '@/lib/stellar/burning';
 import { Keypair } from '@stellar/stellar-sdk';
-import * as ratesApi from '@/lib/api/rates';
 import * as fiatApi from '@/lib/api/fiat';
 import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
@@ -64,8 +64,7 @@ export default function MintPage() {
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
   const [burnError, setBurnError] = useState('');
-  const [rates, setRates] = useState<RatesResponse | null>(null);
-  const [ratesLoading, setRatesLoading] = useState(false);
+  const { rates, loading: ratesLoading } = useRates();
   const [mintError, setMintError] = useState('');
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
@@ -74,31 +73,15 @@ export default function MintPage() {
   const [fiatAmount, setFiatAmount] = useState('');
   const debouncedFiatAmount = useDebounce(fiatAmount, 300);
   const debouncedBurnAmount = useDebounce(burnAmount, 300);
-  const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
   const rateRows = Array.isArray((rates as { rates?: Array<{ currency?: string; rate?: number }> } | null)?.rates)
     ? ((rates as { rates?: Array<{ currency?: string; rate?: number }> }).rates ?? [])
     : [];
 
   const estimatedMintAcbu = useMemo(
-    () => estimateAcbuFromFiat(debouncedFiatAmount, selectedFiatCurrency, mintQuoteRates),
-    [debouncedFiatAmount, selectedFiatCurrency, mintQuoteRates],
+    () => estimateAcbuFromFiat(debouncedFiatAmount, selectedFiatCurrency, rates),
+    [debouncedFiatAmount, selectedFiatCurrency, rates],
   );
-
-  useEffect(() => {
-    let cancelled = false;
-    ratesApi
-      .getRates(opts)
-      .then((data) => {
-        if (!cancelled) setMintQuoteRates(data);
-      })
-      .catch(() => {
-        if (!cancelled) setMintQuoteRates(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
 
   useEffect(() => {
     fiatApi
@@ -111,16 +94,6 @@ export default function MintPage() {
       })
       .catch((e) => logger.error('Failed to get fiat accounts', e));
   }, [opts.token]);
-
-    useEffect(() => {
-        if (activeTab !== "rates") return;
-        setRatesLoading(true);
-        ratesApi
-            .getRates(opts)
-            .then(setRates)
-            .catch(() => setRates(null))
-            .finally(() => setRatesLoading(false));
-    }, [activeTab, opts.token]);
 
     const handleMintConfirm = () => {
         if (!debouncedFiatAmount || parseFloat(debouncedFiatAmount) <= 0 || !selectedFiatCurrency) return;

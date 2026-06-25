@@ -71,8 +71,33 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const domainsToPreconnect = [
+    'https://horizon-testnet.stellar.org',
+    'https://soroban-testnet.stellar.org',
+    'https://va.vercel-analytics.com',
+  ]
+  
+  if (apiBaseUrl) {
+    try {
+      domainsToPreconnect.push(new URL(apiBaseUrl).origin)
+    } catch (_) {}
+  }
+  if (apiUrl) {
+    try {
+      domainsToPreconnect.push(new URL(apiUrl).origin)
+    } catch (_) {}
+  }
+  
+  const uniqueDomains = Array.from(new Set(domainsToPreconnect.filter(Boolean)))
+
   return (
     <AuthProvider>
+      {uniqueDomains.map((domain) => (
+        <React.Fragment key={domain}>
+          <link rel="preconnect" href={domain} crossOrigin="anonymous" />
+          <link rel="dns-prefetch" href={domain} />
+        </React.Fragment>
+      ))}
       <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
       {children}
     </AuthProvider>
