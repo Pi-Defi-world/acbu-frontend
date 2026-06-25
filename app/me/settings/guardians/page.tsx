@@ -108,7 +108,7 @@ export default function GuardiansPage() {
             guardians.map((g) => (
               <Card key={g.id} className="border-border p-4 flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">{g.id}</p>
+                  <p className="font-medium text-foreground truncate" title={g.id}>{g.id}</p>
                 </div>
                 <Button variant="outline" size="sm" className="border-destructive/30 text-destructive shrink-0" onClick={() => handleDelete(g.id)}>Remove</Button>
               </Card>

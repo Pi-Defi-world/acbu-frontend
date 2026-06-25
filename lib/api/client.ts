@@ -1,11 +1,9 @@
 /**
  * API client: base URL from env, authentication via httpOnly cookies.
  * All backend responses are JSON; errors throw with message/details.
- * 
- * 401 Handling: When API returns 401 (Unauthorized), a registered callback is invoked
+ * * 401 Handling: When API returns 401 (Unauthorized), a registered callback is invoked
  * to handle stale auth state (e.g., expired httpOnly cookie).
- * 
- * Timeout: Requests timeout after NEXT_PUBLIC_API_TIMEOUT ms (default 30000).
+ * * Timeout: Requests timeout after NEXT_PUBLIC_API_TIMEOUT ms (default 30000).
  * If caller provides AbortSignal, it aborts on either timeout or caller's signal.
  */
 
@@ -26,6 +24,9 @@ const BASE = typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_API_BASE
 const DEFAULT_TIMEOUT = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_TIMEOUT
   ? parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT, 10) || 30000
   : 30000;
+
+// Helper utility to introduce delays between retry attempts
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Backend often returns `{ error: { message, statusCode } }` (AppError); avoid `[object Object]`. */
 function messageFromErrorBody(
@@ -76,6 +77,10 @@ export interface RequestOptions {
   signal?: AbortSignal;
   /** @deprecated Auth is via httpOnly cookies; this field is unused. */
   token?: string;
+  /** Number of retry attempts on 5xx errors or network drops. Defaults to 3. */
+  retries?: number;
+  /** Base delay time in milliseconds for exponential backoff retry logic. */
+  retryDelay?: number;
 }
 
 export interface ApiError extends Error {
@@ -89,6 +94,8 @@ async function request<T>(
   body?: unknown,
   opts: RequestOptions = {}
 ): Promise<T> {
+  const { retries = 3, retryDelay = 1000 } = opts;
+
   if (!path.startsWith('http') && !BASE.trim()) {
     throw new Error(
       "API base URL is not configured. Set NEXT_PUBLIC_API_BASE_URL (or NEXT_PUBLIC_API_URL) " +
@@ -97,7 +104,7 @@ async function request<T>(
     );
   }
   const url = path.startsWith('http') ? path : `${BASE}${path.startsWith('/') ? path : `/${path}`}`;
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { 'Accept-Encoding': 'gzip' };
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }
@@ -119,6 +126,7 @@ async function request<T>(
   }, DEFAULT_TIMEOUT);
 
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    clearTimeout(timeoutId);
     throw new Error(
       'You appear to be offline. Please check your internet connection and try again.',
     );
@@ -135,60 +143,9 @@ async function request<T>(
     });
   } catch (error) {
     clearTimeout(timeoutId);
+
+    // Differentiate aborts from connection breaks
     if (error instanceof Error && error.name === 'AbortError') {
       if (timedOut) {
-        throw new Error(`Request timed out after ${DEFAULT_TIMEOUT / 1000} seconds`, { cause: error });
-      }
-      // If not timed out, it was aborted by caller's signal, rethrow
-      throw error;
-    }
-    throw error;
-  }
-  clearTimeout(timeoutId);
-  let data: { error?: string | { message?: string }; message?: string; details?: unknown };
-  const ct = res.headers.get('content-type');
-  if (ct?.includes('application/json')) {
-    data = (await res.json()) as {
-      error?: string | { message?: string };
-      message?: string;
-      details?: unknown;
-    };
-  } else {
-    data = { error: res.statusText || 'Request failed' };
-  }
-  if (!res.ok) {
-    const err: ApiError = new Error(
-      messageFromErrorBody(data, res.status),
-    ) as ApiError;
-    err.status = res.status;
-    err.details = data.details ?? data;
-    
-    // Invoke 401 handler if registered (e.g., clear auth state and redirect to login)
-    if (res.status === 401 && authErrorHandler) {
-      authErrorHandler(err);
-    }
-    
-    throw err;
-  }
-  return data as T;
-}
-
-export function get<T>(path: string, opts?: RequestOptions): Promise<T> {
-  return request<T>('GET', path, undefined, opts);
-}
-
-export function post<T>(path: string, body?: unknown, opts?: RequestOptions): Promise<T> {
-  return request<T>('POST', path, body, opts);
-}
-
-export function patch<T>(path: string, body?: unknown, opts?: RequestOptions): Promise<T> {
-  return request<T>('PATCH', path, body, opts);
-}
-
-export function put<T>(path: string, body?: unknown, opts?: RequestOptions): Promise<T> {
-  return request<T>('PUT', path, body, opts);
-}
-
-export function del<T>(path: string, opts?: RequestOptions): Promise<T> {
-  return request<T>('DELETE', path, undefined, opts);
-}
+        if (retries > 0) {
+          console.warn(`[API Client] Timeout on ${method} ${path}. Retrying in ${retryDelay}ms... (${retries} left)`);

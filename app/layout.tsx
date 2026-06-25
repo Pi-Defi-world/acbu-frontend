@@ -1,7 +1,6 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
-import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { I18nProvider } from '@/contexts/i18n-context'
 import { ErrorBoundary } from '@/components/error-boundary'
@@ -18,6 +17,11 @@ const OfflineIndicator = dynamic(
   { ssr: false },
 )
 
+const VercelAnalytics = dynamic(
+  () => import('@vercel/analytics/next').then((m) => ({ default: m.Analytics })),
+  { ssr: false },
+)
+
 const apiBaseUrl =
   typeof process !== 'undefined'
     ? process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
@@ -26,6 +30,20 @@ const apiUrl =
   typeof process !== 'undefined'
     ? process.env.NEXT_PUBLIC_API_URL?.trim()
     : ''
+
+
+function getApiOrigin(): string | null {
+  const rawUrl = apiBaseUrl || apiUrl
+  if (!rawUrl) return null
+
+  try {
+    return new URL(rawUrl).origin
+  } catch {
+    return null
+  }
+}
+
+const apiOrigin = getApiOrigin()
 
 if (
   typeof process !== 'undefined' &&
@@ -72,7 +90,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   userScalable: true,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: light)', color: '#433875' },
     { media: '(prefers-color-scheme: dark)', color: '#1a0a2e' },
   ],
 }
@@ -89,12 +107,21 @@ export default async function RootLayout({
   return (
     <html lang={lang} dir="ltr" suppressHydrationWarning>
       <head>
+        <link rel="preload" href="/placeholder-logo.svg" as="image" type="image/svg+xml" />
+        {apiOrigin && (
+          <>
+            <link rel="dns-prefetch" href={apiOrigin} />
+            <link rel="preconnect" href={apiOrigin} crossOrigin="anonymous" />
+          </>
+        )}
         {/*
           Print stylesheet is deferred until the browser enters print mode.
           media="print" prevents the browser from downloading and parsing
           this resource on non-print (screen/mobile) page loads.
         */}
         <link rel="stylesheet" href="/print.css" media="print" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
@@ -123,12 +150,13 @@ export default async function RootLayout({
                 <WalletSetupModal />
                 <Toaster />
                 {/*
-                  F-065 SRI review: the only third-party script injected here is
-                  @vercel/analytics/next, which is bundled at build time (first-party,
-                  no external CDN fetch). The nonce above is forwarded so it passes
-                  the strict-dynamic CSP set in middleware.ts.
+                  F-065 SRI review: analytics is non-critical, so it is
+                  dynamically loaded on the client instead of being emitted as a
+                  beforeInteractive script that can block initial rendering.
+                  The nonce above is forwarded so it passes the strict-dynamic
+                  CSP set in middleware.ts.
                 */}
-                <Analytics nonce={nonce} crossOrigin="anonymous" />
+                <VercelAnalytics nonce={nonce} crossOrigin="anonymous" />
               </AuthProvider>
             </I18nProvider>
           </ErrorBoundary>
