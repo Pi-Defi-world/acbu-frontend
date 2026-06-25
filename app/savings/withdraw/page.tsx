@@ -105,31 +105,12 @@ export default function SavingsWithdrawPage() {
                     )}
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-<<<<<<< HEAD
                             <label
                                 htmlFor="withdraw-account"
                                 className="text-sm font-medium text-foreground mb-2 block"
                             >
                                 Your account
                             </label>
-=======
-                            <div className="flex items-center justify-between gap-3">
-                                <label
-                                    htmlFor="withdraw-recipient"
-                                    className="form-label"
-                                >
-                                    Recipient
-                                </label>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleToggleEdit}
-                                >
-                                    {editingRecipient ? 'Reset' : 'Change'}
-                                </Button>
-                            </div>
->>>>>>> origin/dev
                             <Input
                                 id="withdraw-account"
                                 value={user}

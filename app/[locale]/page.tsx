@@ -19,7 +19,6 @@ import {
   Clock,
   Building2,
   ArrowUpRight,
-  HandCoins,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';

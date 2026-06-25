@@ -86,23 +86,19 @@ function getStatusColor(status: string | undefined) {
   }
 }
 
-/**
- * Page component for sending ACBU tokens.
- */
 export default function SendPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const { ensureSession } = useSessionGuard();
   const kit = useStellarWalletsKit();
-  const { toast } = useToast();
   const {
     balance,
     loading: balanceLoading,
     error: balanceError,
     refetch: refetchBalance,
   } = useBalance();
-  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const { t } = useI18n();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
 
   const [activeTab, setActiveTab] = useState("send");
   const [showSendDialog, setShowSendDialog] = useState(false);
@@ -154,34 +150,6 @@ export default function SendPage() {
 
   const loadTransfers = useCallback(async () => {
     setLoadError("");
-    transfersApi
-      .getTransfers(opts)
-      .then((data) => {
-        setTransfers(data.transfers ?? []);
-        setLoadError("");
-      })
-      .catch((e) => setLoadError(e instanceof Error ? e.message : "Failed to load transfers"))
-      .finally(() => setLoadingTransfers(false));
-  }, [opts.token]);
-  const [transfersError, setTransfersError] = useState("");
-  const [contactsError, setContactsError] = useState("");
-  const [submitError, setSubmitError] = useState("");
-  const [sending, setSending] = useState(false);
-  const [loadError, setLoadError] = useState("");
-
-  useScrollRestoration('/send', !loadingTransfers);
-
-  const contactsParentRef = useRef<HTMLDivElement>(null);
-  
-  const virtualizer = useVirtualizer({
-    count: contacts.length,
-    getScrollElement: () => contactsParentRef.current?.parentElement as Element | null,
-    estimateSize: () => 36,
-    overscan: 5,
-  });
-
-  const loadTransfers = useCallback(async () => {
-    setLoadError("");
     try {
       const data = await transfersApi.getTransfers(opts);
       setTransfers(data.transfers ?? []);
@@ -195,23 +163,12 @@ export default function SendPage() {
 
   const loadContacts = useCallback(async () => {
     setLoadError("");
-    userApi
-      .getContacts(opts)
-      .then((data) => {
-        setContacts(data.contacts ?? []);
-        setLoadError("");
-      })
-      .catch((e) => setLoadError(e instanceof Error ? e.message : "Failed to load contacts"))
-      .finally(() => setLoadingContacts(false));
-  }, [opts.token]);
     try {
       const data = await userApi.getContacts(opts);
       setContacts(data.contacts ?? []);
-      setContactsError("");
+      setLoadError("");
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Failed to load contacts";
-      setContactsError(message);
-      setLoadError(message);
+      setLoadError(e instanceof Error ? e.message : "Failed to load contacts");
     } finally {
       setLoadingContacts(false);
     }
@@ -221,6 +178,8 @@ export default function SendPage() {
     loadTransfers();
     loadContacts();
   }, [loadTransfers, loadContacts]);
+
+  useScrollRestoration('/send', !loadingTransfers);
 
   const handleSendDialogChange = useCallback((open: boolean) => setShowSendDialog(open), []);
   const handleConfirmDialogChange = useCallback(
@@ -260,11 +219,6 @@ export default function SendPage() {
         : customRecipient.trim(),
     [useContact, selectedContact, customRecipient],
   );
-  const getToValue = useCallback(() =>
-    useContact && selectedContact
-      ? selectedContact.pay_uri || selectedContact.alias || selectedContact.id
-      : customRecipient.trim(),
-  [useContact, selectedContact, customRecipient]);
 
   const handleConfirmTransfer = useCallback(async () => {
     const to = getToValue();
@@ -278,15 +232,14 @@ export default function SendPage() {
       return;
     }
 
-    
     try {
       let blockchainTxHash: string | undefined;
 
       if (looksLikeStellarAddress(to)) {
         if (!userId) throw new Error("Not logged in");
-        
+
         const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
-        
+
         if (secret) {
           const sourceAddress = Keypair.fromSecret(secret).publicKey();
           if (stellarAddress && sourceAddress !== stellarAddress) {
@@ -321,7 +274,7 @@ export default function SendPage() {
               })
               .catch(reject);
           });
-          
+
           if (stellarAddress && address !== stellarAddress) {
             throw new Error(
               `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
@@ -343,17 +296,16 @@ export default function SendPage() {
           note,
           ...(blockchainTxHash ? { blockchain_tx_hash: blockchainTxHash } : {}),
         },
-        { to, amount_acbu: confirmedAmount, note, ...(blockchainTxHash ? { blockchain_tx_hash: blockchainTxHash } : {}) },
         opts,
       );
-      
+
       loadTransfers();
       refetchBalance();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
       setLastSentAmount(confirmedAmount);
       setShowSuccessDialog(true);
-      
+
       setTimeout(() => {
         setShowSuccessDialog(false);
         setAmount("");
@@ -362,7 +314,7 @@ export default function SendPage() {
         setCustomRecipient("");
         setSelectedContact(null);
       }, 2500);
-      
+
     } catch (e) {
       setApiError(e);
     } finally {
@@ -370,47 +322,24 @@ export default function SendPage() {
     }
   }, [
     amount,
+    confirmedAmount,
     getToValue,
     note,
     userId,
     stellarAddress,
     kit,
-    opts.token,
+    opts,
     loadTransfers,
     refetchBalance,
     ensureSession,
     clearError,
     setApiError,
   ]);
-  }, [amount, getToValue, note, userId, stellarAddress, kit, opts, loadTransfers, refetchBalance]);
-
-  const handleContactChange = useCallback((id: string) => {
-    const c = contacts.find((x: ContactItem) => x.id === id);
-    if (c) setSelectedContact(c);
-  }, [contacts]);
-
-  const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    if (v === "" || /^\d*\.?\d*$/.test(v)) setAmount(v);
-  }, []);
-
-  const handleNoteChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNote(e.target.value);
-  }, []);
-
-  const handleCustomRecipientChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCustomRecipient(e.target.value);
-  }, []);
 
   const handleContinue = useCallback(() => {
     setConfirmedAmount(amount);
     setShowConfirmDialog(true);
   }, [amount]);
-
-  const handleConfirmDialogOpenChange = useCallback((open: boolean) => {
-    if (!open && !sending) setConfirmedAmount("");
-    setShowConfirmDialog(open);
-  }, [sending]);
 
   const exceedsBalance =
     balance !== null && amount !== "" && parseFloat(amount) > balance;
@@ -425,56 +354,51 @@ export default function SendPage() {
       ),
     [debouncedAmount, exceedsBalance, useContact, selectedContact, customRecipient],
   );
-  const isValid = useMemo(() => {
-    return amount &&
-      parseFloat(amount) > 0 &&
-      !exceedsBalance &&
-      ((useContact && selectedContact) || (!useContact && customRecipient.trim()));
-  }, [amount, exceedsBalance, useContact, selectedContact, customRecipient]);
 
   const transfersList = useMemo(() => {
     if (loadingTransfers) return <SkeletonList count={2} itemHeight="h-14" />;
     if (transfers.length === 0)
       return (
         <div className="rounded-lg border border-border bg-card p-6 text-center">
-          <p className="text-sm text-muted-foreground">{t("send.noTransfersYet")}</p>
+          <p className="text-sm text-muted-foreground">{t('send.noTransfersYet')}</p>
         </div>
       );
     return (
       <div className="space-y-2">
-        {transfers.map((tr: TransferItem) => (
+        {transfers.map((item: TransferItem) => (
           <Link
-            key={tr.transaction_id}
-            href={`/send/${tr.transaction_id}`}
+            key={item.transaction_id}
+            href={`/send/${item.transaction_id}`}
             className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
           >
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-foreground truncate">{t("send.transferLabel")}</p>
-              <p className="text-xs text-muted-foreground">{formatDate(tr.created_at)}</p>
-              <p className="font-medium text-foreground truncate" title={t('send.transferLabel')}>
-                {t('send.transferLabel')}
-              </p>
+              <p className="font-medium text-foreground truncate">{t('send.transferLabel')}</p>
               <p className="text-xs text-muted-foreground">
-                {formatDate(t.created_at)}
+                {formatDate(item.created_at)}
               </p>
             </div>
             <div className="text-right">
               <p className="font-semibold text-foreground">
-                ACBU {formatAmount(tr.amount_acbu)}
+                ACBU {formatAmount(item.amount_acbu)}
               </p>
-              <Badge variant="outline" className="mt-1 text-xs">
-                {tr.status === "completed" && <Check className="mr-1 h-3 w-3" />}
-                {tr.status === "pending" && <AlertCircle className="mr-1 h-3 w-3" />}
-                {tr.status
-                  ? tr.status.charAt(0).toUpperCase() + tr.status.slice(1)
-                  : t("common.unknown")}
+              <Badge
+                variant="outline"
+                className={`mt-1 text-xs ${getStatusColor(item.status)}`}
+              >
+                {item.status === "completed" && (
+                  <Check className="mr-1 h-3 w-3" />
+                )}
+                {item.status === "pending" && (
+                  <AlertCircle className="mr-1 h-3 w-3" />
+                )}
+                {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : t('common.unknown')}
               </Badge>
             </div>
           </Link>
         ))}
       </div>
     );
-  }, [transfers, loadingTransfers, t]);
+  }, [t, transfers, loadingTransfers]);
 
   return (
     <>
@@ -496,28 +420,6 @@ export default function SendPage() {
                 {t("send.history")}
               </TabsTrigger>
             </TabsList>
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <header className="page-header">
-        <div className="px-4 py-3">
-          <h1 className="page-title mb-3">
-            {t('send.title')}
-          </h1>
-          <TabsList className="bg-muted inline-flex h-10 items-center justify-start rounded-lg p-1 text-muted-foreground">
-            <TabsTrigger value="send" className="px-4 py-1.5 rounded-md font-medium text-sm transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              {t('send.send')}
-            </TabsTrigger>
-            <TabsTrigger value="history" className="px-4 py-1.5 rounded-md font-medium text-sm transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              {t('send.history')}
-            </TabsTrigger>
-          </TabsList>
-        </div>
-      </header>
-
-      <div className="px-4 py-4">
-        {loadError && (
-          <div className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            <p className="font-medium">{loadError}</p>
           </div>
         </header>
 
@@ -527,11 +429,6 @@ export default function SendPage() {
               className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300"
               role="alert"
               aria-live="assertive"
-        <TabsContent value="send" className="space-y-4 outline-none mt-0">
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              onClick={() => setShowSendDialog(true)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto flex-col py-4"
             >
               <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
               <p className="font-medium">{loadError}</p>
@@ -560,15 +457,8 @@ export default function SendPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="history" className="space-y-3 outline-none mt-0">
-                <span>{t('send.addContact')}</span>
-              </Link>
-            </Button>
-          </div>
-        </TabsContent>
-
-          <TabsContent 
-            value="history" 
+          <TabsContent
+            value="history"
             id="panel-history"
             role="tabpanel"
             aria-labelledby="tab-history"
@@ -583,66 +473,7 @@ export default function SendPage() {
           </TabsContent>
         </div>
       </Tabs>
-              {loadingTransfers ? (
-                <SkeletonList count={2} itemHeight="h-14" />
-              ) : transfers.length === 0 ? (
-                <div className="rounded-lg border border-border bg-card p-6 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    No transfers yet
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {transfers.map((t: TransferItem) => (
-                    <Link
-                      key={t.transaction_id}
-                      href={`/send/${t.transaction_id}`}
-                      className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                      aria-label={`Transfer of ${t.amount_acbu} ACBU, status ${t.status}, created ${formatDate(t.created_at)}`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate" title="Transfer">
-                          Transfer
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(t.created_at)}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-foreground">
-                          ACBU {formatAmount(t.amount_acbu)}
-                        </p>
-                        <Badge
-                          variant="outline"
-                          className={`mt-1 text-xs ${getStatusBadgeClassName(t.status)}`}
-                        >
-                          {t.status === "completed" && (
-                            <Check className="mr-1 h-3 w-3" aria-hidden="true" />
-                          )}
-                          {t.status === "pending" && (
-                            <AlertCircle className="mr-1 h-3 w-3" aria-hidden="true" />
-                          )}
-                          {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
-                        </Badge>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-        <TabsContent value="history" className="space-y-3 outline-none mt-0">
-          <div>
-            <h3 className="mb-3 text-sm font-semibold text-foreground">
-              {t('send.recentTransfers')}
-            </h3>
-            {transfersList}
-          </div>
-        </TabsContent>
-      </div>
 
-      {/* Send Dialog */}
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
         <DialogContent className="max-w-md border-border">
           <DialogHeader>
@@ -652,12 +483,6 @@ export default function SendPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-foreground">{t("send.recipient")}</Label>
-            <DialogTitle>{t('send.title')}</DialogTitle>
-            <DialogDescription>{t('send.dialogDescription')}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-foreground">{t('send.recipient')}</Label>
               <Tabs
                 value={useContact ? "contact" : "custom"}
                 onValueChange={(v) => setUseContact(v === "contact")}
@@ -687,52 +512,13 @@ export default function SendPage() {
                         </div>
                       </SelectContent>
                     </Select>
-                  <Select
-                    value={selectedContact?.id || ""}
-                    onValueChange={handleContactChange}
-                  >
-                    <SelectTrigger className="border-border">
-                      <SelectValue placeholder={t('send.selectContact')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <div
-                        ref={contactsParentRef}
-                        style={{
-                          height: `${virtualizer.getTotalSize()}px`,
-                          width: '100%',
-                          position: 'relative',
-                        }}
-                      >
-                        {virtualizer.getVirtualItems().map((virtualRow) => {
-                          const c = contacts[virtualRow.index];
-                          return (
-                            <div
-                              key={virtualRow.key}
-                              style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: `${virtualRow.size}px`,
-                                transform: `translateY(${virtualRow.start}px)`,
-                              }}
-                            >
-                              <SelectItem value={c.id}>
-                                {c.alias ?? c.pay_uri ?? c.id}
-                              </SelectItem>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </SelectContent>
-                  </Select>
                   )}
                 </TabsContent>
                 <TabsContent value="custom" className="mt-3">
                   <Input
                     placeholder={t("send.walletAddressOrEmail")}
                     value={customRecipient}
-                  onChange={handleCustomRecipientChange}
+                    onChange={handleCustomRecipientChange}
                     className="border-border"
                   />
                 </TabsContent>
@@ -795,10 +581,7 @@ export default function SendPage() {
                 {t("send.cancel")}
               </Button>
               <Button
-                onClick={() => {
-                  setConfirmedAmount(amount);
-                  setShowConfirmDialog(true);
-                }}
+                onClick={handleContinue}
                 disabled={!isFormValid || isSubmitDisabled}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
@@ -809,7 +592,6 @@ export default function SendPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={handleConfirmDialogChange}>
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
@@ -860,7 +642,6 @@ export default function SendPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Success Dialog */}
       <Dialog open={showSuccessDialog} onOpenChange={handleSuccessDialogChange}>
         <DialogContent className="max-w-md border-border">
           <div className="flex flex-col items-center text-center py-6">
@@ -877,6 +658,6 @@ export default function SendPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </Tabs>
+    </>
   );
 }

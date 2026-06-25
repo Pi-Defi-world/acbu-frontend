@@ -36,12 +36,9 @@ import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
-import * as ratesApi from "@/lib/api/rates";
-import { useBalance } from "@/hooks/use-balance";
-import type { MintResponse, BurnResponse, CurrencyPreference, RatesResponse } from "@/types/api";
+import type { MintResponse, BurnResponse, CurrencyPreference, QuoteResponse } from "@/types/api";
 import { logger } from "@/lib/logger";
 import { useAuth } from "@/contexts/auth-context";
-import { useToast } from "@/hooks/use-toast";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
 import { Keypair } from "@stellar/stellar-sdk";
@@ -81,30 +78,10 @@ function estimateLocalFromAcbu(
 export default function CurrencyPage() {
   const opts = useApiOpts();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
-  const { toast } = useToast();
-=======
-  const { userId, stellarAddress } = useAuth();
-  const kit = useStellarWalletsKit();
->>>>>>> origin/dev
-=======
-  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { balance, loading: balanceLoading, error: balanceError, refetch: refetchBalance } = useBalance();
   const { toast } = useToast();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
-<<<<<<< HEAD
-  const { toast } = useToast();
->>>>>>> upstream/dev
-=======
-  const {
-    balance,
-    loading: balanceLoading,
-    error: balanceError,
-    refetch: refetchBalance,
-  } = useBalance();
->>>>>>> upstream/dev
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
@@ -120,12 +97,8 @@ export default function CurrencyPage() {
 
   // Mint state
   const [mintAmount, setMintAmount] = useState("");
-<<<<<<< HEAD
   const debouncedMintAmount = useDebounce(mintAmount, 300);
   const [mintSource, setMintSource] = useState("stellar");
-=======
-  const [mintSource, setMintSource] = useState<Exclude<CurrencyPreference, "auto">>("usdc");
->>>>>>> origin/dev
   const [mintWalletAddress, setMintWalletAddress] = useState("");
 
   // Burn state
@@ -204,14 +177,8 @@ export default function CurrencyPage() {
   const ngnPerAcbu = useMemo(() => localPerAcbu("NGN", rates), [rates]);
 
   const availableBalance = balance ?? 0;
-<<<<<<< HEAD
   const burnNumeric = parseFloat(debouncedBurnAmount || "0");
-  const intlNumeric = parseFloat(debouncedIntlAmount || "0");
   const mintNumeric = parseFloat(debouncedMintAmount || "0");
-=======
-  const burnNumeric = parseFloat(burnAmount || "0");
-  const mintNumeric = parseFloat(mintAmount || "0");
->>>>>>> upstream/dev
 
   const estimatedMintAcbu = estimateAcbuFromUsd(mintNumeric, rates);
   const estimatedBurnNgn = estimateLocalFromAcbu(burnNumeric, "NGN", rates);
@@ -241,7 +208,7 @@ export default function CurrencyPage() {
         const res: MintResponse = await mintApi.mintFromUsdc(
           mintAmount,
           mintWalletAddress.trim(),
-          mintSource,
+          mintSource as CurrencyPreference,
           opts,
         );
         setLastTxId(res.transaction_id);
