@@ -71,6 +71,7 @@
     "react-hook-form": "^7.60.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.4",
+    "sharp": "^0.34.5",
     "sonner": "^1.7.4",
     "stellar-sdk": "^13.3.0",
     "tailwind-merge": "^3.3.1",
