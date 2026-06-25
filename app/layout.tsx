@@ -71,5 +71,10 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AuthProvider>{children}</AuthProvider>;
+  return (
+    <AuthProvider>
+      <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
+      {children}
+    </AuthProvider>
+  );
 }
