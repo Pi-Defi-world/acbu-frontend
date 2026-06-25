@@ -5,6 +5,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Invariant function that throws an error if the condition is falsy.
+ * Use this instead of console.assert for invariant checks in production.
+ */
+export function invariant(
+  condition: unknown,
+  message?: string
+): asserts condition {
+  if (!condition) {
+    throw new Error(message ?? "Invariant violation");
+  }
+}
+
 type NumberLocale = string | string[];
 
 function resolveNumberLocale(locale?: NumberLocale): NumberLocale | undefined {
