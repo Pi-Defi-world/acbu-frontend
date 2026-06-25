@@ -1,7 +1,6 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
-import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { I18nProvider } from '@/contexts/i18n-context'
 import { ErrorBoundary } from '@/components/error-boundary'
@@ -15,6 +14,11 @@ import dynamic from 'next/dynamic';
 
 const OfflineIndicator = dynamic(
   () => import('@/components/offline-indicator').then((m) => ({ default: m.OfflineIndicator })),
+  { ssr: false },
+)
+
+const VercelAnalytics = dynamic(
+  () => import('@vercel/analytics/next').then((m) => ({ default: m.Analytics })),
   { ssr: false },
 )
 
@@ -116,6 +120,8 @@ export default async function RootLayout({
           this resource on non-print (screen/mobile) page loads.
         */}
         <link rel="stylesheet" href="/print.css" media="print" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
@@ -144,12 +150,13 @@ export default async function RootLayout({
                 <WalletSetupModal />
                 <Toaster />
                 {/*
-                  F-065 SRI review: the only third-party script injected here is
-                  @vercel/analytics/next, which is bundled at build time (first-party,
-                  no external CDN fetch). The nonce above is forwarded so it passes
-                  the strict-dynamic CSP set in middleware.ts.
+                  F-065 SRI review: analytics is non-critical, so it is
+                  dynamically loaded on the client instead of being emitted as a
+                  beforeInteractive script that can block initial rendering.
+                  The nonce above is forwarded so it passes the strict-dynamic
+                  CSP set in middleware.ts.
                 */}
-                <Analytics nonce={nonce} crossOrigin="anonymous" />
+                <VercelAnalytics nonce={nonce} crossOrigin="anonymous" />
               </AuthProvider>
             </I18nProvider>
           </ErrorBoundary>

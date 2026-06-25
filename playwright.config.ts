@@ -9,7 +9,7 @@ export default defineConfig({
   reporter: 'html',
   
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -22,9 +22,11 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    // Build then start to ensure assets are available in CI and cold starts
+    command: process.env.PW_BUILD_AND_START ? process.env.PW_BUILD_AND_START : 'npm run build && npm run start',
+    url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120000,
+    // Increase timeout for cold starts (build + start) in CI
+    timeout: process.env.CI ? 300000 : 120000,
   },
 });
