@@ -380,7 +380,7 @@ export default function Home() {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate md:text-base">
+                        <p className="text-sm font-medium text-foreground truncate md:text-base" title={t.type === 'mint' ? 'Mint' : t.type === 'burn' ? 'Burn' : 'Transfer'}>
                           {t.type === 'mint' ? 'Mint' : t.type === 'burn' ? 'Burn' : 'Transfer'}
                         </p>
                         <p className="text-xs text-muted-foreground md:text-sm">{formatDate(t.created_at)}</p>

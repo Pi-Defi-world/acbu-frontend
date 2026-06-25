@@ -208,17 +208,17 @@ export default function TransferDetailPage() {
           >
             <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
           </Link>
-          <h1 className="text-lg font-bold text-foreground truncate">
+      <h1 className="text-lg font-bold text-foreground truncate" title={`${isFiatRecord ? "Faucet" : "Transfer"} Details`}>
             {isFiatRecord ? "Faucet" : "Transfer"} Details
-=======
+          </h1>=======
       <div className="page-header">
         <div className="page-header-row">
           <Link href="/send" aria-label="Back to transfers">
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
-          <h1 className="page-title truncate">
+     <h1 className="page-title truncate" title={`${isFiatRecord ? "Faucet" : "Transfer"}`}>
             {isFiatRecord ? "Faucet" : "Transfer"}
->>>>>>> origin/dev
+          </h1>>>>>>>> origin/dev
           </h1>
         </div>
       </div>

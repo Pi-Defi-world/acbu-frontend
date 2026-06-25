@@ -126,7 +126,7 @@ export default function TransactionDetailPage() {
           <Link href="/activity">
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
-          <h1 className="page-title truncate">
+          <h1 className="page-title truncate" title="Transaction">
             Transaction
           </h1>
         </div>
