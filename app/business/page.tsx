@@ -62,7 +62,7 @@ export default function BusinessPage() {
     };
 
     fetchStats();
-  }, [opts]);
+  }, [opts.token]);
 
   return (
     <>
