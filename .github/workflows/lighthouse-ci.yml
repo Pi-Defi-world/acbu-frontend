@@ -34,4 +34,4 @@ jobs:
       - name: Run LHCI
         env:
           CHROME_BIN: /usr/bin/chromium-browser
-        run: npx @lhci/cli@0.11.0 autorun --config=.lighthouseci/config.js
+        run: npx @lhci/cli@0.11.0 autorun --config=.lighthouseci/config.cjs
