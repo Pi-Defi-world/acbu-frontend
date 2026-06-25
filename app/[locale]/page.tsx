@@ -23,6 +23,7 @@ import {
 import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
+import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { RetryErrorBlock } from '@/components/ui/retry-error-block';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
@@ -219,7 +220,7 @@ export default function Home() {
                 {!showBalance ? (
                   <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">••••••</p>
                 ) : balanceLoading || ratesLoading ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base">{t('approx_usd')} ...</p>
+                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base"><BalanceSkeleton variant="compact" /></p>
                 ) : balance == null ? (
                   <p className="text-sm text-muted-foreground mt-1.5 md:text-base">{t('approx_usd')} —</p>
                 ) : acbuUsd != null ? (

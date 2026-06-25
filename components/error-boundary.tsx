@@ -8,7 +8,7 @@ import { errorReporter } from '@/lib/error-reporting';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
-  level?: 'app' | 'page' | 'component';
+  level?: 'component' | 'page' | 'app';
 }
 
 interface State {
@@ -45,8 +45,12 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) {
         return this.props.fallback;
       }
+      const isAppLevel = this.props.level === 'app';
+      const isPageLevel = this.props.level === 'page';
       return (
-        <div className="flex min-h-[200px] flex-col items-center justify-center gap-4 p-4 text-center">
+        <div className={`flex flex-col items-center justify-center gap-4 p-6 text-center ${
+          isAppLevel ? 'min-h-screen' : isPageLevel ? 'min-h-[400px]' : 'min-h-[200px]'
+        }`}>
           <div className="rounded-full bg-red-100 p-3">
             <AlertTriangle className="h-6 w-6 text-red-600" />
           </div>
