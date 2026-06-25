@@ -100,6 +100,8 @@ export default async function RootLayout({
           this resource on non-print (screen/mobile) page loads.
         */}
         <link rel="stylesheet" href="/print.css" media="print" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
