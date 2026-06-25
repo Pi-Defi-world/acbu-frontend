@@ -121,5 +121,10 @@
         "@trezor/connect-plugin-stellar>@stellar/stellar-sdk": "^15.0.1"
       }
     }
-  }
+  },
+  "browserslist": [
+    ">0.5%",
+    "not dead",
+    "not op_mini all"
+  ]
 }
