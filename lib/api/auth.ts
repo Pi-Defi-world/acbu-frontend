@@ -1,4 +1,4 @@
-import { normalizeUsername } from '../utils';
+import { normalizeUsername } from '@/lib/utils';
 import { post } from './client';
 import type { RequestOptions } from './client';
 import type { SigninResponse, SigninRequires2FA } from '@/types/api';
