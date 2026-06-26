@@ -111,7 +111,7 @@ export default async function RootLayout({
         {apiOrigin && (
           <>
             <link rel="dns-prefetch" href={apiOrigin} />
-            <link rel="preconnect" href={apiOrigin} crossOrigin="anonymous" />
+            <link rel="preconnect" href={apiOrigin} crossOrigin="use-credentials" />
           </>
         )}
         {/*
