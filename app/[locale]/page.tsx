@@ -254,7 +254,7 @@ export default function Home() {
                       )}
                       {!fiatAccounts.length && (
                         <p className="text-sm font-normal text-muted-foreground mt-1 md:text-base">
-                          <Link href="/fiat" className="text-primary font-medium underline-offset-2 hover:underline">
+                          <Link href="/fiat" as="/fiat" className="text-primary font-medium underline-offset-2 hover:underline">
                             {t('add_demo_funds')}
                           </Link>
                         </p>
@@ -280,7 +280,7 @@ export default function Home() {
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
-                <Link key={feature.href} href={feature.href} className="block">
+                <Link key={feature.href} href={feature.href} as={feature.href} className="block">
                   <div className={`${feature.color} rounded-lg border border-border/50 p-4 h-full transition-all active:scale-95 md:p-5`}>
                     <Icon className={`w-6 h-6 ${feature.iconColor} mb-2 md:w-7 md:h-7 md:mb-3`} />
                     <h3 className="text-sm font-semibold text-foreground mb-0.5 md:text-base">{feature.title}</h3>
@@ -294,7 +294,7 @@ export default function Home() {
           <div className="space-y-3 md:space-y-4">
             <div className="flex items-center justify-between px-1">
               <h3 className="text-sm font-semibold text-foreground md:text-base">{t('recent_activity')}</h3>
-              <Link href="/activity" className="text-xs text-primary font-medium md:text-sm">{t('view_all')}</Link>
+              <Link href="/activity" as="/activity" className="text-xs text-primary font-medium md:text-sm">{t('view_all')}</Link>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             {loading ? (
@@ -304,7 +304,7 @@ export default function Home() {
                 icon={<Clock className="w-10 h-10" />}
                 title={t('no_recent_activity')}
                 action={
-                  <Link href="/send" className="text-xs text-primary font-medium">
+                  <Link href="/send" as="/send" className="text-xs text-primary font-medium">
                     {t('send_money')}
                   </Link>
                 }
@@ -312,7 +312,7 @@ export default function Home() {
             ) : (
               <div className="space-y-2 md:space-y-3">
                 {transactions.slice(0, 5).map((t) => (
-                  <Link key={t.transaction_id} href={`/transactions/${t.transaction_id}`} className="block rounded-lg border border-border bg-card p-3 transition-colors active:bg-muted md:p-4">
+                  <Link key={t.transaction_id} href={`/transactions/${t.transaction_id}`} as={`/transactions/${t.transaction_id}`} className="block rounded-lg border border-border bg-card p-3 transition-colors active:bg-muted md:p-4">
                     <div className="flex items-center gap-3 mb-2">
                       <div
                         className={`p-2 rounded-full flex-shrink-0 md:p-3 ${
