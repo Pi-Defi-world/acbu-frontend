@@ -21,19 +21,11 @@ import { logger } from '@/lib/logger';
 import { useI18n } from '@/contexts/i18n-context';
 
 const businessServices = [
-<<<<<<< HEAD
-  { id: 'sme', title: 'SME Services', description: 'Business accounts, transfers & statements', icon: Briefcase, badge: 'Pro', href: '/sme' },
-  { id: 'salary', title: 'Payroll', description: 'Disburse salaries and manage batches', icon: Users, badge: 'New', href: '/salary' },
-  { id: 'campaigns', title: 'Crowdfunding', description: 'Raise funds for projects via Trivela', icon: Zap, badge: 'Alpha', href: '/campaigns/1' },
-  { id: 'enterprise', title: 'Enterprise', description: 'Bulk transfers and treasury management', icon: PiggyBank, href: '/enterprise' },
-  { id: 'gateway', title: 'Payment Gateway', description: 'Create charges and manage escrow', icon: CreditCard, href: '/gateway' },
-=======
   { id: 'sme', titleKey: 'sme', descKey: 'smeDesc', icon: Briefcase, badge: 'Pro', href: '/business/sme' },
   { id: 'salary', titleKey: 'payroll', descKey: 'payrollDesc', icon: Users, badge: 'New', href: '/salary' },
   { id: 'campaigns', titleKey: 'crowdfunding', descKey: 'crowdfundingDesc', icon: Zap, badge: 'Alpha', href: '/campaigns/1' },
   { id: 'enterprise', titleKey: 'enterprise', descKey: 'enterpriseDesc', icon: PiggyBank, href: '/enterprise' },
   { id: 'gateway', titleKey: 'gateway', descKey: 'gatewayDesc', icon: CreditCard, href: '/gateway' },
->>>>>>> origin/dev
 ];
 
 /**

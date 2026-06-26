@@ -6,7 +6,7 @@ import {
   TransactionBuilder,
 } from "@stellar/stellar-sdk";
 import { acbuAsset, demoFiatAsset } from "./demo-fiat";
-import { getAssetsConfig } from "../api/config";
+import { getAssetsConfig } from "@/lib/api/config";
 import type { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit";
 import { logger } from '@/lib/logger';
 

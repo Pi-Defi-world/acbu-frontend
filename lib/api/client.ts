@@ -81,6 +81,8 @@ export interface RequestOptions {
   retries?: number;
   /** Base delay time in milliseconds for exponential backoff retry logic. */
   retryDelay?: number;
+  /** Fetch Priority API hint. Pass 'high' for above-the-fold critical requests. */
+  priority?: RequestPriority;
 }
 
 export interface ApiError extends Error {
@@ -139,7 +141,8 @@ async function request<T>(
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal,
-      credentials: 'include', // Include httpOnly cookies in all requests
+      credentials: 'include',
+      ...(opts.priority !== undefined && { priority: opts.priority }),
     });
   } catch (error) {
     clearTimeout(timeoutId);
