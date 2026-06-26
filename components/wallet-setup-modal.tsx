@@ -215,6 +215,7 @@ export function WalletSetupModal() {
         {!option ? (
           <div className="space-y-4 py-4">
             <Button
+              data-testid="generate-wallet-button"
               onClick={() => {
                 // Always generate a fresh key when user explicitly chooses "Generate New Wallet"
                 const kp = Keypair.random();
@@ -231,6 +232,7 @@ export function WalletSetupModal() {
             </Button>
 
             <Button
+              data-testid="import-wallet-button"
               onClick={() => setOption(2)}
               className="w-full h-auto py-4 flex flex-col items-center"
               variant="outline"

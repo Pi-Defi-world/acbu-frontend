@@ -48,7 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
       const isAppLevel = this.props.level === 'app';
       const isPageLevel = this.props.level === 'page';
       return (
-        <div className={`flex flex-col items-center justify-center gap-4 p-6 text-center ${
+        <div data-testid="error-boundary-fallback" className={`flex flex-col items-center justify-center gap-4 p-6 text-center ${
           isAppLevel ? 'min-h-screen' : isPageLevel ? 'min-h-[400px]' : 'min-h-[200px]'
         }`}>
           <div className="rounded-full bg-red-100 p-3">

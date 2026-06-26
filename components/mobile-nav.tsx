@@ -82,6 +82,7 @@ export function MobileNav() {
           return (
             <button
               key={item.href}
+              data-testid={`nav-${item.name.toLowerCase()}`}
               onClick={() => handleNav(item.href)}
               aria-label={item.name}
               disabled={isPending}
