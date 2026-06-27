@@ -14,5 +14,10 @@ export default defineConfig({
       provider: 'istanbul',
       reporter: ['text', 'lcov'],
     },
+    resolve: {
+      alias: {
+        '': './',
+      },
+    },
   },
 })
