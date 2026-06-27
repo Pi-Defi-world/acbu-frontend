@@ -13,6 +13,7 @@ const nextConfig = {
     // F-001: TypeScript errors must fail the build to prevent shipping broken code
     ignoreBuildErrors: false,
   },
+  crossOrigin: 'anonymous',
   // Improve tree-shaking for large packages and local UI exports
   experimental: {
     optimizePackageImports: ['lucide-react', '@/components/ui'],

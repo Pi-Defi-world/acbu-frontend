@@ -35,7 +35,7 @@ export default function GuardiansPage() {
     }).catch((e) => {
       setError(e instanceof Error ? e.message : 'Failed to load guardians');
     }).finally(() => setLoading(false));
-  }, [opts]);
+  }, [opts.token]);
 
   useEffect(() => {
     setLoading(true);

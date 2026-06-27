@@ -9,21 +9,12 @@ import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, Help
 import { useAuth } from '@/contexts/auth-context';
 import { useBalance } from '@/hooks/use-balance';
 import { useApiOpts } from '@/hooks/use-api';
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { KycBadge } from '@/components/ui/kyc-badge';
-=======
->>>>>>> origin/dev
-import { formatAmount } from '@/lib/utils';
-=======
 import { formatAmount, parseUtcDate } from '@/lib/utils';
->>>>>>> upstream/dev
 import * as userApi from '@/lib/api/user';
 import * as transactionsApi from '@/lib/api/transactions';
 import type { UserMe } from '@/types/api';
 import type { TransactionListItem } from '@/types/api';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { RetryErrorBlock } from '@/components/ui/retry-error-block';
 
 // ---------------------------------------------------------------------------
@@ -83,8 +74,6 @@ function getKycBadgeConfig(status: KycStatus | undefined | null): KycBadgeConfig
   }
 }
 
-<<<<<<< HEAD
-=======
 function LocalKycBadge({ status, loading }: { status: KycStatus | undefined | null; loading: boolean }) {
   if (loading) {
     return <div className="h-5 w-24 rounded-full bg-muted animate-pulse" />;
@@ -97,7 +86,6 @@ function LocalKycBadge({ status, loading }: { status: KycStatus | undefined | nu
     </Badge>
   );
 }
->>>>>>> origin/dev
 
 const menuItems = [
   {
@@ -223,7 +211,7 @@ export default function MePage() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [user?.kyc_status, pollingDelay, loading, opts]);
+  }, [user?.kyc_status, pollingDelay, loading, opts.token]);
 
   const handleLogout = async () => {
     setShowLogoutConfirm(false);
@@ -266,17 +254,7 @@ export default function MePage() {
                 <h1 className="page-title truncate md:text-2xl" title={displayName}>{displayName}</h1>
                 <LocalKycBadge status={user?.kyc_status} loading={loading} />
               </div>
-<<<<<<< HEAD
-              <p className="text-xs text-muted-foreground truncate" title={user?.email || user?.phone_e164 || '—'}>{user?.email || user?.phone_e164 || '—'}</p>
-<<<<<<< HEAD
-              <div className="mt-1.5">
-                <KycBadge status={user?.kyc_status} />
-              </div>
-=======
->>>>>>> origin/dev
-=======
               <p className="text-xs text-muted-foreground truncate md:text-sm" title={user?.email || user?.phone_e164 || '—'}>{user?.email || user?.phone_e164 || '—'}</p>
->>>>>>> upstream/dev
             </div>
           </div>
         </div>
