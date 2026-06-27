@@ -2,6 +2,7 @@ import React, { Suspense } from "react"
 import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
+import { NavigationGuardProvider } from '@/contexts/navigation-guard-context'
 import { ErrorBoundary } from '@/components/error-boundary'
 import '../globals.css'
 import { AuthGuard } from '@/components/layout/auth-guard';

@@ -62,6 +62,7 @@ import {
 } from "@/components/ui/select";
 import { useSessionGuard } from "@/hooks/use-session-guard";
 import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
+import { useNavigationGuard } from "@/contexts/navigation-guard-context";
 
 function formatDate(iso: string) {
   const d = parseUtcDate(iso);
@@ -117,6 +118,7 @@ export default function SendPage() {
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const { setHasUnsavedChanges } = useNavigationGuard();
 
   const contactsParentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
@@ -340,6 +342,21 @@ export default function SendPage() {
     setConfirmedAmount(amount);
     setShowConfirmDialog(true);
   }, [amount]);
+
+  const handleConfirmDialogOpenChange = useCallback((open: boolean) => {
+    if (!open && !sending) setConfirmedAmount("");
+    setShowConfirmDialog(open);
+  }, [sending]);
+
+  const handleSendDialogOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      setAmount("");
+      setNote("");
+      setCustomRecipient("");
+      setSelectedContact(null);
+    }
+    setShowSendDialog(open);
+  }, []);
 
   const exceedsBalance =
     balance !== null && amount !== "" && parseFloat(amount) > balance;
@@ -582,6 +599,7 @@ export default function SendPage() {
               </Button>
               <Button
                 onClick={handleContinue}
+                disabled={!isValid}
                 disabled={!isFormValid || isSubmitDisabled}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
