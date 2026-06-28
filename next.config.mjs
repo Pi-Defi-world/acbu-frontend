@@ -20,6 +20,8 @@ const nextConfig = {
   },
   // Don't advertise the framework to reduce attack surface
   poweredByHeader: false,
+  // Disable compression since CDN handles it
+  compress: false,
   async redirects() {
     return [
       { source: '/account', destination: '/me', permanent: false },
