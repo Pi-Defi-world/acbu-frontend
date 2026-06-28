@@ -31,7 +31,6 @@ export function AppLayout({ children }: AppLayoutProps) {
           dismissed={warningDismissed}
         />
       )}
-      <main className={`flex-1 ${!isPublic ? 'pb-24' : ''}`}>{children}</main>
 
       {!isPublic && <MobileNav />}
     </div>
