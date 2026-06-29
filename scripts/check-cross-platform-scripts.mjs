@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import process from 'node:process'
 
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
 
@@ -8,11 +9,11 @@ const unixOnlyPatterns = [
     replacement: 'rimraf or a Node.js cleanup script',
   },
   {
-    pattern: /\bcp\s+\S+/,
+    pattern: /(?:^|[;&|]\s*)cp\s+\S+/,
     replacement: 'shx cp or a Node.js copy script',
   },
   {
-    pattern: /\bmkdir\s+-p\b/,
+    pattern: /(?:^|[;&|]\s*)mkdir\s+-p\b/,
     replacement: 'shx mkdir -p or a Node.js directory script',
   },
 ]
@@ -34,4 +35,4 @@ if (failures.length > 0) {
   process.exit(1)
 }
 
-console.log('Package scripts are cross-platform compatible.')
+process.stdout.write('Package scripts are cross-platform compatible.\n')
