@@ -13,6 +13,7 @@
     "test:a11y:report": "playwright show-report",
     "a11y": "playwright test",
     "typecheck": "tsc --noEmit",
+    "check:scripts": "node scripts/check-cross-platform-scripts.mjs",
     "generate:icons": "node scripts/generate-pwa-icons.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
