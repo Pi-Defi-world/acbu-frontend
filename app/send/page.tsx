@@ -532,7 +532,11 @@ export default function SendPage() {
                   )}
                 </TabsContent>
                 <TabsContent value="custom" className="mt-3">
+                  <Label htmlFor="send-recipient-address" className="mb-2 block text-foreground">
+                    {t("send.recipientAddress")}
+                  </Label>
                   <Input
+                    id="send-recipient-address"
                     placeholder={t("send.walletAddressOrEmail")}
                     value={customRecipient}
                     onChange={handleCustomRecipientChange}
@@ -544,10 +548,13 @@ export default function SendPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-foreground">{t("send.amount")}</Label>
+              <Label htmlFor="send-amount" className="text-foreground">
+                {t("send.amount")}
+              </Label>
               <div className="flex gap-2">
                 <span className="flex items-center text-muted-foreground font-medium">ACBU</span>
                 <Input
+                  id="send-amount"
                   type="number"
                   inputMode="decimal"
                   placeholder="0.00"
