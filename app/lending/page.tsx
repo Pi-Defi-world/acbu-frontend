@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Lending | ACBU',
+  description: 'Apply for loans and access credit facilities using your ACBU tokens as collateral.',
+};
+
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Briefcase, HandCoins, ShieldAlert, CheckCircle2, AlertCircle, Clock, Wallet } from 'lucide-react';
@@ -231,13 +238,13 @@ export default function LendingPage() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <header className="page-header">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
           <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Lending</h1>
+            <h1 className="page-title">Lending</h1>
             <p className="text-xs text-muted-foreground">Apply for a loan</p>
           </div>
           <Link
@@ -418,7 +425,7 @@ export default function LendingPage() {
                         <p className="text-xs text-muted-foreground">
                           ACBU {formatAmount(app.amount)} · {app.term} months
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 truncate">
+                        <p className="text-[10px] text-muted-foreground mt-1 truncate" title={`Ref: ${app.id}`}>
                           Ref: {app.id}
                         </p>
                       </div>

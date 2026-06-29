@@ -50,7 +50,7 @@ function AlertDialogContent({
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
   const contentRef = React.useRef<HTMLDivElement>(null)
-  useFocusTrap(contentRef as React.RefObject<HTMLElement>, { isActive: true })
+  useFocusTrap(contentRef, { isActive: true })
 
   return (
     <AlertDialogPortal>
@@ -75,7 +75,7 @@ function AlertDialogHeader({
   return (
     <div
       data-slot="alert-dialog-header"
-      className={cn('flex flex-col gap-2 text-center sm:text-left', className)}
+      className={cn('flex flex-col gap-2 text-center sm:text-left rtl:sm:text-right', className)}
       {...props}
     />
   )

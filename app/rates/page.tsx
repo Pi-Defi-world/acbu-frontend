@@ -1,20 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { SkeletonList } from "@/components/ui/skeleton-list";
+import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import { ArrowLeft } from "lucide-react";
-import { useApiOpts, useApiError } from "@/hooks/use-api";
-import * as ratesApi from "@/lib/api/rates";
+import { useApiOpts } from "@/hooks/use-api";
+import { useRates } from "@/lib/api/rates";
 import type { RatesResponse } from "@/types/api";
 
 export default function RatesPage() {
   const opts = useApiOpts();
-  const { uiError: error, setApiError: handleError } = useApiError();
-  const [rates, setRates] = useState<RatesResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: rates, loading, error, refetch } = useRates(opts);
 
   const formatRate = (rate: number | undefined): string => {
     if (rate == null) return "—";
@@ -32,40 +31,22 @@ export default function RatesPage() {
     });
   };
 
-  useEffect(() => {
-    let cancelled = false;
-    ratesApi
-      .getRates(opts)
-      .then((data) => {
-        if (!cancelled) setRates(data);
-      })
-      .catch((e) => {
-        if (!cancelled) handleError(e);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
-
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3 flex items-center gap-3">
+      <div className="page-header">
+        <div className="page-header-row">
           <Link
             href="/me"
             aria-label="Go back" 
-            className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2"
+            className="touch-target"
           >
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
-          <h1 className="text-lg font-bold text-foreground">Rates</h1>
+          <h1 className="page-title">Rates</h1>
         </div>
       </div>
       <PageContainer>
-        {error && <p className="text-destructive text-sm mb-3">{error.message}</p>}
+        <RetryErrorBlock message={error} onRetry={refetch} className="mb-3" />
         {loading ? (
           <SkeletonList count={2} itemHeight="h-20" />
         ) : rates ? (

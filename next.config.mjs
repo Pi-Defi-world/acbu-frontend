@@ -1,11 +1,22 @@
-import createNextIntlPlugin from 'next-intl/plugin';
+import bundleAnalyzer from '@next/bundle-analyzer';
+import { validateEnv } from './lib/env-safety.js';
 
-const withNextIntl = createNextIntlPlugin();
+validateEnv(process.env);
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    unoptimized: true,
+  typescript: {
+    // F-001: TypeScript errors must fail the build to prevent shipping broken code
+    ignoreBuildErrors: false,
+  },
+  crossOrigin: 'anonymous',
+  // Improve tree-shaking for large packages and local UI exports
+  experimental: {
+    optimizePackageImports: ['lucide-react', '@/components/ui'],
   },
   // Don't advertise the framework to reduce attack surface
   poweredByHeader: false,
@@ -17,6 +28,6 @@ const nextConfig = {
       { source: '/account/recovery', destination: '/recovery', permanent: false },
     ];
   },
-}
+};
 
-export default withNextIntl(nextConfig)
+export default withBundleAnalyzer(nextConfig);

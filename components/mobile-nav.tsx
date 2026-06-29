@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useRef, useTransition } from "react";
+import React, { useRef, useState, useEffect, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, Send, Coins, Briefcase, User, Wallet } from "lucide-react";
+import { useNavigationGuard } from "@/contexts/navigation-guard-context";
 
 interface NavItem {
   name: string;
@@ -28,40 +29,84 @@ export function MobileNav() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const navigatingTo = useRef<string | null>(null);
+  const [bottomOffset, setBottomOffset] = useState(0);
+  const { confirmNavigation } = useNavigationGuard();
 
-  function handleNav(href: string) {
-    if (isPending || navigatingTo.current === href || pathname === href) return;
+  useEffect(() => {
+    navigatingTo.current = null;
+  }, [pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+
+    const handleViewportChange = () => {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const offset = window.innerHeight - (vv.height + vv.offsetTop);
+      setBottomOffset(Math.max(0, offset));
+    };
+
+    const vv = window.visualViewport;
+    vv.addEventListener("resize", handleViewportChange);
+    vv.addEventListener("scroll", handleViewportChange);
+
+    handleViewportChange();
+
+    return () => {
+      vv.removeEventListener("resize", handleViewportChange);
+      vv.removeEventListener("scroll", handleViewportChange);
+    };
+  }, []);
+
+  async function handleNav(href: string) {
+    if (isPending || navigatingTo.current !== null || pathname === href) return;
+    const confirmed = await confirmNavigation();
+    if (!confirmed) return;
     navigatingTo.current = href;
     startTransition(() => {
       router.push(href);
-      navigatingTo.current = null;
     });
   }
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 border-t border-border bg-card z-40"
+      className="fixed bottom-0 left-0 right-0 border-t border-border bg-card z-40 transition-[bottom] duration-150 ease-out md:h-auto"
       role="navigation"
       aria-label="Mobile navigation"
+      style={{ bottom: `${bottomOffset}px` }}
     >
       <div className="flex justify-between items-center h-20 px-1">
-        {navItems.map((item) => {
+        {navItems.map((item, idx) => {
           const isActive = pathname === item.href;
+          const showLabels = true;
+          // Explicitly set tabIndex to match the visual left-to-right order.
+          // Using positive tabindex values here ensures keyboard focus
+          // follows the same sequence users see on screen.
+          const tabIndex = idx + 1;
           return (
             <button
               key={item.href}
+              data-testid={`nav-${item.name.toLowerCase()}`}
               onClick={() => handleNav(item.href)}
               aria-label={item.name}
-              aria-current={isActive ? "page" : undefined}
               disabled={isPending}
+              tabIndex={tabIndex}
               className={`flex flex-col items-center justify-center flex-1 h-20 gap-1 transition-colors ${
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {item.icon}
-              <span className="text-xs font-medium text-center">{item.name}</span>
+              <span className="md:w-7 md:h-7 flex items-center justify-center">
+                {item.icon}
+              </span>
+              {showLabels ? (
+                <span className="text-xs font-medium text-center md:text-sm">
+                  {item.name}
+                </span>
+              ) : (
+                <span className="sr-only">{item.name}</span>
+              )}
             </button>
           );
         })}

@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Transfer Details | ACBU',
+  description: 'View detailed information about a specific ACBU transfer including recipient, amount, and status.',
+};
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
@@ -11,9 +18,8 @@ import { ArrowLeft, Share2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useApiOpts } from "@/hooks/use-api";
 import * as transfersApi from "@/lib/api/transfers";
-import { formatAmount } from "@/lib/utils";
+import { formatAmount, parseUtcDate } from "@/lib/utils";
 
-// Add safe date formatter
 function safeFormatDate(iso: string | undefined) {
   if (!iso) return '';
   try {
@@ -103,16 +109,12 @@ export default function TransferDetailPage() {
   if (!id) {
     return (
       <>
-        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-          <div className="px-4 py-3 flex items-center gap-3">
-            <Link 
-              href="/send" 
-              aria-label="Back to transfers"
-              className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            >
-              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
+        <div className="page-header">
+          <div className="page-header-row">
+            <Link href="/send" aria-label="Back to transfers">
+              <ArrowLeft className="w-5 h-5 text-primary" />
             </Link>
-            <h1 className="text-lg font-bold text-foreground">Transfer</h1>
+            <h1 className="page-title">Transfer</h1>
           </div>
         </div>
         <PageContainer>
@@ -127,16 +129,12 @@ export default function TransferDetailPage() {
   if (loading) {
     return (
       <>
-        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-          <div className="px-4 py-3 flex items-center gap-3">
-            <Link 
-              href="/send" 
-              aria-label="Back to transfers"
-              className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            >
-              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
+        <div className="page-header">
+          <div className="page-header-row">
+            <Link href="/send" aria-label="Back to transfers">
+              <ArrowLeft className="w-5 h-5 text-primary" />
             </Link>
-            <h1 className="text-lg font-bold text-foreground">Transfer</h1>
+            <h1 className="page-title">Transfer</h1>
           </div>
         </div>
         <PageContainer>
@@ -152,16 +150,12 @@ export default function TransferDetailPage() {
   if (error || !data) {
     return (
       <>
-        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-          <div className="px-4 py-3 flex items-center gap-3">
-            <Link 
-              href="/send" 
-              aria-label="Back to transfers"
-              className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            >
-              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
+        <div className="page-header">
+          <div className="page-header-row">
+            <Link href="/send" aria-label="Back to transfers">
+              <ArrowLeft className="w-5 h-5 text-primary" />
             </Link>
-            <h1 className="text-lg font-bold text-foreground">Transfer</h1>
+            <h1 className="page-title">Transfer</h1>
           </div>
         </div>
         <PageContainer>
@@ -199,17 +193,13 @@ export default function TransferDetailPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Link 
-            href="/send" 
-            aria-label="Back to transfers list"
-            className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-          >
-            <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
+      <div className="page-header">
+        <div className="page-header-row">
+          <Link href="/send" aria-label="Back to transfers">
+            <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
-          <h1 className="text-lg font-bold text-foreground truncate flex-1">
-            {isFiatRecord ? "Faucet" : "Transfer"} Details
+          <h1 className="page-title truncate" title={`${isFiatRecord ? "Faucet" : "Transfer"}`}>
+            {isFiatRecord ? "Faucet" : "Transfer"}
           </h1>
           <Button
             variant="ghost"

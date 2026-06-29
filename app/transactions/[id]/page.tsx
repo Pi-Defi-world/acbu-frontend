@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Transaction Details | ACBU',
+  description: 'View detailed information about a specific ACBU transaction including status, amount, and timestamps.',
+};
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
@@ -12,10 +19,10 @@ import { useParams } from "next/navigation";
 import { useApiOpts } from "@/hooks/use-api";
 import * as transactionsApi from "@/lib/api/transactions";
 import type { TransactionDetail } from "@/types/api";
-import { formatAmount } from "@/lib/utils";
+import { formatAmount, parseUtcDate } from "@/lib/utils";
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
+  return parseUtcDate(iso).toLocaleString(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
   });
@@ -95,12 +102,12 @@ export default function TransactionDetailPage() {
   if (!id) {
     return (
       <>
-        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-          <div className="px-4 py-3 flex items-center gap-3">
+        <div className="page-header">
+          <div className="page-header-row">
             <Link href="/activity">
               <ArrowLeft className="w-5 h-5 text-primary" />
             </Link>
-            <h1 className="text-lg font-bold text-foreground">Transaction</h1>
+            <h1 className="page-title">Transaction</h1>
           </div>
         </div>
         <PageContainer>
@@ -113,12 +120,12 @@ export default function TransactionDetailPage() {
   if (loading) {
     return (
       <>
-        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-          <div className="px-4 py-3 flex items-center gap-3">
+        <div className="page-header">
+          <div className="page-header-row">
             <Link href="/activity">
               <ArrowLeft className="w-5 h-5 text-primary" />
             </Link>
-            <h1 className="text-lg font-bold text-foreground">Transaction</h1>
+            <h1 className="page-title">Transaction</h1>
           </div>
         </div>
         <PageContainer>
@@ -131,12 +138,12 @@ export default function TransactionDetailPage() {
   if (error || !data) {
     return (
       <>
-        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-          <div className="px-4 py-3 flex items-center gap-3">
+        <div className="page-header">
+          <div className="page-header-row">
             <Link href="/activity">
               <ArrowLeft className="w-5 h-5 text-primary" />
             </Link>
-            <h1 className="text-lg font-bold text-foreground">Transaction</h1>
+            <h1 className="page-title">Transaction</h1>
           </div>
         </div>
         <PageContainer>
@@ -152,12 +159,12 @@ export default function TransactionDetailPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3 flex items-center gap-3">
+      <div className="page-header">
+        <div className="page-header-row">
           <Link href="/activity">
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
-          <h1 className="text-lg font-bold text-foreground truncate flex-1">
+          <h1 className="page-title truncate" title="Transaction">
             Transaction
           </h1>
           <Button

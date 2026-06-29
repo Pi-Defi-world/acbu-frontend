@@ -29,9 +29,9 @@ export default function ProfileError({
   };
 
   return (
-    <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-6 text-center">
-      <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-3">
-        <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
+    <div className="error-state">
+      <div className="error-icon-wrapper">
+        <AlertTriangle className="error-icon" />
       </div>
       
       <div className="space-y-2">

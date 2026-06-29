@@ -42,7 +42,7 @@ interface UseFocusTrapOptions {
  * Useful for modals, dialogs, and other overlay components
  */
 export function useFocusTrap(
-  containerRef: React.RefObject<HTMLElement | null>,
+  containerRef: React.RefObject<HTMLElement>,
   options?: UseFocusTrapOptions,
 ) {
   const { isActive = true, onFocusChange } = options || {}
