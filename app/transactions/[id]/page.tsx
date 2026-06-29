@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Share2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useApiOpts } from "@/hooks/use-api";
 import * as transactionsApi from "@/lib/api/transactions";
@@ -20,6 +21,33 @@ function formatDate(iso: string) {
   });
 }
 
+async function shareTransaction(data: TransactionDetail) {
+  const amount = data.amount_acbu != null
+    ? `ACBU ${formatAmount(data.amount_acbu)}`
+    : data.local_amount != null
+    ? `${data.currency ?? ""} ${formatAmount(data.local_amount)}`
+    : "—";
+  const date = data.created_at ? formatDate(data.created_at) : "—";
+  const hash = data.blockchain_tx_hash ?? "—";
+  const url = window.location.href;
+
+  const shareData = {
+    title: "Transaction Receipt",
+    text: `Amount: ${amount} | Date: ${date} | Hash: ${hash}`,
+    url,
+  };
+
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+    } catch {
+      // User dismissed or share failed — no-op
+    }
+  } else {
+    await navigator.clipboard.writeText(url);
+  }
+}
+
 /**
  * Detailed view of a specific transaction by ID.
  */
@@ -30,6 +58,16 @@ export default function TransactionDetailPage() {
   const [data, setData] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = useCallback(async () => {
+    if (!data) return;
+    await shareTransaction(data);
+    if (!navigator.share) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [data]);
 
   useEffect(() => {
     if (!id) {
@@ -119,9 +157,19 @@ export default function TransactionDetailPage() {
           <Link href="/activity">
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
-          <h1 className="text-lg font-bold text-foreground truncate">
+          <h1 className="text-lg font-bold text-foreground truncate flex-1">
             Transaction
           </h1>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleShare}
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+            aria-label="Share transaction"
+          >
+            <Share2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
+            {copied ? "Copied!" : "Share"}
+          </Button>
         </div>
       </div>
       <PageContainer>

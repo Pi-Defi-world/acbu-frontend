@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Share2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useApiOpts } from "@/hooks/use-api";
 import * as transfersApi from "@/lib/api/transfers";
@@ -39,6 +40,42 @@ export default function TransferDetailPage() {
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = useCallback(async () => {
+    if (!data) return;
+    const type = (data.type as string) ?? "transfer";
+    const localCurrency = (data.local_currency as string) ?? "";
+    const localAmount = (data.local_amount as string) ?? "";
+    const amountAcbu = (data.amount_acbu as string) ?? "";
+    const createdAt = (data.created_at as string) ?? "";
+    const txHash = (data.blockchain_tx_hash as string) ?? "—";
+    const isFiatRecord = type === "mint" && !!localCurrency && !!localAmount;
+
+    const amount = isFiatRecord
+      ? `${localCurrency} ${formatAmount(localAmount)}`
+      : `ACBU ${formatAmount(amountAcbu)}`;
+    const date = createdAt ? safeFormatDate(createdAt) : "—";
+    const url = window.location.href;
+
+    const shareData = {
+      title: "Transaction Receipt",
+      text: `Amount: ${amount} | Date: ${date} | Hash: ${txHash}`,
+      url,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // User dismissed or share failed — no-op
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [data]);
 
   useEffect(() => {
     if (!id) {
@@ -171,9 +208,19 @@ export default function TransferDetailPage() {
           >
             <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
           </Link>
-          <h1 className="text-lg font-bold text-foreground truncate">
+          <h1 className="text-lg font-bold text-foreground truncate flex-1">
             {isFiatRecord ? "Faucet" : "Transfer"} Details
           </h1>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleShare}
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+            aria-label="Share transfer"
+          >
+            <Share2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
+            {copied ? "Copied!" : "Share"}
+          </Button>
         </div>
       </div>
       
