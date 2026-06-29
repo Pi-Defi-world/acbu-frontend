@@ -1,7 +1,13 @@
 "use client";
 
+import type { Metadata } from 'next';
 import React from "react";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: 'Exchange Rates | ACBU',
+  description: 'View current exchange rates for ACBU against major fiat currencies.',
+};
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { SkeletonList } from "@/components/ui/skeleton-list";

@@ -1,7 +1,13 @@
 'use client';
 
+import type { Metadata } from 'next';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+
+export const metadata: Metadata = {
+  title: 'Upload KYC Documents | ACBU',
+  description: 'Upload your identity verification documents for KYC processing.',
+};
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';

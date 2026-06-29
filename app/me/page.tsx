@@ -1,7 +1,13 @@
 'use client';
 
+import type { Metadata } from 'next';
 import React, { useState, useEffect, useRef } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
+
+export const metadata: Metadata = {
+  title: 'My Account | ACBU',
+  description: 'Manage your ACBU account, profile, and settings.',
+};
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';

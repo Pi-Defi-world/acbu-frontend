@@ -1,7 +1,13 @@
 "use client";
 
+import type { Metadata } from 'next';
 import React, { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: 'Withdraw (Burn) | ACBU',
+  description: 'Burn ACBU tokens and withdraw funds to your bank or mobile money account.',
+};
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";

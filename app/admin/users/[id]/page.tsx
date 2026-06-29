@@ -1,7 +1,13 @@
 'use client';
 
+import type { Metadata } from 'next';
 import { useReducer } from 'react';
 import { useParams } from 'next/navigation';
+
+export const metadata: Metadata = {
+  title: 'Edit User | ACBU Admin',
+  description: 'Edit user account details in the ACBU admin dashboard.',
+};
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';

@@ -1,7 +1,13 @@
 'use client';
 
+import type { Metadata } from 'next';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
+export const metadata: Metadata = {
+  title: 'KYC Verification | ACBU',
+  description: 'Complete your KYC verification to unlock full ACBU account features and higher limits.',
+};
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
