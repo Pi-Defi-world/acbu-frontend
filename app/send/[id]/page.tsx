@@ -12,7 +12,6 @@ import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Share2 } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -201,16 +200,16 @@ export default function TransferDetailPage() {
           <h1 className="page-title truncate" title={`${isFiatRecord ? "Faucet" : "Transfer"}`}>
             {isFiatRecord ? "Faucet" : "Transfer"}
           </h1>
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
             onClick={handleShare}
-            className="shrink-0 text-muted-foreground hover:text-foreground"
-            aria-label="Share transfer"
+            aria-label="Share transaction receipt"
+            aria-live="polite"
+            className="inline-flex items-center gap-1.5 shrink-0 rounded-md border border-border px-3 h-8 text-sm font-medium text-foreground bg-transparent transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
-            <Share2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
-            {copied ? "Copied!" : "Share"}
-          </Button>
+            <Share2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span>{copied ? "Copied!" : "Share"}</span>
+          </button>
         </div>
       </div>
       
