@@ -147,11 +147,15 @@ function SignInForm() {
                         </div>
 
                         <div>
-                            <label className="form-label">
+                            <label
+                                htmlFor="signin-passcode"
+                                className="form-label"
+                            >
                                 Passcode
                             </label>
                             <div className="relative">
                                 <Input
+                                    id="signin-passcode"
                                     type={showPassword ? 'text' : 'password'}
                                     placeholder="••••••••"
                                     value={passcode}

@@ -4,24 +4,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/generate-pwa-icons.mjs && next build",
+    "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
-<<<<<<< HEAD
     "start": "next start",
     "test:a11y": "playwright test accessibility.spec.ts",
     "test:a11y:ci": "playwright test accessibility.spec.ts --reporter=github",
     "test:a11y:report": "playwright show-report",
-    "a11y": "playwright test"
-=======
+    "a11y": "playwright test",
     "typecheck": "tsc --noEmit",
+    "check:scripts": "node scripts/check-cross-platform-scripts.mjs",
     "generate:icons": "node scripts/generate-pwa-icons.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "start": "next start"
->>>>>>> upstream/dev
+    "lint:staged": "lint-staged",
+    "prepare": "husky"
   },
   "dependencies": {
     "@creit.tech/stellar-wallets-kit": "^1.2.1",
@@ -54,11 +53,7 @@
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
     "@stellar/stellar-sdk": "^15.0.1",
-<<<<<<< HEAD
     "@tanstack/react-virtual": "^3.13.24",
-=======
-    "@tanstack/react-virtual": "^3.13.26",
->>>>>>> upstream/dev
     "@vercel/analytics": "1.3.1",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
@@ -78,6 +73,7 @@
     "react-hook-form": "^7.60.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.4",
+    "sharp": "^0.34.5",
     "sonner": "^1.7.4",
     "stellar-sdk": "^13.3.0",
     "tailwind-merge": "^3.3.1",
@@ -85,44 +81,27 @@
     "vaul": "^1.1.2",
     "zod": "3.25.76"
   },
-<<<<<<< HEAD
-"devDependencies": {
-  "@axe-core/playwright": "^4.11.2",
-  "@eslint/js": "^10.0.1",
-  "@playwright/test": "^1.59.1",
-  "@tailwindcss/postcss": "^4.1.9",
-  "@types/node": "^22",
-  "@types/react": "^19",
-  "@types/react-dom": "^19",
-  "eslint": "^9.7.0",
-  "eslint-plugin-react": "^7.37.5",
-  "globals": "^17.5.0",
-  "playwright": "^1.59.1",
-  "postcss": "^8.5",
-  "tailwindcss": "^4.1.9",
-  "tw-animate-css": "1.3.3",
-  "typescript": "^5",
-  "typescript-eslint": "^8.58.2"
-=======
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.2",
+    "@commitlint/cli": "^21.1.0",
+    "@commitlint/config-conventional": "^21.1.0",
     "@eslint/js": "^10.0.1",
-    "@next/bundle-analyzer": "^16.2.6",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.1.9",
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^6.0.1",
-    "@vitest/coverage-v8": "^4.1.5",
-    "eslint": "^10.2.0",
+    "eslint": "^10.4.1",
     "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "5.2.0",
     "globals": "^17.5.0",
+    "husky": "^9.1.7",
     "jsdom": "^29.0.2",
+    "lint-staged": "^16.2.7",
+    "playwright": "^1.59.1",
     "postcss": "^8.5",
+    "postcss-preset-env": "^11.3.1",
+    "prettier": "^3.7.4",
+    "prettier-plugin-tailwindcss": "^0.8.0",
     "sharp": "^0.34.5",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
@@ -142,7 +121,14 @@
         "@trezor/connect-plugin-stellar>@stellar/stellar-sdk": "^15.0.1"
       }
     }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
   }
->>>>>>> upstream/dev
-}
 }

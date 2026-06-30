@@ -64,7 +64,7 @@ export function useBalance(): UseBalanceReturn {
     setError('');
 
     userApi
-      .getBalance(opts)
+      .getBalance({ ...opts, priority: 'high' })
       .then((data) => {
         if (cancelled) return;
         const raw = data.balance;

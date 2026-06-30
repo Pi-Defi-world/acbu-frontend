@@ -48,7 +48,7 @@ test('Amount is displayed and non-empty in confirmation dialog', async () => {
   fireEvent.click(screen.getByText('New Transfer'));
   
   // Enter amount
-  const amountInput = screen.getByPlaceholderText('0.00');
+  const amountInput = screen.getByLabelText('Amount');
   await userEvent.type(amountInput, '100');
   
   // Click Continue to open confirm dialog
@@ -86,7 +86,7 @@ test('Amount is preserved in form after canceling confirmation', async () => {
   
   // Open send dialog and enter amount
   fireEvent.click(screen.getByText('New Transfer'));
-  const amountInput = screen.getByPlaceholderText('0.00');
+  const amountInput = screen.getByLabelText('Amount');
   await userEvent.type(amountInput, '50');
   
   // Open confirm dialog
@@ -131,7 +131,7 @@ test('Amount is cleared after successful transfer', async () => {
   
   // Open send dialog and enter amount
   fireEvent.click(screen.getByText('New Transfer'));
-  const amountInput = screen.getByPlaceholderText('0.00');
+  const amountInput = screen.getByLabelText('Amount');
   await userEvent.type(amountInput, '25');
   
   // Fill recipient (would need proper mock setup)

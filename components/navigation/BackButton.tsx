@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { useNavigationGuard } from '@/contexts/navigation-guard-context';
 
 interface BackButtonProps {
   fallbackHref: string; // required — explicit in-app fallback route
@@ -34,8 +35,11 @@ export function BackButton({
   children 
 }: BackButtonProps) {
   const router = useRouter();
+  const { confirmNavigation } = useNavigationGuard();
 
-  const handleBack = () => {
+  const handleBack = async () => {
+    const confirmed = await confirmNavigation();
+    if (!confirmed) return;
     // Only use browser back if we have in-app history
     // window.history.state.idx is set by Next.js router — 0 means
     // this was the entry page (direct URL, external link, etc.)
