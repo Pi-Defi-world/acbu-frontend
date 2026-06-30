@@ -25,13 +25,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
-import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
 import { useI18n } from "@/contexts/i18n-context";
 import { useBalance } from "@/hooks/use-balance";
-import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
@@ -57,7 +55,7 @@ import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 import { useNavigationGuard } from "@/contexts/navigation-guard-context";
 
 function formatDate(iso: string) {
-  const d = parseUtcDate(iso);
+  const d = new Date(iso);
   const today = new Date();
   if (d.toDateString() === today.toDateString()) return "Today";
   const yesterday = new Date(today);
@@ -91,7 +89,6 @@ function getStatusBadgeClassName(status: string): string {
 export default function SendPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
-  const { ensureSession } = useSessionGuard();
   const kit = useStellarWalletsKit();
   const {
     balance,
@@ -333,7 +330,7 @@ export default function SendPage() {
       );
 
       loadTransfers();
-      refetchBalance();
+      refreshBalance();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
       setLastSentAmount(confirmedAmount);
@@ -570,7 +567,7 @@ export default function SendPage() {
                     id="send-recipient-address"
                     placeholder={t("send.walletAddressOrEmail")}
                     value={customRecipient}
-                    onChange={handleCustomRecipientChange}
+                  onChange={handleCustomRecipientChange}
                     className="border-border"
                     autoComplete="off"
                   />
@@ -653,7 +650,8 @@ export default function SendPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={showConfirmDialog} onOpenChange={handleConfirmDialogChange}>
+      {/* Confirm Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={handleConfirmDialogOpenChange}>
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>{t("send.confirmTransfer")}</AlertDialogTitle>
@@ -703,7 +701,7 @@ export default function SendPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={showSuccessDialog} onOpenChange={handleSuccessDialogChange}>
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <DialogContent className="max-w-md border-border">
           <div className="flex flex-col items-center text-center py-6">
             <div className="rounded-full bg-green-100 dark:bg-green-900 p-4 mb-4">
@@ -719,6 +717,6 @@ export default function SendPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </Tabs>
   );
 }
