@@ -226,9 +226,9 @@ export default function Home() {
                     : balanceLoading
                       ? '...'
                       : `ACBU ${balance != null ? format.number(balance, { minimumFractionDigits: 0, maximumFractionDigits: 7 }) : '—'}`}
-                </h2>
+                </div>
                 {!showBalance ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">••••••</p>
+                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base">••••••</p>
                 ) : balanceLoading || ratesLoading ? (
                   <p className="text-sm text-muted-foreground mt-1.5 md:text-base"><BalanceSkeleton variant="compact" /></p>
                 ) : balance == null ? (
@@ -254,7 +254,7 @@ export default function Home() {
                   ) : (
                     <>
                       <p>
-                        {t('approx_usd')}{' '}
+                        ≈ USD{' '}
                         {format.number(fiatUsdInfo?.usd ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                       </p>
                       {fiatUsdInfo?.partial && fiatAccounts.length > 0 && (
