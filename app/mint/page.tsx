@@ -67,6 +67,239 @@ function estimateAcbuFromFiat(
   return n / localPerAcbu;
 }
 
+// ---------------------------------------------------------------------------
+// Sub-components defined OUTSIDE the page to prevent remounting on re-render.
+// ---------------------------------------------------------------------------
+
+interface FiatAccountOption {
+  id: string;
+  currency: string;
+  bank_name: string;
+}
+
+interface MintFormProps {
+  fiatAccounts: FiatAccountOption[];
+  selectedFiatCurrency: string;
+  onCurrencyChange: (currency: string) => void;
+  fiatAmount: string;
+  onFiatAmountChange: (value: string) => void;
+  estimatedMintAcbu: number | null;
+  mintError: string;
+  onConfirm: () => void;
+}
+
+function MintForm({
+  fiatAccounts,
+  selectedFiatCurrency,
+  onCurrencyChange,
+  fiatAmount,
+  onFiatAmountChange,
+  estimatedMintAcbu,
+  mintError,
+  onConfirm,
+}: MintFormProps) {
+  return (
+    <div>
+      <p className="text-sm text-muted-foreground mb-3">
+        Mint ACBU via custodial on-ramp (demo basket fiat held on the minting
+        contract).
+      </p>
+      {mintError && (
+        <p className="text-sm text-destructive mb-2">{mintError}</p>
+      )}
+      <div>
+        <label
+          htmlFor="fiat-account"
+          className="text-sm font-medium text-foreground mb-2 block"
+        >
+          Basket currency (demo fiat path)
+        </label>
+        <select
+          id="fiat-account"
+          value={selectedFiatCurrency}
+          onChange={(e) => onCurrencyChange(e.target.value)}
+          className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
+        >
+          {fiatAccounts.length === 0 ? (
+            <option value="" disabled>Loading currencies…</option>
+          ) : (
+            fiatAccounts.map((acc) => (
+              <option key={acc.id} value={acc.currency}>
+                {acc.currency} — {acc.bank_name}
+              </option>
+            ))
+          )}
+        </select>
+      </div>
+      <div className="mt-4">
+        <label
+          htmlFor="fiat-amount"
+          className="text-sm font-medium text-foreground mb-2 block"
+        >
+          Amount to Exchange
+        </label>
+        <div className="flex gap-2">
+          <span className="flex items-center text-muted-foreground font-medium">
+            {selectedFiatCurrency || "FIAT"}
+          </span>
+          <Input
+            id="fiat-amount"
+            type="number"
+            placeholder="0.00"
+            min="0"
+            step="any"
+            value={fiatAmount}
+            onChange={(e) => onFiatAmountChange(e.target.value)}
+            className="border-border text-lg font-semibold"
+          />
+        </div>
+      </div>
+      {estimatedMintAcbu != null && (
+        <Card className="border-border bg-muted/80 p-3 mt-3">
+          <p className="text-xs text-muted-foreground mb-1">
+            Estimated ACBU (from latest rates)
+          </p>
+          <p className="text-lg font-semibold text-foreground">
+            ≈ {formatAmount(estimatedMintAcbu)} ACBU
+          </p>
+        </Card>
+      )}
+      <Card className="border-border bg-muted p-3 mt-4">
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">Network Fee</span>
+          <span className="font-medium text-foreground">{MINT_NETWORK_FEE_TEXT}</span>
+        </div>
+      </Card>
+      <Button
+        onClick={onConfirm}
+        disabled={
+          !fiatAmount ||
+          parseFloat(fiatAmount) <= 0 ||
+          !selectedFiatCurrency
+        }
+        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
+      >
+        <ArrowDown className="w-4 h-4 mr-2" />
+        Mint ACBU
+      </Button>
+    </div>
+  );
+}
+
+interface BurnFormProps {
+  fiatAccounts: FiatAccountOption[];
+  selectedFiatCurrency: string;
+  onCurrencyChange: (currency: string) => void;
+  burnAmount: string;
+  onBurnAmountChange: (value: string) => void;
+  burnError: string;
+  balance: number | null;
+  balanceLoading: boolean;
+  onConfirm: () => void;
+}
+
+function BurnForm({
+  fiatAccounts,
+  selectedFiatCurrency,
+  onCurrencyChange,
+  burnAmount,
+  onBurnAmountChange,
+  burnError,
+  balance,
+  balanceLoading,
+  onConfirm,
+}: BurnFormProps) {
+  return (
+    <div>
+      <p className="text-sm text-muted-foreground mb-3">
+        Burn ACBU on-chain for the selected basket slice (no simulated bank
+        credit).
+      </p>
+      {burnError && (
+        <p className="text-sm text-destructive mb-2">{burnError}</p>
+      )}
+      <div>
+        <label
+          htmlFor="burn-fiat-account"
+          className="text-sm font-medium text-foreground mb-2 block"
+        >
+          Basket currency (burn slice)
+        </label>
+        <select
+          id="burn-fiat-account"
+          value={selectedFiatCurrency}
+          onChange={(e) => onCurrencyChange(e.target.value)}
+          className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
+        >
+          {fiatAccounts.length === 0 ? (
+            <option value="" disabled>Loading currencies…</option>
+          ) : (
+            fiatAccounts.map((acc) => (
+              <option key={acc.id} value={acc.currency}>
+                {acc.currency} — {acc.bank_name}
+              </option>
+            ))
+          )}
+        </select>
+      </div>
+      <div className="mt-4">
+        <label
+          htmlFor="burn-amount"
+          className="text-sm font-medium text-foreground mb-2 block"
+        >
+          Amount to Burn
+        </label>
+        <div className="flex gap-2">
+          <span className="flex items-center text-muted-foreground font-medium">
+            ACBU
+          </span>
+          <Input
+            id="burn-amount"
+            type="number"
+            placeholder="0.00"
+            value={burnAmount}
+            onChange={(e) => onBurnAmountChange(e.target.value)}
+            className="border-border text-lg font-semibold"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Available: ACBU {balanceLoading ? '...' : formatAmount(balance)}
+        </p>
+      </div>
+      <Card className="border-border bg-muted p-3 mt-4">
+        <div className="flex justify-between text-sm mb-2">
+          <span className="text-muted-foreground">You'll receive</span>
+          <span className="font-medium text-foreground">
+            {burnAmount && selectedFiatCurrency
+              ? `~ ${selectedFiatCurrency} (based on current rate)`
+              : "—"}
+          </span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">Processing Fee</span>
+          <span className="font-medium text-foreground">{BURN_PROCESSING_FEE_TEXT}</span>
+        </div>
+      </Card>
+      <Button
+        onClick={onConfirm}
+        disabled={
+          !burnAmount ||
+          parseFloat(burnAmount) <= 0 ||
+          !selectedFiatCurrency
+        }
+        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
+      >
+        <ArrowUp className="w-4 h-4 mr-2" />
+        Burn & Redeem
+      </Button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Page component
+// ---------------------------------------------------------------------------
+
 /**
  * Mint and Burn page for ACBU tokens.
  */

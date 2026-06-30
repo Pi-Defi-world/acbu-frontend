@@ -1,14 +1,6 @@
 "use client";
 
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Send Money | ACBU',
-  description: 'Send ACBU tokens to other users securely. Transfer money using phone numbers, aliases, or Stellar addresses.',
-};
-
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -74,16 +66,25 @@ function formatDate(iso: string) {
   return d.toLocaleDateString();
 }
 
-function getStatusColor(status: string | undefined) {
+function getStatusColor(status: string): string {
   switch (status) {
     case "completed":
-      return "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800";
+      return "text-green-600";
     case "pending":
-      return "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
-    case "failed":
-      return "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800";
+      return "text-amber-600";
     default:
-      return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700";
+      return "text-gray-600";
+  }
+}
+
+function getStatusBadgeClassName(status: string): string {
+  switch (status) {
+    case "completed":
+      return "border-green-600 text-green-600";
+    case "pending":
+      return "border-amber-600 text-amber-600";
+    default:
+      return "border-gray-600 text-gray-600";
   }
 }
 
@@ -179,7 +180,37 @@ export default function SendPage() {
   useEffect(() => {
     loadTransfers();
     loadContacts();
-  }, [loadTransfers, loadContacts]);
+  }, [loadTransfers, loadContacts, opts.token]);
+
+  const handleShowSendDialog = useCallback(() => setShowSendDialog(true), []);
+  const handleSendDialogChange = useCallback((open: boolean) => setShowSendDialog(open), []);
+  const handleConfirmDialogChange = useCallback((open: boolean) => {
+    if (!open && !sending) {
+      setConfirmedAmount("");
+    }
+    setShowConfirmDialog(open);
+  }, [sending]);
+  const handleSuccessDialogChange = useCallback((open: boolean) => setShowSuccessDialog(open), []);
+  const handleTabChange = useCallback((value: string) => setActiveTab(value), []);
+  const handleUseContactChange = useCallback((v: string) => setUseContact(v === "contact"), []);
+  const handleContactSelect = useCallback((id: string) => {
+    const c = contacts.find((x: ContactItem) => x.id === id);
+    if (c) setSelectedContact(c);
+  }, [contacts]);
+  const handleCustomRecipientChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setCustomRecipient(e.target.value), []);
+  const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    if (v === "" || /^\d*\.?\d*$/.test(v)) {
+      setAmount(v);
+    }
+  }, []);
+  const debouncedAmount = useDebounce(amount, 300);
+  const handleNoteChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNote(e.target.value), []);
+  const handleSendDialogClose = useCallback(() => setShowSendDialog(false), []);
+  const handleShowConfirmDialog = useCallback(() => {
+    setConfirmedAmount(amount);
+    setShowConfirmDialog(true);
+  }, [amount]);
 
   useScrollRestoration('/send', !loadingTransfers);
 
@@ -224,8 +255,8 @@ export default function SendPage() {
 
   const handleConfirmTransfer = useCallback(async () => {
     const to = getToValue();
-    if (!amount || parseFloat(amount) <= 0 || !to) return;
-    clearError();
+    if (!confirmedAmount || parseFloat(confirmedAmount) <= 0 || !to) return;
+    setSubmitError("");
     setSending(true);
 
     const sessionOk = await ensureSession();

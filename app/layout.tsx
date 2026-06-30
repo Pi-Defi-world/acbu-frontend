@@ -8,14 +8,6 @@ import { GlobalErrorHandler } from '@/components/global-error-handler'
 import './globals.css'
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
-import { Toaster } from '@/components/ui/toaster';
-import { ThemeProvider } from '@/components/theme-provider';
-import dynamic from 'next/dynamic';
-
-const OfflineIndicator = dynamic(
-  () => import('@/components/offline-indicator').then((m) => ({ default: m.OfflineIndicator })),
-  { ssr: false },
-)
 
 const VercelAnalytics = dynamic(
   () => import('@vercel/analytics/next').then((m) => ({ default: m.Analytics })),

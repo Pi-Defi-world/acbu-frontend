@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useTransition } from "react";
+import React, { useRef, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, Send, Coins, Briefcase, User, Wallet } from "lucide-react";
 import { useNavigationGuard } from "@/contexts/navigation-guard-context";
@@ -65,6 +65,7 @@ export function MobileNav() {
     navigatingTo.current = href;
     startTransition(() => {
       router.push(href);
+      navigatingTo.current = null;
     });
   }
 
@@ -78,35 +79,22 @@ export function MobileNav() {
       <div className="flex justify-between items-center h-20 px-1">
         {navItems.map((item, idx) => {
           const isActive = pathname === item.href;
-          const showLabels = true;
-          // Explicitly set tabIndex to match the visual left-to-right order.
-          // Using positive tabindex values here ensures keyboard focus
-          // follows the same sequence users see on screen.
-          const tabIndex = idx + 1;
           return (
             <button
               key={item.href}
               data-testid={`nav-${item.name.toLowerCase()}`}
               onClick={() => handleNav(item.href)}
               aria-label={item.name}
+              aria-current={isActive ? "page" : undefined}
               disabled={isPending}
-              tabIndex={tabIndex}
               className={`flex flex-col items-center justify-center flex-1 h-20 gap-1 transition-colors ${
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <span className="md:w-7 md:h-7 flex items-center justify-center">
-                {item.icon}
-              </span>
-              {showLabels ? (
-                <span className="text-xs font-medium text-center md:text-sm">
-                  {item.name}
-                </span>
-              ) : (
-                <span className="sr-only">{item.name}</span>
-              )}
+              {item.icon}
+              <span className="text-xs font-medium text-center">{item.name}</span>
             </button>
           );
         })}
