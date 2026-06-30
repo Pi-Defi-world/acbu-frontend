@@ -1,8 +1,14 @@
 "use client";
 
+import type { Metadata } from 'next';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
+
+export const metadata: Metadata = {
+  title: 'Mint & Burn | ACBU',
+  description: 'Mint ACBU tokens by depositing fiat currency, or burn ACBU to withdraw to your bank account.',
+};
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
