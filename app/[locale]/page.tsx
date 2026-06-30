@@ -176,6 +176,13 @@ export default function Home() {
       ? acbuBalanceToUsd(balance, rates)
       : null;
   const fiatUsdInfo = showBalance ? sumSimulatedFiatUsd(fiatAccounts, rates) : null;
+  const balanceAnnouncement = !showBalance
+    ? 'Balances hidden'
+    : balanceLoading
+      ? 'Loading balance'
+      : balance != null
+        ? `Balance updated to ACBU ${format.number(balance, { minimumFractionDigits: 0, maximumFractionDigits: 7 })}`
+        : 'Balance unavailable';
 
   return (
     <>
@@ -204,6 +211,9 @@ export default function Home() {
             >
               {showBalance ? <Eye className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" /> : <EyeOff className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" />}
             </button>
+            <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+              {balanceAnnouncement}
+            </div>
             <div className="flex items-start gap-3 pr-12 mb-1 md:gap-6 md:pr-16">
               <div className="flex-1 min-w-0 border-r border-border/60 pr-3 md:pr-6">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
