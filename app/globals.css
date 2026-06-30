@@ -1,5 +1,6 @@
 @import 'tailwindcss' source(none);
 @import 'tw-animate-css';
+@config '../tailwind.config.ts';
 
 /* Only scan shipped app routes and shared source code.
    Legacy routes like /burn, /currency, /reserves, and /test-locale stay out

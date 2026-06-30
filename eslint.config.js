@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 
 export default [
   { 
-    ignores: [".next/**"] 
+    ignores: [".next/**", ".kilo/**"] 
   },
   { 
     files: ["**/*.{js,mjs,cjs,ts,jsx,tsx,json}"], 

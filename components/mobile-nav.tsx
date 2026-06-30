@@ -96,7 +96,6 @@ export function MobileNav() {
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               }`}
-              aria-current={isActive ? "page" : undefined}
             >
               <span className="md:w-7 md:h-7 flex items-center justify-center">
                 {item.icon}
