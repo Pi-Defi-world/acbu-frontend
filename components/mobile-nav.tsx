@@ -3,6 +3,7 @@
 import React, { useRef, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, Send, Coins, Briefcase, User, Wallet } from "lucide-react";
+import { useNavigationGuard } from "@/contexts/navigation-guard-context";
 
 interface NavItem {
   name: string;
@@ -28,9 +29,39 @@ export function MobileNav() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const navigatingTo = useRef<string | null>(null);
+  const [bottomOffset, setBottomOffset] = useState(0);
+  const { confirmNavigation } = useNavigationGuard();
 
-  function handleNav(href: string) {
-    if (isPending || navigatingTo.current === href || pathname === href) return;
+  useEffect(() => {
+    navigatingTo.current = null;
+  }, [pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+
+    const handleViewportChange = () => {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const offset = window.innerHeight - (vv.height + vv.offsetTop);
+      setBottomOffset(Math.max(0, offset));
+    };
+
+    const vv = window.visualViewport;
+    vv.addEventListener("resize", handleViewportChange);
+    vv.addEventListener("scroll", handleViewportChange);
+
+    handleViewportChange();
+
+    return () => {
+      vv.removeEventListener("resize", handleViewportChange);
+      vv.removeEventListener("scroll", handleViewportChange);
+    };
+  }, []);
+
+  async function handleNav(href: string) {
+    if (isPending || navigatingTo.current !== null || pathname === href) return;
+    const confirmed = await confirmNavigation();
+    if (!confirmed) return;
     navigatingTo.current = href;
     startTransition(() => {
       router.push(href);
@@ -51,6 +82,7 @@ export function MobileNav() {
           return (
             <button
               key={item.href}
+              data-testid={`nav-${item.name.toLowerCase()}`}
               onClick={() => handleNav(item.href)}
               aria-label={item.name}
               aria-current={isActive ? "page" : undefined}

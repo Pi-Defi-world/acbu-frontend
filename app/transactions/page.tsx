@@ -1,11 +1,17 @@
 'use client';
 
+import type { Metadata } from 'next';
 import React, { useState, useEffect, useDeferredValue } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { SkeletonList } from '@/components/ui/skeleton-list';
+
+export const metadata: Metadata = {
+  title: 'Transactions | ACBU',
+  description: 'View your ACBU transaction history, including transfers, mints, and burns.',
+};
 import { EmptyState } from '@/components/ui/empty-state';
 import { ArrowLeft, Clock } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';

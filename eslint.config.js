@@ -7,7 +7,7 @@ export default [
     ignores: [".next/**", ".kilo/**"] 
   },
   { 
-    files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"], 
+    files: ["**/*.{js,mjs,cjs,ts,jsx,tsx,json}"], 
     languageOptions: { 
       parserOptions: { ecmaFeatures: { jsx: true } }, 
       globals: globals.browser 

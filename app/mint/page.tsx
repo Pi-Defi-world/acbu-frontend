@@ -1,8 +1,14 @@
 "use client";
 
+import type { Metadata } from 'next';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
+
+export const metadata: Metadata = {
+  title: 'Mint & Burn | ACBU',
+  description: 'Mint ACBU tokens by depositing fiat currency, or burn ACBU to withdraw to your bank account.',
+};
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -37,6 +43,7 @@ import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { useI18n } from '@/contexts/i18n-context';
+import { useNavigationGuard } from '@/contexts/navigation-guard-context';
 
 function formatRate(rate: number | undefined): string {
   if (rate == null || !Number.isFinite(rate)) return '—';
@@ -314,12 +321,30 @@ export default function MintPage() {
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
+  const [burnError, setBurnError] = useState('');
+  const [rates, setRates] = useState<RatesResponse | null>(null);
+  const [ratesLoading, setRatesLoading] = useState(false);
+  const [mintError, setMintError] = useState('');
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
+  const { setHasUnsavedChanges } = useNavigationGuard();
+
+  // Track unsaved changes
+  const hasUnsavedChanges = useMemo(() => {
+    return (step === 'input' && (fiatAmount || burnAmount)) || step === 'confirm';
+  }, [step, fiatAmount, burnAmount]);
+
+  useEffect(() => {
+    setHasUnsavedChanges(hasUnsavedChanges);
+    return () => setHasUnsavedChanges(false);
+  }, [hasUnsavedChanges, setHasUnsavedChanges]);
   const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [fiatAccountsLoading, setFiatAccountsLoading] = useState(true);
   const [selectedFiatCurrency, setSelectedFiatCurrency] = useState('');
   const [fiatAmount, setFiatAmount] = useState('');
+  const debouncedFiatAmount = useDebounce(fiatAmount, 300);
+  const debouncedBurnAmount = useDebounce(burnAmount, 300);
+  const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
 
   const {
@@ -682,6 +707,8 @@ export default function MintPage() {
                                 <select
                                     id="fiat-account"
                                     value={selectedFiatCurrency}
+                                    onChange={(e) => setSelectedFiatCurrency(e.target.value)}
+                                    autoComplete="transaction-currency"
                                     onChange={handleFiatCurrencyChange}
                                     className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                                 >
@@ -715,6 +742,7 @@ export default function MintPage() {
                                         placeholder="0.00"
                                         min="0"
                                         step="any"
+                                        autoComplete="transaction-amount"
                                         value={fiatAmount}
                                         onChange={handleFiatAmountChange}
                                         className="border-border text-lg font-semibold"
@@ -723,6 +751,9 @@ export default function MintPage() {
                             </div>
                             {estimatedMintAcbu != null && (
                                 <Card className="border-border bg-muted/80 p-3 mt-3">
+                                    <p className="text-xs text-muted-foreground mb-1 break-words">
+                                        Estimated ACBU (from latest rates)
+                                    </p>
                                     <p className="text-xs text-muted-foreground mb-1">
                                         {t('mint.estimatedAcbu')}
                                     </p>
@@ -793,6 +824,8 @@ export default function MintPage() {
                                 <select
                                     id="burn-fiat-account"
                                     value={selectedFiatCurrency}
+                                    onChange={(e) => setSelectedFiatCurrency(e.target.value)}
+                                    autoComplete="transaction-currency"
                                     onChange={handleFiatCurrencyChange}
                                     className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                                 >
@@ -824,6 +857,7 @@ export default function MintPage() {
                                         type="number"
                                         inputMode="decimal"
                                         placeholder="0.00"
+                                        autoComplete="transaction-amount"
                                         value={burnAmount}
                                         onChange={handleBurnAmountChange}
                                         className="border-border text-lg font-semibold"
@@ -864,6 +898,7 @@ export default function MintPage() {
                                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
                             >
                                 <ArrowUp className="w-4 h-4 mr-2" />
+                                Burn & Redeem
                                 {t('mint.continueToBurn')}
                             </Button>
                         </div>

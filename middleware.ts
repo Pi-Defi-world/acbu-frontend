@@ -1,18 +1,14 @@
-it import createMiddleware from 'next-intl/middleware';
+import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Block direct access to any markdown files served from public/
   if (request.nextUrl.pathname.endsWith('.md')) {
     return new NextResponse(null, { status: 404 });
   }
 
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-  
+
   const isDev = process.env.NODE_ENV === 'development';
-  
-  // Define CSP directives
-  // Using strict-dynamic with nonces for scripts
-  // style-src includes nonce for styled-components or similar if used
+
   const cspDirectives = {
     'default-src': ["'self'"],
     'script-src': [
@@ -21,8 +17,8 @@ export function middleware(request: NextRequest) {
       "'strict-dynamic'",
       isDev ? "'unsafe-eval'" : "",
     ].filter(Boolean),
-    'style-src': ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"], // unsafe-inline often needed for Next.js internal styles
-    'img-src': ["'self'", "blob:", "data:", "https://*"], // Allow external images
+    'style-src': ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"],
+    'img-src': ["'self'", "blob:", "data:", "https://*"],
     'font-src': ["'self'"],
     'manifest-src': ["'self'"],
     'object-src': ["'none'"],
@@ -30,8 +26,8 @@ export function middleware(request: NextRequest) {
     'form-action': ["'self'"],
     'frame-ancestors': ["'none'"],
     'connect-src': [
-      "'self'", 
-      "https://*.stellar.org", 
+      "'self'",
+      "https://*.stellar.org",
       "https://*.soroban-rpc.com",
       "https://*.vercel-analytics.com",
       isDev ? "ws://localhost:*" : ""
@@ -39,19 +35,27 @@ export function middleware(request: NextRequest) {
     'upgrade-insecure-requests': [],
   };
 
-  // Used when no locale matches
-  defaultLocale: 'en'
-});
+  const cspString = Object.entries(cspDirectives)
+    .map(([key, values]) => {
+      if (values.length === 0) return key;
+      return `${key} ${values.join(' ')}`;
+    })
+    .join('; ');
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+
+  response.headers.set('Content-Security-Policy', cspString);
+
+  return response;
+}
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico and other public static assets (images, fonts, icons)
-     */
     {
       source: '/((?!api|_next/static|_next/image|.*\\.(?:ico|png|jpg|jpeg|svg|webp|gif|woff2?|ttf|otf|map)).*)',
       missing: [

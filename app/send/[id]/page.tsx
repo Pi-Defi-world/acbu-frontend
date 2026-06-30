@@ -13,14 +13,12 @@ import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Share2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useApiOpts } from "@/hooks/use-api";
 import * as transfersApi from "@/lib/api/transfers";
 import { formatAmount, parseUtcDate } from "@/lib/utils";
 
-<<<<<<< HEAD
-// Add safe date formatter
 function safeFormatDate(iso: string | undefined) {
   if (!iso) return '';
   try {
@@ -33,13 +31,6 @@ function safeFormatDate(iso: string | undefined) {
   } catch {
     return '';
   }
-=======
-function formatDate(iso: string) {
-  return parseUtcDate(iso).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
->>>>>>> upstream/dev
 }
 
 
@@ -54,6 +45,42 @@ export default function TransferDetailPage() {
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = useCallback(async () => {
+    if (!data) return;
+    const type = (data.type as string) ?? "transfer";
+    const localCurrency = (data.local_currency as string) ?? "";
+    const localAmount = (data.local_amount as string) ?? "";
+    const amountAcbu = (data.amount_acbu as string) ?? "";
+    const createdAt = (data.created_at as string) ?? "";
+    const txHash = (data.blockchain_tx_hash as string) ?? "—";
+    const isFiatRecord = type === "mint" && !!localCurrency && !!localAmount;
+
+    const amount = isFiatRecord
+      ? `${localCurrency} ${formatAmount(localAmount)}`
+      : `ACBU ${formatAmount(amountAcbu)}`;
+    const date = createdAt ? safeFormatDate(createdAt) : "—";
+    const url = window.location.href;
+
+    const shareData = {
+      title: "Transaction Receipt",
+      text: `Amount: ${amount} | Date: ${date} | Hash: ${txHash}`,
+      url,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // User dismissed or share failed — no-op
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [data]);
 
   useEffect(() => {
     if (!id) {
@@ -81,21 +108,10 @@ export default function TransferDetailPage() {
   if (!id) {
     return (
       <>
-<<<<<<< HEAD
-        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-          <div className="px-4 py-3 flex items-center gap-3">
-            <Link 
-              href="/send" 
-              aria-label="Back to transfers"
-              className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            >
-              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
-=======
         <div className="page-header">
           <div className="page-header-row">
             <Link href="/send" aria-label="Back to transfers">
               <ArrowLeft className="w-5 h-5 text-primary" />
->>>>>>> origin/dev
             </Link>
             <h1 className="page-title">Transfer</h1>
           </div>
@@ -112,21 +128,10 @@ export default function TransferDetailPage() {
   if (loading) {
     return (
       <>
-<<<<<<< HEAD
-        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-          <div className="px-4 py-3 flex items-center gap-3">
-            <Link 
-              href="/send" 
-              aria-label="Back to transfers"
-              className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            >
-              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
-=======
         <div className="page-header">
           <div className="page-header-row">
             <Link href="/send" aria-label="Back to transfers">
               <ArrowLeft className="w-5 h-5 text-primary" />
->>>>>>> origin/dev
             </Link>
             <h1 className="page-title">Transfer</h1>
           </div>
@@ -144,21 +149,10 @@ export default function TransferDetailPage() {
   if (error || !data) {
     return (
       <>
-<<<<<<< HEAD
-        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-          <div className="px-4 py-3 flex items-center gap-3">
-            <Link 
-              href="/send" 
-              aria-label="Back to transfers"
-              className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            >
-              <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
-=======
         <div className="page-header">
           <div className="page-header-row">
             <Link href="/send" aria-label="Back to transfers">
               <ArrowLeft className="w-5 h-5 text-primary" />
->>>>>>> origin/dev
             </Link>
             <h1 className="page-title">Transfer</h1>
           </div>
@@ -198,28 +192,24 @@ export default function TransferDetailPage() {
 
   return (
     <>
-<<<<<<< HEAD
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Link 
-            href="/send" 
-            aria-label="Back to transfers list"
-            className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-          >
-            <ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" />
-          </Link>
-      <h1 className="text-lg font-bold text-foreground truncate" title={`${isFiatRecord ? "Faucet" : "Transfer"} Details`}>
-            {isFiatRecord ? "Faucet" : "Transfer"} Details
-          </h1>=======
       <div className="page-header">
         <div className="page-header-row">
           <Link href="/send" aria-label="Back to transfers">
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
-     <h1 className="page-title truncate" title={`${isFiatRecord ? "Faucet" : "Transfer"}`}>
+          <h1 className="page-title truncate" title={`${isFiatRecord ? "Faucet" : "Transfer"}`}>
             {isFiatRecord ? "Faucet" : "Transfer"}
-          </h1>>>>>>>> origin/dev
           </h1>
+          <button
+            type="button"
+            onClick={handleShare}
+            aria-label="Share transaction receipt"
+            aria-live="polite"
+            className="inline-flex items-center gap-1.5 shrink-0 rounded-md border border-border px-3 h-8 text-sm font-medium text-foreground bg-transparent transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            <Share2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span>{copied ? "Copied!" : "Share"}</span>
+          </button>
         </div>
       </div>
       
