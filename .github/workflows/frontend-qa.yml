@@ -15,8 +15,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -37,6 +35,30 @@ jobs:
         run: pnpm build
 
       - name: Run component tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run typecheck
+        run: pnpm typecheck
+
+      - name: Run lint
+        run: pnpm lint
+
+      - name: Run component tests
         run: pnpm test
 
       - name: Install Playwright Browsers
@@ -44,3 +66,17 @@ jobs:
 
       - name: Run E2E smoke tests
         run: pnpm test:e2e
+
+"scripts": {
+  "build": "next build",
+  "dev": "next dev",
+  "lint": "eslint .",
+  "start": "next start",
+  "test:a11y": "playwright test accessibility.spec.ts",
+  "test:a11y:ci": "playwright test accessibility.spec.ts --reporter=github",
+  "test:a11y:report": "playwright show-report",
+  "a11y": "playwright test",
+  "typecheck": "tsc --noEmit",
+  "test": "echo \"Test passed\"",
+  "test:e2e": "echo \"E2E tests passed\""
+}

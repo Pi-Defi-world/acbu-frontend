@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, Send, Coins, Briefcase, User, Wallet } from "lucide-react";
+import { useNavigationGuard } from "@/contexts/navigation-guard-context";
 
 interface NavItem {
   name: string;
@@ -29,6 +30,7 @@ export function MobileNav() {
   const [isPending, startTransition] = useTransition();
   const navigatingTo = useRef<string | null>(null);
   const [bottomOffset, setBottomOffset] = useState(0);
+  const { confirmNavigation } = useNavigationGuard();
 
   useEffect(() => {
     navigatingTo.current = null;
@@ -56,8 +58,10 @@ export function MobileNav() {
     };
   }, []);
 
-  function handleNav(href: string) {
+  async function handleNav(href: string) {
     if (isPending || navigatingTo.current !== null || pathname === href) return;
+    const confirmed = await confirmNavigation();
+    if (!confirmed) return;
     navigatingTo.current = href;
     startTransition(() => {
       router.push(href);
@@ -82,6 +86,7 @@ export function MobileNav() {
           return (
             <button
               key={item.href}
+              data-testid={`nav-${item.name.toLowerCase()}`}
               onClick={() => handleNav(item.href)}
               aria-label={item.name}
               disabled={isPending}
@@ -91,7 +96,6 @@ export function MobileNav() {
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               }`}
-              aria-current={isActive ? "page" : undefined}
             >
               <span className="md:w-7 md:h-7 flex items-center justify-center">
                 {item.icon}

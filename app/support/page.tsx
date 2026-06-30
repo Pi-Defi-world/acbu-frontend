@@ -1,7 +1,13 @@
 "use client";
 
+import type { Metadata } from 'next';
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { Card } from "@/components/ui/card";
+
+export const metadata: Metadata = {
+  title: 'Support | ACBU',
+  description: 'Get help and support with your ACBU account and transactions.',
+};
 
 interface SupportTicket {
   ticketId: string;

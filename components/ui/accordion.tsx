@@ -6,6 +6,14 @@ import { ChevronDownIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
+/**
+ * Accordion components built on @radix-ui/react-accordion.
+ *
+ * Accessibility: The Radix primitive automatically manages `aria-expanded`
+ * on AccordionTrigger and `aria-controls`/`aria-labelledby` relationships
+ * between trigger and content. No manual ARIA toggling is needed (#512).
+ */
+
 function Accordion({
   ...props
 }: React.ComponentProps<typeof AccordionPrimitive.Root>) {

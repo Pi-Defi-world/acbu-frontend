@@ -9,6 +9,7 @@ export const en = {
     noTransfersYet: 'No transfers yet',
     noTransfersDescription: 'Your transfer history will appear here once you send money.',
     recipient: 'Recipient',
+    recipientAddress: 'Recipient address',
     fromContacts: 'From Contacts',
     newAddress: 'New Address',
     selectContact: 'Select a contact',
