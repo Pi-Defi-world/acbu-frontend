@@ -53,6 +53,7 @@ import {
 import { useSessionGuard } from "@/hooks/use-session-guard";
 import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 import { useNavigationGuard } from "@/contexts/navigation-guard-context";
+import { useHaptic } from "@/hooks/use-haptic";
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -117,6 +118,7 @@ export default function SendPage() {
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
   const { setHasUnsavedChanges } = useNavigationGuard();
+  const { triggerHaptic } = useHaptic();
 
   const contactsParentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
@@ -251,6 +253,7 @@ export default function SendPage() {
   );
 
   const handleConfirmTransfer = useCallback(async () => {
+    triggerHaptic('heavy');
     const to = getToValue();
     if (!confirmedAmount || parseFloat(confirmedAmount) <= 0 || !to) return;
     setSubmitError("");
@@ -334,6 +337,7 @@ export default function SendPage() {
       setShowConfirmDialog(false);
       setShowSendDialog(false);
       setLastSentAmount(confirmedAmount);
+      triggerHaptic('success');
       setShowSuccessDialog(true);
 
       setTimeout(() => {
@@ -364,12 +368,14 @@ export default function SendPage() {
     ensureSession,
     clearError,
     setApiError,
+    triggerHaptic,
   ]);
 
   const handleContinue = useCallback(() => {
+    triggerHaptic('medium');
     setConfirmedAmount(amount);
     setShowConfirmDialog(true);
-  }, [amount]);
+  }, [amount, triggerHaptic]);
 
   const handleConfirmDialogOpenChange = useCallback((open: boolean) => {
     if (!open && !sending) setConfirmedAmount("");
