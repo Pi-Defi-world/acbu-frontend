@@ -10,6 +10,7 @@ export { mapApiError, useApiError } from './use-api-error';
 export { useBalance } from './use-balance';
 export { useDebounce } from './use-debounce';
 export { useFocusTrap } from './use-focus-trap';
+export { useHaptic, HapticPattern } from './use-haptic';
 export { useIsMobile } from './use-mobile';
 export { useNavigationGuard } from './use-navigation-guard';
 export { useOnlineStatus } from './use-online-status';
