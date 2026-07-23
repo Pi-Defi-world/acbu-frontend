@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Settings | ACBU',
+  description: 'Manage your ACBU account settings including security, wallet, contacts, and guardians.',
+};
+
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -22,7 +29,9 @@ export default function SettingsPage() {
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center gap-3">
-          <Link href="/me"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+          <Link href="/me" aria-label="Back to profile">
+            <ArrowLeft className="w-5 h-5 text-primary" />
+          </Link>
           <h1 className="text-lg font-bold text-foreground">Settings</h1>
         </div>
       </div>
@@ -40,10 +49,10 @@ export default function SettingsPage() {
                 <Card className="border-border p-4 flex items-center gap-3">
                   <Icon className="w-5 h-5 text-primary flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">
+                    <p className="font-medium text-foreground truncate" title={item.title}>
                       {item.title}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-xs text-muted-foreground truncate" title={item.description}>
                       {item.description}
                     </p>
                   </div>

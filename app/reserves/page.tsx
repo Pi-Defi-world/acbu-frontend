@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Reserves | ACBU',
+  description: 'View ACBU reserve holdings and transparency reports. Monitor the backing assets that support ACBU tokens.',
+};
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
@@ -72,10 +79,10 @@ export default function ReservesPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Link href="/me" className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
-          <h1 className="text-lg font-bold text-foreground">Reserves</h1>
+      <div className="page-header">
+        <div className="page-header-row">
+          <Link href="/me" className="touch-target"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+          <h1 className="page-title">Reserves</h1>
         </div>
       </div>
       <PageContainer>

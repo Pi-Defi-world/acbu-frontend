@@ -11,7 +11,9 @@
     "send_money": "Send money",
     "some_currencies_missing_rate": "Some currencies missing a rate",
     "usd": "USD",
-    "approx_usd": "≈ USD"
+    "approx_usd": "≈ USD",
+    "transaction_count": "{count, plural, one {# transaction} other {# transactions}}",
+    "session_count": "{count, plural, one {# active session} other {# active sessions}}"
   },
   "features": {
     "send": {
@@ -30,5 +32,11 @@
       "title": "Rates",
       "description": "Market rates"
     }
+  },
+  "navigation": {
+    "unsavedChangesTitle": "Unsaved changes",
+    "unsavedChangesDescription": "You have unsaved changes. Are you sure you want to leave?",
+    "stay": "Stay",
+    "leave": "Leave"
   }
 }

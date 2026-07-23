@@ -1,11 +1,18 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'SME Services | ACBU',
+  description: 'Explore ACBU services for small and medium enterprises including business accounts and payment solutions.',
+};
+
 import React from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Briefcase, Mail, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Briefcase, Mail } from 'lucide-react';
 
 export default function SmePage() {
   const smeEmail = 'sme@acbu.io';
@@ -18,12 +25,12 @@ export default function SmePage() {
   return (
     <>
       <div className="border-b border-border bg-card/95 backdrop-blur-sm sticky top-0 z-10">
-        <div className="px-4 py-3 flex items-center gap-3">
+        <div className="page-header-row">
           <Link href="/business" className="text-primary">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-lg font-bold text-foreground">SME Services</h1>
+            <h1 className="page-title">SME Services</h1>
             <p className="text-sm text-muted-foreground">Apply for business banking, transfers, and statements.</p>
           </div>
         </div>
