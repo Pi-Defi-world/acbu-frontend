@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -443,40 +442,47 @@ export default function CurrencyPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs
-          defaultValue="mint"
-          className="w-full"
-          onValueChange={(v) =>
-            setActiveTab(v as "mint" | "burn" | "international")
-          }
-        >
-          <TabsList className="grid w-full grid-cols-3 px-4 gap-2 bg-transparent border-b border-border rounded-none">
-            <TabsTrigger
-              value="mint"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+        <div className="w-full">
+          <div className="grid w-full grid-cols-3 px-4 gap-2 bg-transparent border-b border-border">
+            <button
+              onClick={() => setActiveTab("mint")}
+              className={`py-4 rounded-none border-b-2 text-sm font-medium transition-colors ${
+                activeTab === "mint"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
             >
               Mint
-            </TabsTrigger>
-            <TabsTrigger
-              value="burn"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            </button>
+            <button
+              onClick={() => setActiveTab("burn")}
+              className={`py-4 rounded-none border-b-2 text-sm font-medium transition-colors ${
+                activeTab === "burn"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
             >
               Burn
-            </TabsTrigger>
-            <TabsTrigger
-              value="international"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            </button>
+            <button
+              onClick={() => setActiveTab("international")}
+              className={`py-4 rounded-none border-b-2 text-sm font-medium transition-colors ${
+                activeTab === "international"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
             >
               International
-            </TabsTrigger>
-          </TabsList>
+            </button>
+          </div>
 
           {/* Mint Tab */}
-          <TabsContent value="mint" className="px-4 py-6 space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Convert USDC to ACBU on Stellar
-              </p>
+          <div className={activeTab === "mint" ? "block" : "hidden"} aria-hidden={activeTab !== "mint"}>
+            <div className="px-4 py-6 space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Convert USDC to ACBU on Stellar
+                </p>
               <Card className="border-border p-4 mb-4">
                 <p className="text-xs text-muted-foreground mb-1">Source</p>
                 <select
@@ -559,14 +565,15 @@ export default function CurrencyPage() {
                 Mint ACBU
               </Button>
             </div>
-          </TabsContent>
+          </div>
 
           {/* Burn Tab */}
-          <TabsContent value="burn" className="px-4 py-6 space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Convert ACBU to fiat and withdraw
-              </p>
+          <div className={activeTab === "burn" ? "block" : "hidden"} aria-hidden={activeTab !== "burn"}>
+            <div className="px-4 py-6 space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Convert ACBU to fiat and withdraw
+                </p>
               <Card className="border-border p-4 mb-4">
                 <p className="text-xs text-muted-foreground mb-1">
                   Destination
@@ -688,14 +695,15 @@ export default function CurrencyPage() {
                 Burn & Withdraw
               </Button>
             </div>
-          </TabsContent>
+          </div>
 
           {/* International Tab */}
-          <TabsContent value="international" className="px-4 py-6 space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Send money internationally with real-time rates
-              </p>
+          <div className={activeTab === "international" ? "block" : "hidden"} aria-hidden={activeTab !== "international"}>
+            <div className="px-4 py-6 space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Send money internationally with real-time rates
+                </p>
 
               <div className="space-y-4">
                 <div>
@@ -831,8 +839,8 @@ export default function CurrencyPage() {
                 </Button>
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </PageContainer>
 
       {/* Confirmation Dialog */}
