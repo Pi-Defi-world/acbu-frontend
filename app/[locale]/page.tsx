@@ -13,7 +13,6 @@ import {
   Clock,
   Building2,
   ArrowUpRight,
-  HandCoins,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';
@@ -177,6 +176,18 @@ export default function Home() {
       ? acbuBalanceToUsd(balance, rates)
       : null;
   const fiatUsdInfo = showBalance ? sumSimulatedFiatUsd(fiatAccounts, rates) : null;
+  const acbuAmountText = !showBalance
+    ? '••••••'
+    : balanceLoading
+      ? '...'
+      : `ACBU ${balance != null ? format.number(balance, { minimumFractionDigits: 0, maximumFractionDigits: 7 }) : '—'}`;
+  const acbuUsdText = !showBalance
+    ? '••••••'
+    : balanceLoading || ratesLoading
+      ? `${t('approx_usd')} ...`
+      : balance == null || acbuUsd == null
+        ? `${t('approx_usd')} —`
+        : `${t('approx_usd')} ${format.number(acbuUsd, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
   return (
     <>
@@ -212,25 +223,11 @@ export default function Home() {
                 </p>
                 <p className="text-[10px] text-muted-foreground mb-1">{t('wallet_balance')}</p>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
-                  {!showBalance
-                    ? '••••••'
-                    : balanceLoading
-                      ? '...'
-                      : `ACBU ${balance != null ? format.number(balance, { minimumFractionDigits: 0, maximumFractionDigits: 7 }) : '—'}`}
+                  {acbuAmountText}
                 </h2>
-                {!showBalance ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">••••••</p>
-                ) : balanceLoading || ratesLoading ? (
-                  <p className="text-sm text-muted-foreground mt-1.5">{t('approx_usd')} ...</p>
-                ) : balance == null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5">{t('approx_usd')} —</p>
-                ) : acbuUsd != null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
-                    {t('approx_usd')} {format.number(acbuUsd, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground mt-1.5">{t('approx_usd')} —</p>
-                )}
+                <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
+                  {acbuUsdText}
+                </p>
               </div>
               <div className="flex-1 min-w-0 text-right">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
