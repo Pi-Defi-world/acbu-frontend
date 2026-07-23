@@ -1,15 +1,24 @@
-import React from "react"
+import React, { Suspense } from "react"
 import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
+import { NavigationGuardProvider } from '@/contexts/navigation-guard-context'
 import { ErrorBoundary } from '@/components/error-boundary'
 import '../globals.css'
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
-import { Toaster } from '@/components/ui/toaster';
+import { Spinner } from '@/components/ui/spinner';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+
+function TranslationsFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <Spinner className="size-6 text-muted-foreground" />
+    </div>
+  );
+}
 
 export const metadata: Metadata = {
   title: 'ACBU - P2P Transfers',
@@ -64,18 +73,19 @@ export default async function RootLayout({
         )}
       </head>
       <body className={`font-sans antialiased`}>
-        <NextIntlClientProvider messages={messages}>
-          <ErrorBoundary>
-            <AuthProvider>
-              <AuthGuard>
-                <AppLayout>{children}</AppLayout>
-              </AuthGuard>
-              <WalletSetupModal />
-              <Toaster />
-              <Analytics />
-            </AuthProvider>
-          </ErrorBoundary>
-        </NextIntlClientProvider>
+        <Suspense fallback={<TranslationsFallback />}>
+          <NextIntlClientProvider messages={messages}>
+            <ErrorBoundary>
+              <AuthProvider>
+                <AuthGuard>
+                  <AppLayout>{children}</AppLayout>
+                </AuthGuard>
+                <WalletSetupModal />
+                <Analytics />
+              </AuthProvider>
+            </ErrorBoundary>
+          </NextIntlClientProvider>
+        </Suspense>
       </body>
     </html>
   )

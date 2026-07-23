@@ -1,4 +1,4 @@
-export { get, post, patch, del, apiOpts } from './client';
+export { get, post, patch, del } from './client';
 export type { RequestOptions, ApiError } from './client';
 export * as auth from './auth';
 export * as user from './user';

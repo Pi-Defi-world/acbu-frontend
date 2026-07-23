@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Wallet | ACBU',
+  description: 'Manage your ACBU wallet, view your Stellar address, and configure wallet connections.',
+};
+
 import React, { useEffect, useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
@@ -189,9 +196,9 @@ export default function WalletPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <div className="page-header">
         <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-foreground">Wallet Management</h1>
+          <h1 className="page-title">Wallet Management</h1>
           <p className="text-xs text-muted-foreground">Manage your Stellar wallet</p>
         </div>
       </div>

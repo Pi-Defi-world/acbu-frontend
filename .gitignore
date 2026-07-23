@@ -18,6 +18,7 @@ yarn-error.log*
 
 # env files
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -29,3 +30,8 @@ next-env.d.ts
 .pnpm-store/
 .history/*
 .env
+package-lock.json
+pnpm-lock.yaml
+
+# prevent documentation files from being accidentally served as static assets
+/public/**/*.md
