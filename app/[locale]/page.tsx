@@ -176,6 +176,20 @@ export default function Home() {
       ? acbuBalanceToUsd(balance, rates)
       : null;
   const fiatUsdInfo = showBalance ? sumSimulatedFiatUsd(fiatAccounts, rates) : null;
+
+  const acbuAmountText = !showBalance
+    ? '••••••'
+    : balanceLoading
+      ? '...'
+      : `ACBU ${balance != null ? format.number(balance, { minimumFractionDigits: 0, maximumFractionDigits: 7 }) : '—'}`;
+  const acbuUsdText = !showBalance
+    ? '••••••'
+    : balanceLoading || ratesLoading
+      ? `${t('approx_usd')} ...`
+      : balance == null || acbuUsd == null
+        ? `${t('approx_usd')} —`
+        : `${t('approx_usd')} ${format.number(acbuUsd, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+
   const balanceAnnouncement = !showBalance
     ? 'Balances hidden'
     : balanceLoading
@@ -183,6 +197,7 @@ export default function Home() {
       : balance != null
         ? `Balance updated to ACBU ${format.number(balance, { minimumFractionDigits: 0, maximumFractionDigits: 7 })}`
         : 'Balance unavailable';
+
 
   return (
     <>
@@ -219,7 +234,15 @@ export default function Home() {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
                   {t('acbu')}
                 </p>
-                <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">{t('wallet_balance')}</p>
+
+                <p className="text-[10px] text-muted-foreground mb-1">{t('wallet_balance')}</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
+                  {acbuAmountText}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
+                  {acbuUsdText}
+                </p>
+               <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">{t('wallet_balance')}</p>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums md:text-4xl">
                   {!showBalance
                     ? '••••••'
@@ -240,6 +263,7 @@ export default function Home() {
                 ) : (
                   <p className="text-sm text-muted-foreground mt-1.5 md:text-base">{t('approx_usd')} —</p>
                 )}
+
               </div>
               <div className="flex-1 min-w-0 text-right">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
