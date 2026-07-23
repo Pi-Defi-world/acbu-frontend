@@ -32,5 +32,11 @@
       "title": "الأسعار",
       "description": "أسعار السوق"
     }
+  },
+  "navigation": {
+    "unsavedChangesTitle": "تغييرات غير محفوظة",
+    "unsavedChangesDescription": "لديك تغييرات غير محفوظة. هل أنت متأكد أنك تريد المغادرة؟",
+    "stay": "البقاء",
+    "leave": "المغادرة"
   }
 }

@@ -32,5 +32,11 @@
       "title": "Kursy",
       "description": "Kursy rynkowe"
     }
+  },
+  "navigation": {
+    "unsavedChangesTitle": "Niezapisane zmiany",
+    "unsavedChangesDescription": "Masz niezapisane zmiany. Czy na pewno chcesz wyjść?",
+    "stay": "Zostań",
+    "leave": "Wyjdź"
   }
 }

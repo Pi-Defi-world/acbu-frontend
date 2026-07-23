@@ -156,7 +156,10 @@ function SignInForm() {
                         </div>
 
                         <div>
-                            <label htmlFor="signin-passcode" className="form-label">
+                            <label
+                                htmlFor="signin-passcode"
+                                className="form-label"
+                            >
                                 Passcode
                             </label>
                             <div className="relative">

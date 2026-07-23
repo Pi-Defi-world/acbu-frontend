@@ -20,7 +20,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
 
-      <main className={`flex-1 ${!isPublic ? 'pb-24' : ''}`}>
+      <main data-testid="app-main-content" className={`flex-1 ${!isPublic ? 'pb-24' : ''}`}>
         <PageTransition>{children}</PageTransition>
       </main>
 

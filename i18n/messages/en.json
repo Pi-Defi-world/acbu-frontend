@@ -32,5 +32,11 @@
       "title": "Rates",
       "description": "Market rates"
     }
+  },
+  "navigation": {
+    "unsavedChangesTitle": "Unsaved changes",
+    "unsavedChangesDescription": "You have unsaved changes. Are you sure you want to leave?",
+    "stay": "Stay",
+    "leave": "Leave"
   }
 }

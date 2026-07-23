@@ -32,5 +32,11 @@
       "title": "Курсы",
       "description": "Рыночные курсы"
     }
+  },
+  "navigation": {
+    "unsavedChangesTitle": "Несохраненные изменения",
+    "unsavedChangesDescription": "У вас есть несохраненные изменения. Вы уверены, что хотите уйти?",
+    "stay": "Остаться",
+    "leave": "Уйти"
   }
 }

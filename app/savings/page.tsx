@@ -112,6 +112,38 @@ export default function SavingsPage() {
   const [newGoalTarget, setNewGoalTarget] = useState("");
   const [newGoalDeadline, setNewGoalDeadline] = useState("");
 
+  const isNewGoalFormValid =
+    newGoalName.trim().length > 0 &&
+    newGoalTarget.trim().length > 0 &&
+    !Number.isNaN(Number.parseFloat(newGoalTarget)) &&
+    Number.parseFloat(newGoalTarget) > 0 &&
+    newGoalDeadline.length > 0;
+
+  const resetNewGoalForm = () => {
+    setNewGoalName("");
+    setNewGoalTarget("");
+    setNewGoalDeadline("");
+  };
+
+  const handleCreateGoal = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!isNewGoalFormValid) return;
+
+    const parsedAmount = Number.parseFloat(newGoalTarget);
+    const newGoal: SavingsGoal = {
+      id: crypto.randomUUID(),
+      name: newGoalName.trim(),
+      targetAmount: parsedAmount,
+      currentAmount: 0,
+      deadline: newGoalDeadline,
+    };
+
+    setGoals((prev) => [...prev, newGoal]);
+    setShowNewGoalDialog(false);
+    resetNewGoalForm();
+  };
+
  useEffect(() => {
     setReceiveError("");
     userApi.getReceive(opts).then(async (data) => {
@@ -266,43 +298,30 @@ export default function SavingsPage() {
             <DialogTitle>Create New Goal</DialogTitle>
             <DialogDescription>Set a savings target to work towards</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <form className="space-y-4" onSubmit={handleCreateGoal}>
             <div className="space-y-2">
-              <Label className="text-foreground">Goal Name</Label>
-              <Input placeholder="e.g. Emergency Fund" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className="border-border" />
+              <Label htmlFor="new-goal-name" className="text-foreground">Goal Name</Label>
+              <Input id="new-goal-name" placeholder="e.g. Emergency Fund" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className="border-border" />
             </div>
             <div className="space-y-2">
-              <Label className="text-foreground">Target Amount (ACBU)</Label>
-              <Input type="number" placeholder="0.00" value={newGoalTarget} onChange={(e) => setNewGoalTarget(e.target.value)} className="border-border" />
+              <Label htmlFor="new-goal-target" className="text-foreground">Target Amount (ACBU)</Label>
+              <Input id="new-goal-target" type="number" placeholder="0.00" value={newGoalTarget} onChange={(e) => setNewGoalTarget(e.target.value)} className="border-border" />
             </div>
             <div className="space-y-2">
-              <Label className="text-foreground">Deadline</Label>
-              <Input type="month" value={newGoalDeadline} onChange={(e) => setNewGoalDeadline(e.target.value)} className="border-border" />
+              <Label htmlFor="new-goal-deadline" className="text-foreground">Deadline</Label>
+              <Input id="new-goal-deadline" type="month" value={newGoalDeadline} onChange={(e) => setNewGoalDeadline(e.target.value)} className="border-border" />
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setShowNewGoalDialog(false)} className="flex-1 border-border">Cancel</Button>
-              <Button 
-                disabled={!newGoalName || !newGoalTarget || parseFloat(newGoalTarget) <= 0 || isNaN(parseFloat(newGoalTarget)) || !newGoalDeadline} 
-                onClick={() => {
-                  const parsedAmount = parseFloat(newGoalTarget);
-                  const newGoal: SavingsGoal = {
-                    id: crypto.randomUUID(),
-                    name: newGoalName,
-                    targetAmount: parsedAmount,
-                    currentAmount: 0,
-                    deadline: newGoalDeadline,
-                  };
-                  setGoals((prev) => [...prev, newGoal]);
-                  setShowNewGoalDialog(false);
-                  setNewGoalName("");
-                  setNewGoalTarget("");
-                  setNewGoalDeadline("");
-                }} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              <Button type="button" variant="outline" onClick={() => setShowNewGoalDialog(false)} className="flex-1 border-border">Cancel</Button>
+              <Button
+                type="submit"
+                disabled={!isNewGoalFormValid}
+                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 Create Goal
               </Button>
             </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
     </>

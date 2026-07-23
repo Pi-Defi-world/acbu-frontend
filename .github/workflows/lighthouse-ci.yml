@@ -21,9 +21,7 @@ jobs:
           node-version: 20
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
+        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -36,4 +34,4 @@ jobs:
       - name: Run LHCI
         env:
           CHROME_BIN: /usr/bin/chromium-browser
-        run: npx @lhci/cli@0.11.0 autorun --config=.lighthouseci/config.js
+        run: npx @lhci/cli@0.11.0 autorun --config=.lighthouseci/config.cjs
