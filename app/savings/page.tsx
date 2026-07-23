@@ -151,7 +151,7 @@ export default function SavingsPage() {
       if (uri && typeof uri === "string") setApiUser(uri);
       setReceiveError("");
     }).catch((e) => {
-      logger.error("Failed to load user info", e); // <-- ADD LOGGER
+      logger.error("Failed to load user info", e);
       setReceiveError(e instanceof Error ? e.message : "Failed to load user info");
     });
   }, [opts.token]);
@@ -164,7 +164,7 @@ export default function SavingsPage() {
       setPositionsBalance(res.balance);
       setReceiveError("");
     }).catch((e) => {
-      logger.error("Failed to load savings balance", e); // <-- ADD LOGGER
+      logger.error("Failed to load savings balance", e);
       setPositionsBalance(null);
       setReceiveError(e instanceof Error ? e.message : "Failed to load savings balance");
     }).finally(() => setPositionsLoading(false));
@@ -246,7 +246,6 @@ export default function SavingsPage() {
               </h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
-            {/* AFTER */}
             <p className="text-3xl font-bold text-foreground mb-1">
               {positionsLoading ? "—" : `ACBU ${formatAmount(totalSavings)}`}
             </p>
