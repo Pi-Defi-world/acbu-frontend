@@ -112,15 +112,23 @@ function SignInForm() {
 
                     <form onSubmit={handleSignIn} className="space-y-4">
                         {error && (
-                            <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-                                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                            <div
+                                id="signin-error"
+                                role="alert"
+                                className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
+                            >
+                                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
                                 <p className="text-sm text-destructive">
                                     {error}
                                 </p>
                             </div>
                         )}
                         {success && (
-                            <div className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10">
+                            <div
+                                id="signin-success"
+                                role="status"
+                                className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10"
+                            >
                                 <p className="text-sm text-green-600">
                                     {success}
                                 </p>
@@ -143,21 +151,24 @@ function SignInForm() {
                                 onChange={(e) => setIdentifier(e.target.value)}
                                 className="border-border"
                                 disabled={loading}
+                                aria-describedby={error ? "signin-error" : undefined}
                             />
                         </div>
 
                         <div>
-                            <label className="form-label">
+                            <label htmlFor="signin-passcode" className="form-label">
                                 Passcode
                             </label>
                             <div className="relative">
                                 <Input
+                                    id="signin-passcode"
                                     type={showPassword ? 'text' : 'password'}
                                     placeholder="••••••••"
                                     value={passcode}
                                     onChange={(e) => setPasscode(e.target.value)}
                                     className="border-border pr-10"
                                     disabled={loading}
+                                    aria-describedby={error ? "signin-error" : undefined}
                                 />
                                 <button
                                     type="button"
