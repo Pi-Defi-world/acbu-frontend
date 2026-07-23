@@ -104,8 +104,12 @@ function TwoFactorForm() {
 
           <form onSubmit={handleVerify} className="space-y-4">
             {error && (
-              <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+              <div
+                id="twofa-error"
+                role="alert"
+                className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
+              >
+                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
                 <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
@@ -129,6 +133,7 @@ function TwoFactorForm() {
                 className="border-border text-center text-lg font-mono tracking-widest"
                 disabled={loading}
                 autoFocus
+                aria-describedby={error ? "twofa-error" : undefined}
               />
             </div>
 

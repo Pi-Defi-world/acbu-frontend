@@ -242,8 +242,7 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
                   {acbuUsdText}
                 </p>
-
-                <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">{t('wallet_balance')}</p>
+               <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">{t('wallet_balance')}</p>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums md:text-4xl">
                   {!showBalance
                     ? '••••••'
