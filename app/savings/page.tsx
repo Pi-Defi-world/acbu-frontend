@@ -225,12 +225,13 @@ export default function SavingsPage() {
 
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="page-title">Savings balance (API)</h2>
+              <h2 className="page-title">On-chain Savings (API)</h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-3xl font-bold text-foreground mb-1">
               {positionsLoading ? "—" : `ACBU ${formatAmount(positionsBalance)}`}
             </p>
+            <p className="text-xs text-muted-foreground mb-3">This reflects balances reported by the backend API only.</p>
             <div className="flex gap-2 mt-3">
               <Link href="/savings/deposit">
                 <Button size="sm" variant="outline" className="border-border bg-transparent">Deposit</Button>
@@ -244,20 +245,17 @@ export default function SavingsPage() {
           {/* Overview Card */}
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="page-title">
-                Total Savings
-              </h2>
+              <h2 className="page-title">Total Savings (API + Goals)</h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-3xl font-bold text-foreground mb-1">
               {positionsLoading ? "—" : `ACBU ${formatAmount(totalSavings)}`}
             </p>
-            <p className="text-xs text-muted-foreground mb-3">
-              Earning 8% APY interest
-            </p>
+            <p className="text-xs text-muted-foreground mb-2">Includes allocated amounts in savings goals: ACBU {formatAmount(goalsTotal)}</p>
+            <p className="text-xs text-muted-foreground mb-3">Earning 8% APY interest</p>
             <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
               <TrendingUp className="w-3 h-3" />
-            <span>+ACBU {formatAmount((totalSavings * 0.08) / 12)} this month</span>
+              <span>+ACBU {formatAmount((totalSavings * 0.08) / 12)} this month</span>
             </div>
           </Card>
 
