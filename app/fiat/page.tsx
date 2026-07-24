@@ -1,23 +1,12 @@
 'use client';
 
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Simulated Bank | ACBU',
-  description: 'Manage your simulated fiat bank accounts for testing ACBU minting and burning operations.',
-};
-
 import React, { useState, useEffect } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-<<<<<<< HEAD
-import { useApiOpts, useApiError } from '@/hooks/use-api';
-=======
 import { useApiOpts } from '@/hooks/use-api';
 import { useApiError } from '@/hooks/use-api-error';
->>>>>>> upstream/dev
 import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import * as fiatApi from '@/lib/api/fiat';
 import { useAuth } from '@/contexts/auth-context';
@@ -25,12 +14,13 @@ import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureDemoFiatTrustlineClient } from '@/lib/stellar/trustlines';
 import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
 import { Building2, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Keypair } from '@stellar/stellar-sdk';
 export default function FiatSimPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
-  const { uiError, setApiError, clearError, isSubmitDisabled, handleError } = useApiError();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [accounts, setAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -212,18 +202,3 @@ export default function FiatSimPage() {
   );
 }
 
-function Badge({
-  children,
-  variant = 'default',
-}: {
-  children: React.ReactNode;
-  variant?: string;
-}) {
-  const styles =
-    variant === 'secondary'
-      ? 'bg-secondary text-secondary-foreground'
-      : 'bg-primary text-primary-foreground';
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${styles}`}>{children}</span>
-  );
-}

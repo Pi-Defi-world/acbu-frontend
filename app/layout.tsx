@@ -1,20 +1,16 @@
 import React from 'react'
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
-import { Analytics } from '@vercel/analytics/next'
-import dynamic from 'next/dynamic'
 import { AuthProvider } from '@/contexts/auth-context'
 import { I18nProvider } from '@/contexts/i18n-context'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { GlobalErrorHandler } from '@/components/global-error-handler'
 import './globals.css'
-import { AppLayout } from '@/components/app-layout'
-import { WalletSetupModal } from '@/components/wallet-setup-modal'
-import { Toaster } from '@/components/ui/toaster'
-import { ThemeProvider } from '@/components/theme-provider'
+import { AppLayout } from '@/components/app-layout';
+import { WalletSetupModal } from '@/components/wallet-setup-modal';
 
-const OfflineIndicator = dynamic(
-  () => import('@/components/offline-indicator').then((m) => ({ default: m.OfflineIndicator })),
+const VercelAnalytics = dynamic(
+  () => import('@vercel/analytics/next').then((m) => ({ default: m.Analytics })),
   { ssr: false },
 )
 
@@ -26,6 +22,20 @@ const apiUrl =
   typeof process !== 'undefined'
     ? process.env.NEXT_PUBLIC_API_URL?.trim()
     : ''
+
+
+function getApiOrigin(): string | null {
+  const rawUrl = apiBaseUrl || apiUrl
+  if (!rawUrl) return null
+
+  try {
+    return new URL(rawUrl).origin
+  } catch {
+    return null
+  }
+}
+
+const apiOrigin = getApiOrigin()
 
 if (
   typeof process !== 'undefined' &&
@@ -67,13 +77,12 @@ export const metadata: Metadata = {
   },
 }
 
-// Viewport config
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   userScalable: true,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: light)', color: '#433875' },
     { media: '(prefers-color-scheme: dark)', color: '#1a0a2e' },
   ],
 }
@@ -83,8 +92,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  // Read the nonce injected by middleware so Next.js can apply it to
-  // inline scripts/styles it generates (e.g. __NEXT_DATA__).
   const headersList = await headers();
   const nonce = headersList.get('x-nonce') ?? undefined;
   const lang = 'en'
@@ -92,6 +99,21 @@ export default async function RootLayout({
   return (
     <html lang={lang} dir="ltr" suppressHydrationWarning>
       <head>
+        <link rel="preload" href="/placeholder-logo.svg" as="image" type="image/svg+xml" />
+        {apiOrigin && (
+          <>
+            <link rel="dns-prefetch" href={apiOrigin} />
+            <link rel="preconnect" href={apiOrigin} crossOrigin="use-credentials" />
+          </>
+        )}
+        {/*
+          Print stylesheet is deferred until the browser enters print mode.
+          media="print" prevents the browser from downloading and parsing
+          this resource on non-print (screen/mobile) page loads.
+        */}
+        <link rel="stylesheet" href="/print.css" media="print" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
@@ -120,23 +142,13 @@ export default async function RootLayout({
                 <WalletSetupModal />
                 <Toaster />
                 {/*
-                  F-065 SRI review: the only third-party script injected here is
-                  @vercel/analytics/next, which is bundled at build time (first-party,
-                  no external CDN fetch). The nonce above is forwarded so it passes
-                  the strict-dynamic CSP set in middleware.ts.
-
-                  If any external CDN scripts (<Script src="https://..."/>) are added
-                  in the future, they MUST include integrity + crossOrigin="anonymous"
-                  attributes, e.g.:
-                    <Script
-                      src="https://cdn.example.com/lib.js"
-                      integrity="sha384-<hash>"
-                      crossOrigin="anonymous"
-                      nonce={nonce}
-                    />
-                  SRI hashes can be generated at https://www.srihash.org/
+                  F-065 SRI review: analytics is non-critical, so it is
+                  dynamically loaded on the client instead of being emitted as a
+                  beforeInteractive script that can block initial rendering.
+                  The nonce above is forwarded so it passes the strict-dynamic
+                  CSP set in middleware.ts.
                 */}
-                <Analytics nonce={nonce} crossOrigin="anonymous" />
+                <VercelAnalytics nonce={nonce} crossOrigin="anonymous" />
               </AuthProvider>
             </I18nProvider>
           </ErrorBoundary>

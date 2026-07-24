@@ -1,33 +1,17 @@
 "use client";
 
-<<<<<<< HEAD
-import React, { useState } from "react";
-=======
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Burn Tokens | ACBU',
-  description: 'Burn ACBU tokens to redeem fiat currency. Convert your digital assets back to traditional money.',
-};
-
 import React, { useState, Suspense } from "react";
->>>>>>> upstream/dev
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SkeletonList } from "@/components/ui/skeleton-list";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-import { SkeletonList } from "@/components/ui/skeleton-list";
->>>>>>> upstream/dev
-=======
->>>>>>> upstream/dev
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -49,7 +33,6 @@ import {
 } from "@/components/ui/form";
 
 const burnSchema = z.object({
-<<<<<<< HEAD
   acbuAmount: z.string().refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
     message: "Amount must be greater than 0",
   }),
@@ -59,7 +42,7 @@ const burnSchema = z.object({
   accountName: z.string()
     .min(3, "Account name is too short")
     .max(100, "Account name is too long"),
-}).superRefine((data: any, ctx: any) => {
+}).superRefine((data, ctx) => {
   if (data.currency === "NGN") {
     if (!/^\d{10}$/.test(data.accountNumber)) {
       ctx.addIssue({
@@ -91,7 +74,6 @@ const burnSchema = z.object({
       });
     }
   } else {
-    // Generic fallback for other currencies
     if (!/^\d+$/.test(data.accountNumber)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -105,7 +87,7 @@ const burnSchema = z.object({
         path: ["accountNumber"],
       });
     }
-    
+
     if (!/^[A-Za-z0-9]+$/.test(data.bankCode)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -120,25 +102,6 @@ const burnSchema = z.object({
       });
     }
   }
-=======
-    acbuAmount: z
-        .string()
-        .refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-            message: "Amount must be greater than 0",
-        }),
-    currency: z.string().length(3, "Currency must be exactly 3 uppercase letters"),
-    accountNumber: z
-        .string()
-        .min(5, "Account number is too short")
-        .max(20, "Account number is too long")
-        .regex(/^\d+$/, "Account number must contain only digits"),
-    bankCode: z
-        .string()
-        .min(3, "Bank code is too short")
-        .max(10, "Bank code is too long")
-        .regex(/^[A-Za-z0-9]+$/, "Bank code must be alphanumeric"),
-    accountName: z.string().min(3, "Account name is too short").max(100, "Account name is too long"),
->>>>>>> upstream/dev
 });
 
 type BurnFormValues = z.infer<typeof burnSchema>;
@@ -148,11 +111,7 @@ const formatCurrency = (amount: string, currency: string) => {
   if (isNaN(value)) return "";
 
   try {
-<<<<<<< HEAD
     return new Intl.NumberFormat(typeof navigator !== 'undefined' ? navigator.language : 'en-US', {
-=======
-    return new Intl.NumberFormat(navigator.language || 'en-US', {
->>>>>>> upstream/dev
       style: "currency",
       currency,
     }).format(value);
@@ -161,11 +120,12 @@ const formatCurrency = (amount: string, currency: string) => {
   }
 };
 
-export default function BurnPage() {
+export function BurnPageContent() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
-  
+  const searchParams = useSearchParams();
+
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
@@ -182,18 +142,9 @@ export default function BurnPage() {
     mode: "onChange",
   });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
   const currency = form.watch("currency");
-  const isValid = form.formState.isValid;
-
-=======
->>>>>>> upstream/dev
-=======
   const { isValid } = form.formState;
-  const currency = form.watch("currency");
 
->>>>>>> upstream/dev
   const onSubmit = async (values: BurnFormValues) => {
     clearError();
     setLoading(true);
@@ -204,9 +155,9 @@ export default function BurnPage() {
       if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
 
       const recipientAccount: BurnRecipientAccount = {
-        account_number: data.accountNumber.trim(),
-        bank_code: data.bankCode.trim(),
-        account_name: data.accountName.trim(),
+        account_number: values.accountNumber.trim(),
+        bank_code: values.bankCode.trim(),
+        account_name: values.accountName.trim(),
         type: "bank",
       };
 
@@ -222,8 +173,8 @@ export default function BurnPage() {
         }
         const submit = await submitBurnRedeemSingleClient({
           userAddress: stellarAddress,
-          amountAcbu: data.acbuAmount,
-          currency: data.currency,
+          amountAcbu: values.acbuAmount,
+          currency: values.currency,
           userSecret: secret,
         });
         burnTxHash = submit.transactionHash;
@@ -244,85 +195,49 @@ export default function BurnPage() {
                 } catch (err) {
                   reject(err);
                 }
-                const submit = await submitBurnRedeemSingleClient({
-                    userAddress: stellarAddress,
-                    amountAcbu: values.acbuAmount,
-                    currency: values.currency,
-                    userSecret: secret,
-                });
-                burnTxHash = submit.transactionHash;
-            } else {
-                if (!kit) throw new Error("Wallet connector not ready");
-                const address = await new Promise<string>((resolve, reject) => {
-                    kit
-                        .openModal({
-                            onWalletSelected: async (selectedOption: { id: string }) => {
-                                try {
-                                    kit.setWallet(selectedOption.id);
-                                    const { address } = await kit.getAddress();
-                                    resolve(address);
-                                } catch (err) {
-                                    reject(err);
-                                }
-                            },
-                        })
-                        .catch(reject);
-                });
-                if (stellarAddress && address !== stellarAddress) {
-                    throw new Error("Connected wallet doesn't match linked account");
-                }
-                const submit = await submitBurnRedeemSingleClient({
-                    userAddress: stellarAddress,
-                    amountAcbu: values.acbuAmount,
-                    currency: values.currency,
-                    external: { kit, address },
-                });
-                burnTxHash = submit.transactionHash;
-            }
-
-            const res = await burnApi.burnAcbu(values.acbuAmount, values.currency, recipientAccount, opts, burnTxHash);
-            setTxId(res.transaction_id);
-            reset({ ...values, acbuAmount: "" });
-        } catch (e) {
-            setApiError(e);
-        } finally {
-            setLoading(false);
+              },
+            })
+            .catch(reject);
+        });
+        if (stellarAddress && address !== stellarAddress) {
+          throw new Error(
+            `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+          );
         }
         const submit = await submitBurnRedeemSingleClient({
           userAddress: stellarAddress,
-          amountAcbu: data.acbuAmount,
-          currency: data.currency,
+          amountAcbu: values.acbuAmount,
+          currency: values.currency,
           external: { kit, address },
         });
         burnTxHash = submit.transactionHash;
       }
 
       const res = await burnApi.burnAcbu(
-        data.acbuAmount,
-        data.currency,
+        values.acbuAmount,
+        values.currency,
         recipientAccount,
         opts,
         burnTxHash,
       );
       setTxId(res.transaction_id);
       form.reset({ ...values, acbuAmount: "" });
-<<<<<<< HEAD
-    } catch (e: any) {
-      // Handle server-side validation errors if they follow a specific format
-      if (e?.status === 400 && e?.details) {
-        const details = e.details as any;
-        const errors = details.errors || (details.error && typeof details.error === 'object' ? details.error : null);
-        
+    } catch (e: unknown) {
+      const err = e as Record<string, unknown>;
+      if (err.status === 400 && err.details) {
+        const details = err.details as Record<string, unknown>;
+        const errors: unknown = details.errors || (typeof details.error === 'object' && details.error ? details.error : null);
+
         if (errors && typeof errors === 'object') {
           Object.entries(errors).forEach(([key, msg]) => {
-            const formKey = key === 'account_number' ? 'accountNumber' :
+            const formKey: string = key === 'account_number' ? 'accountNumber' :
                             key === 'bank_code' ? 'bankCode' :
                             key === 'account_name' ? 'accountName' :
                             key === 'acbu_amount' ? 'acbuAmount' :
-                            key as any;
-            
+                            key;
+
             if (['accountNumber', 'bankCode', 'accountName', 'acbuAmount', 'currency'].includes(formKey)) {
-              form.setError(formKey as any, { type: 'server', message: msg as string });
+              form.setError(formKey as 'accountNumber' | 'bankCode' | 'accountName' | 'acbuAmount' | 'currency', { type: 'server', message: String(msg) });
             }
           });
         } else {
@@ -331,16 +246,10 @@ export default function BurnPage() {
       } else {
         setApiError(e);
       }
-=======
-    } catch (e) {
-      setApiError(e);
->>>>>>> upstream/dev
     } finally {
       setLoading(false);
     }
   };
-
-  const currency = form.watch("currency");
 
   return (
     <>
@@ -364,10 +273,7 @@ export default function BurnPage() {
           {uiError && (
             <ApiErrorDisplay error={uiError} onDismiss={clearError} />
           )}
-<<<<<<< HEAD
-          
-=======
->>>>>>> upstream/dev
+
           {txId && (
             <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
               <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
@@ -376,13 +282,13 @@ export default function BurnPage() {
               </p>
             </div>
           )}
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="acbuAmount"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>ACBU amount</FormLabel>
                     <FormControl>
@@ -411,7 +317,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="currency"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Currency (3 letters)</FormLabel>
                     <FormControl>
@@ -437,7 +343,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="accountNumber"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Account number</FormLabel>
                     <FormControl>
@@ -455,8 +361,8 @@ export default function BurnPage() {
                       />
                     </FormControl>
                     <FormDescription>
-                      {currency === "NGN" 
-                        ? "Nigerian NUBAN accounts must be 10 digits." 
+                      {currency === "NGN"
+                        ? "Nigerian NUBAN accounts must be 10 digits."
                         : currency === "KES"
                         ? "Kenyan account numbers are typically 5-15 digits."
                         : "Standard bank account number (digits only)."}
@@ -469,7 +375,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="bankCode"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Bank code</FormLabel>
                     <FormControl>
@@ -500,7 +406,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="accountName"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Account name</FormLabel>
                     <FormControl>
@@ -519,23 +425,16 @@ export default function BurnPage() {
                   </FormItem>
                 )}
               />
-<<<<<<< HEAD
 
               <Button
                 type="submit"
-<<<<<<< HEAD
                 disabled={!isValid || loading || isSubmitDisabled}
-=======
-                disabled={!form.formState.isValid || loading || isSubmitDisabled}
->>>>>>> upstream/dev
                 className="w-full"
               >
                 {loading ? "Submitting..." : "Burn & Withdraw"}
               </Button>
             </form>
           </Form>
-<<<<<<< HEAD
-=======
         </Card>
       </PageContainer>
     </>
@@ -554,26 +453,11 @@ function BurnPageSkeleton() {
       <PageContainer>
         <Card className="border-border p-4 space-y-4">
           <SkeletonList count={5} itemHeight="h-14" />
->>>>>>> upstream/dev
         </Card>
-=======
-            <Button
-              type="submit"
-              disabled={!isValid || loading || isSubmitDisabled}
-              className="w-full"
-            >
-              {loading ? "Submitting..." : "Burn & Withdraw"}
-            </Button>
-          </form>
-        </Form>
-      </Card>
->>>>>>> upstream/dev
       </PageContainer>
     </>
   );
 }
-<<<<<<< HEAD
-=======
 
 export default function BurnPage() {
   return (
@@ -582,4 +466,3 @@ export default function BurnPage() {
     </Suspense>
   );
 }
->>>>>>> upstream/dev

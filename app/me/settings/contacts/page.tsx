@@ -36,7 +36,7 @@ export default function ContactsPage() {
     }).catch((e) => {
       setError(e instanceof Error ? e.message : 'Failed to load contacts');
     }).finally(() => setLoading(false));
-  }, [opts]);
+  }, [opts.token]);
 
   useEffect(() => {
     setLoading(true);
@@ -111,8 +111,8 @@ export default function ContactsPage() {
             contacts.map((c) => (
               <Card key={c.id} className="border-border p-4 flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">{c.alias ?? c.pay_uri ?? c.id}</p>
-                  {c.alias && c.pay_uri && <p className="text-xs text-muted-foreground truncate">{c.pay_uri}</p>}
+                  <p className="font-medium text-foreground truncate" title={c.alias ?? c.pay_uri ?? c.id}>{c.alias ?? c.pay_uri ?? c.id}</p>
+                  {c.alias && c.pay_uri && <p className="text-xs text-muted-foreground truncate" title={c.pay_uri}>{c.pay_uri}</p>}
                 </div>
                 <Button variant="outline" size="sm" className="border-destructive/30 text-destructive shrink-0" onClick={() => handleDelete(c.id)}>Remove</Button>
               </Card>
