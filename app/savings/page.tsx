@@ -171,7 +171,10 @@ export default function SavingsPage() {
   }, [apiUser, opts.token]);
 
   const apiBalance = typeof positionsBalance === "number" ? positionsBalance : typeof positionsBalance === "string" ? parseFloat(positionsBalance) || 0 : 0;
-  const totalSavings = apiBalance;
+  // Total savings should reflect API positions plus any amounts already allocated
+  // to savings goals so the overview is not redundant with the raw API balance.
+  const goalsTotal = goals.reduce((sum, g) => sum + (typeof g.currentAmount === 'number' ? g.currentAmount : parseFloat(String(g.currentAmount) || '0')), 0);
+  const totalSavings = apiBalance + goalsTotal;
 
   const savingsAccounts: SavingsAccount[] = SAVINGS_ACCOUNT_TYPES.map((acct) => ({
     ...acct,
