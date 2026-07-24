@@ -55,11 +55,14 @@ export function getApiErrorMessage(e: unknown): string {
 }
 
 /**
- * Maps HTTP status codes to user-friendly, actionable messages.
+ * Maps HTTP status codes to user-friendly, actionable string messages.
  * Handles 429 (Rate Limit), 503 (Service Unavailable), and 402 (Payment Required)
  * with specific guidance. Falls back to the raw error message for all other codes.
+ *
+ * Note: for the richer UIError variant (with optional recovery actions) use
+ * `mapApiError` from `@/hooks/use-api-error` instead.
  */
-export function mapApiError(e: unknown): string {
+export function getApiErrorString(e: unknown): string {
   const status = (e as ApiError)?.status;
   switch (status) {
     case 429:
