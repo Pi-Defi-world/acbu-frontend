@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApiOpts } from '@/hooks/use-api';
 import { useApiError } from '@/hooks/use-api-error';
+import { useFiatAccounts } from '@/hooks/use-fiat-accounts';
 import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import * as fiatApi from '@/lib/api/fiat';
 import { useAuth } from '@/contexts/auth-context';
@@ -27,28 +28,19 @@ export default function FiatSimPage() {
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
-  const [accounts, setAccounts] = useState<fiatApi.FiatAccount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { accounts, loading, error: accountsError, refetch: refetchAccounts } = useFiatAccounts();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [lastFaucetTx, setLastFaucetTx] = useState<string | null>(null);
 
   const [faucetAmount, setFaucetAmount] = useState('');
   const [faucetCurrency, setFaucetCurrency] = useState('NGN');
 
-  const fetchAccounts = async () => {
-    try {
-      const data = await fiatApi.getFiatAccounts(opts);
-      setAccounts(data.accounts || []);
-    } catch (e: unknown) {
-      setApiError(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Surface hook-level fetch errors through the shared API error UI.
   useEffect(() => {
-    fetchAccounts();
-  }, [opts.token]);
+    if (accountsError) {
+      setApiError(new Error(accountsError));
+    }
+  }, [accountsError, setApiError]);
 
   const handleFaucet = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +88,7 @@ export default function FiatSimPage() {
       const res = await fiatApi.postFaucet(faucetCurrency, faucetAmount, recipient, opts);
       setLastFaucetTx(res.transaction_hash);
       setFaucetAmount('');
+      refetchAccounts();
     } catch (e: unknown) {
       setApiError(e);
     } finally {

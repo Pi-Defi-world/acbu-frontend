@@ -27,9 +27,10 @@ import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { RetryErrorBlock } from '@/components/ui/retry-error-block';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
+import { useFiatAccounts } from '@/hooks/use-fiat-accounts';
 import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import * as transactionsApi from '@/lib/api/transactions';
-import * as fiatApi from '@/lib/api/fiat';
+import type { FiatAccount } from '@/lib/api/fiat';
 import { useRates } from '@/lib/api/rates';
 import type { TransactionListItem, RatesResponse } from '@/types/api';
 import { formatAcbu, formatAmount, parseUtcDate } from '@/lib/utils';
@@ -72,7 +73,7 @@ function acbuBalanceToUsd(
 
 /** Converts each simulated bank balance (local units) to USD via ACBU cross rates. */
 function sumSimulatedFiatUsd(
-  accounts: fiatApi.FiatAccount[],
+  accounts: FiatAccount[],
   rates: RatesResponse | null,
 ): { usd: number; partial: boolean } {
   const usdPerAcbu = getUsdPerAcbu(rates);
@@ -120,8 +121,10 @@ export default function Home() {
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
-  const [fiatLoading, setFiatLoading] = useState(true);
+  const {
+    accounts: fiatAccounts,
+    loading: fiatLoading,
+  } = useFiatAccounts();
   const {
     data: rates,
     loading: ratesLoading,
@@ -139,25 +142,6 @@ export default function Home() {
     { title: t('features.simulated_bank.title'), description: t('features.simulated_bank.description'), icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
     { title: t('features.rates.title'), description: t('features.rates.description'), icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
   ];
-
-  useEffect(() => {
-    let cancelled = false;
-    setFiatLoading(true);
-    fiatApi
-      .getFiatAccounts(opts)
-      .then((data) => {
-        if (!cancelled) setFiatAccounts(data.accounts ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setFiatAccounts([]);
-      })
-      .finally(() => {
-        if (!cancelled) setFiatLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
 
   useEffect(() => {
     let cancelled = false;

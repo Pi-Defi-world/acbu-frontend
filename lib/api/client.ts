@@ -106,7 +106,7 @@ async function request<T>(
     );
   }
   const url = path.startsWith('http') ? path : `${BASE}${path.startsWith('/') ? path : `/${path}`}`;
-  const headers: Record<string, string> = { 'Accept-Encoding': 'gzip' };
+  const headers: Record<string, string> = {};
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }
@@ -118,7 +118,11 @@ async function request<T>(
 
   // If caller provides signal, abort our controller when caller's aborts
   if (opts.signal) {
-    opts.signal.addEventListener('abort', () => controller.abort(), { once: true });
+    if (opts.signal.aborted) {
+      controller.abort();
+    } else {
+      opts.signal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
   }
 
   // Set timeout
@@ -141,7 +145,7 @@ async function request<T>(
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal,
-      credentials: 'include',
+      credentials: 'include', // Include httpOnly cookies in all requests
       ...(opts.priority !== undefined && { priority: opts.priority }),
     });
   } catch (error) {
@@ -150,5 +154,81 @@ async function request<T>(
     // Differentiate aborts from connection breaks
     if (error instanceof Error && error.name === 'AbortError') {
       if (timedOut) {
+        // If it was an automatic server timeout and we have remaining retries, execute retry
         if (retries > 0) {
           console.warn(`[API Client] Timeout on ${method} ${path}. Retrying in ${retryDelay}ms... (${retries} left)`);
+          await sleep(retryDelay);
+          return request<T>(method, path, body, { ...opts, retries: retries - 1, retryDelay: retryDelay * 2 });
+        }
+        throw new Error(`Request timed out after ${DEFAULT_TIMEOUT / 1000} seconds`, { cause: error });
+      }
+      // Aborted by caller explicitly via AbortSignal — do not retry, just rethrow
+      throw error;
+    }
+
+    // Dynamic Network Interception: Connection dropped, peer reset, or DNS failure
+    if (retries > 0) {
+      console.warn(`[API Client] Network exception on ${method} ${path}. Retrying in ${retryDelay}ms... (${retries} left)`, error);
+      await sleep(retryDelay);
+      return request<T>(method, path, body, { ...opts, retries: retries - 1, retryDelay: retryDelay * 2 });
+    }
+    throw error;
+  }
+  
+  clearTimeout(timeoutId);
+  
+  let data: { error?: string | { message?: string }; message?: string; details?: unknown };
+  const ct = res.headers.get('content-type');
+  if (ct?.includes('application/json')) {
+    data = (await res.json()) as {
+      error?: string | { message?: string };
+      message?: string;
+      details?: unknown;
+    };
+  } else {
+    data = { error: res.statusText || 'Request failed' };
+  }
+
+  if (!res.ok) {
+    const err: ApiError = new Error(
+      messageFromErrorBody(data, res.status),
+    ) as ApiError;
+    err.status = res.status;
+    err.details = data.details ?? data;
+
+    // Trigger retry loop for Server System Failures (5xx) or Rate Limiting (429)
+    if ((res.status >= 500 || res.status === 429) && retries > 0) {
+      console.warn(`[API Client] HTTP Status ${res.status} on ${method} ${path}. Retrying in ${retryDelay}ms... (${retries} left)`);
+      await sleep(retryDelay);
+      return request<T>(method, path, body, { ...opts, retries: retries - 1, retryDelay: retryDelay * 2 });
+    }
+    
+    // Invoke 401 handler if registered (e.g., clear auth state and redirect to login)
+    if (res.status === 401 && authErrorHandler) {
+      authErrorHandler(err);
+    }
+    
+    throw err;
+  }
+  return data as T;
+}
+
+export function get<T>(path: string, opts?: RequestOptions): Promise<T> {
+  return request<T>('GET', path, undefined, opts);
+}
+
+export function post<T>(path: string, body?: unknown, opts?: RequestOptions): Promise<T> {
+  return request<T>('POST', path, body, opts);
+}
+
+export function patch<T>(path: string, body?: unknown, opts?: RequestOptions): Promise<T> {
+  return request<T>('PATCH', path, body, opts);
+}
+
+export function put<T>(path: string, body?: unknown, opts?: RequestOptions): Promise<T> {
+  return request<T>('PUT', path, body, opts);
+}
+
+export function del<T>(path: string, opts?: RequestOptions): Promise<T> {
+  return request<T>('DELETE', path, undefined, opts);
+}
