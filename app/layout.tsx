@@ -93,7 +93,15 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   const headersList = await headers();
-  const nonce = headersList.get('x-nonce') ?? undefined;
+  // headers().get() returns null when the header is absent. Middleware always
+  // sets x-nonce for matched routes, but static pre-rendering and routes that
+  // bypass the matcher produce null here.
+  // Coerce to a non-empty string or leave as undefined so React never emits
+  // nonce="" on the script tag: an empty or missing nonce fails strict-dynamic
+  // CSP enforcement in all browsers and silently breaks the security model.
+  const rawNonce = headersList.get('x-nonce');
+  const nonce: string | undefined =
+    typeof rawNonce === 'string' && rawNonce.length > 0 ? rawNonce : undefined;
   const lang = "en";
 
   return (
