@@ -1,4 +1,5 @@
 import { en } from './locales/en';
+import enMessages from '@/i18n/messages/en.json';
 
 type TranslationValue = string | Record<string, unknown>;
 type Translations = Record<string, TranslationValue>;
@@ -14,7 +15,16 @@ export function getDir(locale: string): 'rtl' | 'ltr' {
   return isRTL(locale) ? 'rtl' : 'ltr';
 }
 
-const locales: Record<string, Translations> = { en: en as unknown as Translations };
+const locales: Record<string, Translations> = {
+  en: {
+    ...(enMessages as unknown as Translations),
+    ...(en as unknown as Translations),
+    mint: {
+      ...(enMessages.mint as unknown as Record<string, unknown>),
+      ...(en.mint as unknown as Record<string, unknown>),
+    },
+  },
+};
 
 export { RTL_LOCALES };
 

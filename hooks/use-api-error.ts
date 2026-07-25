@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { ApiError } from "@/lib/api/client";
 
 /**
@@ -36,9 +36,7 @@ export function mapApiError(err: unknown): UIError | null {
   if (err == null) return null;
 
   const status =
-    (err as ApiError).status ??
-    (err as ApiErrorResponse).status ??
-    undefined;
+    (err as ApiError).status ?? (err as ApiErrorResponse).status ?? undefined;
 
   const rawMessage =
     err instanceof Error
@@ -95,7 +93,18 @@ export function useApiError() {
   const [submitDisabledUntil, setSubmitDisabledUntil] = useState<number>(0);
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
 
+  // Tracks the currently-scheduled timeout so it can be explicitly cancelled
+  // as defense-in-depth alongside the effect cleanup ordering.
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
+    // Always clear any timer left over from a previous run before doing
+    // anything else — defensive, in addition to the cleanup fn below.
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
     if (submitDisabledUntil <= 0) {
       setIsSubmitDisabled(false);
       return;
@@ -106,10 +115,17 @@ export function useApiError() {
       return;
     }
     setIsSubmitDisabled(true);
-    const timeout = setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = null;
       setIsSubmitDisabled(false);
     }, submitDisabledUntil - now);
-    return () => clearTimeout(timeout);
+
+    return () => {
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
   }, [submitDisabledUntil]);
 
   const setApiError = useCallback((err: unknown) => {
