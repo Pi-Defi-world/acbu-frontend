@@ -13,6 +13,7 @@ export default function NotFound() {
         height={27}
         priority
         className="dark:invert"
+        sizes="(max-width: 768px) 100px, 120px"
       />
 
       <div className="rounded-full bg-primary/10 p-4">

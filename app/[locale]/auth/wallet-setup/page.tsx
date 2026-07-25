@@ -21,6 +21,7 @@ import { storeWalletSecret } from "@/lib/wallet-storage";
 import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, CheckCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
+import { logger } from "@/lib/logger";
 
 /**
  * Wallet Setup Confirmation Page
@@ -103,7 +104,7 @@ export default function WalletSetupPage() {
     try {
       await userApi.postWalletConfirm({ wallet_address: publicKey });
     } catch (err) {
-      console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+      logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
       // Don't throw - the address is set, confirmation can retry later if needed
     }
   };
@@ -198,7 +199,7 @@ export default function WalletSetupPage() {
             try {
               await userApi.postWalletConfirm({ wallet_address: pubKey });
             } catch (err) {
-              console.warn("Wallet confirm failed, but wallet address was set.", err);
+              logger.warn("Wallet confirm failed, but wallet address was set.", err);
             }
 
             setSuccess("Wallet connected successfully!");
@@ -231,8 +232,12 @@ export default function WalletSetupPage() {
       <PageContainer>
         <Card className="border-border p-6 space-y-6">
           {error && (
-            <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+            <div
+              id="wallet-setup-error"
+              role="alert"
+              className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
+            >
+              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
@@ -350,11 +355,13 @@ export default function WalletSetupPage() {
                   </div>
 
                   <Input
+                    id="import-seed"
                     type="password"
                     placeholder="Starts with S..."
                     value={importSeed}
                     onChange={(e) => setImportSeed(e.target.value)}
                     disabled={loading}
+                    aria-describedby={error ? "wallet-setup-error" : undefined}
                   />
 
                   <Button type="submit" disabled={loading} className="w-full">

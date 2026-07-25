@@ -125,7 +125,7 @@ export default function ProfilePage() {
         return () => {
             cancelled = true;
         };
-    }, [opts, tick]);
+    }, [opts.token, tick]);
 
     const handleChange = (
         field: keyof FormData,

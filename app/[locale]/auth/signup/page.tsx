@@ -145,8 +145,12 @@ export default function SignUpPage() {
 
                     <form onSubmit={handleSignUp} className="space-y-4">
                         {error && (
-                            <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-                                <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                            <div
+                                id="signup-error"
+                                role="alert"
+                                className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
+                            >
+                                <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
                                 <p className="text-sm text-destructive">
                                     {error}
                                 </p>
@@ -169,6 +173,7 @@ export default function SignUpPage() {
                                 onChange={handleUsernameChange}
                                 className="border-border"
                                 disabled={loading}
+                                aria-describedby={error ? "signup-error" : undefined}
                             />
                         </div>
 
@@ -190,6 +195,7 @@ export default function SignUpPage() {
                                     }
                                     className="border-border pr-10"
                                     disabled={loading}
+                                    aria-describedby={error ? "signup-error" : undefined}
                                 />
                                 <button
                                     type="button"
@@ -250,6 +256,7 @@ export default function SignUpPage() {
                                 }
                                 className="border-border"
                                 disabled={loading}
+                                aria-describedby={error ? "signup-error" : undefined}
                             />
                         </div>
 

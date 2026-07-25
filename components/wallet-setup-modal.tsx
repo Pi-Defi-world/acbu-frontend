@@ -11,6 +11,7 @@ import { storeWalletSecret } from "@/lib/wallet-storage";
 import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
+import { logger } from "@/lib/logger";
 
 export function WalletSetupModal() {
   const { userId, stellarAddress, refreshStellarAddress, isAuthenticated } = useAuth();
@@ -105,7 +106,7 @@ export function WalletSetupModal() {
     try {
       await userApi.postWalletConfirm({ wallet_address: publicKey });
     } catch (err) {
-      console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+      logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
       // Don't throw - the address is set, confirmation can retry later if needed
     }
   };
@@ -174,7 +175,7 @@ export function WalletSetupModal() {
             try {
               await userApi.postWalletConfirm({ wallet_address: pubKey });
             } catch (err) {
-              console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+              logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
             }
 
             handleFinish();
@@ -215,6 +216,7 @@ export function WalletSetupModal() {
         {!option ? (
           <div className="space-y-4 py-4">
             <Button
+              data-testid="generate-wallet-button"
               onClick={() => {
                 // Always generate a fresh key when user explicitly chooses "Generate New Wallet"
                 const kp = Keypair.random();
@@ -231,6 +233,7 @@ export function WalletSetupModal() {
             </Button>
 
             <Button
+              data-testid="import-wallet-button"
               onClick={() => setOption(2)}
               className="w-full h-auto py-4 flex flex-col items-center"
               variant="outline"

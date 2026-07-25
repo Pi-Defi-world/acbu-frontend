@@ -7,6 +7,7 @@ interface PageContainerProps {
   className?: string;
 }
 
+
 /**
  * Mobile-first content wrapper with tablet-optimized spacing.
  * - Mobile (< 768px): px-4 py-4 pb-24
