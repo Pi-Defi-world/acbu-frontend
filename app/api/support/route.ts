@@ -91,7 +91,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const forwardResponse = await fetch(intakeUrl, {
+  let parsedIntakeUrl: URL;
+  try {
+    parsedIntakeUrl = new URL(intakeUrl);
+  } catch {
+    console.error('[Support] SUPPORT_INTAKE_URL is not a valid URL:', intakeUrl);
+    return NextResponse.json(
+      { error: 'Support intake is misconfigured. Please contact support@acbu.io directly.' },
+      { status: 503 },
+    );
+  }
+
+  if (parsedIntakeUrl.protocol !== 'https:') {
+    console.error('[Support] SUPPORT_INTAKE_URL must use HTTPS:', intakeUrl);
+    return NextResponse.json(
+      { error: 'Support intake is misconfigured. Please contact support@acbu.io directly.' },
+      { status: 503 },
+    );
+  }
+
+  const forwardResponse = await fetch(parsedIntakeUrl.toString(), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
