@@ -273,7 +273,7 @@ export default function BillsPage() {
                                                     {formatAmount(
                                                         provider.minAmount,
                                                     )}{" "}
-                                                    - AFK{" "}
+                                                    - ACBU{" "}
                                                     {formatAmount(
                                                         provider.maxAmount,
                                                     )}
@@ -312,7 +312,7 @@ export default function BillsPage() {
                                                     <CheckCircle className="w-4 h-4 text-green-600" />
                                                 )}
                                                 <p className="font-semibold text-foreground">
-                                                    -AFK{" "}
+                                                    -ACBU{" "}
                                                     {formatAmount(tx.amount)}
                                                 </p>
                                             </div>
