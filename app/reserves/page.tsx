@@ -1,11 +1,6 @@
 'use client';
 
-import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Reserves | ACBU',
-  description: 'View ACBU reserve holdings and transparency reports. Monitor the backing assets that support ACBU tokens.',
-};
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';

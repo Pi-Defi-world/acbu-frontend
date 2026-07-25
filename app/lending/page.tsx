@@ -1,11 +1,6 @@
 'use client';
 
-import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Lending | ACBU',
-  description: 'Apply for loans and access credit facilities using your ACBU tokens as collateral.',
-};
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';

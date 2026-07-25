@@ -1,12 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Dashboard | ACBU',
-  description: 'View your ACBU wallet balance, recent transactions, and access key features like sending money, minting tokens, and managing savings.',
-};
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations, useFormatter } from 'next-intl';
