@@ -84,7 +84,9 @@ export default function WalletPage() {
       try {
         await userApi.postWalletConfirm({ wallet_address: newAddress }, opts);
       } catch (err) {
-        console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+        }
       }
 
       handleFinish("New wallet created successfully!");
@@ -133,7 +135,9 @@ export default function WalletPage() {
       try {
         await userApi.postWalletConfirm({ wallet_address: newAddress }, opts);
       } catch (err) {
-        console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+        }
       }
 
       handleFinish("Wallet imported successfully!");
@@ -171,7 +175,9 @@ export default function WalletPage() {
             try {
               await userApi.postWalletConfirm({ wallet_address: pubKey }, opts);
             } catch (err) {
-              console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+              if (process.env.NODE_ENV === 'development') {
+                console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+              }
             }
 
             handleFinish("External wallet connected successfully!");

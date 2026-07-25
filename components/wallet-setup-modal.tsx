@@ -105,7 +105,9 @@ export function WalletSetupModal() {
     try {
       await userApi.postWalletConfirm({ wallet_address: publicKey });
     } catch (err) {
-      console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+      }
       // Don't throw - the address is set, confirmation can retry later if needed
     }
   };
@@ -174,7 +176,9 @@ export function WalletSetupModal() {
             try {
               await userApi.postWalletConfirm({ wallet_address: pubKey });
             } catch (err) {
-              console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+              if (process.env.NODE_ENV === 'development') {
+                console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+              }
             }
 
             handleFinish();
