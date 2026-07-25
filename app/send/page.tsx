@@ -128,8 +128,30 @@ export default function SendPage() {
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
 
+  // Ref for the scrollable container used by the virtualizer.
+  const contactsParentRef = useRef<HTMLDivElement>(null);
+
+  // useVirtualizer always returns a new object on every render, so it must
+  // never appear in a useMemo/useCallback dependency array — doing so makes
+  // the memo recompute every render, defeating its purpose (#678).
+  const virtualizer = useVirtualizer({
+    count: contacts.length,
+    getScrollElement: () => contactsParentRef.current,
+    estimateSize: () => 36,
+    overscan: 5,
+  });
+
+  // Stable reference to the virtualizer so we can safely read it inside the
+  // memo below without adding the (always-new) virtualizer object to deps.
+  const virtualizerRef = useRef(virtualizer);
+  virtualizerRef.current = virtualizer;
+
+  // Only recompute the rendered rows when `contacts` actually changes.
+  // We intentionally omit `virtualizer` from deps — it is a new object on
+  // every render and would make this memo a no-op. Instead we read it via
+  // the stable ref so we always use the latest instance. (#678)
   const virtualizedContacts = useMemo(() => {
-    return virtualizer.getVirtualItems().map((virtualRow) => {
+    return virtualizerRef.current.getVirtualItems().map((virtualRow) => {
       const c = contacts[virtualRow.index];
       return (
         <div
@@ -149,7 +171,8 @@ export default function SendPage() {
         </div>
       );
     });
-  }, [virtualizer, contacts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contacts]);
 
   const loadTransfers = useCallback(async () => {
     setLoadError("");
