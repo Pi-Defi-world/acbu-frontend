@@ -20,6 +20,7 @@ import { storeWalletSecret } from "@/lib/wallet-storage";
 import { getPasscode } from "@/lib/passcode-manager";
 import { AlertCircle, Wallet, Key, Link as LinkIcon, CheckCircle, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
+import { logger } from "@/lib/logger";
 import { useApiOpts, useApiError } from "@/hooks/use-api";
 import { useI18n } from "@/contexts/i18n-context";
 
@@ -93,7 +94,7 @@ export default function WalletPage() {
       try {
         await userApi.postWalletConfirm({ wallet_address: newAddress }, opts);
       } catch (err) {
-        console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+        logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
       }
 
       handleFinish(t("wallet.success.created"));
@@ -142,7 +143,7 @@ export default function WalletPage() {
       try {
         await userApi.postWalletConfirm({ wallet_address: newAddress }, opts);
       } catch (err) {
-        console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+        logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
       }
 
       handleFinish(t("wallet.success.imported"));
@@ -180,7 +181,7 @@ export default function WalletPage() {
             try {
               await userApi.postWalletConfirm({ wallet_address: pubKey }, opts);
             } catch (err) {
-              console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+              logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
             }
 
             handleFinish(t("wallet.success.connected"));
