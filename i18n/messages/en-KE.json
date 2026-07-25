@@ -11,7 +11,8 @@
     "send_money": "Send money",
     "some_currencies_missing_rate": "Some currencies missing a rate",
     "usd": "USD",
-    "approx_usd": "≈ USD"
+    "transaction_count": "{count, plural, one {# transaction} other {# transactions}}",
+    "session_count": "{count, plural, one {# active session} other {# active sessions}}"
   },
   "features": {
     "send": {
@@ -30,6 +31,12 @@
       "title": "Rates",
       "description": "Market rates"
     }
+  },
+  "navigation": {
+    "unsavedChangesTitle": "Unsaved changes",
+    "unsavedChangesDescription": "You have unsaved changes. Are you sure you want to leave?",
+    "stay": "Stay",
+    "leave": "Leave"
   },
   "errors": {
     "boundary": {
@@ -103,9 +110,18 @@
     "application_summary": "ACBU {amount} · {term} months",
     "reference": "Ref: {id}",
     "products": {
-      "personal": { "name": "Personal loan", "description": "Unsecured credit for general use" },
-      "business": { "name": "Business loan", "description": "Working capital for SMEs" },
-      "emergency": { "name": "Emergency loan", "description": "Fast short-term liquidity" }
+      "personal": {
+        "name": "Personal loan",
+        "description": "Unsecured credit for general use"
+      },
+      "business": {
+        "name": "Business loan",
+        "description": "Working capital for SMEs"
+      },
+      "emergency": {
+        "name": "Emergency loan",
+        "description": "Fast short-term liquidity"
+      }
     },
     "errors": {
       "amount_range": "Amount must be between ACBU {min} and ACBU {max}.",
@@ -118,7 +134,10 @@
       "pending": "Pending backend sync — backoffice stub captured the submission.",
       "pending_with_error": "Pending backend sync — backoffice stub captured the submission. ({error})"
     },
-    "status": { "submitted": "Submitted", "pending": "Pending" }
+    "status": {
+      "submitted": "Submitted",
+      "pending": "Pending"
+    }
   },
   "mint": {
     "title": "Mint & Burn",
@@ -127,7 +146,11 @@
     "balance": "ACBU Balance",
     "stellar_balance": "ACBU balance from Stellar Horizon.",
     "link_wallet": "Link a wallet to see your on-chain ACBU balance.",
-    "tabs": { "mint": "Mint", "burn": "Burn", "rates": "Rates" },
+    "tabs": {
+      "mint": "Mint",
+      "burn": "Burn",
+      "rates": "Rates"
+    },
     "loading_currencies": "Loading currencies…",
     "network_fee": "Network Fee",
     "processing_fee": "Processing Fee",

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapApiError } from '../../hooks/use-api-error';
+import { mapApiError } from '@/hooks/use-api-error';
 import { getApiErrorMessage } from '../api/client';
 import type { ApiError } from '../api/client';
 

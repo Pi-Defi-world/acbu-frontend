@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Guardians | ACBU',
+  description: 'Manage your account guardians who can help you recover access to your ACBU account if needed.',
+};
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
@@ -28,7 +35,7 @@ export default function GuardiansPage() {
     }).catch((e) => {
       setError(e instanceof Error ? e.message : 'Failed to load guardians');
     }).finally(() => setLoading(false));
-  }, [opts]);
+  }, [opts.token]);
 
   useEffect(() => {
     setLoading(true);
@@ -63,10 +70,10 @@ export default function GuardiansPage() {
   if (loading) {
     return (
       <>
-        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-          <div className="px-4 py-3 flex items-center gap-3">
+        <div className="page-header">
+          <div className="page-header-row">
             <Link href="/me/settings"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
-            <h1 className="text-lg font-bold text-foreground">Guardians</h1>
+            <h1 className="page-title">Guardians</h1>
           </div>
         </div>
         <PageContainer>
@@ -78,10 +85,10 @@ export default function GuardiansPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3 flex items-center gap-3">
+      <div className="page-header">
+        <div className="page-header-row">
           <Link href="/me/settings"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
-          <h1 className="text-lg font-bold text-foreground">Guardians</h1>
+          <h1 className="page-title">Guardians</h1>
         </div>
       </div>
       <PageContainer>
@@ -101,7 +108,7 @@ export default function GuardiansPage() {
             guardians.map((g) => (
               <Card key={g.id} className="border-border p-4 flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">{g.id}</p>
+                  <p className="font-medium text-foreground truncate" title={g.id}>{g.id}</p>
                 </div>
                 <Button variant="outline" size="sm" className="border-destructive/30 text-destructive shrink-0" onClick={() => handleDelete(g.id)}>Remove</Button>
               </Card>

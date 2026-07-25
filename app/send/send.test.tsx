@@ -120,7 +120,7 @@ describe('SendPage', () => {
     
     fireEvent.click(screen.getByText('New Transfer'))
     
-    const amountInput = screen.getByPlaceholderText('0.00')
+    const amountInput = screen.getByLabelText('Amount')
     fireEvent.change(amountInput, { target: { value: '150' } })
     
     expect(screen.getByText('Insufficient balance.')).toBeInTheDocument()
@@ -137,10 +137,10 @@ describe('SendPage', () => {
     const newAddressTab = screen.getByRole('tab', { name: /New Address/i })
     fireEvent.click(newAddressTab)
     
-    const addressInput = await screen.findByPlaceholderText('Wallet address or email')
+    const addressInput = await screen.findByLabelText('Recipient address')
     fireEvent.change(addressInput, { target: { value: 'target-address' } })
     
-    const amountInput = screen.getByPlaceholderText('0.00')
+    const amountInput = screen.getByLabelText('Amount')
     fireEvent.change(amountInput, { target: { value: '50' } })
     
     expect(screen.getByText('Continue')).not.toBeDisabled()

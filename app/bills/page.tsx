@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Bills | ACBU',
+  description: 'Pay utility bills, mobile airtime, and subscriptions easily with ACBU tokens.',
+};
+
 // F-020: Bills payment is gated behind NEXT_PUBLIC_BILLS_ENABLED.
 // When false (default), users see an honest "coming soon" screen instead of
 // a fake payment flow that only logs to the console.
@@ -353,7 +360,7 @@ export default function BillsPage() {
                                 <div>
                                     <label
                                         htmlFor="payment-amount"
-                                        className="text-sm font-medium text-foreground mb-2 block"
+                                        className="form-label"
                                     >
                                         Amount
                                     </label>
@@ -387,7 +394,7 @@ export default function BillsPage() {
                                 <div>
                                     <label
                                         htmlFor="payment-reference"
-                                        className="text-sm font-medium text-foreground mb-2 block"
+                                        className="form-label"
                                     >
                                         Reference (optional)
                                     </label>

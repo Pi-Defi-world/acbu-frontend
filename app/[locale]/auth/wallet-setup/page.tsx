@@ -1,8 +1,15 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Wallet Setup | ACBU',
+  description: 'Set up your ACBU wallet by creating or importing a Stellar wallet for secure token management.',
+};
+
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+// Dialog components were imported but not used in this page
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -11,7 +18,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
 import { storeWalletSecret } from "@/lib/wallet-storage";
-import { getPasscode } from "@/lib/passcode-manager";
+import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, CheckCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 
@@ -45,19 +52,19 @@ export default function WalletSetupPage() {
     const passcode = getPasscode();
     if (!passcode) {
       // Passcode lost on refresh, clear temp data and redirect to signin
-      sessionStorage.removeItem("temp_passphrase");
+      clearTempPassphrase();
       router.push("/auth/signin");
       return;
     }
 
     // If user already has a wallet address, skip setup and go home
-    if (stellarAddress && !sessionStorage.getItem("temp_passphrase")) {
+    if (stellarAddress && !getTempPassphrase()) {
       router.push("/");
       return;
     }
 
     // Check if we have an auto-generated passphrase from signin
-    const autoGenPassphrase = sessionStorage.getItem("temp_passphrase");
+    const autoGenPassphrase = getTempPassphrase();
     if (autoGenPassphrase) {
       setPassphrase(autoGenPassphrase);
       setOption(1); // Show the confirmation step
@@ -115,8 +122,8 @@ export default function WalletSetupPage() {
       await syncWalletToBackend(passphrase);
       setSuccess("Wallet set up successfully!");
       
-      // Clean up session storage
-      sessionStorage.removeItem("temp_passphrase");
+      // Clean up in-memory temp passphrase
+      clearTempPassphrase();
       
       // Refresh user context to update stellar address
       await refreshStellarAddress();
@@ -147,8 +154,8 @@ export default function WalletSetupPage() {
       await syncWalletToBackend(importSeed);
       setSuccess("Wallet imported successfully!");
       
-      // Clean up session storage
-      sessionStorage.removeItem("temp_passphrase");
+      // Clean up in-memory temp passphrase
+      clearTempPassphrase();
       
       // Refresh user context
       await refreshStellarAddress();
@@ -214,9 +221,9 @@ export default function WalletSetupPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <div className="page-header">
         <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-foreground">Finish Wallet Setup</h1>
+          <h1 className="page-title">Finish Wallet Setup</h1>
           <p className="text-xs text-muted-foreground">Complete your wallet activation</p>
         </div>
       </div>
@@ -224,8 +231,12 @@ export default function WalletSetupPage() {
       <PageContainer>
         <Card className="border-border p-6 space-y-6">
           {error && (
-            <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+            <div
+              id="wallet-setup-error"
+              role="alert"
+              className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
+            >
+              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
@@ -343,11 +354,13 @@ export default function WalletSetupPage() {
                   </div>
 
                   <Input
+                    id="import-seed"
                     type="password"
                     placeholder="Starts with S..."
                     value={importSeed}
                     onChange={(e) => setImportSeed(e.target.value)}
                     disabled={loading}
+                    aria-describedby={error ? "wallet-setup-error" : undefined}
                   />
 
                   <Button type="submit" disabled={loading} className="w-full">

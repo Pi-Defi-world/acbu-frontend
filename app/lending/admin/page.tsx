@@ -1,5 +1,12 @@
 'use client';
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Lending Admin | ACBU',
+  description: 'Manage and review loan applications, approve or reject requests, and monitor lending operations.',
+};
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Inbox, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
@@ -42,13 +49,13 @@ export default function LendingAdminPage() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <header className="page-header">
         <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
           <Link href="/lending" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Back to lending">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Lending · Backoffice</h1>
+            <h1 className="page-title">Lending · Backoffice</h1>
             <p className="text-xs text-muted-foreground">Review loan applications</p>
           </div>
           <Button
@@ -129,15 +136,15 @@ export default function LendingAdminPage() {
 
                     <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                       <dt className="text-muted-foreground">Applicant</dt>
-                      <dd className="text-foreground truncate">
-                        {app.applicantUser ?? '—'}
+                      <dd className="text-foreground truncate" title={app.applicantUser ?? "—"}>
+                        {app.applicantUser ?? "—"}
                       </dd>
                       <dt className="text-muted-foreground">Submitted</dt>
                       <dd className="text-foreground">
                         {new Date(app.submittedAt).toLocaleString()}
                       </dd>
                       <dt className="text-muted-foreground">Reference</dt>
-                      <dd className="text-foreground font-mono truncate">{app.id}</dd>
+                      <dd className="text-foreground font-mono truncate" title={app.id}>{app.id}</dd>
                       {app.purpose && (
                         <>
                           <dt className="text-muted-foreground">Purpose</dt>

@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Sign Up | ACBU',
+  description: 'Create a new ACBU account to start sending money, minting tokens, and managing your digital wallet.',
+};
+
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -138,8 +145,12 @@ export default function SignUpPage() {
 
                     <form onSubmit={handleSignUp} className="space-y-4">
                         {error && (
-                            <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-                                <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                            <div
+                                id="signup-error"
+                                role="alert"
+                                className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
+                            >
+                                <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
                                 <p className="text-sm text-destructive">
                                     {error}
                                 </p>
@@ -149,7 +160,7 @@ export default function SignUpPage() {
                         <div>
                             <label
                                 htmlFor="signup-username"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Username
                             </label>
@@ -162,13 +173,14 @@ export default function SignUpPage() {
                                 onChange={handleUsernameChange}
                                 className="border-border"
                                 disabled={loading}
+                                aria-describedby={error ? "signup-error" : undefined}
                             />
                         </div>
 
                         <div>
                             <label
                                 htmlFor="signup-passcode"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Passcode (min 12 characters)
                             </label>
@@ -183,6 +195,7 @@ export default function SignUpPage() {
                                     }
                                     className="border-border pr-10"
                                     disabled={loading}
+                                    aria-describedby={error ? "signup-error" : undefined}
                                 />
                                 <button
                                     type="button"
@@ -229,7 +242,7 @@ export default function SignUpPage() {
                         <div>
                             <label
                                 htmlFor="confirm-passcode"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Confirm passcode
                             </label>
@@ -243,6 +256,7 @@ export default function SignUpPage() {
                                 }
                                 className="border-border"
                                 disabled={loading}
+                                aria-describedby={error ? "signup-error" : undefined}
                             />
                         </div>
 

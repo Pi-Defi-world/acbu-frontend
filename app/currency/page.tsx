@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,10 +25,16 @@ import * as ratesApi from "@/lib/api/rates";
 import type { RatesResponse } from "@/types/api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
+import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import * as mintApi from "@/lib/api/mint";
 import * as burnApi from "@/lib/api/burn";
-import type { MintResponse, BurnResponse } from "@/types/api";
+import type { MintResponse, BurnResponse, CurrencyPreference, QuoteResponse } from "@/types/api";
 import { logger } from "@/lib/logger";
+import { useAuth } from "@/contexts/auth-context";
+import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
+import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
+import { Keypair } from "@stellar/stellar-sdk";
+import { submitBurnRedeemSingleClient } from "@/lib/stellar/burning";
 
 /** Local currency units per 1 ACBU from the `/rates` oracle, or null if missing. */
 function localPerAcbu(currency: string, rates: RatesResponse | null): number | null {
@@ -65,8 +70,10 @@ function estimateLocalFromAcbu(
 export default function CurrencyPage() {
   const opts = useApiOpts();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
-  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { balance, loading: balanceLoading, error: balanceError, refetch: refetchBalance } = useBalance();
   const { toast } = useToast();
+  const { userId, stellarAddress } = useAuth();
+  const kit = useStellarWalletsKit();
 
   const [activeTab, setActiveTab] = useState<"mint" | "burn" | "international">(
     "mint",
@@ -102,6 +109,9 @@ export default function CurrencyPage() {
   const [intlAccountNumber, setIntlAccountNumber] = useState("");
   const [intlBankCode, setIntlBankCode] = useState("");
   const [intlAccountName, setIntlAccountName] = useState("");
+  const [intlQuote, setIntlQuote] = useState<QuoteResponse | null>(null);
+  const [intlQuoteLoading, setIntlQuoteLoading] = useState(false);
+  const [intlQuoteError, setIntlQuoteError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,21 +128,63 @@ export default function CurrencyPage() {
     };
   }, [opts.token]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const amount = parseFloat(debouncedIntlAmount || "0");
+
+    if (!(amount > 0)) {
+      setIntlQuote(null);
+      setIntlQuoteLoading(false);
+      setIntlQuoteError(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setIntlQuoteLoading(true);
+    setIntlQuoteError(false);
+
+    ratesApi
+      .getQuote(debouncedIntlAmount, intlCurrency, opts)
+      .then((data) => {
+        if (!cancelled) {
+          setIntlQuote(data);
+          setIntlQuoteLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIntlQuote(null);
+          setIntlQuoteError(true);
+          setIntlQuoteLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedIntlAmount, intlCurrency, opts.token]);
+
   const usdPerAcbu = useMemo(() => localPerAcbu("USD", rates), [rates]);
   const ngnPerAcbu = useMemo(() => localPerAcbu("NGN", rates), [rates]);
-  const intlPerAcbu = useMemo(
-    () => localPerAcbu(intlCurrency, rates),
-    [intlCurrency, rates],
-  );
 
   const availableBalance = balance ?? 0;
   const burnNumeric = parseFloat(debouncedBurnAmount || "0");
-  const intlNumeric = parseFloat(debouncedIntlAmount || "0");
   const mintNumeric = parseFloat(debouncedMintAmount || "0");
 
   const estimatedMintAcbu = estimateAcbuFromUsd(mintNumeric, rates);
   const estimatedBurnNgn = estimateLocalFromAcbu(burnNumeric, "NGN", rates);
-  const estimatedIntlLocal = estimateLocalFromAcbu(intlNumeric, intlCurrency, rates);
+  const intlPayoutAmount =
+    intlQuote?.payout_amount ??
+    intlQuote?.receive_amount ??
+    intlQuote?.local_amount ??
+    null;
+  const intlFeeAmount =
+    intlQuote?.total_fee ?? intlQuote?.fee_amount ?? intlQuote?.fee ?? null;
+  const payoutFormatted =
+    intlPayoutAmount != null
+      ? `${intlCurrency} ${formatAmount(intlPayoutAmount)}`
+      : `${intlCurrency} —`;
 
   const handleMintConfirm = () => setStep("confirm");
   const handleBurnConfirm = () => setStep("confirm");
@@ -148,7 +200,7 @@ export default function CurrencyPage() {
         const res: MintResponse = await mintApi.mintFromUsdc(
           mintAmount,
           mintWalletAddress.trim(),
-          "auto",
+          mintSource as CurrencyPreference,
           opts,
         );
         setLastTxId(res.transaction_id);
@@ -159,6 +211,64 @@ export default function CurrencyPage() {
         });
       } else if (activeTab === "burn") {
         logger.info("Burning ACBU", { amount: burnAmount, destination: burnDestination }); // <-- ADD LOGGER
+        
+        // Generate blockchain proof before submission
+        if (!userId) throw new Error("Not signed in");
+        if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
+        
+        let burnTxHash: string;
+        const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+        
+        if (secret) {
+          const localPubKey = Keypair.fromSecret(secret).publicKey();
+          if (stellarAddress && localPubKey !== stellarAddress) {
+            throw new Error(
+              `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+            );
+          }
+          const submit = await submitBurnRedeemSingleClient({
+            userAddress: stellarAddress,
+            amountAcbu: burnAmount,
+            currency: "NGN",
+            userSecret: secret,
+          });
+          burnTxHash = submit.transactionHash;
+        } else {
+          if (!kit) {
+            throw new Error(
+              "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+            );
+          }
+          const address = await new Promise<string>((resolve, reject) => {
+            kit
+              .openModal({
+                onWalletSelected: async (selectedOption: { id: string }) => {
+                  try {
+                    kit.setWallet(selectedOption.id);
+                    const { address } = await kit.getAddress();
+                    resolve(address);
+                  } catch (err) {
+                    reject(err);
+                  }
+                },
+              })
+              .catch(reject);
+          });
+          if (stellarAddress && address !== stellarAddress) {
+            throw new Error(
+              `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+            );
+          }
+          const submit = await submitBurnRedeemSingleClient({
+            userAddress: stellarAddress,
+            amountAcbu: burnAmount,
+            currency: "NGN",
+            external: { kit, address },
+          });
+          burnTxHash = submit.transactionHash;
+        }
+        
+        // Submit burn with blockchain proof
         const recipientType =
           burnDestination === "bank"
             ? "bank"
@@ -175,6 +285,7 @@ export default function CurrencyPage() {
             account_name: burnAccountName.trim(),
           },
           opts,
+          burnTxHash,
         );
         setLastTxId(res.transaction_id);
         setLastResponse(res);
@@ -184,6 +295,64 @@ export default function CurrencyPage() {
         });
       } else {
         logger.info("International transfer", { amount: intlAmount, country: intlCountry }); // <-- ADD LOGGER
+        
+        // Generate blockchain proof before submission
+        if (!userId) throw new Error("Not signed in");
+        if (!stellarAddress) throw new Error("No linked Stellar wallet address.");
+        
+        let burnTxHash: string;
+        const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
+        
+        if (secret) {
+          const localPubKey = Keypair.fromSecret(secret).publicKey();
+          if (stellarAddress && localPubKey !== stellarAddress) {
+            throw new Error(
+              `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+            );
+          }
+          const submit = await submitBurnRedeemSingleClient({
+            userAddress: stellarAddress,
+            amountAcbu: intlAmount,
+            currency: intlCurrency,
+            userSecret: secret,
+          });
+          burnTxHash = submit.transactionHash;
+        } else {
+          if (!kit) {
+            throw new Error(
+              "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+            );
+          }
+          const address = await new Promise<string>((resolve, reject) => {
+            kit
+              .openModal({
+                onWalletSelected: async (selectedOption: { id: string }) => {
+                  try {
+                    kit.setWallet(selectedOption.id);
+                    const { address } = await kit.getAddress();
+                    resolve(address);
+                  } catch (err) {
+                    reject(err);
+                  }
+                },
+              })
+              .catch(reject);
+          });
+          if (stellarAddress && address !== stellarAddress) {
+            throw new Error(
+              `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+            );
+          }
+          const submit = await submitBurnRedeemSingleClient({
+            userAddress: stellarAddress,
+            amountAcbu: intlAmount,
+            currency: intlCurrency,
+            external: { kit, address },
+          });
+          burnTxHash = submit.transactionHash;
+        }
+        
+        // Submit international transfer with blockchain proof
         const res: BurnResponse = await burnApi.burnAcbu(
           intlAmount,
           intlCurrency,
@@ -193,6 +362,7 @@ export default function CurrencyPage() {
             account_name: intlAccountName.trim(),
           },
           opts,
+          burnTxHash,
         );
         setLastTxId(res.transaction_id);
         setLastResponse(res);
@@ -202,7 +372,7 @@ export default function CurrencyPage() {
         });
       }
       setStep("success");
-      refreshBalance();
+      refetchBalance();
     } catch (e) {
       logger.error(`Currency operation failed: ${activeTab}`, e); // <-- ADD LOGGER
       setApiError(e);
@@ -256,44 +426,56 @@ export default function CurrencyPage() {
                 ? "≈ ₦ —"
                 : `≈ ₦${formatAmount(balance * ngnPerAcbu, 0)}`}
             </p>
+            <RetryErrorBlock
+              message={balanceError}
+              onRetry={refetchBalance}
+              className="mt-3 bg-destructive/10 text-xs"
+            />
           </Card>
         </div>
 
         {/* Tabs */}
-        <Tabs
-          defaultValue="mint"
-          className="w-full"
-          onValueChange={(v) =>
-            setActiveTab(v as "mint" | "burn" | "international")
-          }
-        >
-          <TabsList className="grid w-full grid-cols-3 px-4 gap-2 bg-transparent border-b border-border rounded-none">
-            <TabsTrigger
-              value="mint"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+        <div className="w-full">
+          <div className="grid w-full grid-cols-3 px-4 gap-2 bg-transparent border-b border-border">
+            <button
+              onClick={() => setActiveTab("mint")}
+              className={`py-4 rounded-none border-b-2 text-sm font-medium transition-colors ${
+                activeTab === "mint"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
             >
               Mint
-            </TabsTrigger>
-            <TabsTrigger
-              value="burn"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            </button>
+            <button
+              onClick={() => setActiveTab("burn")}
+              className={`py-4 rounded-none border-b-2 text-sm font-medium transition-colors ${
+                activeTab === "burn"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
             >
               Burn
-            </TabsTrigger>
-            <TabsTrigger
-              value="international"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            </button>
+            <button
+              onClick={() => setActiveTab("international")}
+              className={`py-4 rounded-none border-b-2 text-sm font-medium transition-colors ${
+                activeTab === "international"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
             >
               International
-            </TabsTrigger>
-          </TabsList>
+            </button>
+          </div>
 
           {/* Mint Tab */}
-          <TabsContent value="mint" className="px-4 py-6 space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Convert USDC to ACBU on Stellar
-              </p>
+          <div className={activeTab === "mint" ? "block" : "hidden"} aria-hidden={activeTab !== "mint"}>
+            <div className="px-4 py-6 space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Convert USDC to ACBU on Stellar
+                </p>
               <Card className="border-border p-4 mb-4">
                 <p className="text-xs text-muted-foreground mb-1">Source</p>
                 <select
@@ -306,7 +488,7 @@ export default function CurrencyPage() {
               </Card>
 
               <div className="mb-4">
-                <Label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="form-label">
                   Amount to Mint
                 </Label>
                 <div className="flex gap-2">
@@ -332,7 +514,7 @@ export default function CurrencyPage() {
               </div>
 
               <div>
-                <Label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="form-label">
                   Destination Wallet Address
                 </Label>
                 <Input
@@ -376,14 +558,15 @@ export default function CurrencyPage() {
                 Mint ACBU
               </Button>
             </div>
-          </TabsContent>
+          </div>
 
           {/* Burn Tab */}
-          <TabsContent value="burn" className="px-4 py-6 space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Convert ACBU to fiat and withdraw
-              </p>
+          <div className={activeTab === "burn" ? "block" : "hidden"} aria-hidden={activeTab !== "burn"}>
+            <div className="px-4 py-6 space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Convert ACBU to fiat and withdraw
+                </p>
               <Card className="border-border p-4 mb-4">
                 <p className="text-xs text-muted-foreground mb-1">
                   Destination
@@ -400,7 +583,7 @@ export default function CurrencyPage() {
               </Card>
 
               <div>
-                <Label className="text-sm font-medium text-foreground mb-2 block">
+                <Label className="form-label">
                   Amount to Burn
                 </Label>
                 <div className="flex gap-2">
@@ -505,18 +688,19 @@ export default function CurrencyPage() {
                 Burn & Withdraw
               </Button>
             </div>
-          </TabsContent>
+          </div>
 
           {/* International Tab */}
-          <TabsContent value="international" className="px-4 py-6 space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Send money internationally with real-time rates
-              </p>
+          <div className={activeTab === "international" ? "block" : "hidden"} aria-hidden={activeTab !== "international"}>
+            <div className="px-4 py-6 space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Send money internationally with real-time rates
+                </p>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+                  <label className="form-label">
                     Recipient Country
                   </label>
                   <select
@@ -533,7 +717,7 @@ export default function CurrencyPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+                  <label className="form-label">
                     Currency
                   </label>
                   <select
@@ -550,7 +734,7 @@ export default function CurrencyPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+                  <label className="form-label">
                     Amount (ACBU)
                   </label>
                   <div className="flex gap-2">
@@ -614,21 +798,22 @@ export default function CurrencyPage() {
                     <TrendingUp className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
                     <div className="text-sm">
                       <p className="font-medium text-foreground">
-                        {estimatedIntlLocal != null
-                          ? `${intlCurrency} ${formatAmount(estimatedIntlLocal)}`
-                          : intlNumeric > 0
-                            ? `${intlCurrency} — (rate unavailable)`
-                            : `${intlCurrency} 0.00`}
+                        {intlQuoteLoading
+                          ? "Fetching live quote..."
+                          : intlQuoteError
+                            ? "Quote unavailable — try again"
+                            : intlPayoutAmount != null
+                              ? `Recipient gets: ${intlCurrency} ${formatAmount(intlPayoutAmount)}`
+                              : `Recipient gets: ${intlCurrency} 0.00`}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {intlPerAcbu != null
-                          ? `at ${intlCurrency} ${formatAmount(intlPerAcbu, 4)} per ACBU`
-                          : `rate unavailable for ${intlCurrency}`}
+                        Includes all fees: ACBU{" "}
+                        {intlFeeAmount != null ? formatAmount(intlFeeAmount) : "—"}
                       </p>
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Fee: calculated at confirmation
+                    Live quote from backend — includes intermediary & settlement fees
                   </div>
                 </Card>
 
@@ -647,8 +832,8 @@ export default function CurrencyPage() {
                 </Button>
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </PageContainer>
 
       {/* Confirmation Dialog */}
@@ -668,7 +853,7 @@ export default function CurrencyPage() {
               {activeTab === 'burn' &&
                 `Burn ACBU ${formatAmount(burnAmount)} and withdraw to ${burnDestination}`}
               {activeTab === 'international' &&
-                `Send ACBU ${formatAmount(intlAmount)} to ${intlCountry} (${intlCurrency})`}
+                `Send ACBU ${formatAmount(intlAmount)} to ${intlCountry}. Recipient receives ${payoutFormatted} after all fees.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-2">
@@ -722,9 +907,9 @@ export default function CurrencyPage() {
           <div className="py-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Transaction ID:</span>
-              <span className="font-mono text-foreground truncate max-w-[60%]">
-                {lastTxId}
-              </span>
+              <span className="font-mono text-foreground truncate max-w-[60%]" title={lastTxId}>
+                    {lastTxId}
+                  </span>
             </div>
             {lastResponse && "fee" in lastResponse && lastResponse.fee && (
               <div className="flex justify-between">

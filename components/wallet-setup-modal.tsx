@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
 import { storeWalletSecret } from "@/lib/wallet-storage";
-import { getPasscode } from "@/lib/passcode-manager";
+import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 
@@ -34,7 +34,7 @@ export function WalletSetupModal() {
     }
     
     // Check if we have an auto-generated passphrase from signin
-    const autoGenPassphrase = sessionStorage.getItem("temp_passphrase");
+    const autoGenPassphrase = getTempPassphrase();
     
     // Check if user has removed their local wallet from settings
     // If they have no stellarAddress, we definitely show it.
@@ -62,7 +62,7 @@ export function WalletSetupModal() {
   }, [isAuthenticated, stellarAddress]);
 
   const handleFinish = async () => {
-    sessionStorage.removeItem("temp_passphrase");
+    clearTempPassphrase();
     localStorage.removeItem("force_wallet_setup");
     await refreshStellarAddress();
     setOpen(false);
@@ -193,7 +193,7 @@ export function WalletSetupModal() {
   return (
     <Dialog open={open} onOpenChange={(val) => {
       // Prevent closing the modal if the user doesn't have a wallet or needs to confirm passphrase
-      const hasTempPassphrase = sessionStorage.getItem("temp_passphrase");
+      const hasTempPassphrase = getTempPassphrase();
       if (isAuthenticated && (!stellarAddress || hasTempPassphrase)) return;
       setOpen(val);
     }}>
@@ -215,6 +215,7 @@ export function WalletSetupModal() {
         {!option ? (
           <div className="space-y-4 py-4">
             <Button
+              data-testid="generate-wallet-button"
               onClick={() => {
                 // Always generate a fresh key when user explicitly chooses "Generate New Wallet"
                 const kp = Keypair.random();
@@ -231,6 +232,7 @@ export function WalletSetupModal() {
             </Button>
 
             <Button
+              data-testid="import-wallet-button"
               onClick={() => setOption(2)}
               className="w-full h-auto py-4 flex flex-col items-center"
               variant="outline"
