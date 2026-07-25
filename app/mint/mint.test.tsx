@@ -4,6 +4,7 @@ import MintPage from './page'
 import * as authContext from '@/contexts/auth-context'
 import * as useBalanceHook from '@/hooks/use-balance'
 import * as useApiHook from '@/hooks/use-api'
+import * as useFiatAccountsHook from '@/hooks/use-fiat-accounts'
 import * as ratesApi from '@/lib/api/rates'
 import * as fiatApi from '@/lib/api/fiat'
 
@@ -11,6 +12,7 @@ import * as fiatApi from '@/lib/api/fiat'
 vi.mock('@/contexts/auth-context')
 vi.mock('@/hooks/use-balance')
 vi.mock('@/hooks/use-api')
+vi.mock('@/hooks/use-fiat-accounts')
 vi.mock('@/lib/api/rates')
 vi.mock('@/lib/api/fiat')
 vi.mock('@/lib/stellar-wallets-kit', () => ({
@@ -100,6 +102,14 @@ describe('MintPage', () => {
     })
 
     vi.mocked(useApiHook.useApiOpts).mockReturnValue({
+    })
+
+    vi.mocked(useFiatAccountsHook.useFiatAccounts).mockReturnValue({
+      accounts: [{ id: 'acc1', currency: 'NGN', bank_name: 'Test Bank', balance: '0', account_number: '0000000000', account_name: 'Test', ledger_entries: [] }],
+      loading: false,
+      error: '',
+      refetch: vi.fn(),
+      refresh: vi.fn(),
     })
 
     vi.mocked(ratesApi.getRates).mockResolvedValue({ acbu_usd: '1.0' })

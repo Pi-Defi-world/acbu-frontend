@@ -21,6 +21,7 @@ import { storeWalletSecret } from "@/lib/wallet-storage";
 import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, CheckCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
+import { logger } from "@/lib/logger";
 
 /**
  * Wallet Setup Confirmation Page
@@ -103,7 +104,7 @@ export default function WalletSetupPage() {
     try {
       await userApi.postWalletConfirm({ wallet_address: publicKey });
     } catch (err) {
-      console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+      logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
       // Don't throw - the address is set, confirmation can retry later if needed
     }
   };
@@ -198,7 +199,7 @@ export default function WalletSetupPage() {
             try {
               await userApi.postWalletConfirm({ wallet_address: pubKey });
             } catch (err) {
-              console.warn("Wallet confirm failed, but wallet address was set.", err);
+              logger.warn("Wallet confirm failed, but wallet address was set.", err);
             }
 
             setSuccess("Wallet connected successfully!");

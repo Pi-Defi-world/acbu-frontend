@@ -1,4 +1,4 @@
-import React from "react"
+import React from 'react'
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
 import { AuthProvider } from '@/contexts/auth-context'
@@ -14,17 +14,9 @@ const VercelAnalytics = dynamic(
   { ssr: false },
 )
 
-const apiBaseUrl =
-  typeof process !== 'undefined'
-    ? process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
-    : ''
-const apiUrl =
-  typeof process !== 'undefined'
-    ? process.env.NEXT_PUBLIC_API_URL?.trim()
-    : ''
-
-
 function getApiOrigin(): string | null {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim()
   const rawUrl = apiBaseUrl || apiUrl
   if (!rawUrl) return null
 
@@ -33,24 +25,6 @@ function getApiOrigin(): string | null {
   } catch {
     return null
   }
-}
-
-const apiOrigin = getApiOrigin()
-
-if (
-  typeof process !== 'undefined' &&
-  process.env.NODE_ENV === 'development' &&
-  !apiBaseUrl &&
-  !apiUrl
-) {
-  console.error(
-    "\n=================================================================\n" +
-    "🚨 CRITICAL MISSING CONFIGURATION 🚨\n" +
-    "NEXT_PUBLIC_API_BASE_URL (or NEXT_PUBLIC_API_URL) is not set.\n" +
-    "Without this, POST/auth requests will hit Next.js and return 405 errors.\n" +
-    "Please update your .env.local file with your backend API root.\n" +
-    "=================================================================\n"
-  );
 }
 
 export const metadata: Metadata = {
@@ -94,7 +68,25 @@ export default async function RootLayout({
 }>) {
   const headersList = await headers();
   const nonce = headersList.get('x-nonce') ?? undefined;
-  const lang = "en";
+  const lang = 'en'
+
+  // Compute at render time to avoid module-scope env access (Edge / SSR safe)
+  const apiOrigin = getApiOrigin();
+
+  if (
+    process.env.NODE_ENV === 'development' &&
+    !process.env.NEXT_PUBLIC_API_BASE_URL?.trim() &&
+    !process.env.NEXT_PUBLIC_API_URL?.trim()
+  ) {
+    console.error(
+      "\n=================================================================\n" +
+      "🚨 CRITICAL MISSING CONFIGURATION 🚨\n" +
+      "NEXT_PUBLIC_API_BASE_URL (or NEXT_PUBLIC_API_URL) is not set.\n" +
+      "Without this, POST/auth requests will hit Next.js and return 405 errors.\n" +
+      "Please update your .env.local file with your backend API root.\n" +
+      "=================================================================\n"
+    );
+  }
 
   return (
     <html lang={lang} dir="ltr" suppressHydrationWarning>

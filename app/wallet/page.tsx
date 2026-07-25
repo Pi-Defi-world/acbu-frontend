@@ -20,9 +20,12 @@ import { storeWalletSecret } from "@/lib/wallet-storage";
 import { getPasscode } from "@/lib/passcode-manager";
 import { AlertCircle, Wallet, Key, Link as LinkIcon, CheckCircle, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
+import { logger } from "@/lib/logger";
 import { useApiOpts, useApiError } from "@/hooks/use-api";
+import { useI18n } from "@/contexts/i18n-context";
 
 export default function WalletPage() {
+  const { t } = useI18n();
   const { userId, stellarAddress, refreshStellarAddress, logout } = useAuth();
   const opts = useApiOpts();
   const router = useRouter();
@@ -65,7 +68,7 @@ export default function WalletPage() {
 
     setLoading(true);
     try {
-      if (!userId) throw new Error("Not logged in");
+      if (!userId) throw new Error(t("wallet.errors.not_logged_in"));
 
       const passcode = getPasscode();
       if (!passcode) {
@@ -84,17 +87,17 @@ export default function WalletPage() {
       // Sync public key to backend.
       const result = await userApi.putWalletAddress(newAddress, opts);
       if (!result?.ok) {
-        throw new Error("Backend did not accept the new wallet address. Please retry.");
+        throw new Error(t("wallet.errors.address_rejected"));
       }
 
       // Confirm wallet activation on backend
       try {
         await userApi.postWalletConfirm({ wallet_address: newAddress }, opts);
       } catch (err) {
-        console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+        logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
       }
 
-      handleFinish("New wallet created successfully!");
+      handleFinish(t("wallet.success.created"));
     } catch (err: unknown) {
       handleError(err);
     } finally {
@@ -107,13 +110,13 @@ export default function WalletPage() {
     clearError();
 
     if (!importSeed) {
-      setError("Seed is required.");
+      setError(t("wallet.errors.seed_required"));
       return;
     }
 
     setLoading(true);
     try {
-      if (!userId) throw new Error("Not logged in");
+      if (!userId) throw new Error(t("wallet.errors.not_logged_in"));
 
       const passcode = getPasscode();
       if (!passcode) {
@@ -133,17 +136,17 @@ export default function WalletPage() {
       // Tell backend to update stellarAddress
       const result = await userApi.putWalletAddress(newAddress, opts);
       if (!result?.ok) {
-        throw new Error("Backend did not accept the new wallet address. Please retry.");
+        throw new Error(t("wallet.errors.address_rejected"));
       }
 
       // Confirm wallet activation on backend
       try {
         await userApi.postWalletConfirm({ wallet_address: newAddress }, opts);
       } catch (err) {
-        console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+        logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
       }
 
-      handleFinish("Wallet imported successfully!");
+      handleFinish(t("wallet.success.imported"));
     } catch (err: unknown) {
       handleError(err);
     } finally {
@@ -154,12 +157,12 @@ export default function WalletPage() {
   const handleConnectWallet = async () => {
     clearError();
     if (!kit) {
-      setError("Wallet Kit is still initializing...");
+      setError(t("wallet.errors.kit_initializing"));
       return;
     }
     setLoading(true);
     try {
-      if (!userId) throw new Error("Not logged in");
+      if (!userId) throw new Error(t("wallet.errors.not_logged_in"));
 
       // This will prompt the user to select and connect a wallet
       await kit.openModal({
@@ -171,17 +174,17 @@ export default function WalletPage() {
             // Update wallet address on backend
             const result = await userApi.putWalletAddress(pubKey, opts);
             if (!result?.ok) {
-              throw new Error("Backend did not accept the wallet address. Please retry.");
+              throw new Error(t("wallet.errors.address_rejected"));
             }
 
             // Confirm wallet activation on backend
             try {
               await userApi.postWalletConfirm({ wallet_address: pubKey }, opts);
             } catch (err) {
-              console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+              logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
             }
 
-            handleFinish("External wallet connected successfully!");
+            handleFinish(t("wallet.success.connected"));
           } catch (e: unknown) {
             handleError(e);
           }
@@ -198,8 +201,8 @@ export default function WalletPage() {
     <>
       <div className="page-header">
         <div className="px-4 py-3">
-          <h1 className="page-title">Wallet Management</h1>
-          <p className="text-xs text-muted-foreground">Manage your Stellar wallet</p>
+          <h1 className="page-title">{t("wallet.title")}</h1>
+          <p className="text-xs text-muted-foreground">{t("wallet.subtitle")}</p>
         </div>
       </div>
 
@@ -214,7 +217,7 @@ export default function WalletPage() {
 
           {stellarAddress && !option && (
             <Card className="border-border p-5 bg-muted/30">
-              <h2 className="text-sm font-semibold mb-2">Current Wallet Address</h2>
+              <h2 className="text-sm font-semibold mb-2">{t("wallet.current_address")}</h2>
               <div className="p-3 bg-background rounded-lg border border-border">
                 <p className="text-xs font-mono text-muted-foreground break-all">
                   {stellarAddress}
@@ -225,7 +228,7 @@ export default function WalletPage() {
 
           {!option ? (
             <div className="space-y-4">
-              <h2 className="text-base font-semibold">Change or Setup Wallet</h2>
+              <h2 className="text-base font-semibold">{t("wallet.setup_title")}</h2>
               
               <Button
                 onClick={() => setOption(1)}
@@ -236,9 +239,9 @@ export default function WalletPage() {
                   <Wallet className="w-5 h-5" />
                 </div>
                 <div className="text-left">
-                  <span className="font-semibold block">Generate New Wallet</span>
+                  <span className="font-semibold block">{t("wallet.generate.title")}</span>
                   <span className="text-xs text-muted-foreground">
-                    Create a new secure wallet locally
+                    {t("wallet.generate.description")}
                   </span>
                 </div>
               </Button>
@@ -252,9 +255,9 @@ export default function WalletPage() {
                   <Key className="w-5 h-5" />
                 </div>
                 <div className="text-left">
-                  <span className="font-semibold block">Import Existing Seed</span>
+                  <span className="font-semibold block">{t("wallet.import.title")}</span>
                   <span className="text-xs text-muted-foreground">
-                    Use an existing Stellar secret key
+                    {t("wallet.import.description")}
                   </span>
                 </div>
               </Button>
@@ -269,10 +272,10 @@ export default function WalletPage() {
                 </div>
                 <div className="text-left">
                   <span className="font-semibold block">
-                    {loading ? "Connecting..." : "Connect External Wallet"}
+                    {loading ? t("wallet.connect.connecting") : t("wallet.connect.title")}
                   </span>
                   <span className="text-xs text-primary-foreground/70">
-                    Connect Freighter, Lobstr, or others
+                    {t("wallet.connect.description")}
                   </span>
                 </div>
               </Button>
@@ -293,7 +296,7 @@ export default function WalletPage() {
                 }}
                 className="mb-4 -ml-2"
               >
-                ← Back
+                {t("wallet.back")}
               </Button>
 
               {error && (
@@ -305,43 +308,41 @@ export default function WalletPage() {
 
               {option === 1 && (
                 <form onSubmit={handleGenerateConfirm} className="space-y-4">
-                  <h2 className="text-lg font-semibold">Your New Wallet</h2>
+                  <h2 className="text-lg font-semibold">{t("wallet.generate.new_wallet")}</h2>
                   
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                     <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-blue-800 dark:text-blue-300">
-                      Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                      {t("wallet.security_notice")}
                     </p>
                   </div>
 
                   <p className="text-sm text-muted-foreground">
-                    Please save this secret key somewhere safe. It is required to
-                    recover your wallet if you switch devices.
+                    {t("wallet.generate.save_key_notice")}
                   </p>
                   <div className="p-3 bg-muted rounded font-mono text-sm break-all">
                     {passphrase}
                   </div>
 
                   <Button type="submit" disabled={loading} className="w-full mt-4">
-                    {loading ? "Saving..." : "I have saved my key"}
+                    {loading ? t("wallet.generate.saving") : t("wallet.generate.saved")}
                   </Button>
                 </form>
               )}
 
               {option === 2 && (
                 <form onSubmit={handleImportSeed} className="space-y-4">
-                  <h2 className="text-lg font-semibold">Import Seed</h2>
+                  <h2 className="text-lg font-semibold">{t("wallet.import.heading")}</h2>
                   
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                     <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-blue-800 dark:text-blue-300">
-                      Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                      {t("wallet.security_notice")}
                     </p>
                   </div>
 
                   <p className="text-sm text-muted-foreground">
-                    Enter your Stellar secret key (starts with 'S'). It will be stored
-                    encrypted on this device.
+                    {t("wallet.import.seed_help")}
                   </p>
 
                   <div>
@@ -355,7 +356,7 @@ export default function WalletPage() {
                   </div>
 
                   <Button type="submit" disabled={loading} className="w-full mt-4">
-                    {loading ? "Importing..." : "Import Wallet"}
+                    {loading ? t("wallet.import.importing") : t("wallet.import.submit")}
                   </Button>
                 </form>
               )}

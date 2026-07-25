@@ -55,11 +55,14 @@ export function getApiErrorMessage(e: unknown): string {
 }
 
 /**
- * Maps HTTP status codes to user-friendly, actionable messages.
+ * Maps HTTP status codes to user-friendly, actionable string messages.
  * Handles 429 (Rate Limit), 503 (Service Unavailable), and 402 (Payment Required)
  * with specific guidance. Falls back to the raw error message for all other codes.
+ *
+ * Note: for the richer UIError variant (with optional recovery actions) use
+ * `mapApiError` from `@/hooks/use-api-error` instead.
  */
-export function mapApiError(e: unknown): string {
+export function getApiErrorString(e: unknown): string {
   const status = (e as ApiError)?.status;
   switch (status) {
     case 429:
@@ -106,7 +109,7 @@ async function request<T>(
     );
   }
   const url = path.startsWith('http') ? path : `${BASE}${path.startsWith('/') ? path : `/${path}`}`;
-  const headers: Record<string, string> = { 'Accept-Encoding': 'gzip' };
+  const headers: Record<string, string> = {};
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }
@@ -118,7 +121,11 @@ async function request<T>(
 
   // If caller provides signal, abort our controller when caller's aborts
   if (opts.signal) {
-    opts.signal.addEventListener('abort', () => controller.abort(), { once: true });
+    if (opts.signal.aborted) {
+      controller.abort();
+    } else {
+      opts.signal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
   }
 
   // Set timeout
@@ -141,7 +148,7 @@ async function request<T>(
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal,
-      credentials: 'include',
+      credentials: 'include', // Include httpOnly cookies in all requests
       ...(opts.priority !== undefined && { priority: opts.priority }),
     });
   } catch (error) {
@@ -227,4 +234,8 @@ export function put<T>(path: string, body?: unknown, opts?: RequestOptions): Pro
 
 export function del<T>(path: string, opts?: RequestOptions): Promise<T> {
   return request<T>('DELETE', path, undefined, opts);
+
 }
+
+}
+
