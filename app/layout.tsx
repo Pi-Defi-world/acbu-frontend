@@ -1,4 +1,4 @@
-import React from "react"
+import React from 'react'
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
 import { AuthProvider } from '@/contexts/auth-context'
@@ -94,7 +94,7 @@ export default async function RootLayout({
 }>) {
   const headersList = await headers();
   const nonce = headersList.get('x-nonce') ?? undefined;
-  const lang = "en";
+  const lang = 'en'
 
   return (
     <html lang={lang} dir="ltr" suppressHydrationWarning>
