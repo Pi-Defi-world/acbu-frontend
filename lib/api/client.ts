@@ -1,11 +1,9 @@
 /**
  * API client: base URL from env, authentication via httpOnly cookies.
  * All backend responses are JSON; errors throw with message/details.
- * 
- * 401 Handling: When API returns 401 (Unauthorized), a registered callback is invoked
+ * * 401 Handling: When API returns 401 (Unauthorized), a registered callback is invoked
  * to handle stale auth state (e.g., expired httpOnly cookie).
- * 
- * Timeout: Requests timeout after NEXT_PUBLIC_API_TIMEOUT ms (default 30000).
+ * * Timeout: Requests timeout after NEXT_PUBLIC_API_TIMEOUT ms (default 30000).
  * If caller provides AbortSignal, it aborts on either timeout or caller's signal.
  */
 
@@ -26,6 +24,9 @@ const BASE = typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_API_BASE
 const DEFAULT_TIMEOUT = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_TIMEOUT
   ? parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT, 10) || 30000
   : 30000;
+
+// Helper utility to introduce delays between retry attempts
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Backend often returns `{ error: { message, statusCode } }` (AppError); avoid `[object Object]`. */
 function messageFromErrorBody(
@@ -54,11 +55,14 @@ export function getApiErrorMessage(e: unknown): string {
 }
 
 /**
- * Maps HTTP status codes to user-friendly, actionable messages.
+ * Maps HTTP status codes to user-friendly, actionable string messages.
  * Handles 429 (Rate Limit), 503 (Service Unavailable), and 402 (Payment Required)
  * with specific guidance. Falls back to the raw error message for all other codes.
+ *
+ * Note: for the richer UIError variant (with optional recovery actions) use
+ * `mapApiError` from `@/hooks/use-api-error` instead.
  */
-export function mapApiError(e: unknown): string {
+export function getApiErrorString(e: unknown): string {
   const status = (e as ApiError)?.status;
   switch (status) {
     case 429:
@@ -76,6 +80,12 @@ export interface RequestOptions {
   signal?: AbortSignal;
   /** @deprecated Auth is via httpOnly cookies; this field is unused. */
   token?: string;
+  /** Number of retry attempts on 5xx errors or network drops. Defaults to 3. */
+  retries?: number;
+  /** Base delay time in milliseconds for exponential backoff retry logic. */
+  retryDelay?: number;
+  /** Fetch Priority API hint. Pass 'high' for above-the-fold critical requests. */
+  priority?: RequestPriority;
 }
 
 export interface ApiError extends Error {
@@ -89,6 +99,8 @@ async function request<T>(
   body?: unknown,
   opts: RequestOptions = {}
 ): Promise<T> {
+  const { retries = 3, retryDelay = 1000 } = opts;
+
   if (!path.startsWith('http') && !BASE.trim()) {
     throw new Error(
       "API base URL is not configured. Set NEXT_PUBLIC_API_BASE_URL (or NEXT_PUBLIC_API_URL) " +
@@ -109,7 +121,11 @@ async function request<T>(
 
   // If caller provides signal, abort our controller when caller's aborts
   if (opts.signal) {
-    opts.signal.addEventListener('abort', () => controller.abort(), { once: true });
+    if (opts.signal.aborted) {
+      controller.abort();
+    } else {
+      opts.signal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
   }
 
   // Set timeout
@@ -119,6 +135,7 @@ async function request<T>(
   }, DEFAULT_TIMEOUT);
 
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    clearTimeout(timeoutId);
     throw new Error(
       'You appear to be offline. Please check your internet connection and try again.',
     );
@@ -132,19 +149,37 @@ async function request<T>(
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal,
       credentials: 'include', // Include httpOnly cookies in all requests
+      ...(opts.priority !== undefined && { priority: opts.priority }),
     });
   } catch (error) {
     clearTimeout(timeoutId);
+
+    // Differentiate aborts from connection breaks
     if (error instanceof Error && error.name === 'AbortError') {
       if (timedOut) {
+        // If it was an automatic server timeout and we have remaining retries, execute retry
+        if (retries > 0) {
+          console.warn(`[API Client] Timeout on ${method} ${path}. Retrying in ${retryDelay}ms... (${retries} left)`);
+          await sleep(retryDelay);
+          return request<T>(method, path, body, { ...opts, retries: retries - 1, retryDelay: retryDelay * 2 });
+        }
         throw new Error(`Request timed out after ${DEFAULT_TIMEOUT / 1000} seconds`, { cause: error });
       }
-      // If not timed out, it was aborted by caller's signal, rethrow
+      // Aborted by caller explicitly via AbortSignal — do not retry, just rethrow
       throw error;
+    }
+
+    // Dynamic Network Interception: Connection dropped, peer reset, or DNS failure
+    if (retries > 0) {
+      console.warn(`[API Client] Network exception on ${method} ${path}. Retrying in ${retryDelay}ms... (${retries} left)`, error);
+      await sleep(retryDelay);
+      return request<T>(method, path, body, { ...opts, retries: retries - 1, retryDelay: retryDelay * 2 });
     }
     throw error;
   }
+  
   clearTimeout(timeoutId);
+  
   let data: { error?: string | { message?: string }; message?: string; details?: unknown };
   const ct = res.headers.get('content-type');
   if (ct?.includes('application/json')) {
@@ -156,12 +191,20 @@ async function request<T>(
   } else {
     data = { error: res.statusText || 'Request failed' };
   }
+
   if (!res.ok) {
     const err: ApiError = new Error(
       messageFromErrorBody(data, res.status),
     ) as ApiError;
     err.status = res.status;
     err.details = data.details ?? data;
+
+    // Trigger retry loop for Server System Failures (5xx) or Rate Limiting (429)
+    if ((res.status >= 500 || res.status === 429) && retries > 0) {
+      console.warn(`[API Client] HTTP Status ${res.status} on ${method} ${path}. Retrying in ${retryDelay}ms... (${retries} left)`);
+      await sleep(retryDelay);
+      return request<T>(method, path, body, { ...opts, retries: retries - 1, retryDelay: retryDelay * 2 });
+    }
     
     // Invoke 401 handler if registered (e.g., clear auth state and redirect to login)
     if (res.status === 401 && authErrorHandler) {

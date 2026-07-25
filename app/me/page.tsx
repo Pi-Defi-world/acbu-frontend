@@ -1,7 +1,13 @@
 'use client';
 
+import type { Metadata } from 'next';
 import React, { useState, useEffect, useRef } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
+
+export const metadata: Metadata = {
+  title: 'My Account | ACBU',
+  description: 'Manage your ACBU account, profile, and settings.',
+};
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
@@ -9,21 +15,12 @@ import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, Help
 import { useAuth } from '@/contexts/auth-context';
 import { useBalance } from '@/hooks/use-balance';
 import { useApiOpts } from '@/hooks/use-api';
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { KycBadge } from '@/components/ui/kyc-badge';
-=======
->>>>>>> origin/dev
-import { formatAmount } from '@/lib/utils';
-=======
 import { formatAmount, parseUtcDate } from '@/lib/utils';
->>>>>>> upstream/dev
 import * as userApi from '@/lib/api/user';
 import * as transactionsApi from '@/lib/api/transactions';
 import type { UserMe } from '@/types/api';
 import type { TransactionListItem } from '@/types/api';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { RetryErrorBlock } from '@/components/ui/retry-error-block';
 
 // ---------------------------------------------------------------------------
@@ -83,8 +80,6 @@ function getKycBadgeConfig(status: KycStatus | undefined | null): KycBadgeConfig
   }
 }
 
-<<<<<<< HEAD
-=======
 function LocalKycBadge({ status, loading }: { status: KycStatus | undefined | null; loading: boolean }) {
   if (loading) {
     return <div className="h-5 w-24 rounded-full bg-muted animate-pulse" />;
@@ -97,7 +92,6 @@ function LocalKycBadge({ status, loading }: { status: KycStatus | undefined | nu
     </Badge>
   );
 }
->>>>>>> origin/dev
 
 const menuItems = [
   {
@@ -223,7 +217,7 @@ export default function MePage() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [user?.kyc_status, pollingDelay, loading, opts]);
+  }, [user?.kyc_status, pollingDelay, loading, opts.token]);
 
   const handleLogout = async () => {
     setShowLogoutConfirm(false);
@@ -263,20 +257,10 @@ export default function MePage() {
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0 text-white text-lg font-bold md:w-20 md:h-20 md:text-2xl">{initials}</div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <h1 className="page-title truncate md:text-2xl">{displayName}</h1>
+                <h1 className="page-title truncate md:text-2xl" title={displayName}>{displayName}</h1>
                 <LocalKycBadge status={user?.kyc_status} loading={loading} />
               </div>
-<<<<<<< HEAD
-              <p className="text-xs text-muted-foreground truncate">{user?.email || user?.phone_e164 || '—'}</p>
-<<<<<<< HEAD
-              <div className="mt-1.5">
-                <KycBadge status={user?.kyc_status} />
-              </div>
-=======
->>>>>>> origin/dev
-=======
-              <p className="text-xs text-muted-foreground truncate md:text-sm">{user?.email || user?.phone_e164 || '—'}</p>
->>>>>>> upstream/dev
+              <p className="text-xs text-muted-foreground truncate md:text-sm" title={user?.email || user?.phone_e164 || '—'}>{user?.email || user?.phone_e164 || '—'}</p>
             </div>
           </div>
         </div>
@@ -315,7 +299,7 @@ export default function MePage() {
                       <div className="rounded-lg border border-border bg-card p-4 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <Icon className="w-5 h-5 text-primary flex-shrink-0" />
-                          <span className="font-medium text-foreground text-sm truncate">{item.title}</span>
+                          <span className="font-medium text-foreground text-sm truncate" title={item.title}>{item.title}</span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <ArrowRight className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" />

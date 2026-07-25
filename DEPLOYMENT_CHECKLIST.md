@@ -1,73 +1,163 @@
-# Deployment Checklist - Security Fix
+# ACBU Frontend — Deployment Checklist
 
-## Pre-Deployment
+> **Last updated:** 2026-06-30
+> Reflects the actual project configuration: Next.js 16, pnpm, Node.js ≥ 20.
 
-- [ ] Review all changes in `SECURITY_FIX_SUMMARY.md`
-- [ ] Verify backend is setting httpOnly cookies on login
-- [ ] Test login flow in development environment
-- [ ] Test 2FA flow in development environment
-- [ ] Test wallet operations (mint, burn, send)
-- [ ] Verify no API keys in sessionStorage (DevTools)
-- [ ] Check CSP headers in browser DevTools Network tab
+---
 
-## Deployment Steps
+## 1. Prerequisites
 
-1. [ ] Deploy backend changes first (if any cookie configuration needed)
-2. [ ] Deploy frontend changes
-3. [ ] Clear all user sessions (users will need to re-login)
-4. [ ] Monitor error logs for authentication issues
+- [ ] Node.js **20 or later** installed (matches CI: `node-version: 20`)
+- [ ] **pnpm 10.15.0** installed (`npm install -g pnpm@10.15.0`)
+- [ ] Access to the target hosting environment (see §7)
+- [ ] All required environment variables available (see §3)
 
-## Post-Deployment Verification
+---
 
-- [ ] Login works correctly
-- [ ] Logout clears session
-- [ ] 2FA flow works
-- [ ] Wallet operations work
-- [ ] API requests succeed with cookies
-- [ ] CSP headers are present
-- [ ] No console errors related to auth
-- [ ] Check sessionStorage in DevTools - should NOT contain:
-  - `acbu_api_key`
-  - `acbu_passcode`
+## 2. Local build verification
 
-## Rollback Plan
+Run these steps on a clean checkout before triggering a production deploy.
 
-If issues occur:
-1. Revert frontend deployment
-2. Users may need to clear cookies and re-login
-3. Check backend logs for cookie-related errors
+```bash
+# Install dependencies (uses pnpm-lock.yaml — do not use npm or yarn)
+pnpm install --frozen-lockfile
 
-## Security Verification
+# Type-check — TypeScript errors MUST fail the build (F-001 rule)
+pnpm typecheck
 
-Run these checks in browser DevTools:
+# Lint
+pnpm lint
 
-```javascript
-// Should return null (no API key in sessionStorage)
-sessionStorage.getItem('acbu_api_key')
+# Build (generates PWA icons then runs `next build`)
+pnpm build
 
-// Should return null (no passcode in sessionStorage)
-sessionStorage.getItem('acbu_passcode')
+# Unit tests
+pnpm test
 
-// Check cookies in DevTools:
-// - Open DevTools > Application > Cookies
-// - Or check Network tab > Headers > Set-Cookie
-// - Look for httpOnly session cookie (cannot be read via document.cookie)
+# E2E smoke tests (requires a running server on :3000)
+pnpm test:e2e
 ```
 
-## Files Changed
+Build output goes to `.next/`. Do **not** commit the `.next/` directory.
 
-- `contexts/auth-context.tsx` - Removed API key storage
-- `lib/api/client.ts` - Removed Bearer token auth
-- `app/auth/signin/page.tsx` - Updated login flow
-- `app/auth/2fa/page.tsx` - Updated 2FA flow
-- `lib/passcode-manager.ts` - NEW: In-memory passcode storage
-- `lib/wallet-storage.ts` - Use in-memory passcode
-- `middleware.ts` - NEW: CSP and security headers
+---
 
-## Support
+## 3. Environment variables
 
-If users report issues:
-1. Ask them to clear cookies and sessionStorage
-2. Ask them to log in again
-3. Check if they can complete wallet operations
-4. Verify CSP isn't blocking legitimate scripts
+Copy `.env.example` to `.env.local` (local) or configure via your hosting
+provider's secrets management before deploying.
+
+### Client-side (bundled into the browser — **never put secrets here**)
+
+| Variable | Required | Default / Example | Description |
+|---|---|---|---|
+| `NEXT_PUBLIC_API_BASE_URL` | **Yes** | `https://api.example.com/api/v1` | Backend API base URL |
+| `NEXT_PUBLIC_STELLAR_HORIZON_URL` | No | `https://horizon.stellar.org` | Stellar Horizon endpoint |
+| `NEXT_PUBLIC_SOROBAN_RPC_URL` | No | *(empty)* | Soroban RPC endpoint |
+| `NEXT_PUBLIC_ACBU_ASSET_CODE` | No | `ACBU` | On-chain asset code |
+| `NEXT_PUBLIC_ACBU_ASSET_ISSUER` | No | *(empty)* | Stellar asset issuer address |
+| `NEXT_PUBLIC_API_TIMEOUT` | No | `30000` | HTTP timeout in ms |
+| `NEXT_PUBLIC_BILLS_ENABLED` | No | `false` | Feature-flag: enable bills UI |
+| `NEXT_PUBLIC_SUPPORT_INTAKE_URL` | No | *(empty)* | Public support form URL |
+| `NEXT_PUBLIC_DEMO_FIAT_ISSUER` | No | *(empty)* | Demo fiat issuer address |
+| `NEXT_PUBLIC_DEBUG` | No | `false` | Verbose client logging |
+
+> **Security guard:** `lib/env-safety.js` is called at build time via
+> `next.config.mjs`. It throws if any `NEXT_PUBLIC_*` variable name contains
+> dangerous patterns (`DATABASE_URL`, `JWT_SECRET`, `API_SECRET`,
+> `PRIVATE_KEY`, `TOKEN`, `PASSWORD`). The build will **fail** before
+> shipping secrets.
+
+### Server-side only (never exposed to the browser)
+
+| Variable | Required | Description |
+|---|---|---|
+| `SUPPORT_INTAKE_URL` | No | Internal endpoint used by `app/api/support/route.ts` to forward support requests. Leave empty to disable forwarding. |
+
+---
+
+## 4. CI / Quality gate
+
+Two GitHub Actions workflows run automatically:
+
+| Workflow | File | Triggers | What it checks |
+|---|---|---|---|
+| Frontend QA | `.github/workflows/frontend-qa.yml` | push / PR → `main` | typecheck, lint, build, unit tests, E2E smoke |
+| Lighthouse CI | `.github/workflows/lighthouse-ci.yml` | push / PR → `dev` | FCP < 1.8 s, LCP < 2.5 s, TBT < 200 ms |
+
+**All checks must pass before merging to `main`.**
+
+---
+
+## 5. Build flags
+
+| Flag | How to use | Effect |
+|---|---|---|
+| `ANALYZE=true` | `ANALYZE=true pnpm build` | Opens bundle-analyzer report |
+| `NODE_ENV=production` | Set by `next build` automatically | Disables dev-only code paths |
+
+---
+
+## 6. Database / migrations
+
+This is a **frontend-only** repository. There are no database migrations here.
+Data layer changes are handled by the backend API team.
+
+---
+
+## 7. Hosting
+
+The project does not include a `vercel.json` and has no Vercel-specific
+configuration in `next.config.mjs`. It can be deployed to any platform that
+supports Next.js standalone or standard builds:
+
+- **Self-hosted / Docker:** run `pnpm build` then `pnpm start` (`next start`)
+- **Vercel:** push to `main`; set env vars in the Vercel dashboard
+- **Other providers (Netlify, Render, Fly.io, etc.):** configure build
+  command `pnpm build`, output directory `.next`, start command `pnpm start`
+
+> **Note:** The `.gitignore` includes `.vercel/` to keep local Vercel CLI
+> cache out of the repo. This does **not** mean Vercel is the required or
+> only deployment target.
+
+### Required server capabilities
+
+- Node.js 20+
+- Enough memory to run `next build` (~512 MB minimum, 1 GB recommended)
+- Write access to the filesystem during build (for `.next/` output)
+
+---
+
+## 8. Post-deploy smoke test
+
+After deploying, verify the following manually or via E2E:
+
+- [ ] `/` loads without a JS console error
+- [ ] Auth flow (sign-in → 2FA) works end-to-end
+- [ ] Wallet balance displays correctly
+- [ ] `NEXT_PUBLIC_API_BASE_URL` is pointing at the correct environment
+- [ ] `Content-Security-Policy` header is present (set by `middleware.ts`)
+- [ ] PWA icons load (`/icons/icon-192.png`, `/icons/icon-512.png`)
+
+---
+
+## 9. Rollback
+
+1. Identify the last good commit SHA or deployment.
+2. Re-deploy that commit / release via your hosting provider's rollback UI, or:
+   ```bash
+   git checkout <good-sha>
+   pnpm install --frozen-lockfile
+   pnpm build
+   # then deploy the resulting .next/ directory
+   ```
+3. Verify with the §8 smoke test.
+
+---
+
+## 10. Secrets rotation
+
+1. Update the secret value in your hosting provider's environment config.
+2. Trigger a new deployment (server-side secrets take effect on next server
+   start; client-side `NEXT_PUBLIC_*` values require a **rebuild**).
+3. Confirm the old secret no longer works.

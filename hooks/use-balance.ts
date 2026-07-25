@@ -34,10 +34,10 @@ export function useBalance(): UseBalanceReturn {
   const refetch = useCallback(() => setTick((t) => t + 1), []);
   const refresh = refetch;
 
-  // Auto-refresh balance every 30 seconds, but only while the tab is visible.
-  // When the tab becomes hidden the interval is cleared to avoid queueing up
-  // redundant API calls. When it becomes visible again we immediately refetch
-  // and restart the 30-second clock. (#656)
+  // Auto-refresh balance every 30 seconds to catch external transactions.
+  // No stale closure risk: `interval` is captured in the same effect scope, so
+  // the cleanup always clears the correct interval ID. `refresh` is stable
+  // (useCallback with no deps) because setTick uses a functional updater.
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
 
@@ -79,7 +79,7 @@ export function useBalance(): UseBalanceReturn {
     setError('');
 
     userApi
-      .getBalance(opts)
+      .getBalance({ ...opts, priority: 'high' })
       .then((data) => {
         if (cancelled) return;
         const raw = data.balance;
