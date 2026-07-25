@@ -32,8 +32,7 @@ import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
 import { logger } from '@/lib/logger';
-const MINT_NETWORK_FEE_TEXT = "Estimated at confirmation";
-const BURN_PROCESSING_FEE_TEXT = "Estimated at confirmation";
+import { useTranslations } from 'next-intl';
 
 /** `acbu_*` from API = local currency units per 1 ACBU → ACBU = fiat / localPerAcbu. */
 function estimateAcbuFromFiat(
@@ -56,6 +55,7 @@ function estimateAcbuFromFiat(
  * Mint and Burn page for ACBU tokens.
  */
 export default function MintPage() {
+  const t = useTranslations("mint");
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
   const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
@@ -146,7 +146,7 @@ export default function MintPage() {
             // so an unconfirmed trustline would still fail the mint.
             if (!userId) {
                 throw new Error(
-                    "Not signed in — refresh and try again.",
+                    t("errors.not_signed_in"),
                 );
             }
             const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
@@ -171,7 +171,7 @@ export default function MintPage() {
             } else {
               if (!kit) {
                 throw new Error(
-                  "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+                  t("errors.wallet_unavailable"),
                 );
               }
               accountId = await new Promise<string>((resolve, reject) => {
@@ -209,7 +209,7 @@ export default function MintPage() {
             });
             if (trust?.added && !trust.visible) {
                 throw new Error(
-                    "ACBU trustline was submitted but hasn't appeared on Horizon yet. Please retry the mint in a few seconds.",
+                    t("errors.trustline_pending"),
                 );
             }
 
@@ -233,7 +233,7 @@ export default function MintPage() {
             refreshBalance();
             setStep("success");
         } catch (e) {
-            setMintError(e instanceof Error ? e.message : "Mint failed");
+            setMintError(e instanceof Error ? e.message : t("errors.mint_failed"));
         } finally {
             setExecuting(false);
         }
@@ -245,10 +245,10 @@ export default function MintPage() {
         setExecuting(true);
         try {
             if (!userId) {
-                throw new Error("Not signed in — refresh and try again.");
+                throw new Error(t("errors.not_signed_in"));
             }
             if (!stellarAddress) {
-                throw new Error("No linked Stellar wallet address.");
+                throw new Error(t("errors.no_wallet_address"));
             }
             const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
             let burnTxHash: string;
@@ -269,7 +269,7 @@ export default function MintPage() {
             } else {
                 if (!kit) {
                     throw new Error(
-                        "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+                        t("errors.wallet_unavailable"),
                     );
                 }
                 const address = await new Promise<string>((resolve, reject) => {
@@ -309,7 +309,7 @@ export default function MintPage() {
             setTxId(res.transaction_id || res.transactionId || null);
             setStep("success");
         } catch (e) {
-            setBurnError(e instanceof Error ? e.message : "Burn failed");
+            setBurnError(e instanceof Error ? e.message : t("errors.burn_failed"));
         } finally {
             setExecuting(false);
         }
@@ -334,12 +334,12 @@ export default function MintPage() {
     <>
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="px-4 py-4 flex items-center gap-3">
-          <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
+          <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label={t("go_back")}>
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Mint & Burn</h1>
-            <p className="text-xs text-muted-foreground">Create and redeem ACBU</p>
+            <h1 className="text-lg font-bold text-foreground">{t("title")}</h1>
+            <p className="text-xs text-muted-foreground">{t("subtitle")}</p>
           </div>
         </div>
       </header>
@@ -348,15 +348,15 @@ export default function MintPage() {
                 <div className="mb-6">
                     <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
                         <p className="text-sm font-medium opacity-90">
-                            ACBU Balance
+                            {t("balance")}
                         </p>
                         <p className="text-3xl font-bold mb-2">
                             {balanceLoading ? '...' : `ACBU ${formatAmount(balance)}`}
                         </p>
                         <p className="text-xs opacity-75">
                             {balanceSource === "stellar"
-                                ? "ACBU balance from Stellar Horizon."
-                                : "Link a wallet to see your on-chain ACBU balance."}
+                                ? t("stellar_balance")
+                                : t("link_wallet")}
                         </p>
                     </Card>
                 </div>
@@ -373,27 +373,26 @@ export default function MintPage() {
                             value="mint"
                             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
                         >
-                            Mint
+                            {t("tabs.mint")}
                         </TabsTrigger>
                         <TabsTrigger
                             value="burn"
                             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
                         >
-                            Burn
+                            {t("tabs.burn")}
                         </TabsTrigger>
                         <TabsTrigger
                             value="rates"
                             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
                         >
-                            Rates
+                            {t("tabs.rates")}
                         </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="mint" className="py-6 space-y-4">
                         <div>
                             <p className="text-sm text-muted-foreground mb-3">
-                                Mint ACBU via custodial on-ramp (demo basket fiat held on the minting
-                                contract).
+                                {t("mint.description")}
                             </p>
                             {mintError && (
                                 <p className="text-sm text-destructive mb-2">
@@ -405,7 +404,7 @@ export default function MintPage() {
                                     htmlFor="fiat-account"
                                     className="text-sm font-medium text-foreground mb-2 block"
                                 >
-                                    Basket currency (demo fiat path)
+                                    {t("mint.currency")}
                                 </label>
                                 <select
                                     id="fiat-account"
@@ -414,7 +413,7 @@ export default function MintPage() {
                                     className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                                 >
                                     {fiatAccounts.length === 0 ? (
-                                        <option value="" disabled>Loading currencies…</option>
+                                        <option value="" disabled>{t("loading_currencies")}</option>
                                     ) : (
                                         fiatAccounts.map(acc => (
                                             <option key={acc.id} value={acc.currency}>
@@ -429,7 +428,7 @@ export default function MintPage() {
                                     htmlFor="fiat-amount"
                                     className="text-sm font-medium text-foreground mb-2 block"
                                 >
-                                    Amount to Exchange
+                                    {t("mint.amount")}
                                 </label>
                                 <div className="flex gap-2">
                                     <span className="flex items-center text-muted-foreground font-medium">
@@ -452,7 +451,7 @@ export default function MintPage() {
                             {estimatedMintAcbu != null && (
                                 <Card className="border-border bg-muted/80 p-3 mt-3">
                                     <p className="text-xs text-muted-foreground mb-1 break-words">
-                                        Estimated ACBU (from latest rates)
+                                        {t("mint.estimated")}
                                     </p>
                                     <p className="text-lg font-semibold text-foreground break-words">
                                         ≈ {formatAmount(estimatedMintAcbu)} ACBU
@@ -462,10 +461,10 @@ export default function MintPage() {
                             <Card className="border-border bg-muted p-3 mt-4">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">
-                                        Network Fee
+                                        {t("network_fee")}
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {MINT_NETWORK_FEE_TEXT}
+                                        {t("estimated_at_confirmation")}
                                     </span>
                                 </div>
                             </Card>
@@ -479,7 +478,7 @@ export default function MintPage() {
                                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
                             >
                                 <ArrowDown className="w-4 h-4 mr-2" />
-                                Mint ACBU
+                                {t("mint.submit")}
                             </Button>
                         </div>
                     </TabsContent>
@@ -487,8 +486,7 @@ export default function MintPage() {
                     <TabsContent value="burn" className="py-6 space-y-4">
                         <div>
                             <p className="text-sm text-muted-foreground mb-3">
-                                Burn ACBU on-chain for the selected basket slice (no simulated bank
-                                credit).
+                                {t("burn.description")}
                             </p>
                             {burnError && (
                                 <p className="text-sm text-destructive mb-2">
@@ -500,7 +498,7 @@ export default function MintPage() {
                                     htmlFor="burn-fiat-account"
                                     className="text-sm font-medium text-foreground mb-2 block"
                                 >
-                                    Basket currency (burn slice)
+                                    {t("burn.currency")}
                                 </label>
                                 <select
                                     id="burn-fiat-account"
@@ -509,7 +507,7 @@ export default function MintPage() {
                                     className="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium bg-background"
                                 >
                                     {fiatAccounts.length === 0 ? (
-                                        <option value="" disabled>Loading currencies…</option>
+                                        <option value="" disabled>{t("loading_currencies")}</option>
                                     ) : (
                                         fiatAccounts.map(acc => (
                                             <option key={acc.id} value={acc.currency}>
@@ -524,7 +522,7 @@ export default function MintPage() {
                                     htmlFor="burn-amount"
                                     className="text-sm font-medium text-foreground mb-2 block"
                                 >
-                                    Amount to Burn
+                                    {t("burn.amount")}
                                 </label>
                                 <div className="flex gap-2">
                                     <span className="flex items-center text-muted-foreground font-medium">
@@ -542,27 +540,26 @@ export default function MintPage() {
                                     />
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-2">
-                                    Available: ACBU{" "}
-                                    {balanceLoading ? '...' : formatAmount(balance)}
+                                    {t("available", { amount: balanceLoading ? '...' : formatAmount(balance) })}
                                 </p>
                             </div>
                             <Card className="border-border bg-muted p-3 mt-4">
                                 <div className="flex justify-between text-sm mb-2">
                                     <span className="text-muted-foreground">
-                                        You'll receive
+                                        {t("burn.receive")}
                                     </span>
                                     <span className="font-medium text-foreground">
                                         {burnAmount && selectedFiatCurrency
-                                            ? `~ ${selectedFiatCurrency} (based on current rate)`
+                                            ? t("burn.current_rate", { currency: selectedFiatCurrency })
                                             : "—"}
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">
-                                        Processing Fee
+                                        {t("processing_fee")}
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {BURN_PROCESSING_FEE_TEXT}
+                                        {t("estimated_at_confirmation")}
                                     </span>
                                 </div>
                             </Card>
@@ -576,7 +573,7 @@ export default function MintPage() {
                                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
                             >
                                 <ArrowUp className="w-4 h-4 mr-2" />
-                                Burn & Redeem
+                                {t("burn.submit")}
                             </Button>
                         </div>
                     </TabsContent>
@@ -589,15 +586,15 @@ export default function MintPage() {
                 rateRows.map((r: { currency?: string; rate?: number }) => (
                   <Card key={r.currency ?? r.rate} className="border-border p-4">
                     <div className="flex justify-between">
-                      <p className="font-semibold text-foreground">ACBU/{r.currency ?? 'Rate'}</p>
+                      <p className="font-semibold text-foreground">ACBU/{r.currency ?? t("rate")}</p>
                       <p className="text-lg font-bold text-primary">{r.rate != null ? String(r.rate) : '—'}</p>
                     </div>
                   </Card>
                 ))
               ) : (
-                <Card className="border-border p-4"><p className="text-muted-foreground">No rates available. Use the API to load rates.</p></Card>
+                <Card className="border-border p-4"><p className="text-muted-foreground">{t("rates.empty")}</p></Card>
               )}
-              <Card className="border-border bg-muted p-4 mt-6"><p className="text-sm font-semibold text-foreground mb-2">How it works</p><ul className="text-xs text-muted-foreground space-y-2"><li>• Mint converts local fiat to native ACBU</li><li>• Burn redeems ACBU for fiat</li><li>• Rates from backend</li></ul></Card>
+              <Card className="border-border bg-muted p-4 mt-6"><p className="text-sm font-semibold text-foreground mb-2">{t("rates.how_it_works")}</p><ul className="text-xs text-muted-foreground space-y-2"><li>• {t("rates.mint_explanation")}</li><li>• {t("rates.burn_explanation")}</li><li>• {t("rates.source")}</li></ul></Card>
             </div>
           </TabsContent>
         </Tabs>
@@ -608,24 +605,24 @@ export default function MintPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>
                             {activeTab === "mint"
-                                ? "Confirm Mint"
-                                : "Confirm Burn"}
+                                ? t("confirm.mint_title")
+                                : t("confirm.burn_title")}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="break-words">
                             {activeTab === "mint" &&
-                                `Mint ACBU by exchanging ${selectedFiatCurrency} ${formatAmount(fiatAmount)}${
+                                t("confirm.mint_description", { currency: selectedFiatCurrency, amount: formatAmount(fiatAmount), estimate:
                                     estimatedMintAcbu != null
-                                        ? ` (≈ ${formatAmount(estimatedMintAcbu)} ACBU at current rates)`
+                                        ? t("confirm.estimate", { amount: formatAmount(estimatedMintAcbu) })
                                         : ""
-                                }`}
+                                })}
                             {activeTab === "burn" &&
-                                `Burn ACBU ${formatAmount(burnAmount)} and withdraw to bank account`}
+                                t("confirm.burn_description", { amount: formatAmount(burnAmount) })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-4 space-y-2">
                         <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">
-                                Amount:
+                                {t("confirm.amount")}
                             </span>
                             <span className="font-medium text-foreground break-words">
                                 {activeTab === "mint"
@@ -639,14 +636,14 @@ export default function MintPage() {
                             onClick={() => setStep("input")}
                             disabled={executing}
                         >
-                            Cancel
+                            {t("confirm.cancel")}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleExecute}
                             className="bg-primary text-primary-foreground hover:bg-primary/90"
                             disabled={executing}
                         >
-                            {executing ? "Processing..." : "Confirm"}
+                            {executing ? t("confirm.processing") : t("confirm.submit")}
                         </AlertDialogAction>
                     </div>
                 </AlertDialogContent>
@@ -655,27 +652,23 @@ export default function MintPage() {
             <AlertDialog open={step === "success"}>
                 <AlertDialogContent className="max-w-md border-border">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Operation Complete</AlertDialogTitle>
+                        <AlertDialogTitle>{t("success.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Your {activeTab} operation has been submitted
-                            successfully.
+                            {t("success.description", { operation: t(`tabs.${activeTab}`) })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-4 space-y-2">
                         <p className="text-sm text-muted-foreground">
-                            Transaction ID: {txId ?? "—"}
+                            {t("success.transaction_id", { id: txId ?? "—" })}
                         </p>
                         {activeTab === "mint" && mintAcbuReceived != null && (
                             <p className="text-sm font-medium text-foreground">
-                                ACBU credited (app ledger):{" "}
-                                {formatAmount(mintAcbuReceived)} ACBU
+                                {t("success.credited", { amount: formatAmount(mintAcbuReceived) })}
                             </p>
                         )}
                         {activeTab === "mint" && (
                             <p className="text-xs text-muted-foreground">
-                                If the Stellar mint contract errors, tokens are still
-                                recorded in the app; your balance may show
-                                &quot;app ledger&quot; until on-chain mint works.
+                                {t("success.ledger_notice")}
                             </p>
                         )}
                     </div>
@@ -683,7 +676,7 @@ export default function MintPage() {
                         onClick={resetForm}
                         className="bg-primary text-primary-foreground hover:bg-primary/90"
                     >
-                        Done
+                        {t("success.done")}
                     </AlertDialogAction>
                 </AlertDialogContent>
             </AlertDialog>

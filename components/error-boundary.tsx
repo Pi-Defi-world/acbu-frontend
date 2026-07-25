@@ -3,10 +3,12 @@
 import React, { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  translations?: { title: string; description: string; retry: string };
 }
 
 interface State {
@@ -14,7 +16,7 @@ interface State {
   error?: Error;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundaryImpl extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false };
@@ -45,11 +47,11 @@ export class ErrorBoundary extends Component<Props, State> {
             </svg>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Something went wrong</h2>
-            <p className="text-sm text-muted-foreground mt-1">An unexpected error occurred</p>
+            <h2 className="text-lg font-semibold text-foreground">{this.props.translations?.title}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{this.props.translations?.description}</p>
           </div>
           <Button onClick={this.handleReset} variant="outline">
-            Try again
+            {this.props.translations?.retry}
           </Button>
         </div>
       );
@@ -57,4 +59,14 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return this.props.children;
   }
+}
+
+export function ErrorBoundary(props: Omit<Props, 'translations'>) {
+  const t = useTranslations('errors.boundary');
+  return (
+    <ErrorBoundaryImpl
+      {...props}
+      translations={{ title: t('title'), description: t('description'), retry: t('retry') }}
+    />
+  );
 }
