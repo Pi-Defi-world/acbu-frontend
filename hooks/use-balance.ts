@@ -34,25 +34,43 @@ export function useBalance(): UseBalanceReturn {
   const refetch = useCallback(() => setTick((t) => t + 1), []);
   const refresh = refetch;
 
-  // Auto-refresh balance every 30 seconds to catch external transactions
+  // Auto-refresh balance every 30 seconds, but only while the tab is visible.
+  // When the tab becomes hidden the interval is cleared to avoid queueing up
+  // redundant API calls. When it becomes visible again we immediately refetch
+  // and restart the 30-second clock. (#656)
   useEffect(() => {
-    const interval = setInterval(() => {
-      refetch();
-    }, 30000);
+    let interval: ReturnType<typeof setInterval> | null = null;
 
-    return () => clearInterval(interval);
-  }, [refetch]);
+    const startInterval = () => {
+      if (interval !== null) return; // already running
+      interval = setInterval(() => refetch(), 30_000);
+    };
 
-  // Refresh balance when tab/window regains focus
-  useEffect(() => {
+    const stopInterval = () => {
+      if (interval === null) return;
+      clearInterval(interval);
+      interval = null;
+    };
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        refetch();
+        refetch();      // immediate refresh on tab focus
+        startInterval();
+      } else {
+        stopInterval(); // pause while hidden
       }
     };
 
+    // Only start the interval if the tab is already visible on mount.
+    if (document.visibilityState === 'visible') {
+      startInterval();
+    }
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      stopInterval();
+    };
   }, [refetch]);
 
   useEffect(() => {
