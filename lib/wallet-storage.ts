@@ -33,7 +33,7 @@ function toBase64(buffer: ArrayBuffer | Uint8Array): string {
   const bytes = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i += 1) {
-    binary += String.fromCharCode(bytes[i]);
+    binary += String.fromCharCode(bytes[i]!);
   }
   return btoa(binary);
 }

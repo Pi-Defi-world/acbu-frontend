@@ -90,7 +90,7 @@ export default function LendingPage() {
   const [balance, setBalance] = useState<string | number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
 
-  const [productId, setProductId] = useState<string>(LOAN_PRODUCTS[0].id);
+  const [productId, setProductId] = useState<string>(LOAN_PRODUCTS[0]!.id);
   const [amount, setAmount] = useState('');
   const [term, setTerm] = useState('');
   const [purpose, setPurpose] = useState('');
@@ -143,7 +143,7 @@ export default function LendingPage() {
   }, [apiUser, opts.token]);
 
   const selectedProduct = useMemo(
-    () => LOAN_PRODUCTS.find((p) => p.id === productId) ?? LOAN_PRODUCTS[0],
+    () => LOAN_PRODUCTS.find((p) => p.id === productId) ?? LOAN_PRODUCTS[0]!,
     [productId]
   );
 

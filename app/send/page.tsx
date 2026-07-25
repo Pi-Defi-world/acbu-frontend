@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,13 +25,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 import { SkeletonList } from "@/components/ui/skeleton-list";
-import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { Plus, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
 import { useI18n } from "@/contexts/i18n-context";
 import { useBalance } from "@/hooks/use-balance";
-import { RetryErrorBlock } from "@/components/ui/retry-error-block";
 import { useAuth } from "@/contexts/auth-context";
 import * as transfersApi from "@/lib/api/transfers";
 import * as userApi from "@/lib/api/user";
@@ -59,7 +56,7 @@ import { useNavigationGuard } from "@/contexts/navigation-guard-context";
 import { useHaptic } from "@/hooks/use-haptic";
 
 function formatDate(iso: string) {
-  const d = parseUtcDate(iso);
+  const d = new Date(iso);
   const today = new Date();
   if (d.toDateString() === today.toDateString()) return "Today";
   const yesterday = new Date(today);
@@ -68,23 +65,31 @@ function formatDate(iso: string) {
   return d.toLocaleDateString();
 }
 
-function getStatusColor(status: string | undefined) {
+function getStatusColor(status: string): string {
   switch (status) {
     case "completed":
-      return "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800";
+      return "text-green-600";
     case "pending":
-      return "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
-    case "failed":
-      return "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800";
+      return "text-amber-600";
     default:
-      return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700";
+      return "text-gray-600";
+  }
+}
+
+function getStatusBadgeClassName(status: string): string {
+  switch (status) {
+    case "completed":
+      return "border-green-600 text-green-600";
+    case "pending":
+      return "border-amber-600 text-amber-600";
+    default:
+      return "border-gray-600 text-gray-600";
   }
 }
 
 export default function SendPage() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
-  const { ensureSession } = useSessionGuard();
   const kit = useStellarWalletsKit();
   const {
     balance,
@@ -126,6 +131,7 @@ export default function SendPage() {
     () =>
       virtualizer.getVirtualItems().map((virtualRow) => {
         const c = contacts[virtualRow.index];
+        if (!c) return null;
         return (
           <div
             key={virtualRow.key}
@@ -174,7 +180,37 @@ export default function SendPage() {
   useEffect(() => {
     loadTransfers();
     loadContacts();
-  }, [loadTransfers, loadContacts]);
+  }, [loadTransfers, loadContacts, opts.token]);
+
+  const handleShowSendDialog = useCallback(() => setShowSendDialog(true), []);
+  const handleSendDialogChange = useCallback((open: boolean) => setShowSendDialog(open), []);
+  const handleConfirmDialogChange = useCallback((open: boolean) => {
+    if (!open && !sending) {
+      setConfirmedAmount("");
+    }
+    setShowConfirmDialog(open);
+  }, [sending]);
+  const handleSuccessDialogChange = useCallback((open: boolean) => setShowSuccessDialog(open), []);
+  const handleTabChange = useCallback((value: string) => setActiveTab(value), []);
+  const handleUseContactChange = useCallback((v: string) => setUseContact(v === "contact"), []);
+  const handleContactSelect = useCallback((id: string) => {
+    const c = contacts.find((x: ContactItem) => x.id === id);
+    if (c) setSelectedContact(c);
+  }, [contacts]);
+  const handleCustomRecipientChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setCustomRecipient(e.target.value), []);
+  const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    if (v === "" || /^\d*\.?\d*$/.test(v)) {
+      setAmount(v);
+    }
+  }, []);
+  const debouncedAmount = useDebounce(amount, 300);
+  const handleNoteChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNote(e.target.value), []);
+  const handleSendDialogClose = useCallback(() => setShowSendDialog(false), []);
+  const handleShowConfirmDialog = useCallback(() => {
+    setConfirmedAmount(amount);
+    setShowConfirmDialog(true);
+  }, [amount]);
 
   useScrollRestoration('/send', !loadingTransfers);
 
@@ -220,8 +256,8 @@ export default function SendPage() {
   const handleConfirmTransfer = useCallback(async () => {
     triggerHaptic('heavy');
     const to = getToValue();
-    if (!amount || parseFloat(amount) <= 0 || !to) return;
-    clearError();
+    if (!confirmedAmount || parseFloat(confirmedAmount) <= 0 || !to) return;
+    setSubmitError("");
     setSending(true);
 
     const sessionOk = await ensureSession();
@@ -298,7 +334,7 @@ export default function SendPage() {
       );
 
       loadTransfers();
-      refetchBalance();
+      refreshBalance();
       setShowConfirmDialog(false);
       setShowSendDialog(false);
       setLastSentAmount(confirmedAmount);
@@ -318,7 +354,8 @@ export default function SendPage() {
       setApiError(e);
     } finally {
       setSending(false);
-    }  }, [
+    }
+  }, [
     amount,
     confirmedAmount,
     getToValue,
@@ -357,19 +394,17 @@ export default function SendPage() {
   }, []);
 
   const exceedsBalance =
-    balance !== null && debouncedAmount !== "" && parseFloat(debouncedAmount) > balance;
+    balance !== null && amount !== "" && parseFloat(amount) > balance;
 
   const isFormValid = useMemo(
     () =>
       Boolean(
         debouncedAmount &&
           parseFloat(debouncedAmount) > 0 &&
-          balance !== null &&
-          !balanceLoading &&
           !exceedsBalance &&
           ((useContact && selectedContact) || (!useContact && customRecipient.trim())),
       ),
-    [debouncedAmount, exceedsBalance, balance, balanceLoading, useContact, selectedContact, customRecipient],
+    [debouncedAmount, exceedsBalance, useContact, selectedContact, customRecipient],
   );
 
   const transfersList = useMemo(() => {
@@ -539,7 +574,7 @@ export default function SendPage() {
                     id="send-recipient-address"
                     placeholder={t("send.walletAddressOrEmail")}
                     value={customRecipient}
-                    onChange={handleCustomRecipientChange}
+                  onChange={handleCustomRecipientChange}
                     className="border-border"
                     autoComplete="off"
                   />
@@ -611,6 +646,7 @@ export default function SendPage() {
               </Button>
               <Button
                 onClick={handleContinue}
+                disabled={!isValid}
                 disabled={!isFormValid || isSubmitDisabled}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
@@ -621,7 +657,8 @@ export default function SendPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={showConfirmDialog} onOpenChange={handleConfirmDialogChange}>
+      {/* Confirm Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={handleConfirmDialogOpenChange}>
         <AlertDialogContent className="max-w-md border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>{t("send.confirmTransfer")}</AlertDialogTitle>
@@ -671,7 +708,7 @@ export default function SendPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={showSuccessDialog} onOpenChange={handleSuccessDialogChange}>
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <DialogContent className="max-w-md border-border">
           <div className="flex flex-col items-center text-center py-6">
             <div className="rounded-full bg-green-100 dark:bg-green-900 p-4 mb-4">

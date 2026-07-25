@@ -1,5 +1,12 @@
 "use client";
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Currency Management | ACBU',
+  description: 'Manage supported currencies, view exchange rates, and configure your preferred currency settings.',
+};
+
 import React, { useEffect, useMemo, useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
@@ -559,6 +566,7 @@ export default function CurrencyPage() {
               </Button>
             </div>
           </div>
+        </div>
 
           {/* Burn Tab */}
           <div className={activeTab === "burn" ? "block" : "hidden"} aria-hidden={activeTab !== "burn"}>
@@ -689,6 +697,7 @@ export default function CurrencyPage() {
               </Button>
             </div>
           </div>
+        </div>
 
           {/* International Tab */}
           <div className={activeTab === "international" ? "block" : "hidden"} aria-hidden={activeTab !== "international"}>
@@ -834,6 +843,7 @@ export default function CurrencyPage() {
             </div>
           </div>
         </div>
+      </div>
       </PageContainer>
 
       {/* Confirmation Dialog */}

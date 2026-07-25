@@ -234,36 +234,13 @@ export default function Home() {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
                   {t('acbu')}
                 </p>
-
-                <p className="text-[10px] text-muted-foreground mb-1">{t('wallet_balance')}</p>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
+                <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">{t('wallet_balance')}</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums md:text-4xl">
                   {acbuAmountText}
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
+                <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">
                   {acbuUsdText}
                 </p>
-               <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">{t('wallet_balance')}</p>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums md:text-4xl">
-                  {!showBalance
-                    ? '••••••'
-                    : balanceLoading
-                      ? '...'
-                      : `ACBU ${balance != null ? format.number(balance, { minimumFractionDigits: 0, maximumFractionDigits: 7 }) : '—'}`}
-                </div>
-                {!showBalance ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base">••••••</p>
-                ) : balanceLoading || ratesLoading ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base"><BalanceSkeleton variant="compact" /></p>
-                ) : balance == null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base">{t('approx_usd')} —</p>
-                ) : acbuUsd != null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">
-                    {t('approx_usd')} {format.number(acbuUsd, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base">{t('approx_usd')} —</p>
-                )}
-
               </div>
               <div className="flex-1 min-w-0 text-right">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">

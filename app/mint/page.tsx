@@ -369,7 +369,7 @@ export default function MintPage() {
       .then((res) => {
         setFiatAccounts(res.accounts || []);
         if (res.accounts?.length > 0) {
-          setSelectedFiatCurrency(res.accounts[0].currency);
+          setSelectedFiatCurrency(res.accounts[0]!.currency);
         }
       })
       .catch((e) => logger.error('Failed to get fiat accounts', e));
