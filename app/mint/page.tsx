@@ -29,6 +29,8 @@ import { useApiError } from '@/hooks/use-api-error';
 import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import { RetryErrorBlock } from '@/components/ui/retry-error-block';
 import { useBalance } from '@/hooks/use-balance';
+import { useFiatAccounts } from '@/hooks/use-fiat-accounts';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
@@ -332,7 +334,11 @@ export default function MintPage() {
     setHasUnsavedChanges(hasUnsavedChanges);
     return () => setHasUnsavedChanges(false);
   }, [hasUnsavedChanges, setHasUnsavedChanges]);
-  const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
+  const {
+    accounts: fiatAccounts,
+    error: fiatAccountsError,
+    refetch: refetchFiatAccounts,
+  } = useFiatAccounts();
   const [selectedFiatCurrency, setSelectedFiatCurrency] = useState('');
   const [fiatAmount, setFiatAmount] = useState('');
   const debouncedFiatAmount = useDebounce(fiatAmount, 300);
@@ -363,17 +369,22 @@ export default function MintPage() {
     };
   }, [opts.token]);
 
+  // Seed the selected currency once accounts arrive (and when the list reloads).
   useEffect(() => {
-    fiatApi
-      .getFiatAccounts(opts)
-      .then((res) => {
-        setFiatAccounts(res.accounts || []);
-        if (res.accounts?.length > 0) {
-          setSelectedFiatCurrency(res.accounts[0].currency);
-        }
-      })
-      .catch((e) => logger.error('Failed to get fiat accounts', e));
-  }, [opts.token]);
+    if (fiatAccounts.length > 0) {
+      setSelectedFiatCurrency((prev) =>
+        prev && fiatAccounts.some((a) => a.currency === prev)
+          ? prev
+          : fiatAccounts[0].currency,
+      );
+    }
+  }, [fiatAccounts]);
+
+  useEffect(() => {
+    if (fiatAccountsError) {
+      logger.error('Failed to get fiat accounts', fiatAccountsError);
+    }
+  }, [fiatAccountsError]);
 
     useEffect(() => {
         if (activeTab !== "rates") return;
@@ -504,6 +515,7 @@ export default function MintPage() {
                 typeof acbu === "number" && Number.isFinite(acbu) ? acbu : null,
             );
             refreshBalance();
+            refetchFiatAccounts();
             setStep("success");
         } catch (e) {
             setMintApiError(e);
