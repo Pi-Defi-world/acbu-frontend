@@ -58,7 +58,7 @@ async function deriveKey(passcode: string, salt: Uint8Array): Promise<CryptoKey>
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: salt as any,
+      salt: salt as BufferSource,
       iterations: PBKDF2_ITERATIONS,
       hash: 'SHA-256',
     },
@@ -105,9 +105,9 @@ async function decryptSecret(encrypted: string, passcode: string): Promise<strin
     const ciphertext = fromBase64(payload.ciphertext);
     const key = await deriveKey(passcode, salt);
     const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: iv as any },
+      { name: 'AES-GCM', iv: iv as BufferSource },
       key,
-      ciphertext as any,
+      ciphertext as BufferSource,
     );
     return textDecoder.decode(decrypted);
   } catch {
