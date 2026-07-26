@@ -309,7 +309,7 @@ export default function MintPage() {
   const opts = useApiOpts();
   const router = useRouter();
   const { userId, stellarAddress } = useAuth();
-  const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { balance, balanceSource, loading: balanceLoading, refetch: refetchBalance } = useBalance();
   const kit = useStellarWalletsKit();
   const { uiError: mintUiError, setApiError: setMintApiError, clearError: clearMintError, isSubmitDisabled: isMintDisabled } = useApiError();
   const { uiError: burnUiError, setApiError: setBurnApiError, clearError: clearBurnError, isSubmitDisabled: isBurnDisabled } = useApiError();
@@ -372,6 +372,18 @@ export default function MintPage() {
 
   // Seed the selected currency once accounts arrive (and when the list reloads).
   useEffect(() => {
+
+    fiatApi
+      .getFiatAccounts(opts)
+      .then((res) => {
+        setFiatAccounts(res.accounts || []);
+        if (res.accounts?.length > 0) {
+          setSelectedFiatCurrency(res.accounts[0]!.currency);
+        }
+      })
+      .catch((e) => logger.error('Failed to get fiat accounts', e));
+  }, [opts.token]);
+
     if (fiatAccounts.length > 0) {
       setSelectedFiatCurrency((prev) =>
         prev && fiatAccounts.some((a) => a.currency === prev)
@@ -386,6 +398,7 @@ export default function MintPage() {
       logger.error('Failed to get fiat accounts', fiatAccountsError);
     }
   }, [fiatAccountsError]);
+
 
     useEffect(() => {
         if (activeTab !== "rates") return;
@@ -515,7 +528,7 @@ export default function MintPage() {
             setMintAcbuReceived(
                 typeof acbu === "number" && Number.isFinite(acbu) ? acbu : null,
             );
-            refreshBalance();
+            refetchBalance();
             refetchFiatAccounts();
             setStep("success");
         } catch (e) {

@@ -234,4 +234,8 @@ export function put<T>(path: string, body?: unknown, opts?: RequestOptions): Pro
 
 export function del<T>(path: string, opts?: RequestOptions): Promise<T> {
   return request<T>('DELETE', path, undefined, opts);
+
 }
+
+}
+
