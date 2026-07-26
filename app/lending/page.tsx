@@ -94,10 +94,10 @@ export default function LendingPage() {
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [balanceError, setBalanceError] = useState<string | null>(null);
 
-  const [productId, setProductId] = useState<string>(LOAN_PRODUCTS[0].id);
-  const [amount, setAmount] = useState("");
-  const [term, setTerm] = useState("");
-  const [purpose, setPurpose] = useState("");
+  const [productId, setProductId] = useState<string>(LOAN_PRODUCTS[0]!.id);
+  const [amount, setAmount] = useState('');
+  const [term, setTerm] = useState('');
+  const [purpose, setPurpose] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
@@ -155,8 +155,8 @@ export default function LendingPage() {
   }, [apiUser, opts.token]);
 
   const selectedProduct = useMemo(
-    () => LOAN_PRODUCTS.find((p) => p.id === productId) ?? LOAN_PRODUCTS[0],
-    [productId],
+    () => LOAN_PRODUCTS.find((p) => p.id === productId) ?? LOAN_PRODUCTS[0]!,
+    [productId]
   );
 
   const parsedAmount = parseFloat(amount);

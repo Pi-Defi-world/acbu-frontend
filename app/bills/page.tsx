@@ -1,11 +1,11 @@
 "use client";
 
-import type { Metadata } from "next";
+import type { Metadata } from 'next';
+import { CURRENCY } from '@/lib/currency';
 
 export const metadata: Metadata = {
-  title: "Bills | ACBU",
-  description:
-    "Pay utility bills, mobile airtime, and subscriptions easily with ACBU tokens.",
+  title: `Bills | ${CURRENCY}`,
+  description: `Pay utility bills, mobile airtime, and subscriptions easily with ${CURRENCY} tokens.`,
 };
 
 // F-020: Bills payment is gated behind NEXT_PUBLIC_BILLS_ENABLED.
@@ -218,16 +218,18 @@ export default function BillsPage() {
     );
   }
 
-  return (
-    <>
-      <div className="pb-20">
-        {/* Header */}
-        <div className="border-border border-b px-4 pt-6 pb-6">
-          <h1 className="text-foreground mb-2 text-2xl font-bold">Bills</h1>
-          <p className="text-muted-foreground text-sm">
-            Pay bills and subscriptions easily
-          </p>
-        </div>
+                <PageContainer>
+                    {/* Balance Card */}
+                    <div className="mb-5">
+                        <Card className="border-border bg-gradient-to-br from-primary to-secondary p-6 text-primary-foreground">
+                            <p className="text-sm font-medium opacity-90">
+                                Available Balance
+                            </p>
+                            <p className="text-3xl font-bold">
+                                {CURRENCY} {formatAmount(mockBalance)}
+                            </p>
+                        </Card>
+                    </div>
 
         <PageContainer>
           {/* Balance Card */}
@@ -242,26 +244,47 @@ export default function BillsPage() {
             </Card>
           </div>
 
-          {/* Tabs */}
-          <Tabs
-            defaultValue="catalog"
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v as "catalog" | "history")}
-          >
-            <TabsList className="border-border grid w-full grid-cols-2 gap-2 rounded-none border-b bg-transparent px-4">
-              <TabsTrigger
-                value="catalog"
-                className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent"
-              >
-                Catalog
-              </TabsTrigger>
-              <TabsTrigger
-                value="history"
-                className="data-[state=active]:border-primary rounded-none border-b-2 border-transparent"
-              >
-                History
-              </TabsTrigger>
-            </TabsList>
+                        {/* Catalog Tab */}
+                        <TabsContent
+                            value="catalog"
+                            className="px-4 py-6 space-y-3"
+                        >
+                            {billProviders.map((provider) => (
+                                <Card
+                                    key={provider.id}
+                                    className="border-border p-4 cursor-pointer hover:bg-muted transition-colors"
+                                    onClick={() =>
+                                        handleSelectProvider(provider)
+                                    }
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <div className="text-primary flex-shrink-0 mt-1">
+                                            {provider.icon}
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-foreground mb-0.5">
+                                                {provider.name}
+                                            </h3>
+                                            <p className="text-xs text-muted-foreground mb-2">
+                                                {provider.description}
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-muted-foreground">
+                                                    {CURRENCY}{" "}
+                                                    {formatAmount(
+                                                        provider.minAmount,
+                                                    )}{" "}
+                                                    - ACBU{" "}
+                                                    {formatAmount(
+                                                        provider.maxAmount,
+                                                    )}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                        </TabsContent>
 
             {/* Catalog Tab */}
             <TabsContent value="catalog" className="space-y-3 px-4 py-6">
@@ -294,63 +317,62 @@ export default function BillsPage() {
               ))}
             </TabsContent>
 
-            {/* History Tab */}
-            <TabsContent value="history" className="space-y-3 px-4 py-6">
-              {mockHistory.length > 0 ? (
-                mockHistory.map((tx) => (
-                  <Card key={tx.id} className="border-border p-4">
-                    <div className="mb-2 flex items-start justify-between">
-                      <div>
-                        <h3 className="text-foreground font-semibold">
-                          {tx.provider}
-                        </h3>
-                        <p className="text-muted-foreground text-xs">
-                          {new Date(tx.date).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {tx.status === "completed" && (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        )}
-                        <p className="text-foreground font-semibold">
-                          -ACBU {formatAmount(tx.amount)}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-muted-foreground text-xs">
-                      Ref: {tx.reference}
-                    </p>
-                  </Card>
-                ))
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <AlertCircle className="text-muted-foreground mb-3 h-8 w-8" />
-                  <p className="text-muted-foreground text-sm">
-                    No bill payments yet
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </PageContainer>
+                {/* Payment Dialog */}
+                <AlertDialog open={showPayment} onOpenChange={setShowPayment}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>
+                                {paymentStep === "input" &&
+                                    `Pay ${selectedProvider?.name}`}
+                                {paymentStep === "confirm" && "Confirm Payment"}
+                                {paymentStep === "success" &&
+                                    "Payment Successful"}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {paymentStep === "input" &&
+                                    selectedProvider?.description}
+                                {paymentStep === "confirm" &&
+                                    `Pay ${CURRENCY} ${formatAmount(amount)} to ${selectedProvider?.name}`}
+                                {paymentStep === "success" &&
+                                    "Your bill payment has been processed."}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
 
-        {/* Payment Dialog */}
-        <AlertDialog open={showPayment} onOpenChange={setShowPayment}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {paymentStep === "input" && `Pay ${selectedProvider?.name}`}
-                {paymentStep === "confirm" && "Confirm Payment"}
-                {paymentStep === "success" && "Payment Successful"}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {paymentStep === "input" && selectedProvider?.description}
-                {paymentStep === "confirm" &&
-                  `Pay ACBU ${formatAmount(amount)} to ${selectedProvider?.name}`}
-                {paymentStep === "success" &&
-                  "Your bill payment has been processed."}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
+                        {paymentStep === "input" && (
+                            <div className="space-y-4 py-4">
+                                <div>
+                                    <label
+                                        htmlFor="payment-amount"
+                                        className="form-label"
+                                    >
+                                        Amount
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <span className="flex items-center text-muted-foreground">
+                                            {CURRENCY}
+                                        </span>
+                                        <Input
+                                            id="payment-amount"
+                                            type="number"
+                                            placeholder="0.00"
+                                            value={amount}
+                                            onChange={(e) =>
+                                                setAmount(e.target.value)
+                                            }
+                                            className="border-border"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Min: {CURRENCY}{" "}
+                                        {formatAmount(
+                                            selectedProvider?.minAmount,
+                                        )}{" "}
+                                        | Max: {CURRENCY}{" "}
+                                        {formatAmount(
+                                            selectedProvider?.maxAmount,
+                                        )}
+                                    </p>
+                                </div>
 
             {paymentStep === "input" && (
               <div className="space-y-4 py-4">
@@ -377,21 +399,34 @@ export default function BillsPage() {
                   </p>
                 </div>
 
-                <div>
-                  <label htmlFor="payment-reference" className="form-label">
-                    Reference (optional)
-                  </label>
-                  <Input
-                    id="payment-reference"
-                    type="text"
-                    placeholder="Meter number, account ID, etc."
-                    value={reference}
-                    onChange={(e) => setReference(e.target.value)}
-                    className="border-border text-sm"
-                  />
-                </div>
-              </div>
-            )}
+                        {paymentStep === "confirm" && (
+                            <div className="py-4 space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">
+                                        Provider:
+                                    </span>
+                                    <span className="font-medium text-foreground">
+                                        {selectedProvider?.name}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">
+                                        Amount:
+                                    </span>
+                                    <span className="font-medium text-foreground">
+                                        {CURRENCY} {formatAmount(amount)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between text-sm border-t border-border pt-2">
+                                    <span className="text-muted-foreground">
+                                        Fee:
+                                    </span>
+                                    <span className="font-medium text-foreground">
+                                        Free
+                                    </span>
+                                </div>
+                            </div>
+                        )}
 
             {paymentStep === "confirm" && (
               <div className="space-y-2 py-4">
