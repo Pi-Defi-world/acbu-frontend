@@ -1,11 +1,6 @@
 'use client';
 
-import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'My Activity | ACBU',
-  description: 'View your personal transaction history and account activity on ACBU.',
-};
 
 import React from 'react';
 import { useRouter } from 'next/navigation';

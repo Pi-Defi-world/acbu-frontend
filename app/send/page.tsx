@@ -341,21 +341,6 @@ export default function SendPage() {
     setShowConfirmDialog(true);
   }, [amount, triggerHaptic]);
 
-  const handleConfirmDialogOpenChange = useCallback((open: boolean) => {
-    if (!open && !sending) setConfirmedAmount("");
-    setShowConfirmDialog(open);
-  }, [sending]);
-
-  const handleSendDialogOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      setAmount("");
-      setNote("");
-      setCustomRecipient("");
-      setSelectedContact(null);
-    }
-    setShowSendDialog(open);
-  }, []);
-
   const exceedsBalance =
     balance !== null && debouncedAmount !== "" && parseFloat(debouncedAmount) > balance;
 

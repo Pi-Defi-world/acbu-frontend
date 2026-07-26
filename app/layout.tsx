@@ -1,6 +1,7 @@
 import React from 'react'
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
+import dynamic from 'next/dynamic'
 import { AuthProvider } from '@/contexts/auth-context'
 import { I18nProvider } from '@/contexts/i18n-context'
 import { ErrorBoundary } from '@/components/error-boundary'
@@ -8,6 +9,13 @@ import { GlobalErrorHandler } from '@/components/global-error-handler'
 import './globals.css'
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
+import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/components/theme-provider';
+
+const OfflineIndicator = dynamic(
+  () => import('@/components/offline-indicator').then((m) => ({ default: m.OfflineIndicator })),
+  { ssr: false },
+)
 
 const VercelAnalytics = dynamic(
   () => import('@vercel/analytics/next').then((m) => ({ default: m.Analytics })),
