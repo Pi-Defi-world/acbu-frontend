@@ -309,7 +309,7 @@ export default function MintPage() {
   const opts = useApiOpts();
   const router = useRouter();
   const { userId, stellarAddress } = useAuth();
-  const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  const { balance, balanceSource, loading: balanceLoading, refetch: refetchBalance } = useBalance();
   const kit = useStellarWalletsKit();
   const { uiError: mintUiError, setApiError: setMintApiError, clearError: clearMintError, isSubmitDisabled: isMintDisabled } = useApiError();
   const { uiError: burnUiError, setApiError: setBurnApiError, clearError: clearBurnError, isSubmitDisabled: isBurnDisabled } = useApiError();
@@ -528,7 +528,7 @@ export default function MintPage() {
             setMintAcbuReceived(
                 typeof acbu === "number" && Number.isFinite(acbu) ? acbu : null,
             );
-            refreshBalance();
+            refetchBalance();
             refetchFiatAccounts();
             setStep("success");
         } catch (e) {

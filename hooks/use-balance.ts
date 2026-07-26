@@ -10,13 +10,8 @@ interface UseBalanceReturn {
   balanceSource?: string;
   loading: boolean;
   error: string;
-  /**
-   * Triggers a re-fetch of the balance.
-   * `refetch` is preferred in UI; `refresh` kept for backwards-compat.
-   */
+  /** Triggers a re-fetch of the balance. */
   refetch: () => void;
-  /** @deprecated Prefer `refetch()` */
-  refresh: () => void;
 }
 
 /**
@@ -32,7 +27,6 @@ export function useBalance(): UseBalanceReturn {
   const [tick, setTick] = useState(0);
 
   const refetch = useCallback(() => setTick((t) => t + 1), []);
-  const refresh = refetch;
 
   // Auto-refresh balance every 30 seconds to catch external transactions.
   // No stale closure risk: `interval` is captured in the same effect scope, so
@@ -87,5 +81,5 @@ export function useBalance(): UseBalanceReturn {
     };
   }, [opts.token, tick]);
 
-  return { balance, balanceSource, loading, error, refetch, refresh };
+  return { balance, balanceSource, loading, error, refetch };
 }
