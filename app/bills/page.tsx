@@ -1,10 +1,11 @@
 "use client";
 
 import type { Metadata } from 'next';
+import { CURRENCY } from '@/lib/currency';
 
 export const metadata: Metadata = {
-  title: 'Bills | ACBU',
-  description: 'Pay utility bills, mobile airtime, and subscriptions easily with ACBU tokens.',
+  title: `Bills | ${CURRENCY}`,
+  description: `Pay utility bills, mobile airtime, and subscriptions easily with ${CURRENCY} tokens.`,
 };
 
 // F-020: Bills payment is gated behind NEXT_PUBLIC_BILLS_ENABLED.
@@ -215,7 +216,7 @@ export default function BillsPage() {
                                 Available Balance
                             </p>
                             <p className="text-3xl font-bold">
-                                ACBU {formatAmount(mockBalance)}
+                                {CURRENCY} {formatAmount(mockBalance)}
                             </p>
                         </Card>
                     </div>
@@ -269,7 +270,7 @@ export default function BillsPage() {
                                             </p>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-xs text-muted-foreground">
-                                                    ACBU{" "}
+                                                    {CURRENCY}{" "}
                                                     {formatAmount(
                                                         provider.minAmount,
                                                     )}{" "}
@@ -349,7 +350,7 @@ export default function BillsPage() {
                                 {paymentStep === "input" &&
                                     selectedProvider?.description}
                                 {paymentStep === "confirm" &&
-                                    `Pay ACBU ${formatAmount(amount)} to ${selectedProvider?.name}`}
+                                    `Pay ${CURRENCY} ${formatAmount(amount)} to ${selectedProvider?.name}`}
                                 {paymentStep === "success" &&
                                     "Your bill payment has been processed."}
                             </AlertDialogDescription>
@@ -366,7 +367,7 @@ export default function BillsPage() {
                                     </label>
                                     <div className="flex gap-2">
                                         <span className="flex items-center text-muted-foreground">
-                                            ACBU
+                                            {CURRENCY}
                                         </span>
                                         <Input
                                             id="payment-amount"
@@ -380,11 +381,11 @@ export default function BillsPage() {
                                         />
                                     </div>
                                     <p className="text-xs text-muted-foreground mt-1">
-                                        Min: ACBU{" "}
+                                        Min: {CURRENCY}{" "}
                                         {formatAmount(
                                             selectedProvider?.minAmount,
                                         )}{" "}
-                                        | Max: ACBU{" "}
+                                        | Max: {CURRENCY}{" "}
                                         {formatAmount(
                                             selectedProvider?.maxAmount,
                                         )}
@@ -427,7 +428,7 @@ export default function BillsPage() {
                                         Amount:
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        ACBU {formatAmount(amount)}
+                                        {CURRENCY} {formatAmount(amount)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-sm border-t border-border pt-2">
