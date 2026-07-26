@@ -372,6 +372,18 @@ export default function MintPage() {
 
   // Seed the selected currency once accounts arrive (and when the list reloads).
   useEffect(() => {
+
+    fiatApi
+      .getFiatAccounts(opts)
+      .then((res) => {
+        setFiatAccounts(res.accounts || []);
+        if (res.accounts?.length > 0) {
+          setSelectedFiatCurrency(res.accounts[0]!.currency);
+        }
+      })
+      .catch((e) => logger.error('Failed to get fiat accounts', e));
+  }, [opts.token]);
+
     if (fiatAccounts.length > 0) {
       setSelectedFiatCurrency((prev) =>
         prev && fiatAccounts.some((a) => a.currency === prev)
@@ -386,6 +398,7 @@ export default function MintPage() {
       logger.error('Failed to get fiat accounts', fiatAccountsError);
     }
   }, [fiatAccountsError]);
+
 
     useEffect(() => {
         if (activeTab !== "rates") return;
