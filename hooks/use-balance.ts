@@ -33,23 +33,38 @@ export function useBalance(): UseBalanceReturn {
   // the cleanup always clears the correct interval ID. `refresh` is stable
   // (useCallback with no deps) because setTick uses a functional updater.
   useEffect(() => {
-    const interval = setInterval(() => {
-      refetch();
-    }, 30000);
+    let interval: ReturnType<typeof setInterval> | null = null;
 
-    return () => clearInterval(interval);
-  }, [refetch]);
+    const startInterval = () => {
+      if (interval !== null) return; // already running
+      interval = setInterval(() => refetch(), 30_000);
+    };
 
-  // Refresh balance when tab/window regains focus
-  useEffect(() => {
+    const stopInterval = () => {
+      if (interval === null) return;
+      clearInterval(interval);
+      interval = null;
+    };
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        refetch();
+        refetch();      // immediate refresh on tab focus
+        startInterval();
+      } else {
+        stopInterval(); // pause while hidden
       }
     };
 
+    // Only start the interval if the tab is already visible on mount.
+    if (document.visibilityState === 'visible') {
+      startInterval();
+    }
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      stopInterval();
+    };
   }, [refetch]);
 
   useEffect(() => {
