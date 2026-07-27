@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/contexts/i18n-context';
 import type { SessionStatus } from '@/hooks/use-session-guard';
 
 interface SessionExpiryWarningProps {
@@ -31,6 +32,7 @@ export function SessionExpiryWarning({
   dismissed,
 }: SessionExpiryWarningProps) {
   const router = useRouter();
+  const { t } = useI18n();
 
   if (status === 'expired') {
     return (
@@ -39,12 +41,10 @@ export function SessionExpiryWarning({
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-destructive" />
-              Session Expired
+              {t('session.expired')}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Your session has expired. Please sign in again to continue.
-              Any unsaved changes on this page will be preserved until you
-              navigate away.
+              {t('session.expiredDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogAction
@@ -52,7 +52,7 @@ export function SessionExpiryWarning({
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <LogIn className="mr-2 h-4 w-4" />
-            Sign in again
+            {t('session.signInAgain')}
           </AlertDialogAction>
         </AlertDialogContent>
       </AlertDialog>
@@ -67,8 +67,7 @@ export function SessionExpiryWarning({
       >
         <AlertCircle className="h-5 w-5 shrink-0" />
         <p className="flex-1 font-medium">
-          Your session may be expiring soon. Save your work or sign in again to
-          avoid losing progress.
+          {t('session.expiringSoon')}
         </p>
         <Button
           variant="outline"
@@ -77,12 +76,12 @@ export function SessionExpiryWarning({
           className="border-yellow-400 text-yellow-800 hover:bg-yellow-100 dark:border-yellow-600 dark:text-yellow-200 dark:hover:bg-yellow-900"
         >
           <LogIn className="mr-1 h-3 w-3" />
-          Sign in
+          {t('session.signIn')}
         </Button>
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Dismiss warning"
+          aria-label={t('session.dismissWarning')}
           className="shrink-0 rounded p-1 hover:bg-yellow-200 dark:hover:bg-yellow-800"
         >
           ✕

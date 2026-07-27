@@ -19,6 +19,17 @@ import {
  */
 const STALE_TIME = 5 * 60 * 1000; // 5 minutes
 
+/**
+ * Default fee values used as fallback when the config API is unavailable
+ * or does not return fee information.
+ */
+export const DEFAULT_FEES = {
+  /** Network fee shown on the mint form (displayed to user). */
+  networkFee: 'Estimated at confirmation',
+  /** Processing fee shown on the burn/redeem form (displayed to user). */
+  processingFee: '0.3% mint fee',
+} as const;
+
 let cachedAt = 0;
 
 function isFresh(): boolean {
@@ -30,6 +41,10 @@ interface UseConfigReturn {
   loading: boolean;
   error: string;
   refresh: () => void;
+  /** Network fee label shown on the mint form. Falls back to DEFAULT_FEES.networkFee. */
+  networkFee: string;
+  /** Processing fee label shown on the burn/redeem form. Falls back to DEFAULT_FEES.processingFee. */
+  processingFee: string;
 }
 
 /**
@@ -96,5 +111,14 @@ export function useConfig(): UseConfigReturn {
     };
   }, [tick]);
 
-  return { config, loading, error, refresh };
+  // Fee values: read from config if the API exposes them, otherwise use defaults.
+  // The PublicAssetsConfig type doesn't currently include fee fields, so we
+  // defensively cast to access any future fee fields from the backend.
+  const configAny = config as Record<string, unknown> | null;
+  const networkFee =
+    (configAny?.['network_fee'] as string | undefined) ?? DEFAULT_FEES.networkFee;
+  const processingFee =
+    (configAny?.['processing_fee'] as string | undefined) ?? DEFAULT_FEES.processingFee;
+
+  return { config, loading, error, refresh, networkFee, processingFee };
 }

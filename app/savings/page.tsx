@@ -26,6 +26,7 @@ import { ArrowLeft, PiggyBank, TrendingUp, Plus, AlertCircle } from "lucide-reac
 import type { LucideIcon } from 'lucide-react';
 import { PageContainer } from "@/components/layout/page-container";
 import { useApiOpts } from "@/hooks/use-api";
+import { useI18n } from "@/contexts/i18n-context";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
 import { resolveRecipient } from "@/lib/api/recipient";
@@ -97,6 +98,7 @@ const initialGoals: SavingsGoal[] = [
  */
 export default function SavingsPage() {
   const opts = useApiOpts();
+  const { t } = useI18n();
   const [apiUser, setApiUser] = useState("");
   const [positionsBalance, setPositionsBalance] = useState<string | number | null>(null);
   const [positionsLoading, setPositionsLoading] = useState(false);
@@ -205,8 +207,8 @@ export default function SavingsPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
-            <h1 className="page-title">Savings</h1>
-            <p className="text-xs text-muted-foreground">Grow your wealth</p>
+            <h1 className="page-title">{t('savings.title')}</h1>
+            <p className="text-xs text-muted-foreground">{t('savings.subtitle')}</p>
           </div>
         </div>
       </header>
@@ -222,7 +224,7 @@ export default function SavingsPage() {
 
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="page-title">Savings balance (API)</h2>
+              <h2 className="page-title">{t('savings.balance')}</h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-3xl font-bold text-foreground mb-1">
@@ -230,10 +232,10 @@ export default function SavingsPage() {
             </p>
             <div className="flex gap-2 mt-3">
               <Link href="/savings/deposit">
-                <Button size="sm" variant="outline" className="border-border bg-transparent">Deposit</Button>
+                <Button size="sm" variant="outline" className="border-border bg-transparent">{t('savings.deposit')}</Button>
               </Link>
               <Link href="/savings/withdraw">
-                <Button size="sm" variant="outline" className="border-border bg-transparent">Withdraw</Button>
+                <Button size="sm" variant="outline" className="border-border bg-transparent">{t('savings.withdraw')}</Button>
               </Link>
             </div>
           </Card>
@@ -242,7 +244,7 @@ export default function SavingsPage() {
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
               <h2 className="page-title">
-                Total Savings
+                {t('savings.total')}
               </h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
@@ -250,19 +252,19 @@ export default function SavingsPage() {
               {positionsLoading ? "—" : `ACBU ${formatAmount(totalSavings)}`}
             </p>
             <p className="text-xs text-muted-foreground mb-3">
-              Earning 8% APY interest
+              {t('savings.earningApy', { apy: '8' })}
             </p>
             <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
               <TrendingUp className="w-3 h-3" />
-            <span>+ACBU {formatAmount((totalSavings * 0.08) / 12)} this month</span>
+            <span>{t('savings.monthlyEarnings', { amount: formatAmount((totalSavings * 0.08) / 12) })}</span>
             </div>
           </Card>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Savings Goals</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t('savings.goals')}</h3>
               <Button size="sm" variant="outline" className="h-7 border-border bg-transparent" onClick={() => setShowNewGoalDialog(true)}>
-                <Plus className="w-3 h-3 mr-1" /> New Goal
+                <Plus className="w-3 h-3 mr-1" /> {t('savings.newGoal')}
               </Button>
             </div>
             {goals.map((goal) => {
@@ -295,30 +297,30 @@ export default function SavingsPage() {
       <Dialog open={showNewGoalDialog} onOpenChange={setShowNewGoalDialog}>
         <DialogContent className="max-w-md border-border">
           <DialogHeader>
-            <DialogTitle>Create New Goal</DialogTitle>
-            <DialogDescription>Set a savings target to work towards</DialogDescription>
+            <DialogTitle>{t('savings.createGoal')}</DialogTitle>
+            <DialogDescription>{t('savings.createGoalDesc')}</DialogDescription>
           </DialogHeader>
           <form className="space-y-4" onSubmit={handleCreateGoal}>
             <div className="space-y-2">
-              <Label htmlFor="new-goal-name" className="text-foreground">Goal Name</Label>
-              <Input id="new-goal-name" placeholder="e.g. Emergency Fund" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className="border-border" />
+              <Label htmlFor="new-goal-name" className="text-foreground">{t('savings.goalName')}</Label>
+              <Input id="new-goal-name" placeholder={t('savings.goalNamePlaceholder')} value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className="border-border" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-goal-target" className="text-foreground">Target Amount (ACBU)</Label>
+              <Label htmlFor="new-goal-target" className="text-foreground">{t('savings.targetAmount')}</Label>
               <Input id="new-goal-target" type="number" placeholder="0.00" value={newGoalTarget} onChange={(e) => setNewGoalTarget(e.target.value)} className="border-border" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-goal-deadline" className="text-foreground">Deadline</Label>
+              <Label htmlFor="new-goal-deadline" className="text-foreground">{t('savings.deadline')}</Label>
               <Input id="new-goal-deadline" type="month" value={newGoalDeadline} onChange={(e) => setNewGoalDeadline(e.target.value)} className="border-border" />
             </div>
             <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={() => setShowNewGoalDialog(false)} className="flex-1 border-border">Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setShowNewGoalDialog(false)} className="flex-1 border-border">{t('common.cancel')}</Button>
               <Button
                 type="submit"
                 disabled={!isNewGoalFormValid}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                Create Goal
+                {t('savings.createGoalButton')}
               </Button>
             </div>
           </form>

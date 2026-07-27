@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { PageContainer } from '@/components/layout/page-container';
 import { useApiOpts } from '@/hooks/use-api';
+import { useI18n } from '@/contexts/i18n-context';
 import * as lendingApi from '@/lib/api/lending';
 import * as userApi from '@/lib/api/user';
 import { formatAmount } from '@/lib/utils';
@@ -85,6 +86,7 @@ function generateLocalId(): string {
 
 export default function LendingPage() {
   const opts = useApiOpts();
+  const { t } = useI18n();
 
   const [apiUser, setApiUser] = useState('');
   const [balance, setBalance] = useState<string | number | null>(null);
@@ -173,13 +175,13 @@ export default function LendingPage() {
 
     if (!amountValid) {
       setFormError(
-        `Amount must be between ACBU ${selectedProduct.minAmount} and ACBU ${selectedProduct.maxAmount}.`
+        t('lending.amountError', { min: String(selectedProduct.minAmount), max: String(selectedProduct.maxAmount) })
       );
       return;
     }
     if (!termValid) {
       setFormError(
-        `Term must be between ${selectedProduct.minTerm} and ${selectedProduct.maxTerm} months.`
+        t('lending.termError', { min: String(selectedProduct.minTerm), max: String(selectedProduct.maxTerm) })
       );
       return;
     }
@@ -225,13 +227,13 @@ export default function LendingPage() {
     setSubmitting(false);
 
     if (synced) {
-      setSuccessMessage(`Application submitted. Reference: ${loanId}`);
+      setSuccessMessage(t('lending.applicationSubmitted', { id: loanId }));
     } else {
-      setSuccessMessage(`Application saved (ref ${loanId}).`);
+      setSuccessMessage(t('lending.applicationSaved', { id: loanId }));
       setWarningMessage(
         errorMessage
-          ? `Pending backend sync — backoffice stub captured the submission. (${errorMessage})`
-          : 'Pending backend sync — backoffice stub captured the submission.'
+          ? t('lending.pendingSyncWithError', { error: errorMessage })
+          : t('lending.pendingSync')
       );
     }
   };
@@ -244,14 +246,14 @@ export default function LendingPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
-            <h1 className="page-title">Lending</h1>
-            <p className="text-xs text-muted-foreground">Apply for a loan</p>
+            <h1 className="page-title">{t('lending.title')}</h1>
+            <p className="text-xs text-muted-foreground">{t('lending.subtitle')}</p>
           </div>
           <Link
             href="/lending/admin"
             className="text-xs font-medium text-primary hover:underline"
           >
-            Backoffice
+            {t('lending.backoffice')}
           </Link>
         </div>
       </header>
@@ -260,7 +262,7 @@ export default function LendingPage() {
         <div className="space-y-6">
           <Card className="border-border bg-gradient-to-br from-amber-500/10 to-amber-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-semibold text-foreground">Lending position</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t('lending.lendingPosition')}</h2>
               <Wallet className="w-5 h-5 text-amber-600" />
             </div>
             <p className="text-2xl font-bold text-foreground">
@@ -268,15 +270,15 @@ export default function LendingPage() {
                 ? '—'
                 : apiUser
                   ? `ACBU ${formatAmount(balance ?? 0)}`
-                  : 'Sign in to view'}
+                  : t('lending.signInToView')}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {apiUser ? `Lender: ${apiUser}` : 'Lender identity unavailable'}
+              {apiUser ? t('lending.lenderLabel', { user: apiUser }) : t('lending.lenderUnavailable')}
             </p>
           </Card>
 
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground">Choose a product</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t('lending.chooseProduct')}</h3>
             <div className="grid grid-cols-1 gap-3">
               {LOAN_PRODUCTS.map((product) => {
                 const Icon = product.icon;
@@ -321,12 +323,12 @@ export default function LendingPage() {
 
           <Card className="border-border p-4">
             <h3 className="text-sm font-semibold text-foreground mb-4">
-              Application details
+              {t('lending.applicationDetails')}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div className="space-y-2">
                 <Label htmlFor="loan-amount" className="text-foreground">
-                  Amount (ACBU)
+                  {t('lending.amountLabel')}
                 </Label>
                 <Input
                   id="loan-amount"
@@ -344,7 +346,7 @@ export default function LendingPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="loan-term" className="text-foreground">
-                  Term (months)
+                  {t('lending.termLabel')}
                 </Label>
                 <Input
                   id="loan-term"
@@ -362,11 +364,11 @@ export default function LendingPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="loan-purpose" className="text-foreground">
-                  Purpose (optional)
+                  {t('lending.purposeLabel')}
                 </Label>
                 <Textarea
                   id="loan-purpose"
-                  placeholder="How will you use the funds?"
+                  placeholder={t('lending.purposePlaceholder')}
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
                   rows={3}
@@ -395,22 +397,22 @@ export default function LendingPage() {
               )}
 
               <Button type="submit" disabled={!canSubmit} className="w-full">
-                {submitting ? 'Submitting…' : 'Submit application'}
+                {submitting ? t('lending.submitting') : t('lending.submitApplication')}
               </Button>
             </form>
           </Card>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Your applications</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t('lending.yourApplications')}</h3>
               <Link href="/lending/admin" className="text-xs text-primary font-medium">
-                View all
+                {t('lending.viewAll')}
               </Link>
             </div>
             {applications.length === 0 ? (
               <Card className="border-border p-4">
                 <p className="text-sm text-muted-foreground">
-                  No applications yet. Submit one above to see it here.
+                  {t('lending.noApplications')}
                 </p>
               </Card>
             ) : (
@@ -425,8 +427,8 @@ export default function LendingPage() {
                         <p className="text-xs text-muted-foreground">
                           ACBU {formatAmount(app.amount)} · {app.term} months
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 truncate" title={`Ref: ${app.id}`}>
-                          Ref: {app.id}
+                        <p className="text-[10px] text-muted-foreground mt-1 truncate" title={t('lending.refLabel', { id: app.id })}>
+                          {t('lending.refLabel', { id: app.id })}
                         </p>
                       </div>
                       <Badge

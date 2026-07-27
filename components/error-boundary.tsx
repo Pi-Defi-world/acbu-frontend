@@ -4,6 +4,7 @@ import React, { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import { errorReporter } from '@/lib/error-reporting';
+import { t } from '@/lib/i18n';
 
 interface Props {
   children: ReactNode;
@@ -55,11 +56,11 @@ export class ErrorBoundary extends Component<Props, State> {
             <AlertTriangle className="h-6 w-6 text-red-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Something went wrong</h2>
-            <p className="text-sm text-muted-foreground mt-1">An unexpected error occurred</p>
+            <h2 className="text-lg font-semibold text-foreground">{t('errorBoundary.somethingWentWrong')}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{t('errorBoundary.unexpectedError')}</p>
           </div>
           <Button onClick={this.handleReset} variant="outline">
-            Try again
+            {t('errorBoundary.tryAgain')}
           </Button>
         </div>
       );

@@ -42,6 +42,7 @@ import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { useI18n } from '@/contexts/i18n-context';
+import { useConfig } from '@/hooks/use-config';
 import { useNavigationGuard } from '@/contexts/navigation-guard-context';
 
 function formatRate(rate: number | undefined): string {
@@ -85,6 +86,8 @@ interface MintFormProps {
   estimatedMintAcbu: number | null;
   mintError: string;
   onConfirm: () => void;
+  networkFeeLabel: string;
+  networkFeeValue: string;
 }
 
 function MintForm({
@@ -96,6 +99,8 @@ function MintForm({
   estimatedMintAcbu,
   mintError,
   onConfirm,
+  networkFeeLabel,
+  networkFeeValue,
 }: MintFormProps) {
   return (
     <div>
@@ -165,8 +170,8 @@ function MintForm({
       )}
       <Card className="border-border bg-muted p-3 mt-4">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Network Fee</span>
-          <span className="font-medium text-foreground">{MINT_NETWORK_FEE_TEXT}</span>
+          <span className="text-muted-foreground">{networkFeeLabel}</span>
+          <span className="font-medium text-foreground">{networkFeeValue}</span>
         </div>
       </Card>
       <Button
@@ -195,6 +200,8 @@ interface BurnFormProps {
   balance: number | null;
   balanceLoading: boolean;
   onConfirm: () => void;
+  processingFeeLabel: string;
+  processingFeeValue: string;
 }
 
 function BurnForm({
@@ -207,6 +214,8 @@ function BurnForm({
   balance,
   balanceLoading,
   onConfirm,
+  processingFeeLabel,
+  processingFeeValue,
 }: BurnFormProps) {
   return (
     <div>
@@ -275,8 +284,8 @@ function BurnForm({
           </span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Processing Fee</span>
-          <span className="font-medium text-foreground">{BURN_PROCESSING_FEE_TEXT}</span>
+          <span className="text-muted-foreground">{processingFeeLabel}</span>
+          <span className="font-medium text-foreground">{processingFeeValue}</span>
         </div>
       </Card>
       <Button
@@ -308,6 +317,8 @@ export default function MintPage() {
   const { userId, stellarAddress } = useAuth();
   const { balance, balanceSource, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   const kit = useStellarWalletsKit();
+  const { t } = useI18n();
+  const { networkFee: networkFeeText, processingFee: processingFeeText } = useConfig();
   const { uiError: mintUiError, setApiError: setMintApiError, clearError: clearMintError, isSubmitDisabled: isMintDisabled } = useApiError();
   const { uiError: burnUiError, setApiError: setBurnApiError, clearError: clearBurnError, isSubmitDisabled: isBurnDisabled } = useApiError();
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
@@ -890,10 +901,10 @@ export default function MintPage() {
                             <Card className="border-border bg-muted p-3 mt-4">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">
-                                        Network Fee
+                                        {t('mint.networkFeeLabel')}
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {MINT_NETWORK_FEE_TEXT}
+                                        {networkFeeText}
                                     </span>
                                 </div>
                             </Card>
@@ -987,10 +998,10 @@ export default function MintPage() {
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">
-                                        Processing Fee
+                                        {t('mint.processingFeeLabel')}
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {BURN_PROCESSING_FEE_TEXT}
+                                        {processingFeeText}
                                     </span>
                                 </div>
                             </Card>
