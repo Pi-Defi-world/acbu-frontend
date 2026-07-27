@@ -13,20 +13,18 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
-import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import { useRouter } from "next/navigation";
-import * as userApi from "@/lib/api/user";
-import { storeWalletSecret } from "@/lib/wallet-storage";
 import { getPasscode } from "@/lib/passcode-manager";
 import { AlertCircle, Wallet, Key, Link as LinkIcon, CheckCircle, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 import { useApiOpts, useApiError } from "@/hooks/use-api";
+import { useWalletSetup } from "@/hooks/use-wallet-setup";
 
 export default function WalletPage() {
   const { userId, stellarAddress, refreshStellarAddress, logout } = useAuth();
   const opts = useApiOpts();
   const router = useRouter();
-  const kit = useStellarWalletsKit();
+  const { generateWallet, importWallet, connectExternalWallet } = useWalletSetup();
   const [passphrase, setPassphrase] = useState("");
   const { uiError, setApiError: handleError, clearError } = useApiError();
   const error = uiError?.message ?? "";
@@ -69,31 +67,12 @@ export default function WalletPage() {
 
       const passcode = getPasscode();
       if (!passcode) {
-        // Passcode missing - redirect to signin for re-authentication
         await logout();
         router.push("/auth/signin");
         return;
       }
 
-      const kp = Keypair.fromSecret(passphrase);
-      const newAddress = kp.publicKey();
-
-      // Store encrypted with passcode (secure)
-      await storeWalletSecret(userId, passphrase, passcode);
-
-      // Sync public key to backend.
-      const result = await userApi.putWalletAddress(newAddress, opts);
-      if (!result?.ok) {
-        throw new Error("Backend did not accept the new wallet address. Please retry.");
-      }
-
-      // Confirm wallet activation on backend
-      try {
-        await userApi.postWalletConfirm({ wallet_address: newAddress }, opts);
-      } catch (err) {
-        console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
-      }
-
+      await generateWallet(passphrase, opts);
       handleFinish("New wallet created successfully!");
     } catch (err: unknown) {
       handleError(err);
@@ -117,32 +96,12 @@ export default function WalletPage() {
 
       const passcode = getPasscode();
       if (!passcode) {
-        // Passcode missing - redirect to signin for re-authentication
         await logout();
         router.push("/auth/signin");
         return;
       }
 
-      // Validate seed
-      const kp = Keypair.fromSecret(importSeed);
-      const newAddress = kp.publicKey();
-
-      // Store encrypted with passcode (secure)
-      await storeWalletSecret(userId, importSeed, passcode);
-
-      // Tell backend to update stellarAddress
-      const result = await userApi.putWalletAddress(newAddress, opts);
-      if (!result?.ok) {
-        throw new Error("Backend did not accept the new wallet address. Please retry.");
-      }
-
-      // Confirm wallet activation on backend
-      try {
-        await userApi.postWalletConfirm({ wallet_address: newAddress }, opts);
-      } catch (err) {
-        console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
-      }
-
+      await importWallet(importSeed, opts);
       handleFinish("Wallet imported successfully!");
     } catch (err: unknown) {
       handleError(err);
@@ -153,40 +112,12 @@ export default function WalletPage() {
 
   const handleConnectWallet = async () => {
     clearError();
-    if (!kit) {
-      setError("Wallet Kit is still initializing...");
-      return;
-    }
     setLoading(true);
     try {
       if (!userId) throw new Error("Not logged in");
 
-      // This will prompt the user to select and connect a wallet
-      await kit.openModal({
-        onWalletSelected: async (selectedOption: { id: string }) => {
-          try {
-            kit.setWallet(selectedOption.id);
-            const { address: pubKey } = await kit.getAddress();
-
-            // Update wallet address on backend
-            const result = await userApi.putWalletAddress(pubKey, opts);
-            if (!result?.ok) {
-              throw new Error("Backend did not accept the wallet address. Please retry.");
-            }
-
-            // Confirm wallet activation on backend
-            try {
-              await userApi.postWalletConfirm({ wallet_address: pubKey }, opts);
-            } catch (err) {
-              console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
-            }
-
-            handleFinish("External wallet connected successfully!");
-          } catch (e: unknown) {
-            handleError(e);
-          }
-        },
-      });
+      await connectExternalWallet(opts);
+      handleFinish("External wallet connected successfully!");
     } catch (err: unknown) {
       handleError(err);
     } finally {

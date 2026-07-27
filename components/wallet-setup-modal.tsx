@@ -1,20 +1,16 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
-import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
-import * as userApi from "@/lib/api/user";
-import { storeWalletSecret } from "@/lib/wallet-storage";
-import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
+import { getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
+import { useWalletSetup } from "@/hooks/use-wallet-setup";
 
 export function WalletSetupModal() {
   const { userId, stellarAddress, refreshStellarAddress, isAuthenticated } = useAuth();
-  const kit = useStellarWalletsKit();
+  const { generateWallet, importWallet, connectExternalWallet } = useWalletSetup();
   const [open, setOpen] = useState(false);
   const [passphrase, setPassphrase] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +21,6 @@ export function WalletSetupModal() {
 
   // For importing seed
   const [importSeed, setImportSeed] = useState("");
-  // Wallet secret is encrypted with the account passcode via storeWalletSecret
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -33,20 +28,7 @@ export function WalletSetupModal() {
       return;
     }
     
-    // Check if we have an auto-generated passphrase from signin
     const autoGenPassphrase = getTempPassphrase();
-    
-    // Check if user has removed their local wallet from settings
-    // If they have no stellarAddress, we definitely show it.
-    // If they have a stellarAddress, but want to re-import, we need a way to trigger it.
-    // Let's check `hasStoredWallet` if they have a stellarAddress.
-    // But since WalletKit might be used without local storage, we shouldn't force the modal
-    // just because they lack local storage. 
-    // However, if the user specifically clears the wallet (which reloads the page) 
-    // AND they have no `stellarAddress` OR we want them to re-setup, we should show it.
-    // For now, if `!stellarAddress || autoGenPassphrase` it shows up.
-    // If they clicked "Remove Local Wallet", they probably want to re-import, but if stellarAddress is still there,
-    // they can't. Let's add a flag in localStorage "force_wallet_setup".
     const forceSetup = localStorage.getItem("force_wallet_setup");
 
     if (!stellarAddress || autoGenPassphrase || forceSetup) {
@@ -54,7 +36,7 @@ export function WalletSetupModal() {
       
       if (autoGenPassphrase) {
         setPassphrase(autoGenPassphrase);
-        setOption(1); // Default to showing the generated passphrase if it exists
+        setOption(1);
       }
     } else {
       setOpen(false);
@@ -68,56 +50,14 @@ export function WalletSetupModal() {
     setOpen(false);
   };
 
-  /**
-   * Sync a newly-generated or imported wallet to the backend.
-   *
-   * Order matters here: we push the new address to the backend FIRST, and only
-   * write the local seed after the PUT succeeds. That way, if the backend call
-   * fails, we don't end up with a local seed whose public key doesn't match
-   * the server's record (which is what caused the mint to keep targeting the
-   * wrong recipient and erroring with "trustline entry is missing").
-   * 
-   * After syncing, we call postWalletConfirm to complete the activation flow.
-   */
-  const syncWalletToBackend = async (secret: string): Promise<void> => {
-    if (!userId) throw new Error("Not logged in");
-    
-    const passcode = getPasscode();
-    if (!passcode) {
-      throw new Error("Passcode not available. Please log in again to set up your wallet.");
-    }
-
-    const kp = Keypair.fromSecret(secret);
-    const publicKey = kp.publicKey();
-
-    // Step 1: Update wallet address on backend
-    const result = await userApi.putWalletAddress(publicKey);
-    if (!result?.ok || (result.stellar_address && result.stellar_address !== publicKey)) {
-      throw new Error(
-        "Backend did not accept the new wallet address. Please retry.",
-      );
-    }
-
-    // Step 2: Store secret encrypted with passcode
-    await storeWalletSecret(userId, secret, passcode);
-
-    // Step 3: Confirm wallet activation on backend
-    try {
-      await userApi.postWalletConfirm({ wallet_address: publicKey });
-    } catch (err) {
-      console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
-      // Don't throw - the address is set, confirmation can retry later if needed
-    }
-  };
-
   const handleGenerateConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     setLoading(true);
     try {
-      await syncWalletToBackend(passphrase);
-      handleFinish();
+      await generateWallet(passphrase);
+      await handleFinish();
     } catch (err: unknown) {
       setError((err as Error).message || "Failed to save wallet");
     } finally {
@@ -136,9 +76,8 @@ export function WalletSetupModal() {
 
     setLoading(true);
     try {
-      Keypair.fromSecret(importSeed);
-      await syncWalletToBackend(importSeed);
-      handleFinish();
+      await importWallet(importSeed);
+      await handleFinish();
     } catch (err: unknown) {
       setError("Invalid seed or failed to import. " + ((err as Error).message || ""));
     } finally {
@@ -148,43 +87,13 @@ export function WalletSetupModal() {
 
   const handleConnectWallet = async () => {
     setError("");
-    if (!kit) {
-      setError("Wallet Kit is still initializing...");
-      return;
-    }
 
     setLoading(true);
     try {
-      if (!userId) throw new Error("Not logged in");
-
-      // This will prompt the user to select and connect a wallet
-      await kit.openModal({
-        onWalletSelected: async (selectedOption: { id: string }) => {
-          try {
-            kit.setWallet(selectedOption.id);
-            const { address: pubKey } = await kit.getAddress();
-
-            // Update wallet address on backend
-            const result = await userApi.putWalletAddress(pubKey);
-            if (!result?.ok || (result.stellar_address && result.stellar_address !== pubKey)) {
-              throw new Error("Backend did not accept the wallet address. Please retry.");
-            }
-
-            // Confirm wallet activation on backend
-            try {
-              await userApi.postWalletConfirm({ wallet_address: pubKey });
-            } catch (err) {
-              console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
-            }
-
-            handleFinish();
-          } catch (e: unknown) {
-            setError((e as Error).message || "Failed to connect wallet");
-          }
-        },
-      });
+      await connectExternalWallet();
+      await handleFinish();
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to open wallet modal");
+      setError((err as Error).message || "Failed to connect wallet");
     } finally {
       setLoading(false);
     }
