@@ -17,7 +17,11 @@ import { useAuth } from "@/contexts/auth-context";
 import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, CheckCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
+<<<<<<< HEAD
 import { useWalletSetup } from "@/hooks/use-wallet-setup";
+=======
+import { logger } from "@/lib/logger";
+>>>>>>> upstream/dev
 
 /**
  * Wallet Setup Confirmation Page
@@ -68,7 +72,46 @@ export default function WalletSetupPage() {
     }
   }, [isAuthenticated, stellarAddress, router]);
 
+<<<<<<< HEAD
   const { generateWallet, importWallet, connectExternalWallet } = useWalletSetup();
+=======
+  /**
+   * Sync wallet to backend: 
+   * 1. Put wallet address to backend
+   * 2. Store secret encrypted with passcode
+   * 3. Call postWalletConfirm to complete activation
+   */
+  const syncWalletToBackend = async (secret: string): Promise<void> => {
+    if (!userId) throw new Error("Not logged in");
+    
+    const passcode = getPasscode();
+    if (!passcode) {
+      throw new Error("Passcode not available. Please log in again to set up your wallet.");
+    }
+    
+    const kp = Keypair.fromSecret(secret);
+    const publicKey = kp.publicKey();
+
+    // Step 1: Update wallet address on backend
+    const result = await userApi.putWalletAddress(publicKey);
+    if (!result?.ok || (result.stellar_address && result.stellar_address !== publicKey)) {
+      throw new Error(
+        "Backend did not accept the new wallet address. Please retry.",
+      );
+    }
+
+    // Step 2: Store secret encrypted with passcode
+    await storeWalletSecret(userId, secret, passcode);
+
+    // Step 3: Confirm wallet activation on backend
+    try {
+      await userApi.postWalletConfirm({ wallet_address: publicKey });
+    } catch (err) {
+      logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+      // Don't throw - the address is set, confirmation can retry later if needed
+    }
+  };
+>>>>>>> upstream/dev
 
   const handleGenerateConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,6 +170,7 @@ export default function WalletSetupPage() {
 
     setLoading(true);
     try {
+<<<<<<< HEAD
       await connectExternalWallet();
       setSuccess("Wallet connected successfully!");
       await refreshStellarAddress();
@@ -134,6 +178,42 @@ export default function WalletSetupPage() {
       setTimeout(() => {
         router.push("/");
       }, 1500);
+=======
+      if (!userId) throw new Error("Not logged in");
+
+      // Open wallet connector modal
+      await kit.openModal({
+        onWalletSelected: async (selectedOption: { id: string }) => {
+          try {
+            kit.setWallet(selectedOption.id);
+            const { address: pubKey } = await kit.getAddress();
+
+            // Update wallet address on backend
+            const result = await userApi.putWalletAddress(pubKey);
+            if (!result?.ok || (result.stellar_address && result.stellar_address !== pubKey)) {
+              throw new Error("Backend did not accept the wallet address. Please retry.");
+            }
+
+            // Confirm wallet activation on backend
+            try {
+              await userApi.postWalletConfirm({ wallet_address: pubKey });
+            } catch (err) {
+              logger.warn("Wallet confirm failed, but wallet address was set.", err);
+            }
+
+            setSuccess("Wallet connected successfully!");
+            await refreshStellarAddress();
+            
+            setTimeout(() => {
+              router.push("/");
+            }, 1500);
+          } catch (e: unknown) {
+            setError((e as Error).message || "Failed to connect wallet");
+            setLoading(false);
+          }
+        },
+      });
+>>>>>>> upstream/dev
     } catch (err: unknown) {
       setError((err as Error).message || "Failed to connect wallet");
       setLoading(false);
@@ -152,8 +232,12 @@ export default function WalletSetupPage() {
       <PageContainer>
         <Card className="border-border p-6 space-y-6">
           {error && (
-            <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+            <div
+              id="wallet-setup-error"
+              role="alert"
+              className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
+            >
+              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
@@ -271,11 +355,13 @@ export default function WalletSetupPage() {
                   </div>
 
                   <Input
+                    id="import-seed"
                     type="password"
                     placeholder="Starts with S..."
                     value={importSeed}
                     onChange={(e) => setImportSeed(e.target.value)}
                     disabled={loading}
+                    aria-describedby={error ? "wallet-setup-error" : undefined}
                   />
 
                   <Button type="submit" disabled={loading} className="w-full">

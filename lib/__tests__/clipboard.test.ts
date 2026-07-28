@@ -15,6 +15,8 @@ describe('copyToClipboard', () => {
       });
     }
 
+    vi.stubGlobal('window', { ...window, isSecureContext: true });
+
     // Mock document.execCommand
     if (typeof document !== 'undefined') {
       document.execCommand = vi.fn().mockReturnValue(true);
@@ -45,6 +47,14 @@ describe('copyToClipboard', () => {
     const text = 'test text';
     await copyToClipboard(text);
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(text);
+  });
+
+  it('should fallback to document.execCommand in insecure contexts', async () => {
+    vi.stubGlobal('window', { ...window, isSecureContext: false });
+    const text = 'insecure text';
+    await copyToClipboard(text);
+    expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+    expect(document.execCommand).toHaveBeenCalledWith('copy');
   });
 
   it('should fallback to document.execCommand when navigator.clipboard is missing', async () => {

@@ -1,11 +1,17 @@
 "use client";
 
+<<<<<<< HEAD
 import React, { useState } from "react";
+=======
+import React, { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+>>>>>>> upstream/dev
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SkeletonList } from "@/components/ui/skeleton-list";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
@@ -29,6 +35,7 @@ import {
 } from "@/components/ui/form";
 
 const burnSchema = z.object({
+<<<<<<< HEAD
   acbuAmount: z
     .string()
     .refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -46,6 +53,77 @@ const burnSchema = z.object({
     .max(10, "Bank code is too long")
     .regex(/^[A-Za-z0-9]+$/, "Bank code must be alphanumeric"),
   accountName: z.string().min(3, "Account name is too short").max(100, "Account name is too long"),
+=======
+  acbuAmount: z.string().refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
+    message: "Amount must be greater than 0",
+  }),
+  currency: z.string().length(3, "Currency must be exactly 3 uppercase letters"),
+  accountNumber: z.string(),
+  bankCode: z.string(),
+  accountName: z.string()
+    .min(3, "Account name is too short")
+    .max(100, "Account name is too long"),
+}).superRefine((data, ctx) => {
+  if (data.currency === "NGN") {
+    if (!/^\d{10}$/.test(data.accountNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Nigerian account numbers (NUBAN) must be exactly 10 digits",
+        path: ["accountNumber"],
+      });
+    }
+    if (!/^\d{3}$/.test(data.bankCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Nigerian bank codes must be 3 digits",
+        path: ["bankCode"],
+      });
+    }
+  } else if (data.currency === "KES") {
+    if (!/^\d{5,15}$/.test(data.accountNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Kenyan account numbers are typically 5 to 15 digits",
+        path: ["accountNumber"],
+      });
+    }
+    if (!/^[A-Za-z0-9]{3,10}$/.test(data.bankCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Kenyan bank codes must be 3-10 alphanumeric characters",
+        path: ["bankCode"],
+      });
+    }
+  } else {
+    if (!/^\d+$/.test(data.accountNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Account number must contain only digits",
+        path: ["accountNumber"],
+      });
+    } else if (data.accountNumber.length < 5 || data.accountNumber.length > 20) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Account number must be between 5 and 20 digits",
+        path: ["accountNumber"],
+      });
+    }
+
+    if (!/^[A-Za-z0-9]+$/.test(data.bankCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Bank code must be alphanumeric",
+        path: ["bankCode"],
+      });
+    } else if (data.bankCode.length < 3 || data.bankCode.length > 10) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Bank code must be between 3 and 10 characters",
+        path: ["bankCode"],
+      });
+    }
+  }
+>>>>>>> upstream/dev
 });
 
 type BurnFormValues = z.infer<typeof burnSchema>;
@@ -64,11 +142,17 @@ const formatCurrency = (amount: string, currency: string) => {
   }
 };
 
-export default function BurnPage() {
+export function BurnPageContent() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
+<<<<<<< HEAD
   const { getWalletSigner } = useWalletSetup();
   
+=======
+  const kit = useStellarWalletsKit();
+  const searchParams = useSearchParams();
+
+>>>>>>> upstream/dev
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
@@ -85,8 +169,11 @@ export default function BurnPage() {
     mode: "onChange",
   });
 
-  const { isValid } = form.formState;
+<<<<<<< HEAD
+=======
   const currency = form.watch("currency");
+>>>>>>> upstream/dev
+  const { isValid } = form.formState;
 
   const onSubmit = async (values: BurnFormValues) => {
     clearError();
@@ -113,7 +200,58 @@ export default function BurnPage() {
         external: signer.external,
       });
 
+<<<<<<< HEAD
       const burnTxHash = submit.transactionHash;
+=======
+      if (secret) {
+        const localPubKey = Keypair.fromSecret(secret).publicKey();
+        if (stellarAddress && localPubKey !== stellarAddress) {
+          throw new Error(
+            `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
+          );
+        }
+        const submit = await submitBurnRedeemSingleClient({
+          userAddress: stellarAddress,
+          amountAcbu: values.acbuAmount,
+          currency: values.currency,
+          userSecret: secret,
+        });
+        burnTxHash = submit.transactionHash;
+      } else {
+        if (!kit) {
+          throw new Error(
+            "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
+          );
+        }
+        const address = await new Promise<string>((resolve, reject) => {
+          kit
+            .openModal({
+              onWalletSelected: async (selectedOption: { id: string }) => {
+                try {
+                  kit.setWallet(selectedOption.id);
+                  const { address } = await kit.getAddress();
+                  resolve(address);
+                } catch (err) {
+                  reject(err);
+                }
+              },
+            })
+            .catch(reject);
+        });
+        if (stellarAddress && address !== stellarAddress) {
+          throw new Error(
+            `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
+          );
+        }
+        const submit = await submitBurnRedeemSingleClient({
+          userAddress: stellarAddress,
+          amountAcbu: values.acbuAmount,
+          currency: values.currency,
+          external: { kit, address },
+        });
+        burnTxHash = submit.transactionHash;
+      }
+>>>>>>> upstream/dev
 
       const res = await burnApi.burnAcbu(
         values.acbuAmount,
@@ -124,8 +262,35 @@ export default function BurnPage() {
       );
       setTxId(res.transaction_id);
       form.reset({ ...values, acbuAmount: "" });
+<<<<<<< HEAD
     } catch (e) {
       setApiError(e);
+=======
+    } catch (e: unknown) {
+      const err = e as Record<string, unknown>;
+      if (err.status === 400 && err.details) {
+        const details = err.details as Record<string, unknown>;
+        const errors: unknown = details.errors || (typeof details.error === 'object' && details.error ? details.error : null);
+
+        if (errors && typeof errors === 'object') {
+          Object.entries(errors).forEach(([key, msg]) => {
+            const formKey: string = key === 'account_number' ? 'accountNumber' :
+                            key === 'bank_code' ? 'bankCode' :
+                            key === 'account_name' ? 'accountName' :
+                            key === 'acbu_amount' ? 'acbuAmount' :
+                            key;
+
+            if (['accountNumber', 'bankCode', 'accountName', 'acbuAmount', 'currency'].includes(formKey)) {
+              form.setError(formKey as 'accountNumber' | 'bankCode' | 'accountName' | 'acbuAmount' | 'currency', { type: 'server', message: String(msg) });
+            }
+          });
+        } else {
+          setApiError(e);
+        }
+      } else {
+        setApiError(e);
+      }
+>>>>>>> upstream/dev
     } finally {
       setLoading(false);
     }
@@ -153,6 +318,10 @@ export default function BurnPage() {
           {uiError && (
             <ApiErrorDisplay error={uiError} onDismiss={clearError} />
           )}
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/dev
           {txId && (
             <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
               <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
@@ -161,13 +330,13 @@ export default function BurnPage() {
               </p>
             </div>
           )}
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="acbuAmount"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>ACBU amount</FormLabel>
                     <FormControl>
@@ -196,7 +365,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="currency"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Currency (3 letters)</FormLabel>
                     <FormControl>
@@ -222,7 +391,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="accountNumber"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Account number</FormLabel>
                     <FormControl>
@@ -240,8 +409,8 @@ export default function BurnPage() {
                       />
                     </FormControl>
                     <FormDescription>
-                      {currency === "NGN" 
-                        ? "Nigerian NUBAN accounts must be 10 digits." 
+                      {currency === "NGN"
+                        ? "Nigerian NUBAN accounts must be 10 digits."
                         : currency === "KES"
                         ? "Kenyan account numbers are typically 5-15 digits."
                         : "Standard bank account number (digits only)."}
@@ -254,7 +423,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="bankCode"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Bank code</FormLabel>
                     <FormControl>
@@ -285,7 +454,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="accountName"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Account name</FormLabel>
                     <FormControl>
@@ -319,3 +488,32 @@ export default function BurnPage() {
     </>
   );
 }
+<<<<<<< HEAD
+=======
+
+function BurnPageSkeleton() {
+  return (
+    <>
+      <div className="page-header">
+        <div className="page-header-row">
+          <div className="w-9 h-9" />
+          <div className="h-6 w-40 bg-accent animate-pulse rounded-md" />
+        </div>
+      </div>
+      <PageContainer>
+        <Card className="border-border p-4 space-y-4">
+          <SkeletonList count={5} itemHeight="h-14" />
+        </Card>
+      </PageContainer>
+    </>
+  );
+}
+
+export default function BurnPage() {
+  return (
+    <Suspense fallback={<BurnPageSkeleton />}>
+      <BurnPageContent />
+    </Suspense>
+  );
+}
+>>>>>>> upstream/dev

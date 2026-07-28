@@ -52,7 +52,7 @@ export class ErrorReporter {
         const errors = this.getStoredErrors();
         errors.push(report);
         const recentErrors = errors.slice(-50);
-        localStorage.setItem('app_errors', JSON.stringify(recentErrors));
+        sessionStorage.setItem('app_errors', JSON.stringify(recentErrors));
 
         fetch('/api/errors', {
           method: 'POST',
@@ -75,7 +75,7 @@ export class ErrorReporter {
     if (typeof window === 'undefined') return [];
     
     try {
-      const stored = localStorage.getItem('app_errors');
+      const stored = sessionStorage.getItem('app_errors');
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -87,7 +87,7 @@ export class ErrorReporter {
    */
   clearStoredErrors(): void {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('app_errors');
+      sessionStorage.removeItem('app_errors');
     }
   }
 

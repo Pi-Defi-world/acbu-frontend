@@ -1,12 +1,5 @@
 'use client';
 
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Simulated Bank | ACBU',
-  description: 'Manage your simulated fiat bank accounts for testing ACBU minting and burning operations.',
-};
-
 import React, { useState, useEffect } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
@@ -14,12 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApiOpts } from '@/hooks/use-api';
 import { useApiError } from '@/hooks/use-api-error';
+<<<<<<< HEAD
+=======
+import { useFiatAccounts } from '@/hooks/use-fiat-accounts';
+>>>>>>> upstream/dev
 import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import * as fiatApi from '@/lib/api/fiat';
 import { useAuth } from '@/contexts/auth-context';
 import { ensureDemoFiatTrustlineClient } from '@/lib/stellar/trustlines';
 import { useWalletSetup } from '@/hooks/use-wallet-setup';
 import { Building2, Plus } from 'lucide-react';
+<<<<<<< HEAD
 
 export default function FiatSimPage() {
   const opts = useApiOpts();
@@ -28,26 +26,28 @@ export default function FiatSimPage() {
   const { uiError, setApiError, clearError, isSubmitDisabled, handleError } = useApiError();
   const [accounts, setAccounts] = useState<fiatApi.FiatAccount[]>([]);
   const [loading, setLoading] = useState(true);
+=======
+import { Badge } from '@/components/ui/badge';
+import { Keypair } from '@stellar/stellar-sdk';
+export default function FiatSimPage() {
+  const opts = useApiOpts();
+  const { userId, stellarAddress } = useAuth();
+  const kit = useStellarWalletsKit();
+  const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
+  const { accounts, loading, error: accountsError, refetch: refetchAccounts } = useFiatAccounts();
+>>>>>>> upstream/dev
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [lastFaucetTx, setLastFaucetTx] = useState<string | null>(null);
 
   const [faucetAmount, setFaucetAmount] = useState('');
   const [faucetCurrency, setFaucetCurrency] = useState('NGN');
 
-  const fetchAccounts = async () => {
-    try {
-      const data = await fiatApi.getFiatAccounts(opts);
-      setAccounts(data.accounts || []);
-    } catch (e: unknown) {
-      setApiError(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Surface hook-level fetch errors through the shared API error UI.
   useEffect(() => {
-    fetchAccounts();
-  }, [opts.token]);
+    if (accountsError) {
+      setApiError(new Error(accountsError));
+    }
+  }, [accountsError, setApiError]);
 
   const handleFaucet = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +67,7 @@ export default function FiatSimPage() {
       const res = await fiatApi.postFaucet(faucetCurrency, faucetAmount, recipient, opts);
       setLastFaucetTx(res.transaction_hash);
       setFaucetAmount('');
+      refetchAccounts();
     } catch (e: unknown) {
       setApiError(e);
     } finally {
@@ -179,18 +180,3 @@ export default function FiatSimPage() {
   );
 }
 
-function Badge({
-  children,
-  variant = 'default',
-}: {
-  children: React.ReactNode;
-  variant?: string;
-}) {
-  const styles =
-    variant === 'secondary'
-      ? 'bg-secondary text-secondary-foreground'
-      : 'bg-primary text-primary-foreground';
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${styles}`}>{children}</span>
-  );
-}

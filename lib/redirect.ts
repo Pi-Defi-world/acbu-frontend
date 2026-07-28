@@ -12,4 +12,4 @@ export function isSafeRedirect(target: string | null, baseOrigin?: string): stri
     }
 }
 
-export default isSafeRedirect;
+

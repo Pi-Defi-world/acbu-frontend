@@ -17,14 +17,14 @@ let inMemoryTempPassphrase: string | null = null;
  * though active XSS can still access it while in memory.
  */
 export function setPasscode(passcode: string): void {
-  passcodeHolder.set(passcode);
+  inMemoryPasscode = passcode;
 }
 
 /**
  * Get the stored passcode from memory.
  */
 export function getPasscode(): string | null {
-  return passcodeHolder.get();
+  return inMemoryPasscode;
 }
 
 /**
@@ -32,14 +32,14 @@ export function getPasscode(): string | null {
  * Called on logout or when user explicitly clears it.
  */
 export function clearPasscode(): void {
-  passcodeHolder.clear();
+  inMemoryPasscode = null;
 }
 
 /**
  * Check if passcode is available in memory.
  */
 export function hasPasscode(): boolean {
-  return passcodeHolder.has();
+  return inMemoryPasscode !== null;
 }
 
 /**

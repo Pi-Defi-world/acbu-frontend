@@ -112,6 +112,38 @@ export default function SavingsPage() {
   const [newGoalTarget, setNewGoalTarget] = useState("");
   const [newGoalDeadline, setNewGoalDeadline] = useState("");
 
+  const isNewGoalFormValid =
+    newGoalName.trim().length > 0 &&
+    newGoalTarget.trim().length > 0 &&
+    !Number.isNaN(Number.parseFloat(newGoalTarget)) &&
+    Number.parseFloat(newGoalTarget) > 0 &&
+    newGoalDeadline.length > 0;
+
+  const resetNewGoalForm = () => {
+    setNewGoalName("");
+    setNewGoalTarget("");
+    setNewGoalDeadline("");
+  };
+
+  const handleCreateGoal = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!isNewGoalFormValid) return;
+
+    const parsedAmount = Number.parseFloat(newGoalTarget);
+    const newGoal: SavingsGoal = {
+      id: crypto.randomUUID(),
+      name: newGoalName.trim(),
+      targetAmount: parsedAmount,
+      currentAmount: 0,
+      deadline: newGoalDeadline,
+    };
+
+    setGoals((prev) => [...prev, newGoal]);
+    setShowNewGoalDialog(false);
+    resetNewGoalForm();
+  };
+
  useEffect(() => {
     setReceiveError("");
     userApi.getReceive(opts).then(async (data) => {
@@ -119,7 +151,7 @@ export default function SavingsPage() {
       if (uri && typeof uri === "string") setApiUser(uri);
       setReceiveError("");
     }).catch((e) => {
-      logger.error("Failed to load user info", e); // <-- ADD LOGGER
+      logger.error("Failed to load user info", e);
       setReceiveError(e instanceof Error ? e.message : "Failed to load user info");
     });
   }, [opts.token]);
@@ -132,14 +164,17 @@ export default function SavingsPage() {
       setPositionsBalance(res.balance);
       setReceiveError("");
     }).catch((e) => {
-      logger.error("Failed to load savings balance", e); // <-- ADD LOGGER
+      logger.error("Failed to load savings balance", e);
       setPositionsBalance(null);
       setReceiveError(e instanceof Error ? e.message : "Failed to load savings balance");
     }).finally(() => setPositionsLoading(false));
   }, [apiUser, opts.token]);
 
   const apiBalance = typeof positionsBalance === "number" ? positionsBalance : typeof positionsBalance === "string" ? parseFloat(positionsBalance) || 0 : 0;
-  const totalSavings = apiBalance;
+  // Total savings should reflect API positions plus any amounts already allocated
+  // to savings goals so the overview is not redundant with the raw API balance.
+  const goalsTotal = goals.reduce((sum, g) => sum + (typeof g.currentAmount === 'number' ? g.currentAmount : parseFloat(String(g.currentAmount) || '0')), 0);
+  const totalSavings = apiBalance + goalsTotal;
 
   const savingsAccounts: SavingsAccount[] = SAVINGS_ACCOUNT_TYPES.map((acct) => ({
     ...acct,
@@ -190,12 +225,13 @@ export default function SavingsPage() {
 
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="page-title">Savings balance (API)</h2>
+              <h2 className="page-title">On-chain Savings (API)</h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-3xl font-bold text-foreground mb-1">
               {positionsLoading ? "—" : `ACBU ${formatAmount(positionsBalance)}`}
             </p>
+            <p className="text-xs text-muted-foreground mb-3">This reflects balances reported by the backend API only.</p>
             <div className="flex gap-2 mt-3">
               <Link href="/savings/deposit">
                 <Button size="sm" variant="outline" className="border-border bg-transparent">Deposit</Button>
@@ -209,21 +245,17 @@ export default function SavingsPage() {
           {/* Overview Card */}
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="page-title">
-                Total Savings
-              </h2>
+              <h2 className="page-title">Total Savings (API + Goals)</h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
-            {/* AFTER */}
             <p className="text-3xl font-bold text-foreground mb-1">
               {positionsLoading ? "—" : `ACBU ${formatAmount(totalSavings)}`}
             </p>
-            <p className="text-xs text-muted-foreground mb-3">
-              Earning 8% APY interest
-            </p>
+            <p className="text-xs text-muted-foreground mb-2">Includes allocated amounts in savings goals: ACBU {formatAmount(goalsTotal)}</p>
+            <p className="text-xs text-muted-foreground mb-3">Earning 8% APY interest</p>
             <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
               <TrendingUp className="w-3 h-3" />
-            <span>+ACBU {formatAmount((totalSavings * 0.08) / 12)} this month</span>
+              <span>+ACBU {formatAmount((totalSavings * 0.08) / 12)} this month</span>
             </div>
           </Card>
 
@@ -267,43 +299,30 @@ export default function SavingsPage() {
             <DialogTitle>Create New Goal</DialogTitle>
             <DialogDescription>Set a savings target to work towards</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <form className="space-y-4" onSubmit={handleCreateGoal}>
             <div className="space-y-2">
-              <Label className="text-foreground">Goal Name</Label>
-              <Input placeholder="e.g. Emergency Fund" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className="border-border" />
+              <Label htmlFor="new-goal-name" className="text-foreground">Goal Name</Label>
+              <Input id="new-goal-name" placeholder="e.g. Emergency Fund" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className="border-border" />
             </div>
             <div className="space-y-2">
-              <Label className="text-foreground">Target Amount (ACBU)</Label>
-              <Input type="number" placeholder="0.00" value={newGoalTarget} onChange={(e) => setNewGoalTarget(e.target.value)} className="border-border" />
+              <Label htmlFor="new-goal-target" className="text-foreground">Target Amount (ACBU)</Label>
+              <Input id="new-goal-target" type="number" placeholder="0.00" value={newGoalTarget} onChange={(e) => setNewGoalTarget(e.target.value)} className="border-border" />
             </div>
             <div className="space-y-2">
-              <Label className="text-foreground">Deadline</Label>
-              <Input type="month" value={newGoalDeadline} onChange={(e) => setNewGoalDeadline(e.target.value)} className="border-border" />
+              <Label htmlFor="new-goal-deadline" className="text-foreground">Deadline</Label>
+              <Input id="new-goal-deadline" type="month" value={newGoalDeadline} onChange={(e) => setNewGoalDeadline(e.target.value)} className="border-border" />
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setShowNewGoalDialog(false)} className="flex-1 border-border">Cancel</Button>
-              <Button 
-                disabled={!newGoalName || !newGoalTarget || parseFloat(newGoalTarget) <= 0 || isNaN(parseFloat(newGoalTarget)) || !newGoalDeadline} 
-                onClick={() => {
-                  const parsedAmount = parseFloat(newGoalTarget);
-                  const newGoal: SavingsGoal = {
-                    id: crypto.randomUUID(),
-                    name: newGoalName,
-                    targetAmount: parsedAmount,
-                    currentAmount: 0,
-                    deadline: newGoalDeadline,
-                  };
-                  setGoals((prev) => [...prev, newGoal]);
-                  setShowNewGoalDialog(false);
-                  setNewGoalName("");
-                  setNewGoalTarget("");
-                  setNewGoalDeadline("");
-                }} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              <Button type="button" variant="outline" onClick={() => setShowNewGoalDialog(false)} className="flex-1 border-border">Cancel</Button>
+              <Button
+                type="submit"
+                disabled={!isNewGoalFormValid}
+                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 Create Goal
               </Button>
             </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
     </>

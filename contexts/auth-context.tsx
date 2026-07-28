@@ -1,28 +1,32 @@
-'use client';
+"use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
-import * as authApi from '@/lib/api/auth';
-import { onAuthError } from '@/lib/api/client';
-import { clearPasscode } from '@/lib/passcode-manager';
-import { logger } from '@/lib/logger';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+} from "react";
+import * as authApi from "@/lib/api/auth";
+import { onAuthError } from "@/lib/api/client";
+import { clearPasscode, clearTempPassphrase } from "@/lib/passcode-manager";
+import { logger } from "@/lib/logger";
 
-const USER_ID_KEY = 'acbu_user_id';
-const API_KEY_KEY = 'acbu_api_key';
-const STELLAR_ADDRESS_KEY = 'acbu_stellar_address';
-const PASSCODE_KEY = "acbu_passcode";
+const USER_ID_KEY = "acbu_user_id";
+const STELLAR_ADDRESS_KEY = "acbu_stellar_address";
 
 interface AuthState {
   userId: string | null;
-  apiKey: string | null;
   stellarAddress: string | null;
   isAuthenticated: boolean;
   isHydrated: boolean;
 }
 
 interface AuthContextValue extends AuthState {
-  login: (apiKey: string, userId: string, stellarAddress?: string | null) => void;
+  login: (userId: string, stellarAddress?: string | null) => void;
   logout: () => Promise<void>;
-  setAuth: (apiKey: string | null, userId: string | null, stellarAddress?: string | null) => void;
+  setAuth: (userId: string | null, stellarAddress?: string | null) => void;
   refreshStellarAddress: () => Promise<void>;
   /**
    * Most recent session validation error (e.g. transient network failure).
@@ -32,166 +36,150 @@ interface AuthContextValue extends AuthState {
   /** Re-run session validation. Useful for a Retry UI. */
   refetchSession: () => Promise<void>;
 }
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/dev
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getStoredAuth(): AuthState {
-  if (typeof window === 'undefined') {
-    return { userId: null, apiKey: null, stellarAddress: null, isAuthenticated: false, isHydrated: false };
+  if (typeof window === "undefined") {
+    return {
+      userId: null,
+      stellarAddress: null,
+      isAuthenticated: false,
+      isHydrated: false,
+    };
   }
   const userId = sessionStorage.getItem(USER_ID_KEY);
-  const apiKey = sessionStorage.getItem(API_KEY_KEY);
   const stellarAddress = sessionStorage.getItem(STELLAR_ADDRESS_KEY);
-  
-  if (apiKey) {
-    setToken(apiKey);
-  }
 
   return {
-    apiKey,
     userId,
     stellarAddress,
-    isAuthenticated: !!(userId && apiKey),
+    isAuthenticated: !!userId,
     isHydrated: true,
   };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({ 
-    userId: null, 
-    apiKey: null, 
-    stellarAddress: null, 
+  const [state, setState] = useState<AuthState>({
+    userId: null,
+    stellarAddress: null,
     isAuthenticated: false,
     isHydrated: false,
   });
-  const [sessionError, setSessionError] = useState('');
+  const [sessionError, setSessionError] = useState("");
 
-<<<<<<< HEAD
-  useEffect(() => {
-    const auth = getStoredAuth();
-    setState(auth);
-  }, []);
-=======
   // Validate session on mount by checking if the httpOnly cookie is still valid
   const validateSession = useCallback(async () => {
-      const storedAuth = getStoredAuth();
-      
-      // If no userId in storage, definitely not authenticated
-      if (!storedAuth.userId) {
-        setSessionError('');
-        setState({ 
+    const storedAuth = getStoredAuth();
+
+    // If no userId in storage, definitely not authenticated
+    if (!storedAuth.userId) {
+      setSessionError("");
+      setState({
+        userId: null,
+        stellarAddress: null,
+        isAuthenticated: false,
+        isHydrated: true,
+      });
+      return;
+    }
+
+    // Validate the httpOnly cookie by making an API call
+    try {
+      setSessionError("");
+      const { getMe } = await import("@/lib/api/user");
+      await getMe(); // If this succeeds, the cookie is valid
+
+      // Cookie is valid, mark as authenticated
+      setState({
+        userId: storedAuth.userId,
+        stellarAddress: storedAuth.stellarAddress,
+        isAuthenticated: true,
+        isHydrated: true,
+      });
+    } catch (error) {
+      const status = (error as { status?: number })?.status;
+
+      if (status === 401) {
+        // Cookie is invalid or expired - clear stored auth
+        // The onAuthError handler will also be triggered
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem(USER_ID_KEY);
+          sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+        }
+        clearPasscode();
+        setSessionError("");
+        setState({
           userId: null,
           stellarAddress: null,
           isAuthenticated: false,
-          isHydrated: true 
+          isHydrated: true,
         });
-        return;
-      }
-
-      // Validate the httpOnly cookie by making an API call
-      try {
-        setSessionError('');
-        const { getMe } = await import('@/lib/api/user');
-        await getMe(); // If this succeeds, the cookie is valid
-        
-        // Cookie is valid, mark as authenticated
+      } else {
+        // Network error or other transient failure
+        // Keep stored data but mark as not authenticated until retry succeeds
+        setSessionError(
+          error instanceof Error ? error.message : "Failed to validate session",
+        );
         setState({
           userId: storedAuth.userId,
           stellarAddress: storedAuth.stellarAddress,
-          isAuthenticated: true,
+          isAuthenticated: false,
           isHydrated: true,
         });
-      } catch (error) {
-        const status = (error as { status?: number })?.status;
-        
-        if (status === 401) {
-          // Cookie is invalid or expired - clear stored auth
-          // The onAuthError handler will also be triggered
-          if (typeof window !== 'undefined') {
-            sessionStorage.removeItem(USER_ID_KEY);
-            sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
-          }
-          clearPasscode();
-          setSessionError('');
-          setState({
-            userId: null,
-            stellarAddress: null,
-            isAuthenticated: false,
-            isHydrated: true,
-          });
-        } else {
-          // Network error or other transient failure
-          // Keep stored data but mark as not authenticated until retry succeeds
-          setSessionError(error instanceof Error ? error.message : 'Failed to validate session');
-          setState({
-            userId: storedAuth.userId,
-            stellarAddress: storedAuth.stellarAddress,
-            isAuthenticated: false,
-            isHydrated: true,
-          });
-        }
       }
-    }, []);
+    }
+  }, []);
 
   useEffect(() => {
     void validateSession();
   }, [validateSession]);
->>>>>>> upstream/dev
 
-  const setAuth = useCallback((apiKey: string | null, userId: string | null, stellarAddress: string | null = null) => {
-    if (typeof window !== 'undefined') {
-      if (userId && apiKey) {
-        sessionStorage.setItem(USER_ID_KEY, userId);
-        sessionStorage.setItem(API_KEY_KEY, apiKey);
-        if (stellarAddress) {
-          sessionStorage.setItem(STELLAR_ADDRESS_KEY, stellarAddress);
+  const setAuth = useCallback(
+    (userId: string | null, stellarAddress: string | null = null) => {
+      if (typeof window !== "undefined") {
+        if (userId) {
+          sessionStorage.setItem(USER_ID_KEY, userId);
+          if (stellarAddress) {
+            sessionStorage.setItem(STELLAR_ADDRESS_KEY, stellarAddress);
+          } else {
+            sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+          }
         } else {
+          sessionStorage.removeItem(USER_ID_KEY);
           sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
         }
-      } else {
-        sessionStorage.removeItem(USER_ID_KEY);
-        sessionStorage.removeItem(API_KEY_KEY);
-        sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
-        sessionStorage.removeItem(PASSCODE_KEY);
       }
-    }
-    
-    // Update API client token
-    setToken(apiKey);
 
-    setState({
-      userId,
-      apiKey,
-      stellarAddress,
-      isAuthenticated: !!(userId && apiKey),
-      isHydrated: true,
-    });
-  }, []);
+      setState({
+        userId,
+        stellarAddress,
+        isAuthenticated: !!userId,
+        isHydrated: true,
+      });
+    },
+    [],
+  );
 
   const refreshStellarAddress = useCallback(async () => {
     if (!state.isAuthenticated) return;
     try {
-      // We need to update stellarAddress in state. getMe currently doesn't return it based on controller logic, 
-      // but let's check if we can get it from balance endpoint or if we should update getMe.
-      const { getBalance } = await import('@/lib/api/user');
+      const { getBalance } = await import("@/lib/api/user");
       const balance = await getBalance();
-      
+
       if (balance.stellar_address) {
-        setAuth(state.apiKey, state.userId, balance.stellar_address);
+        setAuth(state.userId, balance.stellar_address);
       }
     } catch (e) {
-      logger.error('Failed to refresh stellar address', e);
+      logger.error("Failed to refresh stellar address", e);
     }
-  }, [state.isAuthenticated, state.apiKey, state.userId, setAuth]);
+  }, [state.isAuthenticated, state.userId, setAuth]);
 
   const login = useCallback(
-    (apiKey: string, userId: string, stellarAddress: string | null = null) => {
-      setAuth(apiKey, userId, stellarAddress);
+    (userId: string, stellarAddress: string | null = null) => {
+      setAuth(userId, stellarAddress);
     },
-    [setAuth]
+    [setAuth],
   );
 
   const logout = useCallback(async () => {
@@ -200,13 +188,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // ignore network errors; clear local state anyway
     }
-    setAuth(null, null, null);
+    clearPasscode();
+    clearTempPassphrase();
+    setAuth(null, null);
   }, [setAuth]);
 
   // Register 401 error handler: when API returns 401, clear stale auth state
   useEffect(() => {
     onAuthError(() => {
-      setAuth(null, null, null);
+      setAuth(null, null);
     });
   }, [setAuth]);
 
@@ -220,7 +210,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       sessionError,
       refetchSession: validateSession,
     }),
-    [state, login, logout, setAuth, refreshStellarAddress, sessionError, validateSession]
+    [
+      state,
+      login,
+      logout,
+      setAuth,
+      refreshStellarAddress,
+      sessionError,
+      validateSession,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -229,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error("useAuth must be used within AuthProvider");
   }
   return ctx;
 }

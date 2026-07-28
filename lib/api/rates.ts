@@ -6,17 +6,15 @@ import { useCallback, useEffect, useState } from 'react';
 const RATES_TTL_MS = 60_000; // 1 minute
 
 let cachedRates: RatesResponse | null = null;
-let cacheToken: string | undefined;
 let cacheExpiry = 0;
 
 export async function getRates(opts?: RequestOptions): Promise<RatesResponse> {
   const now = Date.now();
-  if (cachedRates && opts?.token === cacheToken && now < cacheExpiry) {
+  if (cachedRates && now < cacheExpiry) {
     return cachedRates;
   }
   const data = await get<RatesResponse>('/rates', opts);
   cachedRates = data;
-  cacheToken = opts?.token;
   cacheExpiry = now + RATES_TTL_MS;
   return data;
 }
@@ -60,7 +58,7 @@ export function useRates(opts?: RequestOptions): UseRatesResult {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tick, opts?.token]);
+  }, [tick]);
 
   return { data, loading, error, refetch };
 }
