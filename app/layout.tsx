@@ -114,22 +114,24 @@ export default async function RootLayout({
         <link rel="stylesheet" href="/print.css" media="print" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <script
-          nonce={nonce}
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const mql = window.matchMedia('(prefers-color-scheme: dark)');
-                  function updateTheme(e) {
-                    document.documentElement.classList.toggle('dark', e.matches);
-                  }
-                  mql.addEventListener('change', updateTheme);
-                } catch (err) {}
-              })();
-            `,
-          }}
-        />
+        {nonce && (
+          <script
+            nonce={nonce}
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function() {
+                  try {
+                    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+                    function updateTheme(e) {
+                      document.documentElement.classList.toggle('dark', e.matches);
+                    }
+                    mql.addEventListener('change', updateTheme);
+                  } catch (err) {}
+                })();
+              `,
+            }}
+          />
+        )}
       </head>
       <body className={`font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
