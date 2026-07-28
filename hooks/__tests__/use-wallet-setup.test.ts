@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useWalletSetup } from '../use-wallet-setup';
-import { Keypair } from '@stellar/stellar-sdk';
 
 // Mock dependencies
 const mockRefreshStellarAddress = vi.fn();
@@ -131,6 +130,20 @@ describe('useWalletSetup', () => {
     expect(userApi.putWalletAddress).toHaveBeenCalledWith(externalPubKey, undefined);
   });
 
+  it('connectExternalWallet rejects when modal is dismissed', async () => {
+    mockOpenModal.mockImplementationOnce(async ({ onClosed }: { onClosed?: (err?: Error) => void }) => {
+      if (onClosed) {
+        onClosed(new Error('User closed modal'));
+      }
+    });
+
+    const { result } = renderHook(() => useWalletSetup());
+
+    await act(async () => {
+      await expect(result.current.connectExternalWallet()).rejects.toThrow('User closed modal');
+    });
+  });
+
   it('getWalletSigner returns local secret when matching secret exists', async () => {
     const secret = 'S_MATCH_SECRET';
     vi.mocked(walletStorage.getWalletSecretAnyLocal).mockResolvedValueOnce(secret);
@@ -145,6 +158,21 @@ describe('useWalletSetup', () => {
     expect(signer).toEqual({
       userSecret: 'S_MATCH_SECRET',
       address: 'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7',
+    });
+  });
+
+  it('getWalletSigner rejects when modal is dismissed for external wallet', async () => {
+    vi.mocked(walletStorage.getWalletSecretAnyLocal).mockResolvedValueOnce(null);
+    mockOpenModal.mockImplementationOnce(async ({ onClosed }: { onClosed?: (err?: Error) => void }) => {
+      if (onClosed) {
+        onClosed(new Error('User closed modal'));
+      }
+    });
+
+    const { result } = renderHook(() => useWalletSetup());
+
+    await act(async () => {
+      await expect(result.current.getWalletSigner()).rejects.toThrow('User closed modal');
     });
   });
 

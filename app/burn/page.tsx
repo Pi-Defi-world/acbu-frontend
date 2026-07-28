@@ -1,11 +1,7 @@
 "use client";
 
-<<<<<<< HEAD
-import React, { useState } from "react";
-=======
 import React, { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
->>>>>>> upstream/dev
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
@@ -35,25 +31,6 @@ import {
 } from "@/components/ui/form";
 
 const burnSchema = z.object({
-<<<<<<< HEAD
-  acbuAmount: z
-    .string()
-    .refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-      message: "Amount must be greater than 0",
-    }),
-  currency: z.string().length(3, "Currency must be exactly 3 uppercase letters"),
-  accountNumber: z
-    .string()
-    .min(5, "Account number is too short")
-    .max(20, "Account number is too long")
-    .regex(/^\d+$/, "Account number must contain only digits"),
-  bankCode: z
-    .string()
-    .min(3, "Bank code is too short")
-    .max(10, "Bank code is too long")
-    .regex(/^[A-Za-z0-9]+$/, "Bank code must be alphanumeric"),
-  accountName: z.string().min(3, "Account name is too short").max(100, "Account name is too long"),
-=======
   acbuAmount: z.string().refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
     message: "Amount must be greater than 0",
   }),
@@ -123,7 +100,6 @@ const burnSchema = z.object({
       });
     }
   }
->>>>>>> upstream/dev
 });
 
 type BurnFormValues = z.infer<typeof burnSchema>;
@@ -145,23 +121,21 @@ const formatCurrency = (amount: string, currency: string) => {
 export function BurnPageContent() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
-<<<<<<< HEAD
   const { getWalletSigner } = useWalletSetup();
-  
-=======
-  const kit = useStellarWalletsKit();
   const searchParams = useSearchParams();
 
->>>>>>> upstream/dev
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
 
+  const initialAmount = searchParams.get('amount') || '';
+  const initialCurrency = searchParams.get('currency') || 'NGN';
+
   const form = useForm<BurnFormValues>({
     resolver: zodResolver(burnSchema),
     defaultValues: {
-      acbuAmount: "",
-      currency: "NGN",
+      acbuAmount: initialAmount,
+      currency: initialCurrency,
       accountNumber: "",
       bankCode: "",
       accountName: "",
@@ -169,10 +143,7 @@ export function BurnPageContent() {
     mode: "onChange",
   });
 
-<<<<<<< HEAD
-=======
   const currency = form.watch("currency");
->>>>>>> upstream/dev
   const { isValid } = form.formState;
 
   const onSubmit = async (values: BurnFormValues) => {
@@ -200,58 +171,7 @@ export function BurnPageContent() {
         external: signer.external,
       });
 
-<<<<<<< HEAD
       const burnTxHash = submit.transactionHash;
-=======
-      if (secret) {
-        const localPubKey = Keypair.fromSecret(secret).publicKey();
-        if (stellarAddress && localPubKey !== stellarAddress) {
-          throw new Error(
-            `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
-          );
-        }
-        const submit = await submitBurnRedeemSingleClient({
-          userAddress: stellarAddress,
-          amountAcbu: values.acbuAmount,
-          currency: values.currency,
-          userSecret: secret,
-        });
-        burnTxHash = submit.transactionHash;
-      } else {
-        if (!kit) {
-          throw new Error(
-            "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
-          );
-        }
-        const address = await new Promise<string>((resolve, reject) => {
-          kit
-            .openModal({
-              onWalletSelected: async (selectedOption: { id: string }) => {
-                try {
-                  kit.setWallet(selectedOption.id);
-                  const { address } = await kit.getAddress();
-                  resolve(address);
-                } catch (err) {
-                  reject(err);
-                }
-              },
-            })
-            .catch(reject);
-        });
-        if (stellarAddress && address !== stellarAddress) {
-          throw new Error(
-            `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
-          );
-        }
-        const submit = await submitBurnRedeemSingleClient({
-          userAddress: stellarAddress,
-          amountAcbu: values.acbuAmount,
-          currency: values.currency,
-          external: { kit, address },
-        });
-        burnTxHash = submit.transactionHash;
-      }
->>>>>>> upstream/dev
 
       const res = await burnApi.burnAcbu(
         values.acbuAmount,
@@ -262,10 +182,6 @@ export function BurnPageContent() {
       );
       setTxId(res.transaction_id);
       form.reset({ ...values, acbuAmount: "" });
-<<<<<<< HEAD
-    } catch (e) {
-      setApiError(e);
-=======
     } catch (e: unknown) {
       const err = e as Record<string, unknown>;
       if (err.status === 400 && err.details) {
@@ -290,7 +206,6 @@ export function BurnPageContent() {
       } else {
         setApiError(e);
       }
->>>>>>> upstream/dev
     } finally {
       setLoading(false);
     }
@@ -318,10 +233,7 @@ export function BurnPageContent() {
           {uiError && (
             <ApiErrorDisplay error={uiError} onDismiss={clearError} />
           )}
-<<<<<<< HEAD
-=======
 
->>>>>>> upstream/dev
           {txId && (
             <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
               <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
@@ -488,8 +400,6 @@ export function BurnPageContent() {
     </>
   );
 }
-<<<<<<< HEAD
-=======
 
 function BurnPageSkeleton() {
   return (
@@ -516,4 +426,3 @@ export default function BurnPage() {
     </Suspense>
   );
 }
->>>>>>> upstream/dev

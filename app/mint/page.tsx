@@ -1,14 +1,8 @@
 "use client";
 
-import type { Metadata } from 'next';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
-
-export const metadata: Metadata = {
-  title: 'Mint & Burn | ACBU',
-  description: 'Mint ACBU tokens by depositing fiat currency, or burn ACBU to withdraw to your bank account.',
-};
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -32,20 +26,11 @@ import { useBalance } from '@/hooks/use-balance';
 import { useFiatAccounts } from '@/hooks/use-fiat-accounts';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useAuth } from '@/contexts/auth-context';
-<<<<<<< HEAD
-=======
 import { useRouter } from 'next/navigation';
-import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
->>>>>>> upstream/dev
 import { ensureAcbuTrustlineClient } from '@/lib/stellar/trustlines';
 import { useWalletSetup } from '@/hooks/use-wallet-setup';
 import { submitBurnRedeemSingleClient } from '@/lib/stellar/burning';
-<<<<<<< HEAD
-import { useRates } from '@/lib/api/rates';
-=======
-import { Keypair } from '@stellar/stellar-sdk';
 import * as ratesApi from '@/lib/api/rates';
->>>>>>> upstream/dev
 import * as fiatApi from '@/lib/api/fiat';
 import type { RatesResponse } from '@/types/api';
 import { formatAmount } from '@/lib/utils';
@@ -313,36 +298,24 @@ function BurnForm({
  */
 export default function MintPage() {
   const { t } = useI18n();
-<<<<<<< HEAD
+  const opts = useApiOpts();
+  const router = useRouter();
+  const { userId, stellarAddress } = useAuth();
   const { getWalletSigner } = useWalletSetup();
   const {
     balance,
     balanceSource,
     loading: balanceLoading,
-    error: balanceError,
     refetch: refetchBalance,
   } = useBalance();
-=======
-  const opts = useApiOpts();
-  const router = useRouter();
-  const { userId, stellarAddress } = useAuth();
-  const { balance, balanceSource, loading: balanceLoading, refetch: refetchBalance } = useBalance();
-  const kit = useStellarWalletsKit();
-  const { uiError: mintUiError, setApiError: setMintApiError, clearError: clearMintError, isSubmitDisabled: isMintDisabled } = useApiError();
-  const { uiError: burnUiError, setApiError: setBurnApiError, clearError: clearBurnError, isSubmitDisabled: isBurnDisabled } = useApiError();
->>>>>>> upstream/dev
+  const { uiError: mintUiError, setApiError: setMintApiError, clearError: clearMintError } = useApiError();
+  const { uiError: burnUiError, setApiError: setBurnApiError, clearError: clearBurnError } = useApiError();
+
   const [activeTab, setActiveTab] = useState<'mint' | 'burn' | 'rates'>('mint');
   const [step, setStep] = useState<'input' | 'confirm' | 'success'>('input');
   const [burnAmount, setBurnAmount] = useState('');
-  const [burnError, setBurnError] = useState('');
-<<<<<<< HEAD
-=======
   const [rates, setRates] = useState<RatesResponse | null>(null);
-  const { error: mintError, clearError: clearMintError, handleError: handleMintError } = useApiError();
-  const { error: burnError, clearError: clearBurnError, handleError: handleBurnError } = useApiError();
   const [ratesLoading, setRatesLoading] = useState(false);
->>>>>>> upstream/dev
-  const [mintError, setMintError] = useState('');
   const [txId, setTxId] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
   const { setHasUnsavedChanges } = useNavigationGuard();
@@ -356,6 +329,7 @@ export default function MintPage() {
     setHasUnsavedChanges(hasUnsavedChanges);
     return () => setHasUnsavedChanges(false);
   }, [hasUnsavedChanges, setHasUnsavedChanges]);
+
   const {
     accounts: fiatAccounts,
     error: fiatAccountsError,
@@ -365,10 +339,7 @@ export default function MintPage() {
   const [fiatAmount, setFiatAmount] = useState('');
   const debouncedFiatAmount = useDebounce(fiatAmount, 300);
   const debouncedBurnAmount = useDebounce(burnAmount, 300);
-<<<<<<< HEAD
-=======
   const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
->>>>>>> upstream/dev
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
   const rateRows = Array.isArray((rates as { rates?: Array<{ currency?: string; rate?: number }> } | null)?.rates)
     ? ((rates as { rates?: Array<{ currency?: string; rate?: number }> }).rates ?? [])
@@ -396,18 +367,6 @@ export default function MintPage() {
 
   // Seed the selected currency once accounts arrive (and when the list reloads).
   useEffect(() => {
-
-    fiatApi
-      .getFiatAccounts(opts)
-      .then((res) => {
-        setFiatAccounts(res.accounts || []);
-        if (res.accounts?.length > 0) {
-          setSelectedFiatCurrency(res.accounts[0]!.currency);
-        }
-      })
-      .catch((e) => logger.error('Failed to get fiat accounts', e));
-  }, [opts.token]);
-
     if (fiatAccounts.length > 0) {
       setSelectedFiatCurrency((prev) =>
         prev && fiatAccounts.some((a) => a.currency === prev)
@@ -459,78 +418,12 @@ export default function MintPage() {
         clearMintError();
         setExecuting(true);
         try {
-<<<<<<< HEAD
             const signer = await getWalletSigner();
             const accountId = signer.address;
             const trust = await ensureAcbuTrustlineClient({
                 userSecret: signer.userSecret,
                 external: signer.external,
             });
-=======
-            // Default setup: make sure the recipient trusts the ACBU asset
-            // before the backend tries to mint. Without this the minting
-            // contract fails with "trustline entry is missing for account".
-            // We add it client-side using the local wallet seed and then
-            // wait for Horizon to confirm the trustline before calling the
-            // backend — Soroban simulation reads the ledger's current state,
-            // so an unconfirmed trustline would still fail the mint.
-            if (!userId) {
-                throw new Error(
-                    t("mint.errors.not_signed_in"),
-                );
-            }
-            const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
-
-            let accountId: string;
-            let trust:
-              | Awaited<ReturnType<typeof ensureAcbuTrustlineClient>>
-              | null = null;
-
-            if (secret) {
-              // Guard: the locally stored seed MUST derive to the public key the
-              // backend treats as this user's Stellar account, otherwise we'd
-              // keep adding trustlines to the wrong account forever while the
-              // mint contract tries to deposit into the real recipient.
-              accountId = Keypair.fromSecret(secret).publicKey();
-              if (stellarAddress && accountId !== stellarAddress) {
-                  throw new Error(
-                      `Local wallet (${accountId.slice(0, 6)}…${accountId.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
-                  );
-              }
-              trust = await ensureAcbuTrustlineClient({ userSecret: secret });
-            } else {
-              if (!kit) {
-                throw new Error(
-                  t("mint.errors.wallet_unavailable"),
-                );
-              }
-              accountId = await new Promise<string>((resolve, reject) => {
-                kit
-                  .openModal({
-                    onWalletSelected: async (selectedOption: { id: string }) => {
-                      try {
-                        kit.setWallet(selectedOption.id);
-                        const { address } = await kit.getAddress();
-                        resolve(address);
-                      } catch (err) {
-                        reject(err);
-                      }
-                    },
-                  })
-                  .catch(reject);
-              });
-
-              if (stellarAddress && accountId !== stellarAddress) {
-                throw new Error(
-                  `Connected wallet (${accountId.slice(0, 6)}…${accountId.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
-                );
-              }
-
-              trust = await ensureAcbuTrustlineClient({
-                external: { kit, address: accountId },
-              });
-            }
->>>>>>> upstream/dev
 
             logger.info("[mint] ACBU trustline ensured", {
                 account: accountId,
@@ -782,9 +675,6 @@ export default function MintPage() {
                             </div>
                             {estimatedMintAcbu != null && (
                                 <Card className="border-border bg-muted/80 p-3 mt-3">
-                                    <p className="text-xs text-muted-foreground mb-1 break-words">
-                                        {t("mint.mint.estimated")}
-                                    </p>
                                     <p className="text-xs text-muted-foreground mb-1">
                                         {t('mint.estimatedAcbu')}
                                     </p>
@@ -908,11 +798,7 @@ export default function MintPage() {
                                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-6"
                             >
                                 <ArrowUp className="w-4 h-4 mr-2" />
-<<<<<<< HEAD
                                 {t('mint.continueToBurn')}
-=======
-                                {t("mint.burn.submit")}
->>>>>>> upstream/dev
                             </Button>
                         </div>
                     </TabsContent>

@@ -1,12 +1,5 @@
 "use client";
 
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Wallet | ACBU',
-  description: 'Manage your ACBU wallet, view your Stellar address, and configure wallet connections.',
-};
-
 import React, { useEffect, useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
@@ -19,11 +12,8 @@ import { AlertCircle, Wallet, Key, Link as LinkIcon, CheckCircle, Lock } from "l
 import { Keypair } from "@stellar/stellar-sdk";
 import { logger } from "@/lib/logger";
 import { useApiOpts, useApiError } from "@/hooks/use-api";
-<<<<<<< HEAD
 import { useWalletSetup } from "@/hooks/use-wallet-setup";
-=======
 import { useI18n } from "@/contexts/i18n-context";
->>>>>>> upstream/dev
 
 export default function WalletPage() {
   const { t } = useI18n();
@@ -78,31 +68,8 @@ export default function WalletPage() {
         return;
       }
 
-<<<<<<< HEAD
       await generateWallet(passphrase, opts);
-      handleFinish("New wallet created successfully!");
-=======
-      const kp = Keypair.fromSecret(passphrase);
-      const newAddress = kp.publicKey();
-
-      // Store encrypted with passcode (secure)
-      await storeWalletSecret(userId, passphrase, passcode);
-
-      // Sync public key to backend.
-      const result = await userApi.putWalletAddress(newAddress, opts);
-      if (!result?.ok) {
-        throw new Error(t("wallet.errors.address_rejected"));
-      }
-
-      // Confirm wallet activation on backend
-      try {
-        await userApi.postWalletConfirm({ wallet_address: newAddress }, opts);
-      } catch (err) {
-        logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
-      }
-
-      handleFinish(t("wallet.success.created"));
->>>>>>> upstream/dev
+      await handleFinish("New wallet created successfully!");
     } catch (err: unknown) {
       handleError(err);
     } finally {
@@ -130,32 +97,8 @@ export default function WalletPage() {
         return;
       }
 
-<<<<<<< HEAD
       await importWallet(importSeed, opts);
-      handleFinish("Wallet imported successfully!");
-=======
-      // Validate seed
-      const kp = Keypair.fromSecret(importSeed);
-      const newAddress = kp.publicKey();
-
-      // Store encrypted with passcode (secure)
-      await storeWalletSecret(userId, importSeed, passcode);
-
-      // Tell backend to update stellarAddress
-      const result = await userApi.putWalletAddress(newAddress, opts);
-      if (!result?.ok) {
-        throw new Error(t("wallet.errors.address_rejected"));
-      }
-
-      // Confirm wallet activation on backend
-      try {
-        await userApi.postWalletConfirm({ wallet_address: newAddress }, opts);
-      } catch (err) {
-        logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
-      }
-
-      handleFinish(t("wallet.success.imported"));
->>>>>>> upstream/dev
+      await handleFinish("Wallet imported successfully!");
     } catch (err: unknown) {
       handleError(err);
     } finally {
@@ -165,48 +108,12 @@ export default function WalletPage() {
 
   const handleConnectWallet = async () => {
     clearError();
-<<<<<<< HEAD
-=======
-    if (!kit) {
-      setError(t("wallet.errors.kit_initializing"));
-      return;
-    }
->>>>>>> upstream/dev
     setLoading(true);
     try {
       if (!userId) throw new Error(t("wallet.errors.not_logged_in"));
 
-<<<<<<< HEAD
       await connectExternalWallet(opts);
-      handleFinish("External wallet connected successfully!");
-=======
-      // This will prompt the user to select and connect a wallet
-      await kit.openModal({
-        onWalletSelected: async (selectedOption: { id: string }) => {
-          try {
-            kit.setWallet(selectedOption.id);
-            const { address: pubKey } = await kit.getAddress();
-
-            // Update wallet address on backend
-            const result = await userApi.putWalletAddress(pubKey, opts);
-            if (!result?.ok) {
-              throw new Error(t("wallet.errors.address_rejected"));
-            }
-
-            // Confirm wallet activation on backend
-            try {
-              await userApi.postWalletConfirm({ wallet_address: pubKey }, opts);
-            } catch (err) {
-              logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
-            }
-
-            handleFinish(t("wallet.success.connected"));
-          } catch (e: unknown) {
-            handleError(e);
-          }
-        },
-      });
->>>>>>> upstream/dev
+      await handleFinish("External wallet connected successfully!");
     } catch (err: unknown) {
       handleError(err);
     } finally {

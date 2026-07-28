@@ -7,35 +7,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApiOpts } from '@/hooks/use-api';
 import { useApiError } from '@/hooks/use-api-error';
-<<<<<<< HEAD
-=======
 import { useFiatAccounts } from '@/hooks/use-fiat-accounts';
->>>>>>> upstream/dev
 import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import * as fiatApi from '@/lib/api/fiat';
-import { useAuth } from '@/contexts/auth-context';
 import { ensureDemoFiatTrustlineClient } from '@/lib/stellar/trustlines';
 import { useWalletSetup } from '@/hooks/use-wallet-setup';
 import { Building2, Plus } from 'lucide-react';
-<<<<<<< HEAD
+import { Badge } from '@/components/ui/badge';
 
 export default function FiatSimPage() {
   const opts = useApiOpts();
-  const { userId, stellarAddress } = useAuth();
   const { getWalletSigner } = useWalletSetup();
-  const { uiError, setApiError, clearError, isSubmitDisabled, handleError } = useApiError();
-  const [accounts, setAccounts] = useState<fiatApi.FiatAccount[]>([]);
-  const [loading, setLoading] = useState(true);
-=======
-import { Badge } from '@/components/ui/badge';
-import { Keypair } from '@stellar/stellar-sdk';
-export default function FiatSimPage() {
-  const opts = useApiOpts();
-  const { userId, stellarAddress } = useAuth();
-  const kit = useStellarWalletsKit();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const { accounts, loading, error: accountsError, refetch: refetchAccounts } = useFiatAccounts();
->>>>>>> upstream/dev
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [lastFaucetTx, setLastFaucetTx] = useState<string | null>(null);
 

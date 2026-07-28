@@ -2,17 +2,19 @@
 
 import { useCallback } from "react";
 import { Keypair } from "@stellar/stellar-sdk";
+import type { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit";
 import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
 import { storeWalletSecret, getWalletSecretAnyLocal } from "@/lib/wallet-storage";
 import { getPasscode } from "@/lib/passcode-manager";
+import { logger } from "@/lib/logger";
 import type { ApiOpts } from "@/hooks/use-api";
 
 export interface WalletSigner {
   userSecret?: string;
   external?: {
-    kit: any;
+    kit: StellarWalletsKit;
     address: string;
   };
   address: string;
@@ -37,20 +39,20 @@ export function useWalletSetup() {
       const kp = Keypair.fromSecret(secret);
       const publicKey = kp.publicKey();
 
-      // Step 1: Update wallet address on backend
+      // Step 1: Store secret encrypted with passcode locally
+      await storeWalletSecret(userId, secret, passcode);
+
+      // Step 2: Update wallet address on backend
       const result = await userApi.putWalletAddress(publicKey, opts);
       if (!result?.ok || (result.stellar_address && result.stellar_address !== publicKey)) {
         throw new Error("Backend did not accept the new wallet address. Please retry.");
       }
 
-      // Step 2: Store secret encrypted with passcode
-      await storeWalletSecret(userId, secret, passcode);
-
       // Step 3: Confirm wallet activation on backend
       try {
         await userApi.postWalletConfirm({ wallet_address: publicKey }, opts);
       } catch (err) {
-        console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+        logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
       }
 
       return publicKey;
@@ -108,13 +110,16 @@ export function useWalletSetup() {
                 try {
                   await userApi.postWalletConfirm({ wallet_address: pubKey }, opts);
                 } catch (err) {
-                  console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+                  logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
                 }
 
                 resolve({ publicKey: pubKey });
               } catch (e) {
                 reject(e);
               }
+            },
+            onClosed: (err?: unknown) => {
+              reject(err || new Error("Wallet modal closed"));
             },
           })
           .catch(reject);
@@ -163,6 +168,9 @@ export function useWalletSetup() {
               } catch (err) {
                 reject(err);
               }
+            },
+            onClosed: (err?: unknown) => {
+              reject(err || new Error("Wallet modal closed"));
             },
           })
           .catch(reject);

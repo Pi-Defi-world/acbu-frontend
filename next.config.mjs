@@ -27,6 +27,7 @@ if (
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {},
   typescript: {
     // F-001: TypeScript errors must fail the build to prevent shipping broken code
     ignoreBuildErrors: false,

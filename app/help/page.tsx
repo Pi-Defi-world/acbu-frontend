@@ -1,12 +1,5 @@
 "use client";
 
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Help & Support | ACBU',
-  description: 'Get help with ACBU. Browse FAQs, contact support, and find answers to common questions about using the platform.',
-};
-
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,14 +8,11 @@ import { useAuth } from "@/contexts/auth-context";
 import { getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
-<<<<<<< HEAD
 import { useWalletSetup } from "@/hooks/use-wallet-setup";
-=======
 import { logger } from "@/lib/logger";
->>>>>>> upstream/dev
 
 export function WalletSetupModal() {
-  const { userId, stellarAddress, refreshStellarAddress, isAuthenticated } = useAuth();
+  const { stellarAddress, refreshStellarAddress, isAuthenticated } = useAuth();
   const { generateWallet, importWallet, connectExternalWallet } = useWalletSetup();
   const [open, setOpen] = useState(false);
   const [passphrase, setPassphrase] = useState("");
@@ -33,7 +32,7 @@ export function WalletSetupModal() {
     }
     
     const autoGenPassphrase = getTempPassphrase();
-    const forceSetup = localStorage.getItem("force_wallet_setup");
+    const forceSetup = typeof window !== "undefined" ? localStorage.getItem("force_wallet_setup") : null;
 
     if (!stellarAddress || autoGenPassphrase || forceSetup) {
       setOpen(true);
@@ -49,56 +48,14 @@ export function WalletSetupModal() {
 
   const handleFinish = async () => {
     clearTempPassphrase();
-    localStorage.removeItem("force_wallet_setup");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("force_wallet_setup");
+    }
     await refreshStellarAddress();
     setOpen(false);
   };
 
-<<<<<<< HEAD
-=======
-  /**
-   * Sync a newly-generated or imported wallet to the backend.
-   *
-   * Order matters here: we push the new address to the backend FIRST, and only
-   * write the local seed after the PUT succeeds. That way, if the backend call
-   * fails, we don't end up with a local seed whose public key doesn't match
-   * the server's record (which is what caused the mint to keep targeting the
-   * wrong recipient and erroring with "trustline entry is missing").
-   * 
-   * After syncing, we call postWalletConfirm to complete the activation flow.
-   */
-  const syncWalletToBackend = async (secret: string): Promise<void> => {
-    if (!userId) throw new Error("Not logged in");
-    
-    const passcode = getPasscode();
-    if (!passcode) {
-      throw new Error("Passcode not available. Please log in again to set up your wallet.");
-    }
 
-    const kp = Keypair.fromSecret(secret);
-    const publicKey = kp.publicKey();
-
-    // Step 1: Update wallet address on backend
-    const result = await userApi.putWalletAddress(publicKey);
-    if (!result?.ok || (result.stellar_address && result.stellar_address !== publicKey)) {
-      throw new Error(
-        "Backend did not accept the new wallet address. Please retry.",
-      );
-    }
-
-    // Step 2: Store secret encrypted with passcode
-    await storeWalletSecret(userId, secret, passcode);
-
-    // Step 3: Confirm wallet activation on backend
-    try {
-      await userApi.postWalletConfirm({ wallet_address: publicKey });
-    } catch (err) {
-      logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
-      // Don't throw - the address is set, confirmation can retry later if needed
-    }
-  };
-
->>>>>>> upstream/dev
   const handleGenerateConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -139,39 +96,8 @@ export function WalletSetupModal() {
 
     setLoading(true);
     try {
-<<<<<<< HEAD
       await connectExternalWallet();
       await handleFinish();
-=======
-      if (!userId) throw new Error("Not logged in");
-
-      // This will prompt the user to select and connect a wallet
-      await kit.openModal({
-        onWalletSelected: async (selectedOption: { id: string }) => {
-          try {
-            kit.setWallet(selectedOption.id);
-            const { address: pubKey } = await kit.getAddress();
-
-            // Update wallet address on backend
-            const result = await userApi.putWalletAddress(pubKey);
-            if (!result?.ok || (result.stellar_address && result.stellar_address !== pubKey)) {
-              throw new Error("Backend did not accept the wallet address. Please retry.");
-            }
-
-            // Confirm wallet activation on backend
-            try {
-              await userApi.postWalletConfirm({ wallet_address: pubKey });
-            } catch (err) {
-              logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
-            }
-
-            handleFinish();
-          } catch (e: unknown) {
-            setError((e as Error).message || "Failed to connect wallet");
-          }
-        },
-      });
->>>>>>> upstream/dev
     } catch (err: unknown) {
       setError((err as Error).message || "Failed to connect wallet");
     } finally {
