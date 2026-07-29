@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useTransition } from "react";
+import React, { useRef, useState, useEffect, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, Send, Coins, Briefcase, User, Wallet } from "lucide-react";
 import { useNavigationGuard } from "@/contexts/navigation-guard-context";
