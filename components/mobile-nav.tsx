@@ -12,16 +12,16 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-  { name: "Send", href: "/send", icon: <Send className="w-5 h-5" /> },
-  { name: "Mint", href: "/mint", icon: <Coins className="w-5 h-5" /> },
+  { name: "Home", href: "/", icon: <Home className="h-5 w-5" /> },
+  { name: "Send", href: "/send", icon: <Send className="h-5 w-5" /> },
+  { name: "Mint", href: "/mint", icon: <Coins className="h-5 w-5" /> },
   {
     name: "Business",
     href: "/business",
-    icon: <Briefcase className="w-5 h-5" />,
+    icon: <Briefcase className="h-5 w-5" />,
   },
-  { name: "Wallet", href: "/wallet", icon: <Wallet className="w-5 h-5" /> },
-  { name: "Me", href: "/me", icon: <User className="w-5 h-5" /> },
+  { name: "Wallet", href: "/wallet", icon: <Wallet className="h-5 w-5" /> },
+  { name: "Me", href: "/me", icon: <User className="h-5 w-5" /> },
 ];
 
 export function MobileNav() {
@@ -71,13 +71,13 @@ export function MobileNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 border-t border-border bg-card z-40 transition-[bottom] duration-150 ease-out md:h-auto"
+      className="border-border bg-card fixed right-0 bottom-0 left-0 z-40 border-t transition-[bottom] duration-150 ease-out md:h-auto"
       role="navigation"
       aria-label="Mobile navigation"
       style={{ bottom: `${bottomOffset}px` }}
     >
-      <div className="flex justify-between items-center h-20 px-1">
-        {navItems.map((item, idx) => {
+      <div className="flex h-20 items-center justify-between px-1">
+        {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
             <button
@@ -87,14 +87,16 @@ export function MobileNav() {
               aria-label={item.name}
               aria-current={isActive ? "page" : undefined}
               disabled={isPending}
-              className={`flex flex-col items-center justify-center flex-1 h-20 gap-1 transition-colors ${
+              className={`flex h-20 flex-1 flex-col items-center justify-center gap-1 transition-colors ${
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {item.icon}
-              <span className="text-xs font-medium text-center">{item.name}</span>
+              <span className="text-center text-xs font-medium">
+                {item.name}
+              </span>
             </button>
           );
         })}
