@@ -165,6 +165,7 @@ export default function FiatSimPage() {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <p className="text-xs font-bold text-primary">{acc.bank_name}</p>
+                      <p className="text-xs text-muted-foreground">{acc.account_name}</p>
                       <p className="text-xs text-muted-foreground">{acc.account_number}</p>
                     </div>
                     <Badge variant="secondary">{acc.currency}</Badge>
