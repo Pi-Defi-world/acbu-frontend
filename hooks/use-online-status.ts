@@ -8,6 +8,8 @@ export function useOnlineStatus(): boolean {
   );
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const handleOnline = () => setOnline(true);
     const handleOffline = () => setOnline(false);
 
