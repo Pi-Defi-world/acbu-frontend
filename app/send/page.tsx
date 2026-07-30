@@ -578,7 +578,6 @@ export default function SendPage() {
                   type="number"
                   inputMode="decimal"
                   placeholder="0.00"
-                  min="0"
                   step="any"
                   autoComplete="transaction-amount"
                   min={0}
