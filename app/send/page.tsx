@@ -142,37 +142,6 @@ export default function SendPage() {
 
   useScrollRestoration('/send', !loadingTransfers);
 
-  const handleSendDialogChange = useCallback((open: boolean) => setShowSendDialog(open), []);
-  const handleConfirmDialogChange = useCallback(
-    (open: boolean) => {
-      if (!open && !sending) setConfirmedAmount("");
-      setShowConfirmDialog(open);
-    },
-    [sending],
-  );
-  const handleSuccessDialogChange = useCallback((open: boolean) => setShowSuccessDialog(open), []);
-  const handleUseContactChange = useCallback((v: string) => setUseContact(v === "contact"), []);
-  const handleContactSelect = useCallback(
-    (id: string) => {
-      const c = contacts.find((x: ContactItem) => x.id === id);
-      if (c) setSelectedContact(c);
-    },
-    [contacts],
-  );
-  const handleCustomRecipientChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setCustomRecipient(e.target.value),
-    [],
-  );
-  const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    if (v === "" || /^\d*\.?\d*$/.test(v)) setAmount(v);
-  }, []);
-  const debouncedAmount = useDebounce(amount, 300);
-  const handleNoteChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setNote(e.target.value),
-    [],
-  );
-
   const getToValue = useCallback(
     () =>
       useContact && selectedContact
@@ -453,7 +422,6 @@ export default function SendPage() {
                   type="number"
                   inputMode="decimal"
                   placeholder="0.00"
-                  min="0"
                   step="any"
                   autoComplete="transaction-amount"
                   value={amount}
