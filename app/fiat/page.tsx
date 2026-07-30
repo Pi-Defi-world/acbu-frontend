@@ -10,17 +10,14 @@ import { useApiError } from '@/hooks/use-api-error';
 import { useFiatAccounts } from '@/hooks/use-fiat-accounts';
 import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import * as fiatApi from '@/lib/api/fiat';
-import { useAuth } from '@/contexts/auth-context';
-import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureDemoFiatTrustlineClient } from '@/lib/stellar/trustlines';
-import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
+import { useWalletSetup } from '@/hooks/use-wallet-setup';
 import { Building2, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Keypair } from '@stellar/stellar-sdk';
+
 export default function FiatSimPage() {
   const opts = useApiOpts();
-  const { userId, stellarAddress } = useAuth();
-  const kit = useStellarWalletsKit();
+  const { getWalletSigner } = useWalletSetup();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const { accounts, loading, error: accountsError, refetch: refetchAccounts } = useFiatAccounts();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -44,41 +41,13 @@ export default function FiatSimPage() {
     clearError();
     setLastFaucetTx(null);
     try {
-      if (!userId) throw new Error('Not logged in');
-      const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
-
-      let recipient: string;
-      if (secret) {
-        recipient = Keypair.fromSecret(secret).publicKey();
-        await ensureDemoFiatTrustlineClient({ userSecret: secret, currency: faucetCurrency });
-      } else {
-        if (!kit) {
-          throw new Error(
-            'No local wallet secret found and wallet connector is not ready yet. Please wait a moment and retry.',
-          );
-        }
-        const address = await new Promise<string>((resolve, reject) => {
-          kit
-            .openModal({
-              onWalletSelected: async (selectedOption: { id: string }) => {
-                try {
-                  kit.setWallet(selectedOption.id);
-                  const { address } = await kit.getAddress();
-                  resolve(address);
-                } catch (err) {
-                  reject(err);
-                }
-              },
-            })
-            .catch(reject);
-        });
-
-        recipient = address;
-        await ensureDemoFiatTrustlineClient({
-          external: { kit, address },
-          currency: faucetCurrency,
-        });
-      }
+      const signer = await getWalletSigner();
+      const recipient = signer.address;
+      await ensureDemoFiatTrustlineClient({
+        userSecret: signer.userSecret,
+        external: signer.external,
+        currency: faucetCurrency,
+      });
       const res = await fiatApi.postFaucet(faucetCurrency, faucetAmount, recipient, opts);
       setLastFaucetTx(res.transaction_hash);
       setFaucetAmount('');

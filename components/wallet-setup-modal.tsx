@@ -21,6 +21,7 @@ import {
 } from "@/lib/passcode-manager";
 import { AlertCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
+import { useWalletSetup } from "@/hooks/use-wallet-setup";
 import { logger } from "@/lib/logger";
 
 const FORCE_WALLET_SETUP_KEY = "force_wallet_setup";
@@ -58,7 +59,6 @@ export function WalletSetupModal() {
 
   // For importing seed
   const [importSeed, setImportSeed] = useState("");
-  // Wallet secret is encrypted with the account passcode via storeWalletSecret
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -87,7 +87,7 @@ export function WalletSetupModal() {
 
       if (autoGenPassphrase) {
         setPassphrase(autoGenPassphrase);
-        setOption(1); // Default to showing the generated passphrase if it exists
+        setOption(1);
       }
     } else {
       setOpen(false);
@@ -157,8 +157,8 @@ export function WalletSetupModal() {
 
     setLoading(true);
     try {
-      await syncWalletToBackend(passphrase);
-      handleFinish();
+      await generateWallet(passphrase);
+      await handleFinish();
     } catch (err: unknown) {
       setError((err as Error).message || "Failed to save wallet");
     } finally {
@@ -177,9 +177,8 @@ export function WalletSetupModal() {
 
     setLoading(true);
     try {
-      Keypair.fromSecret(importSeed);
-      await syncWalletToBackend(importSeed);
-      handleFinish();
+      await importWallet(importSeed);
+      await handleFinish();
     } catch (err: unknown) {
       setError(
         "Invalid seed or failed to import. " + ((err as Error).message || ""),
@@ -191,10 +190,6 @@ export function WalletSetupModal() {
 
   const handleConnectWallet = async () => {
     setError("");
-    if (!kit) {
-      setError("Wallet Kit is still initializing...");
-      return;
-    }
 
     setLoading(true);
     try {
@@ -235,7 +230,7 @@ export function WalletSetupModal() {
         },
       });
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to open wallet modal");
+      setError((err as Error).message || "Failed to connect wallet");
     } finally {
       setLoading(false);
     }

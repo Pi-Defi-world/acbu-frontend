@@ -7,10 +7,8 @@
     ],
     "allowJs": true,
 
-    "target": "ES6",
-    "noUncheckedIndexedAccess": true,
-
     "target": "ES2020",
+    "noUncheckedIndexedAccess": true,
 
     "skipLibCheck": true,
     "strict": true,
