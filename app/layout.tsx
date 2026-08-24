@@ -7,6 +7,7 @@ import { I18nProvider } from '@/contexts/i18n-context'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { GlobalErrorHandler } from '@/components/global-error-handler'
 import './globals.css'
+import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
 import { Toaster } from '@/components/ui/toaster';
@@ -140,7 +141,7 @@ export default async function RootLayout({
           <ErrorBoundary level="app">
             <I18nProvider>
               <AuthProvider>
-                <AppLayout>{children}</AppLayout>
+                <AppLayout><AuthGuard>{children}</AuthGuard></AppLayout>
                 <WalletSetupModal />
                 <Toaster />
                 {/*
