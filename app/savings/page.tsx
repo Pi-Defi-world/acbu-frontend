@@ -23,6 +23,7 @@ import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
 import { resolveRecipient } from "@/lib/api/recipient";
 import { formatAmount } from "@/lib/utils";
+import { BalanceSkeleton } from "@/components/ui/balance-skeleton";
 
 /**
  * Resolve any user identifier (Stellar address, phone, alias, pay URI)
@@ -210,8 +211,13 @@ export default function SavingsPage() {
       <PageContainer>
         <div className="space-y-6">
           {receiveError && (
-            <div className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
-              <AlertCircle className="h-5 w-5 shrink-0" />
+            <div 
+              className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive"
+              role="alert"
+              aria-live="assertive"
+              aria-atomic="true"
+            >
+              <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
               <p className="font-medium">{receiveError}</p>
             </div>
           )}
@@ -221,10 +227,16 @@ export default function SavingsPage() {
               <h2 className="page-title">On-chain Savings (API)</h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
-            <p className="text-3xl font-bold text-foreground mb-1">
-              {positionsLoading ? "—" : `ACBU ${formatAmount(positionsBalance)}`}
-            </p>
-            <p className="text-xs text-muted-foreground mb-3">This reflects balances reported by the backend API only.</p>
+            {positionsLoading ? (
+              <BalanceSkeleton variant="full" />
+            ) : (
+              <>
+                <p className="text-3xl font-bold text-foreground mb-1">
+                  ACBU {formatAmount(positionsBalance)}
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">This reflects balances reported by the backend API only.</p>
+              </>
+            )}
             <div className="flex gap-2 mt-3">
               <Link href="/savings/deposit">
                 <Button size="sm" variant="outline" className="border-border bg-transparent">Deposit</Button>
@@ -241,15 +253,21 @@ export default function SavingsPage() {
               <h2 className="page-title">Total Savings (API + Goals)</h2>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
-            <p className="text-3xl font-bold text-foreground mb-1">
-              {positionsLoading ? "—" : `ACBU ${formatAmount(totalSavings)}`}
-            </p>
-            <p className="text-xs text-muted-foreground mb-2">Includes allocated amounts in savings goals: ACBU {formatAmount(goalsTotal)}</p>
-            <p className="text-xs text-muted-foreground mb-3">Earning 8% APY interest</p>
-            <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
-              <TrendingUp className="w-3 h-3" />
-              <span>+ACBU {formatAmount((totalSavings * 0.08) / 12)} this month</span>
-            </div>
+            {positionsLoading ? (
+              <BalanceSkeleton variant="full" />
+            ) : (
+              <>
+                <p className="text-3xl font-bold text-foreground mb-1">
+                  ACBU {formatAmount(totalSavings)}
+                </p>
+                <p className="text-xs text-muted-foreground mb-2">Includes allocated amounts in savings goals: ACBU {formatAmount(goalsTotal)}</p>
+                <p className="text-xs text-muted-foreground mb-3">Earning 8% APY interest</p>
+                <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                  <TrendingUp className="w-3 h-3" />
+                  <span>+ACBU {formatAmount((totalSavings * 0.08) / 12)} this month</span>
+                </div>
+              </>
+            )}
           </Card>
 
           <div className="space-y-4">

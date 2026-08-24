@@ -30,6 +30,7 @@ import {
   type StoredLoanApplication,
 } from "@/lib/lending-store";
 import { useI18n } from "@/contexts/i18n-context";
+import { BalanceSkeleton } from "@/components/ui/balance-skeleton";
 
 interface LoanProduct {
   id: string;
@@ -291,18 +292,23 @@ export default function LendingPage() {
               <Wallet className="h-5 w-5 text-amber-600" />
             </div>
             {balanceError ? (
-              <div className="border-destructive/30 bg-destructive/5 text-destructive flex items-center gap-2 rounded-lg border p-3 text-xs">
-                <AlertCircle className="h-4 w-4 shrink-0" />
+              <div 
+                className="border-destructive/30 bg-destructive/5 text-destructive flex items-center gap-2 rounded-lg border p-3 text-xs"
+                role="alert"
+                aria-live="assertive"
+                aria-atomic="true"
+              >
+                <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <p>{balanceError}</p>
               </div>
+            ) : balanceLoading ? (
+              <BalanceSkeleton variant="full" />
             ) : (
               <>
                 <p className="text-foreground text-2xl font-bold">
-                  {balanceLoading
-                    ? "—"
-                    : apiUser
-                      ? `ACBU ${formatAmount(balance ?? 0)}`
-                      : t("lending.sign_in_to_view")}
+                  {apiUser
+                    ? `ACBU ${formatAmount(balance ?? 0)}`
+                    : t("lending.sign_in_to_view")}
                 </p>
                 <p className="text-muted-foreground mt-1 text-xs">
                   {apiUser
