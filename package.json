@@ -86,6 +86,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.2",
+    "@next/bundle-analyzer": "^16.2.6",
     "@commitlint/cli": "^21.1.0",
     "@commitlint/config-conventional": "^21.1.0",
     "@eslint/js": "^10.0.1",
