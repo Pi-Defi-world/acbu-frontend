@@ -1,30 +1,40 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Briefcase, HandCoins, ShieldAlert, CheckCircle2, AlertCircle, Clock, Wallet } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { PageContainer } from '@/components/layout/page-container';
-import { useApiOpts } from '@/hooks/use-api';
-import * as lendingApi from '@/lib/api/lending';
-import * as userApi from '@/lib/api/user';
-import { formatAmount } from '@/lib/utils';
+import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Briefcase,
+  HandCoins,
+  ShieldAlert,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Wallet,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { PageContainer } from "@/components/layout/page-container";
+import { useApiOpts } from "@/hooks/use-api";
+import * as lendingApi from "@/lib/api/lending";
+import * as userApi from "@/lib/api/user";
+import { formatAmount } from "@/lib/utils";
 import {
   listApplications,
   saveApplication,
   type StoredLoanApplication,
-} from '@/lib/lending-store';
+} from "@/lib/lending-store";
+import { useI18n } from "@/contexts/i18n-context";
+import { BalanceSkeleton } from "@/components/ui/balance-skeleton";
 
 interface LoanProduct {
   id: string;
-  name: string;
-  description: string;
+  translationKey: "personal" | "business" | "emergency";
   minAmount: number;
   maxAmount: number;
   minTerm: number;
@@ -35,9 +45,8 @@ interface LoanProduct {
 
 const LOAN_PRODUCTS: LoanProduct[] = [
   {
-    id: 'personal',
-    name: 'Personal loan',
-    description: 'Unsecured credit for general use',
+    id: "personal",
+    translationKey: "personal",
     minAmount: 50,
     maxAmount: 5000,
     minTerm: 3,
@@ -46,9 +55,8 @@ const LOAN_PRODUCTS: LoanProduct[] = [
     icon: HandCoins,
   },
   {
-    id: 'business',
-    name: 'Business loan',
-    description: 'Working capital for SMEs',
+    id: "business",
+    translationKey: "business",
     minAmount: 500,
     maxAmount: 25000,
     minTerm: 6,
@@ -57,9 +65,8 @@ const LOAN_PRODUCTS: LoanProduct[] = [
     icon: Briefcase,
   },
   {
-    id: 'emergency',
-    name: 'Emergency loan',
-    description: 'Fast short-term liquidity',
+    id: "emergency",
+    translationKey: "emergency",
     minAmount: 25,
     maxAmount: 1000,
     minTerm: 1,
@@ -70,28 +77,33 @@ const LOAN_PRODUCTS: LoanProduct[] = [
 ];
 
 function generateLocalId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return `local-${crypto.randomUUID()}`;
   }
   return `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export default function LendingPage() {
+  const { t } = useI18n();
   const opts = useApiOpts();
 
-  const [apiUser, setApiUser] = useState('');
+  const [apiUser, setApiUser] = useState("");
   const [balance, setBalance] = useState<string | number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
 
-  const [productId, setProductId] = useState<string>(LOAN_PRODUCTS[0].id);
+  const [productId, setProductId] = useState<string>(LOAN_PRODUCTS[0]!.id);
   const [amount, setAmount] = useState('');
   const [term, setTerm] = useState('');
   const [purpose, setPurpose] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [warningMessage, setWarningMessage] = useState('');
+  const [formError, setFormError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [warningMessage, setWarningMessage] = useState("");
 
   const [applications, setApplications] = useState<StoredLoanApplication[]>([]);
 
@@ -119,13 +131,21 @@ export default function LendingPage() {
     if (!apiUser) return;
     let cancelled = false;
     setBalanceLoading(true);
+    setBalanceError(null);
     lendingApi
       .getLendingBalance(apiUser, opts)
       .then((res) => {
         if (!cancelled) setBalance(res.balance);
       })
-      .catch(() => {
-        if (!cancelled) setBalance(null);
+      .catch((err) => {
+        if (!cancelled) {
+          setBalance(null);
+          setBalanceError(
+            err instanceof Error
+              ? err.message
+              : "Failed to load lending balance",
+          );
+        }
       })
       .finally(() => {
         if (!cancelled) setBalanceLoading(false);
@@ -136,7 +156,7 @@ export default function LendingPage() {
   }, [apiUser, opts.token]);
 
   const selectedProduct = useMemo(
-    () => LOAN_PRODUCTS.find((p) => p.id === productId) ?? LOAN_PRODUCTS[0],
+    () => LOAN_PRODUCTS.find((p) => p.id === productId) ?? LOAN_PRODUCTS[0]!,
     [productId]
   );
 
@@ -153,26 +173,32 @@ export default function LendingPage() {
   const canSubmit = amountValid && termValid && !submitting;
 
   const resetForm = () => {
-    setAmount('');
-    setTerm('');
-    setPurpose('');
+    setAmount("");
+    setTerm("");
+    setPurpose("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError('');
-    setSuccessMessage('');
-    setWarningMessage('');
+    setFormError("");
+    setSuccessMessage("");
+    setWarningMessage("");
 
     if (!amountValid) {
       setFormError(
-        `Amount must be between ACBU ${selectedProduct.minAmount} and ACBU ${selectedProduct.maxAmount}.`
+        t("lending.errors.amount_range", {
+          min: selectedProduct.minAmount,
+          max: selectedProduct.maxAmount,
+        }),
       );
       return;
     }
     if (!termValid) {
       setFormError(
-        `Term must be between ${selectedProduct.minTerm} and ${selectedProduct.maxTerm} months.`
+        t("lending.errors.term_range", {
+          min: selectedProduct.minTerm,
+          max: selectedProduct.maxTerm,
+        }),
       );
       return;
     }
@@ -190,23 +216,24 @@ export default function LendingPage() {
           amount: parsedAmount,
           term: parsedTerm,
         },
-        opts
+        opts,
       );
       if (res.loanId) loanId = res.loanId;
       synced = Boolean(res.success);
     } catch (err) {
-      errorMessage = err instanceof Error ? err.message : 'Backend sync failed';
+      errorMessage =
+        err instanceof Error ? err.message : t("lending.errors.backend_sync");
     }
 
     const record: StoredLoanApplication = {
       id: loanId,
       productId: selectedProduct.id,
-      productName: selectedProduct.name,
+      productName: t(`lending.products.${selectedProduct.translationKey}.name`),
       amount: parsedAmount,
       term: parsedTerm,
       purpose: purpose.trim() || undefined,
       applicantUser: apiUser || undefined,
-      status: synced ? 'submitted' : 'pending',
+      status: synced ? "submitted" : "pending",
       syncedWithBackend: synced,
       submittedAt: new Date().toISOString(),
       errorMessage,
@@ -218,33 +245,39 @@ export default function LendingPage() {
     setSubmitting(false);
 
     if (synced) {
-      setSuccessMessage(`Application submitted. Reference: ${loanId}`);
+      setSuccessMessage(t("lending.messages.submitted", { id: loanId }));
     } else {
-      setSuccessMessage(`Application saved (ref ${loanId}).`);
+      setSuccessMessage(t("lending.messages.saved", { id: loanId }));
       setWarningMessage(
         errorMessage
-          ? `Pending backend sync — backoffice stub captured the submission. (${errorMessage})`
-          : 'Pending backend sync — backoffice stub captured the submission.'
+          ? t("lending.messages.pending_with_error", { error: errorMessage })
+          : t("lending.messages.pending"),
       );
     }
   };
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
-          <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
-            <ArrowLeft className="w-5 h-5" />
+      <header className="page-header">
+        <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-4">
+          <Link
+            href="/"
+            className="hover:bg-muted rounded p-2 transition-colors"
+            aria-label={t("lending.go_back")}
+          >
+            <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Lending</h1>
-            <p className="text-xs text-muted-foreground">Apply for a loan</p>
+            <h1 className="page-title">{t("lending.title")}</h1>
+            <p className="text-muted-foreground text-xs">
+              {t("lending.subtitle")}
+            </p>
           </div>
           <Link
             href="/lending/admin"
-            className="text-xs font-medium text-primary hover:underline"
+            className="text-primary text-xs font-medium hover:underline"
           >
-            Backoffice
+            {t("lending.backoffice")}
           </Link>
         </div>
       </header>
@@ -252,24 +285,44 @@ export default function LendingPage() {
       <PageContainer>
         <div className="space-y-6">
           <Card className="border-border bg-gradient-to-br from-amber-500/10 to-amber-600/10 p-5">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-semibold text-foreground">Lending position</h2>
-              <Wallet className="w-5 h-5 text-amber-600" />
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-foreground text-sm font-semibold">
+                {t("lending.position")}
+              </h2>
+              <Wallet className="h-5 w-5 text-amber-600" />
             </div>
-            <p className="text-2xl font-bold text-foreground">
-              {balanceLoading
-                ? '—'
-                : apiUser
-                  ? `ACBU ${formatAmount(balance ?? 0)}`
-                  : 'Sign in to view'}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {apiUser ? `Lender: ${apiUser}` : 'Lender identity unavailable'}
-            </p>
+            {balanceError ? (
+              <div 
+                className="border-destructive/30 bg-destructive/5 text-destructive flex items-center gap-2 rounded-lg border p-3 text-xs"
+                role="alert"
+                aria-live="assertive"
+                aria-atomic="true"
+              >
+                <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <p>{balanceError}</p>
+              </div>
+            ) : balanceLoading ? (
+              <BalanceSkeleton variant="full" />
+            ) : (
+              <>
+                <p className="text-foreground text-2xl font-bold">
+                  {apiUser
+                    ? `ACBU ${formatAmount(balance ?? 0)}`
+                    : t("lending.sign_in_to_view")}
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {apiUser
+                    ? t("lending.lender", { user: apiUser })
+                    : t("lending.lender_unavailable")}
+                </p>
+              </>
+            )}
           </Card>
 
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground">Choose a product</h3>
+            <h3 className="text-foreground text-sm font-semibold">
+              {t("lending.choose_product")}
+            </h3>
             <div className="grid grid-cols-1 gap-3">
               {LOAN_PRODUCTS.map((product) => {
                 const Icon = product.icon;
@@ -279,30 +332,39 @@ export default function LendingPage() {
                     key={product.id}
                     type="button"
                     onClick={() => setProductId(product.id)}
-                    className={`w-full text-left rounded-xl border transition-all p-4 ${
+                    className={`w-full rounded-xl border p-4 text-left transition-all ${
                       active
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border bg-card hover:border-primary/50'
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-card hover:border-primary/50"
                     }`}
                     aria-pressed={active}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-muted">
-                        <Icon className="w-5 h-5" />
+                      <div className="bg-muted rounded-lg p-2">
+                        <Icon className="h-5 w-5" />
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="font-semibold text-foreground">{product.name}</p>
+                          <p className="text-foreground font-semibold">
+                            {t(
+                              `lending.products.${product.translationKey}.name`,
+                            )}
+                          </p>
                           <Badge variant="secondary" className="text-[10px]">
-                            {product.ratePct}% APR
+                            {t("lending.apr", { rate: product.ratePct })}
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {product.description}
+                        <p className="text-muted-foreground text-xs">
+                          {t(
+                            `lending.products.${product.translationKey}.description`,
+                          )}
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          ACBU {product.minAmount}–{product.maxAmount} ·{' '}
-                          {product.minTerm}–{product.maxTerm} months
+                        <p className="text-muted-foreground mt-1 text-[10px]">
+                          ACBU {product.minAmount}–{product.maxAmount} ·{" "}
+                          {t("lending.term_months", {
+                            min: product.minTerm,
+                            max: product.maxTerm,
+                          })}
                         </p>
                       </div>
                     </div>
@@ -313,13 +375,13 @@ export default function LendingPage() {
           </div>
 
           <Card className="border-border p-4">
-            <h3 className="text-sm font-semibold text-foreground mb-4">
-              Application details
+            <h3 className="text-foreground mb-4 text-sm font-semibold">
+              {t("lending.application_details")}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div className="space-y-2">
                 <Label htmlFor="loan-amount" className="text-foreground">
-                  Amount (ACBU)
+                  {t("lending.amount")}
                 </Label>
                 <Input
                   id="loan-amount"
@@ -337,7 +399,7 @@ export default function LendingPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="loan-term" className="text-foreground">
-                  Term (months)
+                  {t("lending.term")}
                 </Label>
                 <Input
                   id="loan-term"
@@ -355,11 +417,11 @@ export default function LendingPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="loan-purpose" className="text-foreground">
-                  Purpose (optional)
+                  {t("lending.purpose")}
                 </Label>
                 <Textarea
                   id="loan-purpose"
-                  placeholder="How will you use the funds?"
+                  placeholder={t("lending.purpose_placeholder")}
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
                   rows={3}
@@ -369,41 +431,46 @@ export default function LendingPage() {
               </div>
 
               {formError && (
-                <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
-                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <div className="border-destructive/30 bg-destructive/5 text-destructive flex items-start gap-2 rounded-lg border p-3 text-xs">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                   <p>{formError}</p>
                 </div>
               )}
               {successMessage && (
                 <div className="flex items-start gap-2 rounded-lg border border-green-500/30 bg-green-500/5 p-3 text-xs text-green-700 dark:text-green-400">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
                   <p>{successMessage}</p>
                 </div>
               )}
               {warningMessage && (
                 <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-400">
-                  <Clock className="h-4 w-4 shrink-0 mt-0.5" />
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0" />
                   <p>{warningMessage}</p>
                 </div>
               )}
 
               <Button type="submit" disabled={!canSubmit} className="w-full">
-                {submitting ? 'Submitting…' : 'Submit application'}
+                {submitting ? t("lending.submitting") : t("lending.submit")}
               </Button>
             </form>
           </Card>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Your applications</h3>
-              <Link href="/lending/admin" className="text-xs text-primary font-medium">
-                View all
+              <h3 className="text-foreground text-sm font-semibold">
+                {t("lending.your_applications")}
+              </h3>
+              <Link
+                href="/lending/admin"
+                className="text-primary text-xs font-medium"
+              >
+                {t("lending.view_all")}
               </Link>
             </div>
             {applications.length === 0 ? (
               <Card className="border-border p-4">
-                <p className="text-sm text-muted-foreground">
-                  No applications yet. Submit one above to see it here.
+                <p className="text-muted-foreground text-sm">
+                  {t("lending.no_applications")}
                 </p>
               </Card>
             ) : (
@@ -412,21 +479,29 @@ export default function LendingPage() {
                   <Card key={app.id} className="border-border p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-sm">
+                        <p className="text-foreground text-sm font-semibold">
                           {app.productName}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          ACBU {formatAmount(app.amount)} · {app.term} months
+                        <p className="text-muted-foreground text-xs">
+                          {t("lending.application_summary", {
+                            amount: formatAmount(app.amount),
+                            term: app.term,
+                          })}
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 truncate">
-                          Ref: {app.id}
+                        <p
+                          className="text-muted-foreground mt-1 truncate text-[10px]"
+                          title={t("lending.reference", { id: app.id })}
+                        >
+                          {t("lending.reference", { id: app.id })}
                         </p>
                       </div>
                       <Badge
-                        variant={app.syncedWithBackend ? 'default' : 'secondary'}
+                        variant={
+                          app.syncedWithBackend ? "default" : "secondary"
+                        }
                         className="text-[10px] capitalize"
                       >
-                        {app.status}
+                        {t(`lending.status.${app.status}`)}
                       </Badge>
                     </div>
                   </Card>

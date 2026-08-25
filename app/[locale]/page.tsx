@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations, useFormatter } from 'next-intl';
@@ -17,13 +18,17 @@ import {
 import { PageContainer } from '@/components/layout/page-container';
 import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
+import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
+import { RetryErrorBlock } from '@/components/ui/retry-error-block';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
+import { useFiatAccounts } from '@/hooks/use-fiat-accounts';
+import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import * as transactionsApi from '@/lib/api/transactions';
-import * as fiatApi from '@/lib/api/fiat';
-import * as ratesApi from '@/lib/api/rates';
+import type { FiatAccount } from '@/lib/api/fiat';
+import { useRates } from '@/lib/api/rates';
 import type { TransactionListItem, RatesResponse } from '@/types/api';
-import { formatAcbu, formatAmount } from '@/lib/utils';
+import { formatAcbu, formatAmount, parseUtcDate } from '@/lib/utils';
 
 function parsePositiveNumber(v: string | number | null | undefined): number | null {
   if (v === null || v === undefined) return null;
@@ -63,7 +68,7 @@ function acbuBalanceToUsd(
 
 /** Converts each simulated bank balance (local units) to USD via ACBU cross rates. */
 function sumSimulatedFiatUsd(
-  accounts: fiatApi.FiatAccount[],
+  accounts: FiatAccount[],
   rates: RatesResponse | null,
 ): { usd: number; partial: boolean } {
   const usdPerAcbu = getUsdPerAcbu(rates);
@@ -87,7 +92,7 @@ function sumSimulatedFiatUsd(
 }
 
 function formatDate(iso: string) {
-  const d = new Date(iso);
+  const d = parseUtcDate(iso);
   const today = new Date();
   if (d.toDateString() === today.toDateString()) return 'Today';
   const yesterday = new Date(today);
@@ -101,63 +106,37 @@ function formatDate(iso: string) {
  */
 export default function Home() {
   const [showBalance, setShowBalance] = useState(true);
-  const { balance, loading: balanceLoading, error: balanceError } = useBalance();
+  const {
+    balance,
+    loading: balanceLoading,
+    error: balanceError,
+    refetch: refetchBalance,
+  } = useBalance();
   const opts = useApiOpts();
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
-  const [fiatLoading, setFiatLoading] = useState(true);
-  const [rates, setRates] = useState<RatesResponse | null>(null);
-  const [ratesLoading, setRatesLoading] = useState(true);
+  const {
+    accounts: fiatAccounts,
+    loading: fiatLoading,
+  } = useFiatAccounts();
+  const {
+    data: rates,
+    loading: ratesLoading,
+    error: ratesError,
+    refetch: refetchRates,
+  } = useRates(opts);
 
   const t = useTranslations('home');
   const format = useFormatter();
+  useScrollRestoration('/', !loading);
 
-  const features = [
+  const features = useMemo(() => [
     { title: t('features.send.title'), description: t('features.send.description'), icon: Send, href: '/send', color: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
     { title: t('features.mint.title'), description: t('features.mint.description'), icon: Coins, href: '/mint', color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
     { title: t('features.simulated_bank.title'), description: t('features.simulated_bank.description'), icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
     { title: t('features.rates.title'), description: t('features.rates.description'), icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
-  ];
-
-  useEffect(() => {
-    let cancelled = false;
-    setRatesLoading(true);
-    ratesApi
-      .getRates(opts)
-      .then((data) => {
-        if (!cancelled) setRates(data);
-      })
-      .catch(() => {
-        if (!cancelled) setRates(null);
-      })
-      .finally(() => {
-        if (!cancelled) setRatesLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setFiatLoading(true);
-    fiatApi
-      .getFiatAccounts(opts)
-      .then((data) => {
-        if (!cancelled) setFiatAccounts(data.accounts ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setFiatAccounts([]);
-      })
-      .finally(() => {
-        if (!cancelled) setFiatLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
+  ], [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -176,6 +155,7 @@ export default function Home() {
       ? acbuBalanceToUsd(balance, rates)
       : null;
   const fiatUsdInfo = showBalance ? sumSimulatedFiatUsd(fiatAccounts, rates) : null;
+
   const acbuAmountText = !showBalance
     ? '••••••'
     : balanceLoading
@@ -189,17 +169,26 @@ export default function Home() {
         ? `${t('approx_usd')} —`
         : `${t('approx_usd')} ${format.number(acbuUsd, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
+  const balanceAnnouncement = !showBalance
+    ? 'Balances hidden'
+    : balanceLoading
+      ? 'Loading balance'
+      : balance != null
+        ? `Balance updated to ACBU ${format.number(balance, { minimumFractionDigits: 0, maximumFractionDigits: 7 })}`
+        : 'Balance unavailable';
+
+
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3">
+      <header className="page-header">
+        <div className="px-4 py-3 md:px-6 md:py-4 md:max-w-4xl md:mx-auto">
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1">
-              <h1 className="text-base font-bold text-foreground">Welcome back</h1>
-              <p className="text-xs text-muted-foreground">Manage your finances</p>
+              <h1 className="text-base font-bold text-foreground md:text-lg">Welcome back</h1>
+              <p className="text-xs text-muted-foreground md:text-sm">Manage your finances</p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <div className="w-7 h-7 rounded-full bg-primary" />
+            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 md:w-12 md:h-12">
+              <div className="w-7 h-7 rounded-full bg-primary md:w-10 md:h-10" />
             </div>
           </div>
         </div>
@@ -207,34 +196,37 @@ export default function Home() {
 
       <PageContainer>
         <div className="space-y-5">
-          <div className="rounded-lg border border-border bg-gradient-to-br from-primary/20 via-secondary/10 to-transparent p-5 relative overflow-hidden">
+          <div className="rounded-lg border border-border bg-gradient-to-br from-primary/20 via-secondary/10 to-transparent p-5 relative overflow-hidden md:p-6">
             <button
               type="button"
               onClick={() => setShowBalance(!showBalance)}
-              className="absolute top-4 right-4 p-1.5 hover:bg-muted rounded-full transition-colors flex-shrink-0 z-10"
+              className="absolute top-4 right-4 p-1.5 hover:bg-muted rounded-full transition-colors flex-shrink-0 z-10 md:p-2 md:top-5 md:right-5"
               aria-label={showBalance ? 'Hide balances' : 'Show balances'}
             >
-              {showBalance ? <Eye className="w-4 h-4 text-muted-foreground" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+              {showBalance ? <Eye className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" /> : <EyeOff className="w-4 h-4 text-muted-foreground md:w-5 md:h-5" />}
             </button>
-            <div className="flex items-start gap-3 pr-12 mb-1">
-              <div className="flex-1 min-w-0 border-r border-border/60 pr-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+            <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+              {balanceAnnouncement}
+            </div>
+            <div className="flex items-start gap-3 pr-12 mb-1 md:gap-6 md:pr-16">
+              <div className="flex-1 min-w-0 border-r border-border/60 pr-3 md:pr-6">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
                   {t('acbu')}
                 </p>
-                <p className="text-[10px] text-muted-foreground mb-1">{t('wallet_balance')}</p>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
+                <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">{t('wallet_balance')}</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums md:text-4xl">
                   {acbuAmountText}
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
+                <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">
                   {acbuUsdText}
                 </p>
               </div>
               <div className="flex-1 min-w-0 text-right">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
                   {t('fiat')}
                 </p>
-                <p className="text-[10px] text-muted-foreground mb-1">{t('simulated_usd_equivalent')}</p>
-                <div className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums space-y-1">
+                <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">{t('simulated_usd_equivalent')}</p>
+                <div className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums space-y-1 md:text-4xl">
                   {!showBalance ? (
                     <p>••••••</p>
                   ) : fiatLoading || ratesLoading ? (
@@ -242,17 +234,17 @@ export default function Home() {
                   ) : (
                     <>
                       <p>
-                        {t('approx_usd')}{' '}
+                        ≈ USD{' '}
                         {format.number(fiatUsdInfo?.usd ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                       </p>
                       {fiatUsdInfo?.partial && fiatAccounts.length > 0 && (
-                        <p className="text-[10px] font-normal text-muted-foreground">
+                        <p className="text-[10px] font-normal text-muted-foreground md:text-xs">
                           {t('some_currencies_missing_rate')}
                         </p>
                       )}
                       {!fiatAccounts.length && (
-                        <p className="text-sm font-normal text-muted-foreground mt-1">
-                          <Link href="/fiat" className="text-primary font-medium underline-offset-2 hover:underline">
+                        <p className="text-sm font-normal text-muted-foreground mt-1 md:text-base">
+                          <Link href="/fiat" as="/fiat" className="text-primary font-medium underline-offset-2 hover:underline">
                             {t('add_demo_funds')}
                           </Link>
                         </p>
@@ -262,32 +254,37 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            {showBalance && balanceError && (
-              <div className="flex items-center gap-1 text-xs text-destructive mt-2">
-                <span>{balanceError}</span>
-              </div>
+            {showBalance && (balanceError || ratesError) && (
+              <RetryErrorBlock
+                className="mt-3 text-xs"
+                message={balanceError || ratesError}
+                onRetry={() => {
+                  if (balanceError) refetchBalance();
+                  if (ratesError) refetchRates();
+                }}
+              />
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
-                <Link key={feature.href} href={feature.href} className="block">
-                  <div className={`${feature.color} rounded-lg border border-border/50 p-4 h-full transition-all active:scale-95`}>
-                    <Icon className={`w-6 h-6 ${feature.iconColor} mb-2`} />
-                    <h3 className="text-sm font-semibold text-foreground mb-0.5">{feature.title}</h3>
-                    <p className="text-xs text-muted-foreground">{feature.description}</p>
+                <Link key={feature.href} href={feature.href} as={feature.href} className="block">
+                  <div className={`${feature.color} rounded-lg border border-border/50 p-4 h-full transition-all active:scale-95 md:p-5`}>
+                    <Icon className={`w-6 h-6 ${feature.iconColor} mb-2 md:w-7 md:h-7 md:mb-3`} />
+                    <h3 className="text-sm font-semibold text-foreground mb-0.5 md:text-base">{feature.title}</h3>
+                    <p className="text-xs text-muted-foreground md:text-sm">{feature.description}</p>
                   </div>
                 </Link>
               );
             })}
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 md:space-y-4">
             <div className="flex items-center justify-between px-1">
-              <h3 className="text-sm font-semibold text-foreground">{t('recent_activity')}</h3>
-              <Link href="/activity" className="text-xs text-primary font-medium">{t('view_all')}</Link>
+              <h3 className="text-sm font-semibold text-foreground md:text-base">{t('recent_activity')}</h3>
+              <Link href="/activity" as="/activity" className="text-xs text-primary font-medium md:text-sm">{t('view_all')}</Link>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             {loading ? (
@@ -297,18 +294,18 @@ export default function Home() {
                 icon={<Clock className="w-10 h-10" />}
                 title={t('no_recent_activity')}
                 action={
-                  <Link href="/send" className="text-xs text-primary font-medium">
+                  <Link href="/send" as="/send" className="text-xs text-primary font-medium">
                     {t('send_money')}
                   </Link>
                 }
               />
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2 md:space-y-3">
                 {transactions.slice(0, 5).map((t) => (
-                  <Link key={t.transaction_id} href={`/transactions/${t.transaction_id}`} className="block rounded-lg border border-border bg-card p-3 transition-colors active:bg-muted">
+                  <Link key={t.transaction_id} href={`/transactions/${t.transaction_id}`} as={`/transactions/${t.transaction_id}`} className="block rounded-lg border border-border bg-card p-3 transition-colors active:bg-muted md:p-4">
                     <div className="flex items-center gap-3 mb-2">
                       <div
-                        className={`p-2 rounded-full flex-shrink-0 ${
+                        className={`p-2 rounded-full flex-shrink-0 md:p-3 ${
                           t.type === 'mint'
                             ? 'bg-green-100 dark:bg-green-900/30'
                             : t.type === 'burn'
@@ -317,7 +314,7 @@ export default function Home() {
                         }`}
                       >
                         <ArrowUpRight
-                          className={`w-4 h-4 ${
+                          className={`w-4 h-4 md:w-5 md:h-5 ${
                             t.type === 'mint'
                               ? 'text-green-600 dark:text-green-400'
                               : t.type === 'burn'
@@ -327,14 +324,14 @@ export default function Home() {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
+                        <p className="text-sm font-medium text-foreground truncate md:text-base" title={t.type === 'mint' ? 'Mint' : t.type === 'burn' ? 'Burn' : 'Transfer'}>
                           {t.type === 'mint' ? 'Mint' : t.type === 'burn' ? 'Burn' : 'Transfer'}
                         </p>
-                        <p className="text-xs text-muted-foreground">{formatDate(t.created_at)}</p>
+                        <p className="text-xs text-muted-foreground md:text-sm">{formatDate(t.created_at)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between pl-11">
-                      <p className="text-sm font-semibold text-foreground">
+                    <div className="flex items-center justify-between pl-11 md:pl-14">
+                      <p className="text-sm font-semibold text-foreground md:text-base">
                         {t.type === 'burn'
                           ? `- ACBU ${formatAcbu(t.acbu_amount_burned ?? t.amount_acbu)}`
                           : t.type === 'mint'
@@ -345,7 +342,7 @@ export default function Home() {
                                 : '—'
                             : `ACBU ${formatAcbu(t.amount_acbu)}`}
                       </p>
-                      <Badge variant="outline" className="text-xs">{t.status}</Badge>
+                      <Badge variant="outline" className="text-xs md:text-sm">{t.status}</Badge>
                     </div>
                   </Link>
                 ))}
