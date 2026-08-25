@@ -9,7 +9,8 @@ import { Card } from "@/components/ui/card";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import * as authApi from "@/lib/api/auth";
-import { setPasscode as storePasscode } from "@/lib/passcode-manager";
+import { setPasscode as storePasscode, setTempPassphrase } from "@/lib/passcode-manager";
+import { isSafeRedirect } from "@/lib/redirect";
 
 export default function SignInPage() {
     return (
@@ -55,32 +56,33 @@ function SignInForm() {
 
             const result = await authApi.signin(identifier.trim(), passcode);
 
-      if ('requires_2fa' in result && result.requires_2fa) {
-        // Store passcode in memory BEFORE redirecting to 2FA
-        storePasscode(passcode);
-        
-        // Store challenge token securely in sessionStorage (not in URL)
-        // This prevents leaks via Referer headers, browser history, and server logs
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('2fa_challenge_token', result.challenge_token);
-        }
-        router.push('/auth/2fa');
-        return;
-      }
+            const redirectParam = searchParams.get("redirect");
 
-      if ("user_id" in result) {
-        // Store passcode in memory for wallet operations (more secure than sessionStorage)
-        storePasscode(passcode);
-        
-        login(result.user_id, result.stellar_address);
-        
-        if (result.wallet_created && result.passphrase) {
-          sessionStorage.setItem('temp_passphrase', result.passphrase);
-          router.push('/auth/wallet-setup');
-        } else {
-          router.push("/");
-        }
-      }
+            if ('requires_2fa' in result && result.requires_2fa) {
+                storePasscode(passcode);
+
+                if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('2fa_challenge_token', result.challenge_token);
+                    const safe = isSafeRedirect(redirectParam);
+                    if (safe) sessionStorage.setItem('post_auth_redirect', safe);
+                }
+                router.push('/auth/2fa');
+                return;
+            }
+
+            if ("user_id" in result) {
+                storePasscode(passcode);
+
+                login(result.user_id, result.stellar_address);
+
+                if (result.wallet_created && result.passphrase) {
+                    setTempPassphrase(result.passphrase);
+                    router.push('/auth/wallet-setup');
+                } else {
+                    const safe = isSafeRedirect(redirectParam);
+                    router.push(safe ?? "/");
+                }
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Sign in failed");
         } finally {
@@ -103,15 +105,23 @@ function SignInForm() {
 
                     <form onSubmit={handleSignIn} className="space-y-4">
                         {error && (
-                            <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-                                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                            <div
+                                id="signin-error"
+                                role="alert"
+                                className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
+                            >
+                                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
                                 <p className="text-sm text-destructive">
                                     {error}
                                 </p>
                             </div>
                         )}
                         {success && (
-                            <div className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10">
+                            <div
+                                id="signin-success"
+                                role="status"
+                                className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10"
+                            >
                                 <p className="text-sm text-green-600">
                                     {success}
                                 </p>
@@ -121,7 +131,7 @@ function SignInForm() {
                         <div>
                             <label
                                 htmlFor="signin-detail"
-                                className="text-sm font-medium text-foreground mb-2 block"
+                                className="form-label"
                             >
                                 Username, email, or phone
                             </label>
@@ -134,37 +144,43 @@ function SignInForm() {
                                 onChange={(e) => setIdentifier(e.target.value)}
                                 className="border-border"
                                 disabled={loading}
+                                aria-describedby={error ? "signin-error" : undefined}
                             />
                         </div>
 
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Passcode
-              </label>
-              <div className="relative">
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  className="border-border pr-10"
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  disabled={loading}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
+                        <div>
+                            <label
+                                htmlFor="signin-passcode"
+                                className="form-label"
+                            >
+                                Passcode
+                            </label>
+                            <div className="relative">
+                                <Input
+                                    id="signin-passcode"
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder="••••••••"
+                                    value={passcode}
+                                    onChange={(e) => setPasscode(e.target.value)}
+                                    className="border-border pr-10"
+                                    disabled={loading}
+                                    aria-describedby={error ? "signin-error" : undefined}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    disabled={loading}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="w-4 h-4" />
+                                    ) : (
+                                        <Eye className="w-4 h-4" />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
 
                         <div className="text-right">
                             <Link

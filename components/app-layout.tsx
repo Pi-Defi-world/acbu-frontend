@@ -1,10 +1,12 @@
-'use client';
+"use client";
 
-import { MobileNav } from './mobile-nav';
-import { PageTransition } from './page-transition';
-import { usePathname } from 'next/navigation';
+import { MobileNav } from "./mobile-nav";
+import { PageTransition } from "./page-transition";
+import { usePathname } from "next/navigation";
+import { SessionExpiryWarning } from "@/components/session-expiry-warning";
+import { useSessionGuard } from "@/hooks/use-session-guard";
 
-const PUBLIC_PATHS = ['/auth/signin', '/auth/signup', '/auth/2fa', '/recovery'];
+const PUBLIC_PATHS = ["/auth/signin", "/auth/signup", "/auth/2fa", "/recovery"];
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -12,13 +14,28 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
-  const isPublic = PUBLIC_PATHS.some((p) => pathname?.startsWith(p) || pathname === p);
+  const isPublic = PUBLIC_PATHS.some(
+    (p) => pathname?.startsWith(p) || pathname === p,
+  );
+  const { status, dismissWarning, warningDismissed } = useSessionGuard();
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <main className={`flex-1 ${!isPublic ? 'pb-24' : ''}`}>
+    <div className="bg-background flex min-h-screen flex-col">
+      <main
+        data-testid="app-main-content"
+        className={`flex-1 ${!isPublic ? "pb-24" : ""}`}
+      >
         <PageTransition>{children}</PageTransition>
       </main>
+
+      {!isPublic && (
+        <SessionExpiryWarning
+          status={status}
+          onDismiss={dismissWarning}
+          dismissed={warningDismissed}
+        />
+      )}
+
       {!isPublic && <MobileNav />}
     </div>
   );
