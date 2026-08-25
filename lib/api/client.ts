@@ -8,6 +8,9 @@
  * Timeout: Requests timeout after NEXT_PUBLIC_API_TIMEOUT ms (default 30000).
  * If caller provides AbortSignal, it aborts on either timeout or caller's signal.
  */
+import type { ApiError } from '@/types/api';
+
+export type { ApiError } from '@/types/api';
 
 let authErrorHandler: ((error: ApiError) => void) | null = null;
 
@@ -56,11 +59,6 @@ export function getApiErrorMessage(e: unknown): string {
 export interface RequestOptions {
   signal?: AbortSignal;
   token?: string;
-}
-
-export interface ApiError extends Error {
-  status?: number;
-  details?: unknown;
 }
 
 async function request<T>(

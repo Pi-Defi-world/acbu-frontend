@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useApiError } from '../use-api-error';
-import type { ApiError } from '@/lib/api/client';
+import type { ApiError } from '@/types/api';
 
 function makeApiError(status: number, message: string): ApiError {
   const err = new Error(message) as ApiError;
