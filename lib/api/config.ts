@@ -16,6 +16,23 @@ export interface PublicAssetsConfig {
   contracts?: {
     burning?: string | null;
   };
+  fees?: {
+    mint_network_fee_text?: string | null;
+    burn_processing_fee_text?: string | null;
+    transfer_network_fee_text?: string | null;
+    mint?: {
+      network_fee_text?: string | null;
+      fee_text?: string | null;
+    } | null;
+    burn?: {
+      processing_fee_text?: string | null;
+      fee_text?: string | null;
+    } | null;
+    transfer?: {
+      network_fee_text?: string | null;
+      fee_text?: string | null;
+    } | null;
+  } | null;
 }
 
 let cached: PublicAssetsConfig | null = null;

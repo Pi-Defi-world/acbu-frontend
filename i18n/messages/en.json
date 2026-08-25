@@ -30,5 +30,23 @@
       "title": "Rates",
       "description": "Market rates"
     }
+  },
+  "auth_2fa": {
+    "loading": "Loading...",
+    "title": "Two-Factor Authentication",
+    "description": "Enter the 6-digit code from your authenticator app",
+    "code_label": "Authentication Code",
+    "verify": "Verify",
+    "verifying": "Verifying...",
+    "missing_challenge_token": "Missing challenge token.",
+    "sign_in_again": "Sign in again",
+    "no_authenticator_summary": "Don't have access to your authenticator?",
+    "no_authenticator_body": "Contact support or use your backup codes if you saved them.",
+    "errors": {
+      "invalid_code": "Please enter a valid 6-digit code",
+      "missing_challenge": "Missing challenge. Please sign in again.",
+      "session_expired": "Session expired. Please sign in again.",
+      "verification_failed": "Verification failed"
+    }
   }
 }

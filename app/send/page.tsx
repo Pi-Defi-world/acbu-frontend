@@ -36,6 +36,8 @@ import { formatAmount } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
+import { useConfig } from "@/hooks/use-config";
+import { getTransferNetworkFeeText } from "@/lib/fee-text";
 import {
   looksLikeStellarAddress,
   submitAcbuPaymentClient,
@@ -59,17 +61,6 @@ function formatDate(iso: string) {
   return d.toLocaleDateString();
 }
 
-function getStatusColor(status: string): string {
-  switch (status) {
-    case "completed":
-      return "text-green-600";
-    case "pending":
-      return "text-amber-600";
-    default:
-      return "text-gray-600";
-  }
-}
-
 function getStatusBadgeClassName(status: string): string {
   switch (status) {
     case "completed":
@@ -86,6 +77,7 @@ function getStatusBadgeClassName(status: string): string {
  */
 export default function SendPage() {
   const opts = useApiOpts();
+  const { config } = useConfig();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
@@ -109,6 +101,7 @@ export default function SendPage() {
   const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const transferNetworkFeeText = getTransferNetworkFeeText(config);
 
   const virtualizedContacts = useMemo(() => {
     return contacts.map((c) => (
@@ -269,58 +262,6 @@ export default function SendPage() {
       !exceedsBalance &&
       ((useContact && selectedContact) || (!useContact && customRecipient.trim()));
   }, [debouncedAmount, exceedsBalance, useContact, selectedContact, customRecipient]);
-
-  const transfersList = useMemo(() => {
-    if (loadingTransfers) {
-      return <SkeletonList count={2} itemHeight="h-14" />;
-    }
-    if (transfers.length === 0) {
-      return (
-        <div className="rounded-lg border border-border bg-card p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            No transfers yet
-          </p>
-        </div>
-      );
-    }
-    return (
-      <div className="space-y-2">
-        {transfers.map((t: TransferItem) => (
-          <Link
-            key={t.transaction_id}
-            href={`/send/${t.transaction_id}`}
-            className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-foreground truncate">
-                Transfer
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {formatDate(t.created_at)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="font-semibold text-foreground">
-                ACBU {formatAmount(t.amount_acbu)}
-              </p>
-              <Badge
-                variant="outline"
-                className={`mt-1 text-xs ${getStatusColor(t.status)}`}
-              >
-                {t.status === "completed" && (
-                  <Check className="mr-1 h-3 w-3" />
-                )}
-                {t.status === "pending" && (
-                  <AlertCircle className="mr-1 h-3 w-3" />
-                )}
-                {t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : "Unknown"}
-              </Badge>
-            </div>
-          </Link>
-        ))}
-      </div>
-    );
-  }, [transfers, loadingTransfers]);
 
   return (
     <>
@@ -494,7 +435,17 @@ export default function SendPage() {
                       <SelectValue placeholder="Select a contact" />
                     </SelectTrigger>
                     <SelectContent>
-                      {virtualizedContacts}
+                      {loadingContacts ? (
+                        <SelectItem value="__loading" disabled>
+                          Loading contacts...
+                        </SelectItem>
+                      ) : contacts.length > 0 ? (
+                        virtualizedContacts
+                      ) : (
+                        <SelectItem value="__empty" disabled>
+                          No contacts found
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </TabsContent>
@@ -568,7 +519,7 @@ export default function SendPage() {
             <Card className="border-border bg-muted p-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Network Fee</span>
-                <span className="font-medium text-foreground">Free</span>
+                <span className="font-medium text-foreground">{transferNetworkFeeText}</span>
               </div>
             </Card>
 
@@ -628,7 +579,7 @@ export default function SendPage() {
                 ACBU {formatAmount(amount)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Network Fee: Free
+                Network Fee: {transferNetworkFeeText}
               </p>
             </div>
             {note && (
