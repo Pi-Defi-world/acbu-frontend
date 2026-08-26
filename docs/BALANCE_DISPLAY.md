@@ -10,6 +10,8 @@ This document explains how to properly fetch and display user balances without s
 
 Fetches the user's ACBU wallet balance from `/users/me/balance` endpoint.
 
+
+
 **Returns:**
 ```typescript
 {

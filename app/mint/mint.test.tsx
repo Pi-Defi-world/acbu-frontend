@@ -4,6 +4,7 @@ import MintPage from './page'
 import * as authContext from '@/contexts/auth-context'
 import * as useBalanceHook from '@/hooks/use-balance'
 import * as useApiHook from '@/hooks/use-api'
+import * as useFiatAccountsHook from '@/hooks/use-fiat-accounts'
 import * as ratesApi from '@/lib/api/rates'
 import * as fiatApi from '@/lib/api/fiat'
 
@@ -11,6 +12,7 @@ import * as fiatApi from '@/lib/api/fiat'
 vi.mock('@/contexts/auth-context')
 vi.mock('@/hooks/use-balance')
 vi.mock('@/hooks/use-api')
+vi.mock('@/hooks/use-fiat-accounts')
 vi.mock('@/lib/api/rates')
 vi.mock('@/lib/api/fiat')
 vi.mock('@/lib/stellar-wallets-kit', () => ({
@@ -64,6 +66,12 @@ vi.mock('@/components/ui/alert-dialog', () => ({
   AlertDialogCancel: ({ children, onClick }: { children: React.ReactNode, onClick: () => void }) => <button onClick={onClick}>{children}</button>,
 }))
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useParams: () => ({}),
+  usePathname: () => '/',
+}))
+
 vi.mock('next/link', () => ({
   default: ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>
@@ -89,11 +97,19 @@ describe('MintPage', () => {
       balance: 100,
       balanceSource: 'stellar',
       loading: false,
-      refresh: vi.fn(),
+      refetch: vi.fn(),
       error: '',
     })
 
     vi.mocked(useApiHook.useApiOpts).mockReturnValue({
+    })
+
+    vi.mocked(useFiatAccountsHook.useFiatAccounts).mockReturnValue({
+      accounts: [{ id: 'acc1', currency: 'NGN', bank_name: 'Test Bank', balance: '0', account_number: '0000000000', account_name: 'Test', ledger_entries: [] }],
+      loading: false,
+      error: '',
+      refetch: vi.fn(),
+      refresh: vi.fn(),
     })
 
     vi.mocked(ratesApi.getRates).mockResolvedValue({ acbu_usd: '1.0' })
@@ -132,6 +148,6 @@ describe('MintPage', () => {
     const availableTexts = screen.getAllByText(/100/)
     expect(availableTexts.length).toBeGreaterThan(0)
     expect(screen.getByText(/Available: ACBU/)).toBeInTheDocument()
-    expect(screen.getByText('Burn & Redeem')).not.toBeDisabled()
+    expect(screen.getByText('Continue to Burn & Redeem')).not.toBeDisabled()
   })
 })
