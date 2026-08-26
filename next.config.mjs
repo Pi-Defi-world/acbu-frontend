@@ -77,7 +77,37 @@ const nextConfig = {
   },
 
   async redirects() {
+    // Supported locale slugs – keep in sync with i18n/locales.ts
+    const localePattern = '(en|en-NG|en-KE|ar|ru|pl)';
+
     return [
+      // ── Locale-aware redirects (must come first so they take priority) ──
+      // Visitors arriving at /:locale/account/* keep their locale on the way
+      // to the canonical /me/* destination (fixes #766).
+      {
+        source: `/:locale${localePattern}/account`,
+        destination: '/:locale/me',
+        permanent: false,
+      },
+      {
+        source: `/:locale${localePattern}/account/profile`,
+        destination: '/:locale/me/profile',
+        permanent: false,
+      },
+      {
+        source: `/:locale${localePattern}/account/kyc`,
+        destination: '/:locale/me/kyc',
+        permanent: false,
+      },
+      {
+        source: `/:locale${localePattern}/account/recovery`,
+        destination: '/:locale/recovery',
+        permanent: false,
+      },
+
+      // ── Bare (non-localised) redirects ──────────────────────────────────
+      // Visitors without a locale prefix are redirected as before; the
+      // locale middleware will add the preferred locale afterwards.
       { source: '/account', destination: '/me', permanent: false },
       { source: '/account/profile', destination: '/me/profile', permanent: false },
       { source: '/account/kyc', destination: '/me/kyc', permanent: false },
