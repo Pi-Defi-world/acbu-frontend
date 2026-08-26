@@ -3,6 +3,13 @@ import Link from 'next/link';
 import { FileQuestion, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+/**
+ * Root-level 404 fallback — rendered when Next.js cannot match any route
+ * outside the [locale] tree (e.g. bare /unknown-path with no locale prefix).
+ * This component runs without next-intl context, so strings are hard-coded
+ * in English. Locale-prefixed unknown routes are handled by
+ * app/[locale]/not-found.tsx which has full translation support.
+ */
 export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-6 text-center">
@@ -17,7 +24,7 @@ export default function NotFound() {
       />
 
       <div className="rounded-full bg-primary/10 p-4">
-        <FileQuestion className="h-10 w-10 text-primary" />
+        <FileQuestion className="h-10 w-10 text-primary" aria-hidden="true" />
       </div>
 
       <div className="space-y-2">
@@ -32,7 +39,7 @@ export default function NotFound() {
 
       <Button asChild>
         <Link href="/">
-          <Home className="w-4 h-4 mr-2" />
+          <Home className="w-4 h-4 mr-2" aria-hidden="true" />
           Go to dashboard
         </Link>
       </Button>
