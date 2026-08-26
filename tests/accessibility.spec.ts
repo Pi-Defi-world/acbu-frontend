@@ -45,7 +45,6 @@ test.describe('Accessibility Tests', () => {
     
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
-      .exclude('.chakra-portal')
       .disableRules(['color-contrast']) // Temporarily disable color contrast checks
       .analyze();
     
@@ -59,7 +58,6 @@ test.describe('Accessibility Tests', () => {
     
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
-      .exclude('.chakra-portal')
       .disableRules(['color-contrast']) // Temporarily disable color contrast checks
       .analyze();
     
@@ -73,7 +71,6 @@ test.describe('Accessibility Tests', () => {
     
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
-      .exclude('.chakra-portal')
       .disableRules(['color-contrast']) // Temporarily disable color contrast checks
       .analyze();
     
@@ -87,7 +84,6 @@ test.describe('Accessibility Tests', () => {
     
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
-      .exclude('.chakra-portal')
       .disableRules(['color-contrast']) // Temporarily disable color contrast checks
       .analyze();
     
