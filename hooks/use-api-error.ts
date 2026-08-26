@@ -1,9 +1,5 @@
-
 import { useState, useCallback } from "react";
 import type { ApiError, ApiErrorResponse, UIError } from "@/types/api";
-import { useState, useCallback, useEffect, useRef } from "react";
-import type { ApiError } from "@/lib/api/client";
-
 
 export type { UIError, UIErrorAction } from "@/types/api";
 
