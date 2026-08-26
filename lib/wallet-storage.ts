@@ -33,7 +33,7 @@ function toBase64(buffer: ArrayBuffer | Uint8Array): string {
   const bytes = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i += 1) {
-    binary += String.fromCharCode(bytes[i]);
+    binary += String.fromCharCode(bytes[i]!);
   }
   return btoa(binary);
 }
@@ -58,7 +58,7 @@ async function deriveKey(passcode: string, salt: Uint8Array): Promise<CryptoKey>
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: salt as any,
+      salt: salt as BufferSource,
       iterations: PBKDF2_ITERATIONS,
       hash: 'SHA-256',
     },
@@ -105,9 +105,9 @@ async function decryptSecret(encrypted: string, passcode: string): Promise<strin
     const ciphertext = fromBase64(payload.ciphertext);
     const key = await deriveKey(passcode, salt);
     const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: iv as any },
+      { name: 'AES-GCM', iv: iv as BufferSource },
       key,
-      ciphertext as any,
+      ciphertext as BufferSource,
     );
     return textDecoder.decode(decrypted);
   } catch {
@@ -146,21 +146,6 @@ export async function storeWalletSecretLocalPlaintext(
       secret,
     );
   }
-  // Fallback: IndexedDB can be unavailable in some browser modes; keep a copy in localStorage.
-  // (Still per-origin; this is not meant as a security measure.)
-  try {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(userKey, secret);
-      if (stellarAddress) {
-        window.localStorage.setItem(
-          `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`,
-          secret,
-        );
-      }
-    }
-  } catch {
-    // ignore
-  }
 }
 
 /**
@@ -182,32 +167,32 @@ export async function getWalletSecretLocalPlaintext(
     const byAddress = await localforage.getItem<string>(addressKey);
     if (byAddress) return byAddress;
   }
-  try {
-    if (typeof window !== 'undefined') {
-      const lsByUser = window.localStorage.getItem(userKey);
-      if (lsByUser) return lsByUser;
-      if (addressKey) return window.localStorage.getItem(addressKey);
-    }
-  } catch {
-    // ignore
-  }
   return null;
 }
 
 /**
- * Best-effort wallet secret lookup (dev/test flows only).
- *
- * Returns the plaintext secret from the dev storage slot.
- * The former sessionStorage passcode path has been intentionally removed (F-003):
- * passcodes must be held in memory only and passed explicitly to `getWalletSecret()`
- * by callers that perform authenticated decryption.
+ * Best-effort wallet secret lookup:
+ * - plaintext slot (dev/test flows and wallet-setup modal)
+ * - encrypted slot decrypted with passcode from memory (wallet page flow)
  */
 export async function getWalletSecretAnyLocal(
   userId: string,
   stellarAddress?: string | null,
 ): Promise<string | null> {
   assertDevOnly();
-  return getWalletSecretLocalPlaintext(userId, stellarAddress);
+  const plaintext = await getWalletSecretLocalPlaintext(userId, stellarAddress);
+  if (plaintext) return plaintext;
+
+  try {
+    const passcode = getPasscode();
+    if (passcode) {
+      const decrypted = await getWalletSecret(userId, passcode);
+      if (decrypted) return decrypted;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
 }
 
 export async function hasStoredWallet(userId: string): Promise<boolean> {

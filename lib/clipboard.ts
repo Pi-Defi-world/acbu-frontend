@@ -1,16 +1,24 @@
+import { logger } from '@/lib/logger';
+
 /**
  * Reusable utility to copy text to the clipboard.
  * Supports both modern Clipboard API and fallback for non-secure origins.
  */
 export async function copyToClipboard(text: string): Promise<void> {
   // 1. Try modern Clipboard API if available (requires secure context)
-  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+  if (
+    typeof window !== 'undefined' &&
+    window.isSecureContext &&
+    typeof navigator !== 'undefined' &&
+    navigator.clipboard &&
+    navigator.clipboard.writeText
+  ) {
     try {
       await navigator.clipboard.writeText(text);
       return;
     } catch (err) {
       // If Clipboard API fails (e.g. user denied permission), fall through to fallback
-      console.warn('Clipboard API failed, falling back to legacy method:', err);
+      logger.warn('Clipboard API failed, falling back to legacy method', err);
     }
   }
 
@@ -36,7 +44,7 @@ export async function copyToClipboard(text: string): Promise<void> {
         throw new Error('execCommand returned false');
       }
     } catch (err) {
-      console.error('Fallback copy failed:', err);
+      logger.error('Fallback copy failed', err);
       throw new Error('Unable to copy to clipboard', { cause: err });
     } finally {
       document.body.removeChild(textarea);

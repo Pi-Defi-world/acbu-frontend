@@ -1,32 +1,7 @@
 import { useState, useCallback } from "react";
-import type { ApiError } from "@/lib/api/client";
+import type { ApiError, ApiErrorResponse, UIError } from "@/types/api";
 
-/**
- * Strict shape of an API error response from the backend.
- */
-export interface ApiErrorResponse {
-  status?: number;
-  message?: string;
-  details?: unknown;
-}
-
-/**
- * A mapped UI error with a human-readable message and an optional recovery action.
- */
-export interface UIError {
-  message: string;
-  action?: UIErrorAction;
-}
-
-export interface UIErrorAction {
-  label: string;
-  /** If set, render as a link. */
-  href?: string;
-  /** If set, call this when the action button is clicked. */
-  onClick?: () => void;
-  /** If true, the submit button should be disabled until this resolves. */
-  disableSubmitFor?: number; // milliseconds
-}
+export type { UIError, UIErrorAction } from "@/types/api";
 
 /**
  * Maps an API error status code to a user-friendly UIError.
@@ -36,9 +11,7 @@ export function mapApiError(err: unknown): UIError | null {
   if (err == null) return null;
 
   const status =
-    (err as ApiError).status ??
-    (err as ApiErrorResponse).status ??
-    undefined;
+    (err as ApiError).status ?? (err as ApiErrorResponse).status ?? undefined;
 
   const rawMessage =
     err instanceof Error
@@ -93,6 +66,42 @@ export function mapApiError(err: unknown): UIError | null {
 export function useApiError() {
   const [uiError, setUiError] = useState<UIError | null>(null);
   const [submitDisabledUntil, setSubmitDisabledUntil] = useState<number>(0);
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
+
+  // Tracks the currently-scheduled timeout so it can be explicitly cancelled
+  // as defense-in-depth alongside the effect cleanup ordering.
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    // Always clear any timer left over from a previous run before doing
+    // anything else — defensive, in addition to the cleanup fn below.
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    if (submitDisabledUntil <= 0) {
+      setIsSubmitDisabled(false);
+      return;
+    }
+    const now = Date.now();
+    if (submitDisabledUntil <= now) {
+      setIsSubmitDisabled(false);
+      return;
+    }
+    setIsSubmitDisabled(true);
+    timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = null;
+      setIsSubmitDisabled(false);
+    }, submitDisabledUntil - now);
+
+    return () => {
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [submitDisabledUntil]);
 
   const setApiError = useCallback((err: unknown) => {
     const mapped = mapApiError(err);
@@ -106,8 +115,6 @@ export function useApiError() {
     setUiError(null);
     setSubmitDisabledUntil(0);
   }, []);
-
-  const isSubmitDisabled = submitDisabledUntil > Date.now();
 
   return { uiError, setApiError, clearError, isSubmitDisabled };
 }

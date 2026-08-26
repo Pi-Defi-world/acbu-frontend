@@ -53,14 +53,15 @@ export function useRates(): UseRatesReturn {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
     setLoading(true);
     setError('');
 
-    // Deduplicate concurrent requests
+    // Deduplicate concurrent requests; pass the abort signal so the
+    // underlying fetch is cancelled when the component unmounts.
     const promise =
       inFlightPromise ??
-      (inFlightPromise = ratesApi.getRates(opts).finally(() => {
+      (inFlightPromise = ratesApi.getRates({ ...opts, signal: controller.signal }).finally(() => {
         inFlightPromise = null;
       }));
 
@@ -68,18 +69,18 @@ export function useRates(): UseRatesReturn {
       .then((data) => {
         cachedRates = data;
         cachedAt = Date.now();
-        if (!cancelled) setRates(data);
+        if (!controller.signal.aborted) setRates(data);
       })
       .catch((e) => {
-        if (!cancelled)
-          setError(e instanceof Error ? e.message : 'Failed to load rates');
+        if (controller.signal.aborted) return;
+        setError(e instanceof Error ? e.message : 'Failed to load rates');
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [opts.token, tick]);
 
