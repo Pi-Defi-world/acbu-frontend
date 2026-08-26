@@ -212,4 +212,31 @@ test.describe('Accessibility Tests', () => {
     
     expect(accessibilityScanResults.violations).toEqual([]);
   });
+
+  test('send amount validation is keyboard accessible', async ({ page }) => {
+    await mockAuth(page);
+    await page.goto('/send');
+    await waitForPageReady(page);
+
+    await page.getByRole('button', { name: /New Transfer/i }).click();
+    const dialog = page.getByRole('dialog', { name: 'Send Money' });
+    await expect(dialog).toBeVisible();
+
+    await dialog.getByRole('tab', { name: 'New Address' }).click();
+    await dialog.locator('#custom-recipient').fill('GABC123');
+    const amount = dialog.getByLabel('Amount');
+    await amount.fill('0');
+
+    // A keyboard user must not be able to advance to confirmation with a
+    // non-positive amount, and the control remains discoverable by its label.
+    const continueButton = dialog.getByRole('button', { name: 'Continue to confirmation' });
+    await expect(continueButton).toBeDisabled();
+    await expect(amount).toHaveAttribute('aria-describedby', 'amount-hint');
+
+    const accessibilityScanResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .disableRules(['color-contrast'])
+      .analyze();
+    expect(accessibilityScanResults.violations).toEqual([]);
+  });
 });
