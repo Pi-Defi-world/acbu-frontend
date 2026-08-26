@@ -13,5 +13,9 @@ describe("middleware CSP reporting", () => {
     expect(policy).toContain("report-uri /api/csp-report");
     expect(policy).toContain("default-src 'self'");
     expect(policy).toContain("object-src 'none'");
+    expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+    expect(response.headers.get('Referrer-Policy')).toBe('strict-origin-when-cross-origin');
+    expect(response.headers.get('Permissions-Policy')).toContain('camera=()');
   });
 });
