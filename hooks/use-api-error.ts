@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { ApiError } from "@/lib/api/client";
 
 /**
@@ -36,9 +36,7 @@ export function mapApiError(err: unknown): UIError | null {
   if (err == null) return null;
 
   const status =
-    (err as ApiError).status ??
-    (err as ApiErrorResponse).status ??
-    undefined;
+    (err as ApiError).status ?? (err as ApiErrorResponse).status ?? undefined;
 
   const rawMessage =
     err instanceof Error
@@ -93,6 +91,42 @@ export function mapApiError(err: unknown): UIError | null {
 export function useApiError() {
   const [uiError, setUiError] = useState<UIError | null>(null);
   const [submitDisabledUntil, setSubmitDisabledUntil] = useState<number>(0);
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
+
+  // Tracks the currently-scheduled timeout so it can be explicitly cancelled
+  // as defense-in-depth alongside the effect cleanup ordering.
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    // Always clear any timer left over from a previous run before doing
+    // anything else — defensive, in addition to the cleanup fn below.
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    if (submitDisabledUntil <= 0) {
+      setIsSubmitDisabled(false);
+      return;
+    }
+    const now = Date.now();
+    if (submitDisabledUntil <= now) {
+      setIsSubmitDisabled(false);
+      return;
+    }
+    setIsSubmitDisabled(true);
+    timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = null;
+      setIsSubmitDisabled(false);
+    }, submitDisabledUntil - now);
+
+    return () => {
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [submitDisabledUntil]);
 
   const setApiError = useCallback((err: unknown) => {
     const mapped = mapApiError(err);
@@ -106,8 +140,6 @@ export function useApiError() {
     setUiError(null);
     setSubmitDisabledUntil(0);
   }, []);
-
-  const isSubmitDisabled = submitDisabledUntil > Date.now();
 
   return { uiError, setApiError, clearError, isSubmitDisabled };
 }
