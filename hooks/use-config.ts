@@ -78,8 +78,10 @@ export function useConfig(): UseConfigReturn {
 
     getAssetsConfig()
       .then((cfg) => {
-        cachedAt = Date.now();
-        if (!cancelled) setConfig(cfg);
+        if (!cancelled) {
+          cachedAt = Date.now();
+          setConfig(cfg);
+        }
       })
       .catch((e) => {
         if (!cancelled)
