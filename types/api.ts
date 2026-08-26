@@ -2,6 +2,29 @@
  * API request/response types (snake_case to match backend).
  */
 
+/** Error thrown by the API client for an unsuccessful HTTP response. */
+export interface ApiError extends Error {
+  status?: number;
+  details?: unknown;
+}
+
+/** Error payload returned by the backend before it is converted to an ApiError. */
+export type ApiErrorResponse = Partial<Pick<ApiError, 'message' | 'status' | 'details'>>;
+
+/** A recovery action presented to the user alongside a mapped API error. */
+export interface UIErrorAction {
+  label: string;
+  href?: string;
+  onClick?: () => void;
+  disableSubmitFor?: number;
+}
+
+/** A user-facing representation of an API error. */
+export interface UIError {
+  message: string;
+  action?: UIErrorAction;
+}
+
 // Auth
 export interface SigninResponse {
   api_key?: string; // Deprecated: now returned via httpOnly cookie only
