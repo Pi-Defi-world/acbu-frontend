@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { PageContainer } from "@/components/layout/page-container";
 import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
@@ -222,26 +221,34 @@ export default function WalletSetupPage() {
       </div>
 
       <PageContainer>
-        <Card className="border-border p-6 space-y-6">
-          {error && (
-            <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
+        <Dialog open>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Set Up Your Wallet</DialogTitle>
+              <DialogDescription>
+                ACBU uses the Stellar network. How would you like to set up your wallet?
+              </DialogDescription>
+            </DialogHeader>
 
-          {success && (
-            <div className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10">
-              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-green-600">{success}</p>
-            </div>
-          )}
+            {error && (
+              <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
+                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
 
-          {!option ? (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                How would you like to set up your wallet?
-              </p>
+            {success && (
+              <div className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10">
+                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-green-600">{success}</p>
+              </div>
+            )}
+
+            {!option ? (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  How would you like to set up your wallet?
+                </p>
 
               <Button
                 onClick={() => {
@@ -283,9 +290,9 @@ export default function WalletSetupPage() {
                   Connect Freighter, Lobstr, or others
                 </span>
               </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
+              </div>
+            ) : (
+              <div className="space-y-4">
               <Button
                 variant="ghost"
                 onClick={() => setOption(null)}
@@ -355,9 +362,10 @@ export default function WalletSetupPage() {
                   </Button>
                 </form>
               )}
-            </div>
-          )}
-        </Card>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </PageContainer>
     </>
   );
