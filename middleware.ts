@@ -25,6 +25,7 @@ export function middleware(request: NextRequest) {
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
     'frame-ancestors': ["'none'"],
+    'report-uri': ['/api/csp-report'],
     'connect-src': [
       "'self'",
       "https://*.stellar.org",
