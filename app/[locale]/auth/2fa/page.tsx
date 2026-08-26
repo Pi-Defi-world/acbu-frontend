@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -16,11 +17,13 @@ const CHALLENGE_TOKEN_KEY = '2fa_challenge_token';
 const POST_AUTH_REDIRECT_KEY = 'post_auth_redirect';
 
 export default function TwoFactorPage() {
+  const t = useTranslations('auth_2fa');
+
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md border-border p-8 text-center">
-          <div className="animate-pulse text-muted-foreground">Loading...</div>
+          <div className="animate-pulse text-muted-foreground">{t('loading')}</div>
         </Card>
       </div>
     }>
@@ -30,6 +33,7 @@ export default function TwoFactorPage() {
 }
 
 function TwoFactorForm() {
+  const t = useTranslations('auth_2fa');
   const router = useRouter();
   const { login } = useAuth();
   const [code, setCode] = useState('');
@@ -58,11 +62,17 @@ function TwoFactorForm() {
 
     try {
       if (!code || code.length !== 6) {
-        setError("Please enter a valid 6-digit code");
+        setError(t('errors.invalid_code'));
         return;
       }
       if (!challengeToken) {
-        setError("Missing challenge. Please sign in again.");
+        setError(t('errors.missing_challenge'));
+        return;
+      }
+
+      if (!getPasscode()) {
+        setError(t('errors.session_expired'));
+        sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
         return;
       }
 
@@ -76,7 +86,7 @@ function TwoFactorForm() {
       const safe = isSafeRedirect(stored);
       router.push(safe ?? '/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verification failed');
+      setError(err instanceof Error ? err.message : t('errors.verification_failed'));
     } finally {
       setLoading(false);
     }
@@ -88,10 +98,10 @@ function TwoFactorForm() {
         <div className="p-6 md:p-8">
           <div className="mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Two-Factor Authentication
+              {t('title')}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Enter the 6-digit code from your authenticator app
+              {t('description')}
             </p>
           </div>
 
@@ -112,7 +122,7 @@ function TwoFactorForm() {
                 htmlFor="auth-code"
                 className="form-label"
               >
-                Authentication Code
+                {t('code_label')}
               </label>
               <Input
                 id="auth-code"
@@ -135,15 +145,15 @@ function TwoFactorForm() {
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={loading}
             >
-              {loading ? "Verifying..." : "Verify"}
+              {loading ? t('verifying') : t('verify')}
             </Button>
           </form>
 
           {checked && !challengeToken && (
             <p className="mt-4 text-sm text-destructive">
-              Missing challenge token.{" "}
+              {t('missing_challenge_token')}{' '}
               <Link href="/auth/signin" className="underline">
-                Sign in again
+                {t('sign_in_again')}
               </Link>
               .
             </p>
@@ -153,10 +163,10 @@ function TwoFactorForm() {
             <div className="border-t border-border pt-4">
               <details className="text-sm">
                 <summary className="cursor-pointer text-muted-foreground hover:text-foreground font-medium">
-                  Don't have access to your authenticator?
+                  {t('no_authenticator_summary')}
                 </summary>
                 <p className="mt-2 text-muted-foreground">
-                  Contact support or use your backup codes if you saved them.
+                  {t('no_authenticator_body')}
                 </p>
               </details>
             </div>
