@@ -4,6 +4,7 @@
  * response: the assets don't change between requests within a session.
  */
 import { get } from "./client";
+import type { RequestOptions } from "./client";
 
 export interface PublicAssetsConfig {
   acbu: { code: string; issuer: string | null };
@@ -38,20 +39,24 @@ export interface PublicAssetsConfig {
 let cached: PublicAssetsConfig | null = null;
 let inFlight: Promise<PublicAssetsConfig> | null = null;
 
-export async function getAssetsConfig(): Promise<PublicAssetsConfig> {
+export async function getAssetsConfig(opts?: Pick<RequestOptions, 'signal'>): Promise<PublicAssetsConfig> {
   if (cached) return cached;
-  if (inFlight) return inFlight;
-  inFlight = get<PublicAssetsConfig>("/config/assets")
+  // If an in-flight request exists and no abort signal was provided, reuse it.
+  // If a signal is provided, start a fresh request so the caller can abort it independently.
+  if (inFlight && !opts?.signal) return inFlight;
+  const promise = get<PublicAssetsConfig>("/config/assets", opts)
     .then((cfg) => {
       cached = cfg;
       return cfg;
     })
     .finally(() => {
-      inFlight = null;
+      if (inFlight === promise) inFlight = null;
     });
-  return inFlight;
+  if (!opts?.signal) inFlight = promise;
+  return promise;
 }
 
 export function clearAssetsConfigCache(): void {
   cached = null;
+  inFlight = null;
 }
