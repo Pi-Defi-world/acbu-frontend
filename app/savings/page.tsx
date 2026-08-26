@@ -15,13 +15,20 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, PiggyBank, TrendingUp, Plus, AlertCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  PiggyBank,
+  TrendingUp,
+  Plus,
+  AlertCircle,
+} from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { useApiOpts } from "@/hooks/use-api";
 import * as userApi from "@/lib/api/user";
 import * as savingsApi from "@/lib/api/savings";
 import { formatAmount } from "@/lib/utils";
 import { BalanceSkeleton } from "@/components/ui/balance-skeleton";
+import { useI18n } from "@/contexts/i18n-context";
 
 interface SavingsGoal {
   id: string;
@@ -31,34 +38,38 @@ interface SavingsGoal {
   deadline: string;
 }
 
-const initialGoals: SavingsGoal[] = [
-  {
-    id: "1",
-    name: "Emergency Fund",
-    targetAmount: 5000,
-    currentAmount: 2500,
-    deadline: "Dec 2024",
-  },
-  {
-    id: "2",
-    name: "Business Startup",
-    targetAmount: 10000,
-    currentAmount: 3200,
-    deadline: "Jun 2025",
-  },
-];
-
+function getInitialGoals(t: (path: string) => string): SavingsGoal[] {
+  return [
+    {
+      id: "1",
+      name: t("savings.demo_goals.emergency_fund"),
+      targetAmount: 5000,
+      currentAmount: 2500,
+      deadline: "Dec 2024",
+    },
+    {
+      id: "2",
+      name: t("savings.demo_goals.business_startup"),
+      targetAmount: 10000,
+      currentAmount: 3200,
+      deadline: "Jun 2025",
+    },
+  ];
+}
 
 /**
  * Savings management page.
  */
 export default function SavingsPage() {
+  const { t } = useI18n();
   const opts = useApiOpts();
   const [apiUser, setApiUser] = useState("");
-  const [positionsBalance, setPositionsBalance] = useState<string | number | null>(null);
+  const [positionsBalance, setPositionsBalance] = useState<
+    string | number | null
+  >(null);
   const [positionsLoading, setPositionsLoading] = useState(false);
   const [receiveError, setReceiveError] = useState("");
-  const [goals, setGoals] = useState<SavingsGoal[]>(initialGoals);
+  const [goals, setGoals] = useState<SavingsGoal[]>(() => getInitialGoals(t));
 
   const [showNewGoalDialog, setShowNewGoalDialog] = useState(false);
   const [newGoalName, setNewGoalName] = useState("");
@@ -97,48 +108,77 @@ export default function SavingsPage() {
     resetNewGoalForm();
   };
 
- useEffect(() => {
+  useEffect(() => {
     setReceiveError("");
-    userApi.getReceive(opts).then(async (data) => {
-      const uri = (data.pay_uri ?? data.alias) as string | undefined;
-      if (uri && typeof uri === "string") setApiUser(uri);
-      setReceiveError("");
-    }).catch((e) => {
-      logger.error("Failed to load user info", e);
-      setReceiveError(e instanceof Error ? e.message : "Failed to load user info");
-    });
+    userApi
+      .getReceive(opts)
+      .then(async (data) => {
+        const uri = (data.pay_uri ?? data.alias) as string | undefined;
+        if (uri && typeof uri === "string") setApiUser(uri);
+        setReceiveError("");
+      })
+      .catch((e) => {
+        logger.error("Failed to load user info", e);
+        setReceiveError(
+          e instanceof Error ? e.message : t("savings.errors.load_user_info"),
+        );
+      });
   }, [opts.token]);
 
   useEffect(() => {
     if (!apiUser) return;
     setPositionsLoading(true);
     setReceiveError("");
-    savingsApi.getSavingsPositions(apiUser, undefined, opts).then((res) => {
-      setPositionsBalance(res.balance);
-      setReceiveError("");
-    }).catch((e) => {
-      logger.error("Failed to load savings balance", e);
-      setPositionsBalance(null);
-      setReceiveError(e instanceof Error ? e.message : "Failed to load savings balance");
-    }).finally(() => setPositionsLoading(false));
+    savingsApi
+      .getSavingsPositions(apiUser, undefined, opts)
+      .then((res) => {
+        setPositionsBalance(res.balance);
+        setReceiveError("");
+      })
+      .catch((e) => {
+        logger.error("Failed to load savings balance", e);
+        setPositionsBalance(null);
+        setReceiveError(
+          e instanceof Error ? e.message : t("savings.errors.load_balance"),
+        );
+      })
+      .finally(() => setPositionsLoading(false));
   }, [apiUser, opts.token]);
 
-  const apiBalance = typeof positionsBalance === "number" ? positionsBalance : typeof positionsBalance === "string" ? parseFloat(positionsBalance) || 0 : 0;
+  const apiBalance =
+    typeof positionsBalance === "number"
+      ? positionsBalance
+      : typeof positionsBalance === "string"
+        ? parseFloat(positionsBalance) || 0
+        : 0;
   // Total savings should reflect API positions plus any amounts already allocated
   // to savings goals so the overview is not redundant with the raw API balance.
-  const goalsTotal = goals.reduce((sum, g) => sum + (typeof g.currentAmount === 'number' ? g.currentAmount : parseFloat(String(g.currentAmount) || '0')), 0);
+  const goalsTotal = goals.reduce(
+    (sum, g) =>
+      sum +
+      (typeof g.currentAmount === "number"
+        ? g.currentAmount
+        : parseFloat(String(g.currentAmount) || "0")),
+    0,
+  );
   const totalSavings = apiBalance + goalsTotal;
 
   return (
     <>
       <header className="page-header">
-        <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
-          <Link href="/" className="p-2 hover:bg-muted rounded transition-colors" aria-label="Go back">
-            <ArrowLeft className="w-5 h-5" />
+        <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-4">
+          <Link
+            href="/"
+            className="hover:bg-muted rounded p-2 transition-colors"
+            aria-label={t("savings.go_back")}
+          >
+            <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="flex-1">
-            <h1 className="page-title">Savings</h1>
-            <p className="text-xs text-muted-foreground">Grow your wealth</p>
+            <h1 className="page-title">{t("savings.title")}</h1>
+            <p className="text-muted-foreground text-xs">
+              {t("savings.subtitle")}
+            </p>
           </div>
         </div>
       </header>
@@ -146,8 +186,8 @@ export default function SavingsPage() {
       <PageContainer>
         <div className="space-y-6">
           {receiveError && (
-            <div 
-              className="mb-6 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive"
+            <div
+              className="border-destructive/20 bg-destructive/5 text-destructive mb-6 flex items-center gap-2 rounded-xl border p-4 text-sm"
               role="alert"
               aria-live="assertive"
               aria-atomic="true"
@@ -158,48 +198,72 @@ export default function SavingsPage() {
           )}
 
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="page-title">On-chain Savings (API)</h2>
-              <PiggyBank className="w-5 h-5 text-green-600" />
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="page-title">{t("savings.api_section_title")}</h2>
+              <PiggyBank className="h-5 w-5 text-green-600" />
             </div>
             {positionsLoading ? (
               <BalanceSkeleton variant="full" />
             ) : (
               <>
-                <p className="text-3xl font-bold text-foreground mb-1">
+                <p className="text-foreground mb-1 text-3xl font-bold">
                   ACBU {formatAmount(positionsBalance)}
                 </p>
-                <p className="text-xs text-muted-foreground mb-3">This reflects balances reported by the backend API only.</p>
+                <p className="text-muted-foreground mb-3 text-xs">
+                  {t("savings.api_balance_note")}
+                </p>
               </>
             )}
-            <div className="flex gap-2 mt-3">
+            <div className="mt-3 flex gap-2">
               <Link href="/savings/deposit">
-                <Button size="sm" variant="outline" className="border-border bg-transparent">Deposit</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-border bg-transparent"
+                >
+                  {t("savings.deposit")}
+                </Button>
               </Link>
               <Link href="/savings/withdraw">
-                <Button size="sm" variant="outline" className="border-border bg-transparent">Withdraw</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-border bg-transparent"
+                >
+                  {t("savings.withdraw")}
+                </Button>
               </Link>
             </div>
           </Card>
 
           {/* Overview Card */}
           <Card className="border-border bg-gradient-to-br from-green-500/10 to-green-600/10 p-5">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="page-title">Total Savings (API + Goals)</h2>
-              <PiggyBank className="w-5 h-5 text-green-600" />
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="page-title">{t("savings.total_title")}</h2>
+              <PiggyBank className="h-5 w-5 text-green-600" />
             </div>
             {positionsLoading ? (
               <BalanceSkeleton variant="full" />
             ) : (
               <>
-                <p className="text-3xl font-bold text-foreground mb-1">
+                <p className="text-foreground mb-1 text-3xl font-bold">
                   ACBU {formatAmount(totalSavings)}
                 </p>
-                <p className="text-xs text-muted-foreground mb-2">Includes allocated amounts in savings goals: ACBU {formatAmount(goalsTotal)}</p>
-                <p className="text-xs text-muted-foreground mb-3">Earning 8% APY interest</p>
-                <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                  <TrendingUp className="w-3 h-3" />
-                  <span>+ACBU {formatAmount((totalSavings * 0.08) / 12)} this month</span>
+                <p className="text-muted-foreground mb-2 text-xs">
+                  {t("savings.goals_total_note", {
+                    amount: formatAmount(goalsTotal),
+                  })}
+                </p>
+                <p className="text-muted-foreground mb-3 text-xs">
+                  {t("savings.apy_note")}
+                </p>
+                <div className="flex items-center gap-1 text-xs font-medium text-green-600">
+                  <TrendingUp className="h-3 w-3" />
+                  <span>
+                    {t("savings.monthly_gain", {
+                      amount: formatAmount((totalSavings * 0.08) / 12),
+                    })}
+                  </span>
                 </div>
               </>
             )}
@@ -207,29 +271,51 @@ export default function SavingsPage() {
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Savings Goals</h3>
-              <Button size="sm" variant="outline" className="h-7 border-border bg-transparent" onClick={() => setShowNewGoalDialog(true)}>
-                <Plus className="w-3 h-3 mr-1" /> New Goal
+              <h3 className="text-foreground text-sm font-semibold">
+                {t("savings.goals_title")}
+              </h3>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-border h-7 bg-transparent"
+                onClick={() => setShowNewGoalDialog(true)}
+              >
+                <Plus className="mr-1 h-3 w-3" /> {t("savings.new_goal")}
               </Button>
             </div>
             {goals.map((goal) => {
               const progress = (goal.currentAmount / goal.targetAmount) * 100;
               return (
                 <Card key={goal.id} className="border-border bg-card p-4">
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <h4 className="font-semibold text-foreground">{goal.name}</h4>
-                      <p className="text-xs text-muted-foreground">Target: ACBU {formatAmount(goal.targetAmount)}</p>
+                      <h4 className="text-foreground font-semibold">
+                        {goal.name}
+                      </h4>
+                      <p className="text-muted-foreground text-xs">
+                        {t("savings.goal_target", {
+                          amount: formatAmount(goal.targetAmount),
+                        })}
+                      </p>
                     </div>
-                    <Badge variant="secondary" className="text-xs">{goal.deadline}</Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {goal.deadline}
+                    </Badge>
                   </div>
                   <div className="mb-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium text-foreground">ACBU {formatAmount(goal.currentAmount)}</p>
-                      <p className="text-xs text-muted-foreground">{progress.toFixed(0)}%</p>
+                    <div className="mb-1 flex items-center justify-between">
+                      <p className="text-foreground text-sm font-medium">
+                        ACBU {formatAmount(goal.currentAmount)}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {progress.toFixed(0)}%
+                      </p>
                     </div>
-                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                    <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+                      <div
+                        className="bg-primary h-full transition-all"
+                        style={{ width: `${progress}%` }}
+                      />
                     </div>
                   </div>
                 </Card>
@@ -240,32 +326,66 @@ export default function SavingsPage() {
       </PageContainer>
 
       <Dialog open={showNewGoalDialog} onOpenChange={setShowNewGoalDialog}>
-        <DialogContent className="max-w-md border-border">
+        <DialogContent className="border-border max-w-md">
           <DialogHeader>
-            <DialogTitle>Create New Goal</DialogTitle>
-            <DialogDescription>Set a savings target to work towards</DialogDescription>
+            <DialogTitle>{t("savings.create_goal_title")}</DialogTitle>
+            <DialogDescription>
+              {t("savings.create_goal_description")}
+            </DialogDescription>
           </DialogHeader>
           <form className="space-y-4" onSubmit={handleCreateGoal}>
             <div className="space-y-2">
-              <Label htmlFor="new-goal-name" className="text-foreground">Goal Name</Label>
-              <Input id="new-goal-name" placeholder="e.g. Emergency Fund" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className="border-border" />
+              <Label htmlFor="new-goal-name" className="text-foreground">
+                {t("savings.goal_name_label")}
+              </Label>
+              <Input
+                id="new-goal-name"
+                placeholder={t("savings.goal_name_placeholder")}
+                value={newGoalName}
+                onChange={(e) => setNewGoalName(e.target.value)}
+                className="border-border"
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-goal-target" className="text-foreground">Target Amount (ACBU)</Label>
-              <Input id="new-goal-target" type="number" placeholder="0.00" value={newGoalTarget} onChange={(e) => setNewGoalTarget(e.target.value)} className="border-border" />
+              <Label htmlFor="new-goal-target" className="text-foreground">
+                {t("savings.goal_target_label")}
+              </Label>
+              <Input
+                id="new-goal-target"
+                type="number"
+                placeholder="0.00"
+                value={newGoalTarget}
+                onChange={(e) => setNewGoalTarget(e.target.value)}
+                className="border-border"
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-goal-deadline" className="text-foreground">Deadline</Label>
-              <Input id="new-goal-deadline" type="month" value={newGoalDeadline} onChange={(e) => setNewGoalDeadline(e.target.value)} className="border-border" />
+              <Label htmlFor="new-goal-deadline" className="text-foreground">
+                {t("savings.goal_deadline_label")}
+              </Label>
+              <Input
+                id="new-goal-deadline"
+                type="month"
+                value={newGoalDeadline}
+                onChange={(e) => setNewGoalDeadline(e.target.value)}
+                className="border-border"
+              />
             </div>
             <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={() => setShowNewGoalDialog(false)} className="flex-1 border-border">Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowNewGoalDialog(false)}
+                className="border-border flex-1"
+              >
+                {t("savings.cancel")}
+              </Button>
               <Button
                 type="submit"
                 disabled={!isNewGoalFormValid}
-                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 flex-1"
               >
-                Create Goal
+                {t("savings.create")}
               </Button>
             </div>
           </form>
