@@ -13,16 +13,11 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
-import { storeWalletSecret } from "@/lib/wallet-storage";
-import {
-  getPasscode,
-  getTempPassphrase,
-  clearTempPassphrase,
-} from "@/lib/passcode-manager";
+import { getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
-import { useWalletSetup } from "@/hooks/use-wallet-setup";
 import { logger } from "@/lib/logger";
+import { useI18n } from "@/contexts/i18n-context";
 
 const FORCE_WALLET_SETUP_KEY = "force_wallet_setup";
 
@@ -46,6 +41,7 @@ function clearForceWalletSetupFlag(): void {
 }
 
 export function WalletSetupModal() {
+  const { t } = useI18n();
   const { userId, stellarAddress, refreshStellarAddress, isAuthenticated } =
     useAuth();
   const kit = useStellarWalletsKit();
@@ -101,56 +97,6 @@ export function WalletSetupModal() {
     setOpen(false);
   };
 
-  /**
-   * Sync a newly-generated or imported wallet to the backend.
-   *
-   * Order matters here: we push the new address to the backend FIRST, and only
-   * write the local seed after the PUT succeeds. That way, if the backend call
-   * fails, we don't end up with a local seed whose public key doesn't match
-   * the server's record (which is what caused the mint to keep targeting the
-   * wrong recipient and erroring with "trustline entry is missing").
-   *
-   * After syncing, we call postWalletConfirm to complete the activation flow.
-   */
-  const syncWalletToBackend = async (secret: string): Promise<void> => {
-    if (!userId) throw new Error("Not logged in");
-
-    const passcode = getPasscode();
-    if (!passcode) {
-      throw new Error(
-        "Passcode not available. Please log in again to set up your wallet.",
-      );
-    }
-
-    const kp = Keypair.fromSecret(secret);
-    const publicKey = kp.publicKey();
-
-    // Step 1: Update wallet address on backend
-    const result = await userApi.putWalletAddress(publicKey);
-    if (
-      !result?.ok ||
-      (result.stellar_address && result.stellar_address !== publicKey)
-    ) {
-      throw new Error(
-        "Backend did not accept the new wallet address. Please retry.",
-      );
-    }
-
-    // Step 2: Store secret encrypted with passcode
-    await storeWalletSecret(userId, secret, passcode);
-
-    // Step 3: Confirm wallet activation on backend
-    try {
-      await userApi.postWalletConfirm({ wallet_address: publicKey });
-    } catch (err) {
-      logger.warn(
-        "Wallet confirm failed, but wallet address was set. User can continue.",
-        err,
-      );
-      // Don't throw - the address is set, confirmation can retry later if needed
-    }
-  };
-
   const handleGenerateConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -160,7 +106,7 @@ export function WalletSetupModal() {
       await generateWallet(passphrase);
       await handleFinish();
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to save wallet");
+      setError((err as Error).message || t("wallet.errors.save_failed"));
     } finally {
       setLoading(false);
     }
@@ -171,7 +117,7 @@ export function WalletSetupModal() {
     setError("");
 
     if (!importSeed) {
-      setError("Seed is required.");
+      setError(t("wallet.errors.seed_required"));
       return;
     }
 
@@ -181,7 +127,7 @@ export function WalletSetupModal() {
       await handleFinish();
     } catch (err: unknown) {
       setError(
-        "Invalid seed or failed to import. " + ((err as Error).message || ""),
+        t("wallet.errors.import_failed") + " " + ((err as Error).message || ""),
       );
     } finally {
       setLoading(false);
@@ -193,7 +139,7 @@ export function WalletSetupModal() {
 
     setLoading(true);
     try {
-      if (!userId) throw new Error("Not logged in");
+      if (!userId) throw new Error(t("wallet.errors.not_logged_in"));
 
       // This will prompt the user to select and connect a wallet
       await kit.openModal({
@@ -208,9 +154,7 @@ export function WalletSetupModal() {
               !result?.ok ||
               (result.stellar_address && result.stellar_address !== pubKey)
             ) {
-              throw new Error(
-                "Backend did not accept the wallet address. Please retry.",
-              );
+              throw new Error(t("wallet.errors.address_rejected"));
             }
 
             // Confirm wallet activation on backend
@@ -225,12 +169,12 @@ export function WalletSetupModal() {
 
             handleFinish();
           } catch (e: unknown) {
-            setError((e as Error).message || "Failed to connect wallet");
+            setError((e as Error).message || t("wallet.errors.connect_failed"));
           }
         },
       });
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to connect wallet");
+      setError((err as Error).message || t("wallet.errors.connect_failed"));
     } finally {
       setLoading(false);
     }
@@ -248,11 +192,8 @@ export function WalletSetupModal() {
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Set Up Your Wallet</DialogTitle>
-          <DialogDescription>
-            ACBU uses the Stellar network. How would you like to set up your
-            wallet?
-          </DialogDescription>
+          <DialogTitle>{t("wallet.modal.title")}</DialogTitle>
+          <DialogDescription>{t("wallet.modal.description")}</DialogDescription>
         </DialogHeader>
 
         {error && (
@@ -275,9 +216,11 @@ export function WalletSetupModal() {
               className="flex h-auto w-full flex-col items-center py-4"
               variant="outline"
             >
-              <span className="font-semibold">Generate New Wallet</span>
+              <span className="font-semibold">
+                {t("wallet.generate.title")}
+              </span>
               <span className="text-muted-foreground mt-1 text-center text-xs text-wrap">
-                Let us create a secure wallet for you
+                {t("wallet.generate.description")}
               </span>
             </Button>
 
@@ -287,9 +230,9 @@ export function WalletSetupModal() {
               className="flex h-auto w-full flex-col items-center py-4"
               variant="outline"
             >
-              <span className="font-semibold">Import Existing Seed</span>
+              <span className="font-semibold">{t("wallet.import.title")}</span>
               <span className="text-muted-foreground mt-1 text-center text-xs text-wrap">
-                Use an existing Stellar secret key
+                {t("wallet.import.description")}
               </span>
             </Button>
 
@@ -299,10 +242,12 @@ export function WalletSetupModal() {
               className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-auto w-full flex-col items-center py-4"
             >
               <span className="font-semibold">
-                {loading ? "Connecting..." : "Connect External Wallet"}
+                {loading
+                  ? t("wallet.connect.connecting")
+                  : t("wallet.connect.title")}
               </span>
               <span className="text-primary-foreground/70 mt-1 text-center text-xs text-wrap">
-                Connect Freighter, Lobstr, or others
+                {t("wallet.connect.description")}
               </span>
             </Button>
           </div>
@@ -314,50 +259,52 @@ export function WalletSetupModal() {
               className="mb-2 -ml-2 h-8 px-2"
             >
               <ChevronLeft className="mr-1 h-4 w-4" />
-              Back
+              {t("wallet.modal.back")}
             </Button>
 
             {option === 1 && (
               <form onSubmit={handleGenerateConfirm} className="space-y-4">
-                <h2 className="text-lg font-semibold">Your New Wallet</h2>
+                <h2 className="text-lg font-semibold">
+                  {t("wallet.generate.new_wallet")}
+                </h2>
 
                 <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
                   <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                   <p className="text-xs text-blue-800 dark:text-blue-300">
-                    Your wallet secret will be encrypted with your account
-                    passcode and stored securely on this device.
+                    {t("wallet.security_notice")}
                   </p>
                 </div>
 
                 <p className="text-muted-foreground text-sm">
-                  Please save this secret key somewhere safe. It is required to
-                  recover your wallet if you switch devices.
+                  {t("wallet.generate.save_key_notice")}
                 </p>
                 <div className="bg-muted border-border rounded border p-3 font-mono text-xs break-all">
                   {passphrase}
                 </div>
 
                 <Button type="submit" disabled={loading} className="w-full">
-                  {loading ? "Saving..." : "I have saved my key"}
+                  {loading
+                    ? t("wallet.generate.saving")
+                    : t("wallet.generate.saved")}
                 </Button>
               </form>
             )}
 
             {option === 2 && (
               <form onSubmit={handleImportSeed} className="space-y-4">
-                <h2 className="text-lg font-semibold">Import Seed</h2>
+                <h2 className="text-lg font-semibold">
+                  {t("wallet.import.heading")}
+                </h2>
 
                 <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
                   <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                   <p className="text-xs text-blue-800 dark:text-blue-300">
-                    Your wallet secret will be encrypted with your account
-                    passcode and stored securely on this device.
+                    {t("wallet.security_notice")}
                   </p>
                 </div>
 
                 <p className="text-muted-foreground text-sm">
-                  Enter your Stellar secret key (starts with 'S'). It will be
-                  stored encrypted on this device.
+                  {t("wallet.import.seed_help")}
                 </p>
 
                 <Input
@@ -369,7 +316,9 @@ export function WalletSetupModal() {
                 />
 
                 <Button type="submit" disabled={loading} className="w-full">
-                  {loading ? "Importing..." : "Import Wallet"}
+                  {loading
+                    ? t("wallet.import.importing")
+                    : t("wallet.import.submit")}
                 </Button>
               </form>
             )}

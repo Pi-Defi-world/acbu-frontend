@@ -101,12 +101,21 @@
       "not_logged_in": "Not logged in",
       "address_rejected": "Backend did not accept the wallet address. Please retry.",
       "seed_required": "Seed is required.",
-      "kit_initializing": "Wallet Kit is still initializing..."
+      "kit_initializing": "Wallet Kit is still initializing...",
+      "save_failed": "Failed to save wallet",
+      "import_failed": "Invalid seed or failed to import.",
+      "connect_failed": "Failed to connect wallet",
+      "passcode_unavailable": "Passcode not available. Please log in again to set up your wallet."
     },
     "success": {
       "created": "New wallet created successfully!",
       "imported": "Wallet imported successfully!",
       "connected": "External wallet connected successfully!"
+    },
+    "modal": {
+      "title": "Set Up Your Wallet",
+      "description": "ACBU uses the Stellar network. How would you like to set up your wallet?",
+      "back": "Back"
     }
   },
   "lending": {
@@ -161,6 +170,38 @@
     "status": {
       "submitted": "Submitted",
       "pending": "Pending"
+    }
+  },
+  "savings": {
+    "title": "Savings",
+    "subtitle": "Grow your wealth",
+    "go_back": "Go back",
+    "api_section_title": "On-chain Savings (API)",
+    "api_balance_note": "This reflects balances reported by the backend API only.",
+    "deposit": "Deposit",
+    "withdraw": "Withdraw",
+    "total_title": "Total Savings (API + Goals)",
+    "goals_total_note": "Includes allocated amounts in savings goals: ACBU {amount}",
+    "apy_note": "Earning 8% APY interest",
+    "monthly_gain": "+ACBU {amount} this month",
+    "goals_title": "Savings Goals",
+    "new_goal": "New Goal",
+    "goal_target": "Target: ACBU {amount}",
+    "create_goal_title": "Create New Goal",
+    "create_goal_description": "Set a savings target to work towards",
+    "goal_name_label": "Goal Name",
+    "goal_name_placeholder": "e.g. Emergency Fund",
+    "goal_target_label": "Target Amount (ACBU)",
+    "goal_deadline_label": "Deadline",
+    "cancel": "Cancel",
+    "create": "Create Goal",
+    "demo_goals": {
+      "emergency_fund": "Emergency Fund",
+      "business_startup": "Business Startup"
+    },
+    "errors": {
+      "load_user_info": "Failed to load user info",
+      "load_balance": "Failed to load savings balance"
     }
   },
   "mint": {

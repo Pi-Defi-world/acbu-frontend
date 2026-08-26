@@ -1,12 +1,10 @@
 'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import {
   getAssetsConfig,
   clearAssetsConfigCache,
   type PublicAssetsConfig,
 } from '@/lib/api/config';
-
 /**
  * Stale-while-revalidate cache for app configuration.
  *
@@ -18,20 +16,16 @@ import {
  * and adds proper staleness tracking with a React-friendly interface.
  */
 const STALE_TIME = 5 * 60 * 1000; // 5 minutes
-
 let cachedAt = 0;
-
 function isFresh(): boolean {
   return cachedAt > 0 && Date.now() - cachedAt < STALE_TIME;
 }
-
 interface UseConfigReturn {
   config: PublicAssetsConfig | null;
   loading: boolean;
   error: string;
   refresh: () => void;
 }
-
 /**
  * Fetches public assets configuration with a 5-minute stale-while-revalidate cache.
  *
@@ -44,18 +38,15 @@ export function useConfig(): UseConfigReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tick, setTick] = useState(0);
-
   const refresh = useCallback(() => {
     clearAssetsConfigCache();
     cachedAt = 0;
     setTick((t) => t + 1);
   }, []);
-
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
     setError('');
-
     // getAssetsConfig() deduplicates in-flight requests and caches the result
     // at module level. We pass our AbortSignal so the underlying fetch is
     // cancelled if the component unmounts before the response arrives.
@@ -76,7 +67,6 @@ export function useConfig(): UseConfigReturn {
         controller.abort();
       };
     }
-
     getAssetsConfig({ signal: controller.signal })
       .then((cfg) => {
         cachedAt = Date.now();
@@ -91,11 +81,9 @@ export function useConfig(): UseConfigReturn {
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
-
     return () => {
       controller.abort();
     };
   }, [tick]);
-
   return { config, loading, error, refresh };
 }
