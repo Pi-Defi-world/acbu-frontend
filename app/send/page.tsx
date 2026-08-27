@@ -561,8 +561,8 @@ export default function SendPage() {
             </div>
             <div className="rounded-lg border border-border bg-muted p-4">
               <p className="text-xs text-muted-foreground">Amount</p>
-              <p className="text-2xl font-bold text-foreground">
-                ACBU {formatAmount(amount)}
+              <p className="text-2xl font-bold text-foreground" data-testid="confirm-amount">
+                ACBU {formatAmount(confirmedAmount)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 Network Fee: Free
