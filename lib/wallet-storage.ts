@@ -8,26 +8,19 @@ localforage.config({
 
 const KEY_STORE_PREFIX = 'stellar_secret_';
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
-const KEY_STORE_PLAINTEXT_ADDRESS_PREFIX = 'stellar_secret_plain_addr_';
-// KEY_STORE_PASSPHRASE intentionally removed (F-003):
-// The passcode must never be persisted in sessionStorage — it must only live
-// in memory for the duration of a single decrypt operation.  Any caller that
-// previously relied on the sessionStorage round-trip must pass the passcode
-// explicitly as a function argument instead.
-
-function assertDevOnly(): void {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      'Plaintext wallet storage is development-only and cannot be used in production',
-    );
-  }
-}
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 const SALT_SIZE = 16;
 const IV_SIZE = 12;
 const PBKDF2_ITERATIONS = 200_000;
+
+export interface EncryptedWalletPayload {
+  version: number;
+  salt: string;
+  iv: string;
+  ciphertext: string;
+}
 
 function toBase64(buffer: ArrayBuffer | Uint8Array): string {
   const bytes = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
@@ -58,7 +51,7 @@ async function deriveKey(passcode: string, salt: Uint8Array): Promise<CryptoKey>
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: salt as BufferSource,
+      salt: salt as unknown as BufferSource,
       iterations: PBKDF2_ITERATIONS,
       hash: 'SHA-256',
     },
@@ -77,37 +70,43 @@ async function encryptSecret(secret: string, passcode: string): Promise<string> 
   const iv = crypto.getRandomValues(new Uint8Array(IV_SIZE));
   const key = await deriveKey(passcode, salt);
   const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
+    { name: 'AES-GCM', iv: iv as unknown as BufferSource },
     key,
     textEncoder.encode(secret),
   );
 
-  return JSON.stringify({
+  const payload: EncryptedWalletPayload = {
     version: 1,
     salt: toBase64(salt),
     iv: toBase64(iv),
     ciphertext: toBase64(ciphertext),
-  });
+  };
+  return JSON.stringify(payload);
 }
 
 async function decryptSecret(encrypted: string, passcode: string): Promise<string | null> {
   try {
-    const payload = JSON.parse(encrypted) as {
-      version: number;
-      salt: string;
-      iv: string;
-      ciphertext: string;
-    };
-    if (payload.version !== 1) return null;
+    if (!encrypted) return null;
+    const payload = JSON.parse(encrypted) as EncryptedWalletPayload;
+    if (
+      !payload ||
+      typeof payload !== 'object' ||
+      payload.version !== 1 ||
+      typeof payload.salt !== 'string' ||
+      typeof payload.iv !== 'string' ||
+      typeof payload.ciphertext !== 'string'
+    ) {
+      return null;
+    }
 
     const salt = fromBase64(payload.salt);
     const iv = fromBase64(payload.iv);
     const ciphertext = fromBase64(payload.ciphertext);
     const key = await deriveKey(passcode, salt);
     const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: iv as BufferSource },
+      { name: 'AES-GCM', iv: iv as unknown as BufferSource },
       key,
-      ciphertext as BufferSource,
+      ciphertext as unknown as BufferSource,
     );
     return textDecoder.decode(decrypted);
   } catch {
@@ -116,11 +115,13 @@ async function decryptSecret(encrypted: string, passcode: string): Promise<strin
 }
 
 export async function storeWalletSecret(userId: string, secret: string, passcode: string): Promise<void> {
+  if (!userId) return;
   const encrypted = await encryptSecret(secret, passcode);
   await localforage.setItem(`${KEY_STORE_PREFIX}${userId}`, encrypted);
 }
 
 export async function getWalletSecret(userId: string, passcode: string): Promise<string | null> {
+  if (!userId || !passcode) return null;
   const encrypted = await localforage.getItem<string>(`${KEY_STORE_PREFIX}${userId}`);
   if (!encrypted) return null;
   
@@ -128,65 +129,19 @@ export async function getWalletSecret(userId: string, passcode: string): Promise
 }
 
 /**
- * Store wallet secret in IndexedDB without passcode.
- * This matches the "decrypt without passcode" requirement, but is NOT secure.
- * Only use for dev/test flows.
- */
-export async function storeWalletSecretLocalPlaintext(
-  userId: string,
-  secret: string,
-  stellarAddress?: string,
-): Promise<void> {
-  assertDevOnly();
-  const userKey = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
-  await localforage.setItem(userKey, secret);
-  if (stellarAddress) {
-    await localforage.setItem(
-      `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`,
-      secret,
-    );
-  }
-}
-
-/**
- * Read wallet secret from IndexedDB without passcode.
- */
-export async function getWalletSecretLocalPlaintext(
-  userId: string,
-  stellarAddress?: string | null,
-): Promise<string | null> {
-  assertDevOnly();
-  const userKey = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
-  const addressKey = stellarAddress
-    ? `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`
-    : null;
-
-  const byUser = await localforage.getItem<string>(userKey);
-  if (byUser) return byUser;
-  if (addressKey) {
-    const byAddress = await localforage.getItem<string>(addressKey);
-    if (byAddress) return byAddress;
-  }
-  return null;
-}
-
-/**
  * Best-effort wallet secret lookup:
- * - plaintext slot (dev/test flows and wallet-setup modal)
- * - encrypted slot decrypted with passcode from memory (wallet page flow)
+ * - encrypted slot decrypted with passcode from memory or argument
  */
 export async function getWalletSecretAnyLocal(
   userId: string,
-  stellarAddress?: string | null,
+  _stellarAddress?: string | null,
+  passcode?: string | null,
 ): Promise<string | null> {
-  assertDevOnly();
-  const plaintext = await getWalletSecretLocalPlaintext(userId, stellarAddress);
-  if (plaintext) return plaintext;
-
+  if (!userId) return null;
   try {
-    const passcode = getPasscode();
-    if (passcode) {
-      const decrypted = await getWalletSecret(userId, passcode);
+    const activePasscode = passcode ?? getPasscode();
+    if (activePasscode) {
+      const decrypted = await getWalletSecret(userId, activePasscode);
       if (decrypted) return decrypted;
     }
   } catch {
@@ -196,12 +151,14 @@ export async function getWalletSecretAnyLocal(
 }
 
 export async function hasStoredWallet(userId: string): Promise<boolean> {
+  if (!userId) return false;
   const encrypted = await localforage.getItem<string>(`${KEY_STORE_PREFIX}${userId}`);
   const plaintext = await localforage.getItem<string>(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`);
   return !!encrypted || !!plaintext;
 }
 
 export async function removeStoredWallet(userId: string): Promise<void> {
+  if (!userId) return;
   await localforage.removeItem(`${KEY_STORE_PREFIX}${userId}`);
   await localforage.removeItem(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`);
 }
