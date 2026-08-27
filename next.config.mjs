@@ -40,6 +40,50 @@ const nextConfig = {
   // Don't advertise the framework to reduce attack surface
   poweredByHeader: false,
 
+  /**
+   * Image optimisation — intentional configuration (see docs/adr/image-pipeline.md)
+   *
+   * Optimisation is ENABLED (unoptimized is not set / defaults to false).
+   * Next.js will resize, convert to modern formats, and serve images through
+   * the built-in /_next/image endpoint.
+   *
+   * Remote patterns:
+   *   - The API origin (NEXT_PUBLIC_API_BASE_URL) is whitelisted so that
+   *     user avatars, KYC documents, and other media served from the backend
+   *     can be loaded via next/image without disabling optimisation.
+   *   - Add additional hostnames here rather than setting unoptimized:true.
+   *
+   * Caching:
+   *   - minimumCacheTTL: 60 s floor to avoid thrashing the image endpoint
+   *     on rapidly-changing assets.  CDN/Vercel Edge will respect
+   *     Cache-Control headers emitted by the image handler above this floor.
+   *
+   * Formats:
+   *   - avif first (best compression), webp fallback; browsers that support
+   *     neither receive the original format (jpeg/png).
+   */
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
+    remotePatterns: [
+      // API origin — derives hostname from the runtime env var at build time.
+      // If the env var is absent (e.g. during local dev without .env.local)
+      // the pattern is simply omitted; add a localhost entry below if needed.
+      ...(process.env.NEXT_PUBLIC_API_BASE_URL
+        ? [
+            {
+              protocol: 'https',
+              hostname: new URL(process.env.NEXT_PUBLIC_API_BASE_URL).hostname,
+              pathname: '/**',
+            },
+          ]
+        : []),
+      // ── Add project-specific CDN / storage origins below ────────────────
+      // Example — uncomment and fill in when a dedicated media CDN is added:
+      // { protocol: 'https', hostname: 'media.acbu.io', pathname: '/**' },
+    ],
+  },
+
   // Emit hidden source maps in production so error stack traces can be
   // resolved to original source.  The maps are uploaded to the error
   // tracking service and then stripped from the public build output
