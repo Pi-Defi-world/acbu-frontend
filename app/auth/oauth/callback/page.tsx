@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
@@ -7,40 +7,42 @@ function OAuthCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const calledRef = useRef(false);
-  const [status, setStatus] = useState<'validating' | 'success' | 'error'>('validating');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [status, setStatus] = useState<"validating" | "success" | "error">(
+    "validating",
+  );
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (calledRef.current) return;
     calledRef.current = true;
 
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
 
     if (!code) {
-      setStatus('error');
-      setErrorMessage('Missing authorization code.');
+      setStatus("error");
+      setErrorMessage("Missing authorization code.");
       return;
     }
 
-    const storedState = sessionStorage.getItem('oauth_state');
+    const storedState = sessionStorage.getItem("oauth_state");
 
     if (!state || !storedState || state !== storedState) {
-      setStatus('error');
-      setErrorMessage('Invalid state parameter. Possible CSRF attack.');
+      setStatus("error");
+      setErrorMessage("Invalid state parameter. Possible CSRF attack.");
       return;
     }
 
-    sessionStorage.removeItem('oauth_state');
+    sessionStorage.removeItem("oauth_state");
 
-    setStatus('success');
+    setStatus("success");
 
-    const returnPath = sessionStorage.getItem('oauth_return_path') || '/';
-    sessionStorage.removeItem('oauth_return_path');
+    const returnPath = sessionStorage.getItem("oauth_return_path") || "/";
+    sessionStorage.removeItem("oauth_return_path");
     router.replace(returnPath);
   }, [searchParams, router]);
 
-  if (status === 'validating') {
+  if (status === "validating") {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-muted-foreground">Completing sign-in...</p>
@@ -48,10 +50,12 @@ function OAuthCallbackContent() {
     );
   }
 
-  if (status === 'error') {
+  if (status === "error") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <h1 className="text-xl font-semibold text-destructive">Authentication Error</h1>
+        <h1 className="text-destructive text-xl font-semibold">
+          Authentication Error
+        </h1>
         <p className="text-muted-foreground">{errorMessage}</p>
       </div>
     );
@@ -59,7 +63,9 @@ function OAuthCallbackContent() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <p className="text-muted-foreground">Signed in successfully. Redirecting...</p>
+      <p className="text-muted-foreground">
+        Signed in successfully. Redirecting...
+      </p>
     </div>
   );
 }
