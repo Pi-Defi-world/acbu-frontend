@@ -10,7 +10,7 @@ export interface ErrorReport {
   userAgent: string;
   url: string;
   level: 'app' | 'page' | 'component';
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 export class ErrorReporter {
