@@ -1,7 +1,7 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
 
 function OAuthCallbackContent() {
   const searchParams = useSearchParams();
