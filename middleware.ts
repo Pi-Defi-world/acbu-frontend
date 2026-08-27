@@ -25,6 +25,7 @@ export function middleware(request: NextRequest) {
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
     'frame-ancestors': ["'none'"],
+    'report-uri': ['/api/csp-report'],
     'connect-src': [
       "'self'",
       "https://*.stellar.org",
@@ -50,6 +51,16 @@ export function middleware(request: NextRequest) {
   });
 
   response.headers.set('Content-Security-Policy', cspString);
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (!isDev) {
+    response.headers.set(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains; preload',
+    );
+  }
 
   return response;
 }
