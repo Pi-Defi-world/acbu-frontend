@@ -1,6 +1,5 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
-import { headers } from 'next/headers'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { ErrorBoundary } from '@/components/error-boundary'
@@ -9,6 +8,7 @@ import './globals.css'
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { AppLayout } from '@/components/app-layout';
 import { WalletSetupModal } from '@/components/wallet-setup-modal';
+import { Toaster } from '@/components/ui/toaster';
 
 const apiBaseUrl =
   typeof process !== 'undefined'
@@ -68,16 +68,30 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <AuthProvider>
-      {/* Preconnect to third-party domains to eliminate DNS+TCP latency (#509) */}
-      <link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin="anonymous" />
-      <link rel="dns-prefetch" href="https://va.vercel-scripts.com" />
-      <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
-      {children}
-    </AuthProvider>
+    <html lang="en">
+      <head>
+        {/* Preconnect to third-party domains to eliminate DNS+TCP latency (#509) */}
+        <link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://va.vercel-scripts.com" />
+        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
+      </head>
+      <body className="font-sans antialiased">
+        <GlobalErrorHandler />
+        <ErrorBoundary>
+          <AuthProvider>
+            <AuthGuard>
+              <AppLayout>{children}</AppLayout>
+            </AuthGuard>
+            <WalletSetupModal />
+            <Toaster />
+            <Analytics />
+          </AuthProvider>
+        </ErrorBoundary>
+      </body>
+    </html>
   );
 }

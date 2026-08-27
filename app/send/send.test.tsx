@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import SendPage from './page'
 import * as authContext from '@/contexts/auth-context'
@@ -122,8 +122,8 @@ describe('SendPage', () => {
     
     const amountInput = screen.getByPlaceholderText('0.00')
     fireEvent.change(amountInput, { target: { value: '150' } })
-    
-    expect(screen.getByText('Insufficient balance.')).toBeInTheDocument()
+
+    expect(await screen.findByText('Insufficient balance.')).toBeInTheDocument()
     expect(screen.getByText('Continue')).toBeDisabled()
   })
 
@@ -142,7 +142,9 @@ describe('SendPage', () => {
     
     const amountInput = screen.getByPlaceholderText('0.00')
     fireEvent.change(amountInput, { target: { value: '50' } })
-    
-    expect(screen.getByText('Continue')).not.toBeDisabled()
+
+    await waitFor(() => {
+      expect(screen.getByText('Continue')).not.toBeDisabled()
+    })
   })
 })
