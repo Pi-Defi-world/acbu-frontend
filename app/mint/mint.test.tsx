@@ -97,7 +97,7 @@ describe('MintPage', () => {
       balance: 100,
       balanceSource: 'stellar',
       loading: false,
-      refresh: vi.fn(),
+      refetch: vi.fn(),
       error: '',
     })
 

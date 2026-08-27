@@ -79,9 +79,9 @@ function LocalKycBadge({ status, loading }: { status: KycStatus | undefined | nu
   if (loading) {
     return <div className="h-5 w-24 rounded-full bg-muted animate-pulse" />;
   }
-  const { label, className, Icon } = getKycBadgeConfig(status);
+  const { label, variant, className, Icon } = getKycBadgeConfig(status);
   return (
-    <Badge variant="outline" className={`text-xs font-medium gap-1 px-2 py-0.5 ${className}`}>
+    <Badge variant={variant} className={`text-xs font-medium gap-1 px-2 py-0.5 ${className}`}>
       <Icon className="w-3 h-3 flex-shrink-0" />
       {label}
     </Badge>

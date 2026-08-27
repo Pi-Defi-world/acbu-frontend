@@ -68,14 +68,15 @@ export function useRates(): UseRatesReturn {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
     setLoading(true);
     setError("");
 
-    // Deduplicate concurrent requests
+    // Deduplicate concurrent requests; pass the abort signal so the
+    // underlying fetch is cancelled when the component unmounts.
     const promise =
       inFlightPromise ??
-      (inFlightPromise = ratesApi.getRates(opts).finally(() => {
+      (inFlightPromise = ratesApi.getRates({ ...opts, signal: controller.signal }).finally(() => {
         inFlightPromise = null;
       }));
 
@@ -83,28 +84,18 @@ export function useRates(): UseRatesReturn {
       .then((data) => {
         cachedRates = data;
         cachedAt = Date.now();
-        lastErrorAt = 0;
-        if (!cancelled) {
-          setRates(data);
-          setIsStale(false);
-        }
+        if (!controller.signal.aborted) setRates(data);
       })
       .catch((e) => {
-        // Record the error timestamp so isFresh() can expire the stale cache
-        // after ERROR_TTL, preventing indefinitely stale rates on outage (#789).
-        lastErrorAt = Date.now();
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Failed to load rates");
-          // Flag as stale when we have cached data that can no longer be trusted
-          setIsStale(cachedRates !== null);
-        }
+        if (controller.signal.aborted) return;
+        setError(e instanceof Error ? e.message : 'Failed to load rates');
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [opts.token, tick]);
 

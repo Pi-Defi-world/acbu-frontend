@@ -1,26 +1,22 @@
 "use client";
 
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Wallet Setup | ACBU',
-  description: 'Set up your ACBU wallet by creating or importing a Stellar wallet for secure token management.',
-};
-
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-// Dialog components were imported but not used in this page
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { PageContainer } from "@/components/layout/page-container";
 import { useAuth } from "@/contexts/auth-context";
-import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
-import * as userApi from "@/lib/api/user";
-import { storeWalletSecret } from "@/lib/wallet-storage";
 import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, CheckCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
+import { useWalletSetup } from "@/hooks/use-wallet-setup";
 import { logger } from "@/lib/logger";
 
 /**
@@ -33,7 +29,7 @@ import { logger } from "@/lib/logger";
 export default function WalletSetupPage() {
   const router = useRouter();
   const { userId, stellarAddress, refreshStellarAddress, isAuthenticated } = useAuth();
-  const kit = useStellarWalletsKit();
+  const { generateWallet, importWallet, connectExternalWallet } = useWalletSetup();
   
   const [passphrase, setPassphrase] = useState("");
   const [loading, setLoading] = useState(false);
@@ -72,42 +68,7 @@ export default function WalletSetupPage() {
     }
   }, [isAuthenticated, stellarAddress, router]);
 
-  /**
-   * Sync wallet to backend: 
-   * 1. Put wallet address to backend
-   * 2. Store secret encrypted with passcode
-   * 3. Call postWalletConfirm to complete activation
-   */
-  const syncWalletToBackend = async (secret: string): Promise<void> => {
-    if (!userId) throw new Error("Not logged in");
-    
-    const passcode = getPasscode();
-    if (!passcode) {
-      throw new Error("Passcode not available. Please log in again to set up your wallet.");
-    }
-    
-    const kp = Keypair.fromSecret(secret);
-    const publicKey = kp.publicKey();
 
-    // Step 1: Update wallet address on backend
-    const result = await userApi.putWalletAddress(publicKey);
-    if (!result?.ok || (result.stellar_address && result.stellar_address !== publicKey)) {
-      throw new Error(
-        "Backend did not accept the new wallet address. Please retry.",
-      );
-    }
-
-    // Step 2: Store secret encrypted with passcode
-    await storeWalletSecret(userId, secret, passcode);
-
-    // Step 3: Confirm wallet activation on backend
-    try {
-      await userApi.postWalletConfirm({ wallet_address: publicKey });
-    } catch (err) {
-      logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
-      // Don't throw - the address is set, confirmation can retry later if needed
-    }
-  };
 
   const handleGenerateConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,16 +81,12 @@ export default function WalletSetupPage() {
 
     setLoading(true);
     try {
-      await syncWalletToBackend(passphrase);
+      await generateWallet(passphrase);
       setSuccess("Wallet set up successfully!");
       
-      // Clean up in-memory temp passphrase
       clearTempPassphrase();
-      
-      // Refresh user context to update stellar address
       await refreshStellarAddress();
       
-      // Redirect to home after a brief delay
       setTimeout(() => {
         router.push("/");
       }, 1500);
@@ -150,18 +107,12 @@ export default function WalletSetupPage() {
 
     setLoading(true);
     try {
-      // Validate seed format
-      Keypair.fromSecret(importSeed);
-      await syncWalletToBackend(importSeed);
+      await importWallet(importSeed);
       setSuccess("Wallet imported successfully!");
       
-      // Clean up in-memory temp passphrase
       clearTempPassphrase();
-      
-      // Refresh user context
       await refreshStellarAddress();
       
-      // Redirect to home after a brief delay
       setTimeout(() => {
         router.push("/");
       }, 1500);
@@ -173,49 +124,18 @@ export default function WalletSetupPage() {
 
   const handleConnectWallet = async () => {
     setError("");
-    if (!kit) {
-      setError("Wallet Kit is still initializing...");
-      return;
-    }
 
     setLoading(true);
     try {
-      if (!userId) throw new Error("Not logged in");
-
-      // Open wallet connector modal
-      await kit.openModal({
-        onWalletSelected: async (selectedOption: { id: string }) => {
-          try {
-            kit.setWallet(selectedOption.id);
-            const { address: pubKey } = await kit.getAddress();
-
-            // Update wallet address on backend
-            const result = await userApi.putWalletAddress(pubKey);
-            if (!result?.ok || (result.stellar_address && result.stellar_address !== pubKey)) {
-              throw new Error("Backend did not accept the wallet address. Please retry.");
-            }
-
-            // Confirm wallet activation on backend
-            try {
-              await userApi.postWalletConfirm({ wallet_address: pubKey });
-            } catch (err) {
-              logger.warn("Wallet confirm failed, but wallet address was set.", err);
-            }
-
-            setSuccess("Wallet connected successfully!");
-            await refreshStellarAddress();
-            
-            setTimeout(() => {
-              router.push("/");
-            }, 1500);
-          } catch (e: unknown) {
-            setError((e as Error).message || "Failed to connect wallet");
-            setLoading(false);
-          }
-        },
-      });
+      await connectExternalWallet();
+      setSuccess("Wallet connected successfully!");
+      await refreshStellarAddress();
+      
+      setTimeout(() => {
+        router.push("/");
+      }, 1500);
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to open wallet modal");
+      setError((err as Error).message || "Failed to connect wallet");
       setLoading(false);
     }
   };
@@ -230,30 +150,38 @@ export default function WalletSetupPage() {
       </div>
 
       <PageContainer>
-        <Card className="border-border p-6 space-y-6">
-          {error && (
-            <div
-              id="wallet-setup-error"
-              role="alert"
-              className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
-            >
-              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
+        <Dialog open>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Set Up Your Wallet</DialogTitle>
+              <DialogDescription>
+                ACBU uses the Stellar network. How would you like to set up your wallet?
+              </DialogDescription>
+            </DialogHeader>
 
-          {success && (
-            <div className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10">
-              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-green-600">{success}</p>
-            </div>
-          )}
+            {error && (
+              <div
+                id="wallet-setup-error"
+                role="alert"
+                className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
+              >
+                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
 
-          {!option ? (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                How would you like to set up your wallet?
-              </p>
+            {success && (
+              <div className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10">
+                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-green-600">{success}</p>
+              </div>
+            )}
+
+            {!option ? (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  How would you like to set up your wallet?
+                </p>
 
               <Button
                 onClick={() => {
@@ -295,9 +223,9 @@ export default function WalletSetupPage() {
                   Connect Freighter, Lobstr, or others
                 </span>
               </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
+              </div>
+            ) : (
+              <div className="space-y-4">
               <Button
                 variant="ghost"
                 onClick={() => setOption(null)}
@@ -369,9 +297,10 @@ export default function WalletSetupPage() {
                   </Button>
                 </form>
               )}
-            </div>
-          )}
-        </Card>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </PageContainer>
     </>
   );

@@ -1,32 +1,7 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import type { ApiError } from "@/lib/api/client";
+import { useState, useCallback } from "react";
+import type { ApiError, ApiErrorResponse, UIError } from "@/types/api";
 
-/**
- * Strict shape of an API error response from the backend.
- */
-export interface ApiErrorResponse {
-  status?: number;
-  message?: string;
-  details?: unknown;
-}
-
-/**
- * A mapped UI error with a human-readable message and an optional recovery action.
- */
-export interface UIError {
-  message: string;
-  action?: UIErrorAction;
-}
-
-export interface UIErrorAction {
-  label: string;
-  /** If set, render as a link. */
-  href?: string;
-  /** If set, call this when the action button is clicked. */
-  onClick?: () => void;
-  /** If true, the submit button should be disabled until this resolves. */
-  disableSubmitFor?: number; // milliseconds
-}
+export type { UIError, UIErrorAction } from "@/types/api";
 
 /**
  * Maps an API error status code to a user-friendly UIError.

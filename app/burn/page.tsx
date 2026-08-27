@@ -15,21 +15,19 @@ import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as burnApi from "@/lib/api/burn";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
-import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
-import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
-import { Keypair } from "@stellar/stellar-sdk";
+import { useWalletSetup } from "@/hooks/use-wallet-setup";
 import { submitBurnRedeemSingleClient } from "@/lib/stellar/burning";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 
 const burnSchema = z.object({
@@ -123,18 +121,21 @@ const formatCurrency = (amount: string, currency: string) => {
 export function BurnPageContent() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
-  const kit = useStellarWalletsKit();
+  const { getWalletSigner } = useWalletSetup();
   const searchParams = useSearchParams();
 
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
 
+  const initialAmount = searchParams.get('amount') || '';
+  const initialCurrency = searchParams.get('currency') || 'NGN';
+
   const form = useForm<BurnFormValues>({
     resolver: zodResolver(burnSchema),
     defaultValues: {
-      acbuAmount: searchParams?.get("amount") || "",
-      currency: (searchParams?.get("currency") || "NGN").toUpperCase().slice(0, 3),
+      acbuAmount: initialAmount,
+      currency: initialCurrency,
       accountNumber: "",
       bankCode: "",
       accountName: "",
@@ -161,57 +162,16 @@ export function BurnPageContent() {
         type: "bank",
       };
 
-      const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
-      let burnTxHash: string;
+      const signer = await getWalletSigner();
+      const submit = await submitBurnRedeemSingleClient({
+        userAddress: stellarAddress,
+        amountAcbu: values.acbuAmount,
+        currency: values.currency,
+        userSecret: signer.userSecret,
+        external: signer.external,
+      });
 
-      if (secret) {
-        const localPubKey = Keypair.fromSecret(secret).publicKey();
-        if (stellarAddress && localPubKey !== stellarAddress) {
-          throw new Error(
-            `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
-          );
-        }
-        const submit = await submitBurnRedeemSingleClient({
-          userAddress: stellarAddress,
-          amountAcbu: values.acbuAmount,
-          currency: values.currency,
-          userSecret: secret,
-        });
-        burnTxHash = submit.transactionHash;
-      } else {
-        if (!kit) {
-          throw new Error(
-            "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
-          );
-        }
-        const address = await new Promise<string>((resolve, reject) => {
-          kit
-            .openModal({
-              onWalletSelected: async (selectedOption: { id: string }) => {
-                try {
-                  kit.setWallet(selectedOption.id);
-                  const { address } = await kit.getAddress();
-                  resolve(address);
-                } catch (err) {
-                  reject(err);
-                }
-              },
-            })
-            .catch(reject);
-        });
-        if (stellarAddress && address !== stellarAddress) {
-          throw new Error(
-            `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
-          );
-        }
-        const submit = await submitBurnRedeemSingleClient({
-          userAddress: stellarAddress,
-          amountAcbu: values.acbuAmount,
-          currency: values.currency,
-          external: { kit, address },
-        });
-        burnTxHash = submit.transactionHash;
-      }
+      const burnTxHash = submit.transactionHash;
 
       const res = await burnApi.burnAcbu(
         values.acbuAmount,

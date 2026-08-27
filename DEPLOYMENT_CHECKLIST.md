@@ -7,7 +7,7 @@
 
 ## 1. Prerequisites
 
-- [ ] Node.js **20 or later** installed (matches CI: `node-version: 20`)
+- [ ] Node.js **20 or later** installed (matches `.nvmrc` and `.node-version`: `20`)
 - [ ] **pnpm 10.15.0** installed (`npm install -g pnpm@10.15.0`)
 - [ ] Access to the target hosting environment (see §7)
 - [ ] All required environment variables available (see §3)

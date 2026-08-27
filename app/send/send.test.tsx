@@ -88,7 +88,7 @@ describe('SendPage', () => {
     vi.mocked(useBalanceHook.useBalance).mockReturnValue({
       balance: 100,
       loading: false,
-      refresh: vi.fn(),
+      refetch: vi.fn(),
       error: '',
     })
 
