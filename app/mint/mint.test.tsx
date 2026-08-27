@@ -96,7 +96,7 @@ describe('MintPage', () => {
     vi.mocked(useApiHook.useApiOpts).mockReturnValue({
     })
 
-    vi.mocked(ratesApi.getRates).mockResolvedValue({ acbu_usd: '1.0' })
+    vi.mocked(ratesApi.getRates).mockResolvedValue({ acbu_usd: '1.0', acbu_ngn: '1.0' })
     vi.mocked(fiatApi.getFiatAccounts).mockResolvedValue({ accounts: [{ id: 'acc1', currency: 'NGN', bank_name: 'Test Bank', balance: '0', account_number: '0000000000', account_name: 'Test', ledger_entries: [] }] })
   })
 
