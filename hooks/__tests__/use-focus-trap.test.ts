@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useFocusTrap } from '../use-focus-trap'
 import React from 'react'
@@ -25,7 +25,7 @@ describe('useFocusTrap', () => {
   it('traps focus on Tab from last element to first', () => {
     const containerRef = React.createRef<HTMLDivElement>()
     // Mock the ref
-    ;(containerRef as any).current = container
+    ;containerRef.current = container
 
     renderHook(() => useFocusTrap(containerRef, { isActive: true }))
 
@@ -49,7 +49,7 @@ describe('useFocusTrap', () => {
 
   it('traps focus on Shift+Tab from first element to last', () => {
     const containerRef = React.createRef<HTMLDivElement>()
-    ;(containerRef as any).current = container
+    ;containerRef.current = container
 
     renderHook(() => useFocusTrap(containerRef, { isActive: true }))
 
@@ -74,7 +74,7 @@ describe('useFocusTrap', () => {
 
   it('does not trap focus when inactive', () => {
     const containerRef = React.createRef<HTMLDivElement>()
-    ;(containerRef as any).current = container
+    ;containerRef.current = container
 
     renderHook(() => useFocusTrap(containerRef, { isActive: false }))
 
@@ -93,7 +93,7 @@ describe('useFocusTrap', () => {
 
   it('finds various focusable element types', () => {
     const containerRef = React.createRef<HTMLDivElement>()
-    ;(containerRef as any).current = container
+    ;containerRef.current = container
 
     renderHook(() => useFocusTrap(containerRef, { isActive: true }))
 
@@ -112,7 +112,7 @@ describe('useFocusTrap', () => {
     document.body.appendChild(disabledContainer)
 
     const containerRef = React.createRef<HTMLDivElement>()
-    ;(containerRef as any).current = disabledContainer
+    ;containerRef.current = disabledContainer
 
     renderHook(() => useFocusTrap(containerRef, { isActive: true }))
 
@@ -156,7 +156,7 @@ describe('useFocusTrap', () => {
     document.body.appendChild(hiddenContainer)
 
     const containerRef = React.createRef<HTMLDivElement>()
-    ;(containerRef as any).current = hiddenContainer
+    ;containerRef.current = hiddenContainer
 
     renderHook(() => useFocusTrap(containerRef, { isActive: true }))
 

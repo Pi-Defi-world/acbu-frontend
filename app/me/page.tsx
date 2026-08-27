@@ -3,9 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, HelpCircle, CheckCircle2, Clock3, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useBalance } from '@/hooks/use-balance';
 import { useApiOpts } from '@/hooks/use-api';
@@ -16,56 +15,6 @@ import * as transactionsApi from '@/lib/api/transactions';
 import type { UserMe } from '@/types/api';
 import type { TransactionListItem } from '@/types/api';
 import Link from 'next/link';
-
-// ---------------------------------------------------------------------------
-// KYC badge helpers
-// ---------------------------------------------------------------------------
-
-type KycStatus = 'verified' | 'pending' | 'rejected' | 'not_started' | string;
-
-interface KycBadgeConfig {
-  label: string;
-  variant: 'default' | 'secondary' | 'destructive' | 'outline';
-  className: string;
-  Icon: React.ElementType;
-}
-
-function getKycBadgeConfig(status: KycStatus | undefined | null): KycBadgeConfig {
-  switch (status) {
-    case 'verified':
-    case 'approved':
-      return {
-        label: 'KYC Verified',
-        variant: 'default',
-        className: 'bg-accent/20 text-accent border-accent/30 hover:bg-accent/20',
-        Icon: CheckCircle2,
-      };
-    case 'pending':
-    case 'under_review':
-    case 'submitted':
-      return {
-        label: 'KYC Pending',
-        variant: 'secondary',
-        className: 'bg-yellow-500/15 text-yellow-600 border-yellow-500/30 hover:bg-yellow-500/15 dark:text-yellow-400',
-        Icon: Clock3,
-      };
-    case 'rejected':
-    case 'failed':
-      return {
-        label: 'KYC Rejected',
-        variant: 'destructive',
-        className: 'bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/15',
-        Icon: XCircle,
-      };
-    default:
-      return {
-        label: 'KYC Required',
-        variant: 'outline',
-        className: 'bg-muted/50 text-muted-foreground border-border hover:bg-muted/50',
-        Icon: AlertCircle,
-      };
-  }
-}
 
 
 const menuItems = [

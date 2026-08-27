@@ -46,27 +46,27 @@ describe('getApiErrorMessage', () => {
 describe('mapApiError — HTTP 429 (Rate Limit)', () => {
   it('maps status 429 to the rate-limit message', () => {
     const msg = mapApiError(makeApiError(429, 'rate limited'));
-    expect(msg).toBe('Too many requests. Please wait a moment before trying again.');
+    expect(msg?.message).toBe('Too many requests. Please wait a moment before trying again.');
   });
 
   it('ignores the original error message for 429', () => {
     const msg = mapApiError(makeApiError(429, 'some backend text'));
-    expect(typeof msg).toBe('string');
-    expect(msg).not.toContain('some backend text');
+    expect(typeof msg?.message).toBe('string');
+    expect(msg?.message).not.toContain('some backend text');
   });
 });
 
 describe('mapApiError — HTTP 503 (Service Unavailable)', () => {
   it('maps status 503 to the service-unavailable message', () => {
     const msg = mapApiError(makeApiError(503, 'down for maintenance'));
-    expect(msg).toBe('Our payment processor is temporarily down. Your funds are safe.');
+    expect(msg?.message).toBe('Our payment processor is temporarily down. Your funds are safe.');
   });
 });
 
 describe('mapApiError — HTTP 402 (Payment Required)', () => {
   it('maps status 402 to the payment-required message', () => {
     const msg = mapApiError(makeApiError(402, 'upgrade required'));
-    expect(msg).toBe('Insufficient balance or payment required.');
+    expect(msg?.message).toBe('Insufficient balance or payment required.');
   });
 });
 
@@ -88,7 +88,7 @@ describe('mapApiError — fallback for other status codes', () => {
   });
 
   it('passes through the error message for 500', () => {
-    expect(mapApiError(makeApiError(500, 'internal server error'))).toBe(
+    expect(mapApiError(makeApiError(500, 'internal server error'))?.message).toBe(
       'internal server error',
     );
   });
