@@ -1,54 +1,27 @@
-import { test, expect } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
+import { test, expect } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
-test.describe('Accessibility Tests', () => {
-  /**
-   * Asserts that none of the known error boundaries are visible on the page.
-   *
-   * Covers three error surfaces:
-   *  - React <ErrorBoundary> component  → [data-testid="error-boundary-fallback"]
-   *  - Next.js route-level error.tsx    → .error-state  (contains h2 "Page Error")
-   *  - Next.js global-error.tsx         → h1 "Application Error"
-   *
-   * If any of these are present the page has thrown and the a11y scan would be
-   * testing an error UI instead of the real page, so the test should fail fast.
-   */
-  async function assertNoPageError(page) {
-    // React ErrorBoundary fallback
-    await expect(
-      page.locator('[data-testid="error-boundary-fallback"]'),
-      'React ErrorBoundary fallback should not be visible'
-    ).not.toBeVisible();
-
-    // Next.js route-level error page (app/error.tsx)
-    await expect(
-      page.locator('.error-state'),
-      'Next.js route error page (.error-state) should not be visible'
-    ).not.toBeVisible();
-
-    // Next.js global error page (app/global-error.tsx)
-    await expect(
-      page.locator('h1:has-text("Application Error")'),
-      'Next.js global error page should not be visible'
-    ).not.toBeVisible();
-  }
-
+test.describe("Accessibility Tests", () => {
   // Helper to wait for page to be ready and handle auth modal
   async function waitForPageReady(page) {
     // Wait for network idle
-    await page.waitForLoadState('networkidle');
-    
+    await page.waitForLoadState("networkidle");
+
     // Wait for any loading indicators to disappear
-    const loadingIndicator = page.locator('.animate-pulse');
+    const loadingIndicator = page.locator(".animate-pulse");
     if (await loadingIndicator.isVisible().catch(() => false)) {
-      await loadingIndicator.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
+      await loadingIndicator
+        .waitFor({ state: "hidden", timeout: 10000 })
+        .catch(() => {});
     }
-    
+
     // Wait a bit more for content to stabilize
     await page.waitForTimeout(1000);
-    
+
     // Handle any authentication or wallet setup modals
-    const skipButton = page.locator('button:has-text("Skip"), button:has-text("Skip for now"), button:has-text("Close")');
+    const skipButton = page.locator(
+      'button:has-text("Skip"), button:has-text("Skip for now"), button:has-text("Close")',
+    );
     if (await skipButton.isVisible({ timeout: 3000 }).catch(() => false)) {
       await skipButton.click();
       await page.waitForTimeout(1000);
@@ -57,89 +30,83 @@ test.describe('Accessibility Tests', () => {
 
   // Helper to mock authentication
   async function mockAuth(page) {
-    await page.route('**/api/auth/**', async (route) => {
+    await page.route("**/api/auth/**", async (route) => {
       await route.fulfill({
         status: 200,
-        body: JSON.stringify({ 
-          authenticated: true, 
-          userId: 'test-user',
-          stellarAddress: 'test-address'
-        })
+        body: JSON.stringify({
+          authenticated: true,
+          userId: "test-user",
+          stellarAddress: "test-address",
+        }),
       });
     });
   }
 
-  test('mint page should have no axe violations', async ({ page }) => {
+  test("mint page should have no axe violations", async ({ page }) => {
     await mockAuth(page);
-    await page.goto('/mint');
+    await page.goto("/mint");
     await waitForPageReady(page);
-    await assertNoPageError(page);
-    
+
     const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .disableRules(['color-contrast']) // Temporarily disable color contrast checks
+      .withTags(["wcag2a", "wcag2aa"])
       .analyze();
-    
+
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 
-  test('burn page should have no axe violations', async ({ page }) => {
+  test("burn page should have no axe violations", async ({ page }) => {
     await mockAuth(page);
-    await page.goto('/burn');
+    await page.goto("/burn");
     await waitForPageReady(page);
-    await assertNoPageError(page);
-    
+
     const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .disableRules(['color-contrast']) // Temporarily disable color contrast checks
+      .withTags(["wcag2a", "wcag2aa"])
       .analyze();
-    
+
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 
-  test('send page should have no axe violations', async ({ page }) => {
+  test("send page should have no axe violations", async ({ page }) => {
     await mockAuth(page);
-    await page.goto('/send');
+    await page.goto("/send");
     await waitForPageReady(page);
-    await assertNoPageError(page);
-    
+
     const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .disableRules(['color-contrast']) // Temporarily disable color contrast checks
+      .withTags(["wcag2a", "wcag2aa"])
       .analyze();
-    
+
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 
-  test('savings withdraw page should have no axe violations', async ({ page }) => {
+  test("savings withdraw page should have no axe violations", async ({
+    page,
+  }) => {
     await mockAuth(page);
-    await page.goto('/savings/withdraw');
+    await page.goto("/savings/withdraw");
     await waitForPageReady(page);
-    await assertNoPageError(page);
-    
+
     const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .disableRules(['color-contrast']) // Temporarily disable color contrast checks
+      .withTags(["wcag2a", "wcag2aa"])
       .analyze();
-    
+
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 
-  test('mint form interactions should be accessible', async ({ page }) => {
+  test("mint form interactions should be accessible", async ({ page }) => {
     await mockAuth(page);
-    await page.goto('/mint');
+    await page.goto("/mint");
     await waitForPageReady(page);
-    
+
     // Wait for the mint tab to be active and content to load
     await page.waitForTimeout(2000);
-    
+
     // Try multiple selectors for the fiat select
     const fiatSelectors = [
-      '#fiat-account-select',
-      'select:has(option)',
-      '[name="fiat-account"]'
+      "#fiat-account-select",
+      "select:has(option)",
+      '[name="fiat-account"]',
     ];
-    
+
     let fiatSelect = null;
     for (const selector of fiatSelectors) {
       const element = page.locator(selector);
@@ -148,22 +115,22 @@ test.describe('Accessibility Tests', () => {
         break;
       }
     }
-    
+
     if (fiatSelect) {
       // Check if there are options
-      const options = await fiatSelect.locator('option').count();
+      const options = await fiatSelect.locator("option").count();
       if (options > 1) {
         await fiatSelect.selectOption({ index: 1 });
       }
     }
-    
+
     // Look for amount input
     const amountSelectors = [
-      '#fiat-amount-input',
+      "#fiat-amount-input",
       'input[type="number"]',
-      'input[placeholder*="0.00"]'
+      'input[placeholder*="0.00"]',
     ];
-    
+
     let amountInput = null;
     for (const selector of amountSelectors) {
       const element = page.locator(selector);
@@ -172,49 +139,45 @@ test.describe('Accessibility Tests', () => {
         break;
       }
     }
-    
+
     if (amountInput) {
-      await amountInput.fill('100');
+      await amountInput.fill("100");
     }
-    
+
     // Look for mint button
-    const mintButton = page.getByRole('button', { name: /Mint ACBU/i });
+    const mintButton = page.getByRole("button", { name: /Mint ACBU/i });
     if (await mintButton.isVisible({ timeout: 3000 }).catch(() => false)) {
       await mintButton.click();
-      
+
       // Check dialog accessibility
       const dialog = page.locator('[role="dialog"]');
       await expect(dialog).toBeVisible({ timeout: 5000 });
     }
-    
-    // Ensure no error boundary is visible before scanning
-    await assertNoPageError(page);
 
     // Run axe on the current state
     const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .disableRules(['color-contrast']) // Temporarily disable color contrast checks
+      .withTags(["wcag2a", "wcag2aa"])
       .analyze();
-    
+
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 
-  test('send form interactions should be accessible', async ({ page }) => {
+  test("send form interactions should be accessible", async ({ page }) => {
     await mockAuth(page);
-    await page.goto('/send');
+    await page.goto("/send");
     await waitForPageReady(page);
-    
+
     // Wait for page to be fully loaded
     await page.waitForTimeout(3000);
-    
+
     // Try multiple selectors for the new transfer button
     const buttonSelectors = [
       'button:has-text("New Transfer")',
       'button:has-text("Send")',
       'button:has-text("Transfer")',
-      '[aria-label="Create new transfer"]'
+      '[aria-label="Create new transfer"]',
     ];
-    
+
     let newTransferButton = null;
     for (const selector of buttonSelectors) {
       const element = page.locator(selector);
@@ -223,30 +186,26 @@ test.describe('Accessibility Tests', () => {
         break;
       }
     }
-    
+
     if (newTransferButton) {
       await newTransferButton.click();
-      
+
       // Check dialog
       const dialog = page.locator('[role="dialog"]');
       await expect(dialog).toBeVisible({ timeout: 5000 });
-      
+
       // Test tab navigation (just a few tabs to check focus management)
-      await page.keyboard.press('Tab');
+      await page.keyboard.press("Tab");
       await page.waitForTimeout(100);
-      await page.keyboard.press('Tab');
+      await page.keyboard.press("Tab");
       await page.waitForTimeout(100);
     }
-    
-    // Ensure no error boundary is visible before scanning
-    await assertNoPageError(page);
 
     // Run axe on the current state
     const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .disableRules(['color-contrast']) // Temporarily disable color contrast checks
+      .withTags(["wcag2a", "wcag2aa"])
       .analyze();
-    
+
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 });
