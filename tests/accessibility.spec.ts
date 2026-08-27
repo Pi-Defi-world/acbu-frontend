@@ -2,6 +2,37 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 test.describe('Accessibility Tests', () => {
+  /**
+   * Asserts that none of the known error boundaries are visible on the page.
+   *
+   * Covers three error surfaces:
+   *  - React <ErrorBoundary> component  → [data-testid="error-boundary-fallback"]
+   *  - Next.js route-level error.tsx    → .error-state  (contains h2 "Page Error")
+   *  - Next.js global-error.tsx         → h1 "Application Error"
+   *
+   * If any of these are present the page has thrown and the a11y scan would be
+   * testing an error UI instead of the real page, so the test should fail fast.
+   */
+  async function assertNoPageError(page) {
+    // React ErrorBoundary fallback
+    await expect(
+      page.locator('[data-testid="error-boundary-fallback"]'),
+      'React ErrorBoundary fallback should not be visible'
+    ).not.toBeVisible();
+
+    // Next.js route-level error page (app/error.tsx)
+    await expect(
+      page.locator('.error-state'),
+      'Next.js route error page (.error-state) should not be visible'
+    ).not.toBeVisible();
+
+    // Next.js global error page (app/global-error.tsx)
+    await expect(
+      page.locator('h1:has-text("Application Error")'),
+      'Next.js global error page should not be visible'
+    ).not.toBeVisible();
+  }
+
   // Helper to wait for page to be ready and handle auth modal
   async function waitForPageReady(page) {
     // Wait for network idle
@@ -42,6 +73,7 @@ test.describe('Accessibility Tests', () => {
     await mockAuth(page);
     await page.goto('/mint');
     await waitForPageReady(page);
+    await assertNoPageError(page);
     
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -55,6 +87,7 @@ test.describe('Accessibility Tests', () => {
     await mockAuth(page);
     await page.goto('/burn');
     await waitForPageReady(page);
+    await assertNoPageError(page);
     
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -68,6 +101,7 @@ test.describe('Accessibility Tests', () => {
     await mockAuth(page);
     await page.goto('/send');
     await waitForPageReady(page);
+    await assertNoPageError(page);
     
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -81,6 +115,7 @@ test.describe('Accessibility Tests', () => {
     await mockAuth(page);
     await page.goto('/savings/withdraw');
     await waitForPageReady(page);
+    await assertNoPageError(page);
     
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -152,6 +187,9 @@ test.describe('Accessibility Tests', () => {
       await expect(dialog).toBeVisible({ timeout: 5000 });
     }
     
+    // Ensure no error boundary is visible before scanning
+    await assertNoPageError(page);
+
     // Run axe on the current state
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -200,6 +238,9 @@ test.describe('Accessibility Tests', () => {
       await page.waitForTimeout(100);
     }
     
+    // Ensure no error boundary is visible before scanning
+    await assertNoPageError(page);
+
     // Run axe on the current state
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
