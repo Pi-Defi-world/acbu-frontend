@@ -1,36 +1,41 @@
 "use client";
 
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Two-Factor Authentication | ACBU',
-  description: 'Complete two-factor authentication to secure your ACBU account login.',
+  title: "Two-Factor Authentication | ACBU",
+  description:
+    "Complete two-factor authentication to secure your ACBU account login.",
 };
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-context';
-import * as authApi from '@/lib/api/auth';
-import { getPasscode } from '@/lib/passcode-manager';
-import { isSafeRedirect } from '@/lib/redirect';
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import * as authApi from "@/lib/api/auth";
+import { getPasscode } from "@/lib/passcode-manager";
+import { isSafeRedirect } from "@/lib/redirect";
 
-const CHALLENGE_TOKEN_KEY = '2fa_challenge_token';
-const POST_AUTH_REDIRECT_KEY = 'post_auth_redirect';
+const CHALLENGE_TOKEN_KEY = "2fa_challenge_token";
+const POST_AUTH_REDIRECT_KEY = "post_auth_redirect";
 
 export default function TwoFactorPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-border p-8 text-center">
-          <div className="animate-pulse text-muted-foreground">Loading...</div>
-        </Card>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="bg-background flex min-h-screen items-center justify-center p-4">
+          <Card className="border-border w-full max-w-md p-8 text-center">
+            <div className="text-muted-foreground animate-pulse">
+              Loading...
+            </div>
+          </Card>
+        </div>
+      }
+    >
       <TwoFactorForm />
     </Suspense>
   );
@@ -38,11 +43,13 @@ export default function TwoFactorPage() {
 
 function TwoFactorForm() {
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) ?? "en";
   const { login } = useAuth();
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [challengeToken, setChallengeToken] = useState('');
+  const [error, setError] = useState("");
+  const [challengeToken, setChallengeToken] = useState("");
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
@@ -78,26 +85,30 @@ function TwoFactorForm() {
       sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
 
       // honor a stored safe post-auth redirect if present
-      const stored = typeof window !== 'undefined' ? sessionStorage.getItem(POST_AUTH_REDIRECT_KEY) : null;
-      if (typeof window !== 'undefined') sessionStorage.removeItem(POST_AUTH_REDIRECT_KEY);
+      const stored =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem(POST_AUTH_REDIRECT_KEY)
+          : null;
+      if (typeof window !== "undefined")
+        sessionStorage.removeItem(POST_AUTH_REDIRECT_KEY);
       const safe = isSafeRedirect(stored);
-      router.push(safe ?? '/');
+      router.push(safe ?? `/${locale}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verification failed');
+      setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-border">
+    <div className="bg-background flex min-h-screen items-center justify-center p-4">
+      <Card className="border-border w-full max-w-md">
         <div className="p-6 md:p-8">
           <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+            <h1 className="text-foreground mb-2 text-2xl font-bold md:text-3xl">
               Two-Factor Authentication
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Enter the 6-digit code from your authenticator app
             </p>
           </div>
@@ -107,18 +118,18 @@ function TwoFactorForm() {
               <div
                 id="twofa-error"
                 role="alert"
-                className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
+                className="border-destructive/30 bg-destructive/10 flex gap-3 rounded-lg border p-3"
               >
-                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
-                <p className="text-sm text-destructive">{error}</p>
+                <AlertCircle
+                  className="text-destructive mt-0.5 h-4 w-4 flex-shrink-0"
+                  aria-hidden="true"
+                />
+                <p className="text-destructive text-sm">{error}</p>
               </div>
             )}
 
             <div>
-              <label
-                htmlFor="auth-code"
-                className="form-label"
-              >
+              <label htmlFor="auth-code" className="form-label">
                 Authentication Code
               </label>
               <Input
@@ -130,7 +141,7 @@ function TwoFactorForm() {
                   setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
                 }
                 maxLength={6}
-                className="border-border text-center text-lg font-mono tracking-widest"
+                className="border-border text-center font-mono text-lg tracking-widest"
                 disabled={loading}
                 autoFocus
                 aria-describedby={error ? "twofa-error" : undefined}
@@ -139,7 +150,7 @@ function TwoFactorForm() {
 
             <Button
               type="submit"
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 w-full"
               disabled={loading}
             >
               {loading ? "Verifying..." : "Verify"}
@@ -147,9 +158,9 @@ function TwoFactorForm() {
           </form>
 
           {checked && !challengeToken && (
-            <p className="mt-4 text-sm text-destructive">
+            <p className="text-destructive mt-4 text-sm">
               Missing challenge token.{" "}
-              <Link href="/auth/signin" className="underline">
+              <Link href={`/${locale}/auth/signin`} className="underline">
                 Sign in again
               </Link>
               .
@@ -157,12 +168,12 @@ function TwoFactorForm() {
           )}
 
           <div className="mt-6">
-            <div className="border-t border-border pt-4">
+            <div className="border-border border-t pt-4">
               <details className="text-sm">
-                <summary className="cursor-pointer text-muted-foreground hover:text-foreground font-medium">
+                <summary className="text-muted-foreground hover:text-foreground cursor-pointer font-medium">
                   Don't have access to your authenticator?
                 </summary>
-                <p className="mt-2 text-muted-foreground">
+                <p className="text-muted-foreground mt-2">
                   Contact support or use your backup codes if you saved them.
                 </p>
               </details>

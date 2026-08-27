@@ -1,14 +1,15 @@
 "use client";
 
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Wallet Setup | ACBU',
-  description: 'Set up your ACBU wallet by creating or importing a Stellar wallet for secure token management.',
+  title: "Wallet Setup | ACBU",
+  description:
+    "Set up your ACBU wallet by creating or importing a Stellar wallet for secure token management.",
 };
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 // Dialog components were imported but not used in this page
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,23 +19,30 @@ import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
 import { storeWalletSecret } from "@/lib/wallet-storage";
-import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
+import {
+  getPasscode,
+  getTempPassphrase,
+  clearTempPassphrase,
+} from "@/lib/passcode-manager";
 import { AlertCircle, CheckCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 import { logger } from "@/lib/logger";
 
 /**
  * Wallet Setup Confirmation Page
- * 
+ *
  * This page is shown after user signs up/signs in with a newly created wallet.
  * It allows the user to confirm and complete their wallet setup, then syncs
  * the wallet to the backend and calls postWalletConfirm to activate it.
  */
 export default function WalletSetupPage() {
   const router = useRouter();
-  const { userId, stellarAddress, refreshStellarAddress, isAuthenticated } = useAuth();
+  const params = useParams();
+  const locale = (params?.locale as string) ?? "en";
+  const { userId, stellarAddress, refreshStellarAddress, isAuthenticated } =
+    useAuth();
   const kit = useStellarWalletsKit();
-  
+
   const [passphrase, setPassphrase] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -45,7 +53,7 @@ export default function WalletSetupPage() {
   // Load auto-generated passphrase from session if available
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/auth/signin");
+      router.push(`/${locale}/auth/signin`);
       return;
     }
 
@@ -54,13 +62,13 @@ export default function WalletSetupPage() {
     if (!passcode) {
       // Passcode lost on refresh, clear temp data and redirect to signin
       clearTempPassphrase();
-      router.push("/auth/signin");
+      router.push(`/${locale}/auth/signin`);
       return;
     }
 
     // If user already has a wallet address, skip setup and go home
     if (stellarAddress && !getTempPassphrase()) {
-      router.push("/");
+      router.push(`/${locale}`);
       return;
     }
 
@@ -70,28 +78,33 @@ export default function WalletSetupPage() {
       setPassphrase(autoGenPassphrase);
       setOption(1); // Show the confirmation step
     }
-  }, [isAuthenticated, stellarAddress, router]);
+  }, [isAuthenticated, stellarAddress, router, locale]);
 
   /**
-   * Sync wallet to backend: 
+   * Sync wallet to backend:
    * 1. Put wallet address to backend
    * 2. Store secret encrypted with passcode
    * 3. Call postWalletConfirm to complete activation
    */
   const syncWalletToBackend = async (secret: string): Promise<void> => {
     if (!userId) throw new Error("Not logged in");
-    
+
     const passcode = getPasscode();
     if (!passcode) {
-      throw new Error("Passcode not available. Please log in again to set up your wallet.");
+      throw new Error(
+        "Passcode not available. Please log in again to set up your wallet.",
+      );
     }
-    
+
     const kp = Keypair.fromSecret(secret);
     const publicKey = kp.publicKey();
 
     // Step 1: Update wallet address on backend
     const result = await userApi.putWalletAddress(publicKey);
-    if (!result?.ok || (result.stellar_address && result.stellar_address !== publicKey)) {
+    if (
+      !result?.ok ||
+      (result.stellar_address && result.stellar_address !== publicKey)
+    ) {
       throw new Error(
         "Backend did not accept the new wallet address. Please retry.",
       );
@@ -104,7 +117,10 @@ export default function WalletSetupPage() {
     try {
       await userApi.postWalletConfirm({ wallet_address: publicKey });
     } catch (err) {
-      logger.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
+      logger.warn(
+        "Wallet confirm failed, but wallet address was set. User can continue.",
+        err,
+      );
       // Don't throw - the address is set, confirmation can retry later if needed
     }
   };
@@ -122,16 +138,16 @@ export default function WalletSetupPage() {
     try {
       await syncWalletToBackend(passphrase);
       setSuccess("Wallet set up successfully!");
-      
+
       // Clean up in-memory temp passphrase
       clearTempPassphrase();
-      
+
       // Refresh user context to update stellar address
       await refreshStellarAddress();
-      
+
       // Redirect to home after a brief delay
       setTimeout(() => {
-        router.push("/");
+        router.push(`/${locale}`);
       }, 1500);
     } catch (err: unknown) {
       setError((err as Error).message || "Failed to set up wallet");
@@ -154,19 +170,21 @@ export default function WalletSetupPage() {
       Keypair.fromSecret(importSeed);
       await syncWalletToBackend(importSeed);
       setSuccess("Wallet imported successfully!");
-      
+
       // Clean up in-memory temp passphrase
       clearTempPassphrase();
-      
+
       // Refresh user context
       await refreshStellarAddress();
-      
+
       // Redirect to home after a brief delay
       setTimeout(() => {
-        router.push("/");
+        router.push(`/${locale}`);
       }, 1500);
     } catch (err: unknown) {
-      setError("Invalid seed or failed to import. " + ((err as Error).message || ""));
+      setError(
+        "Invalid seed or failed to import. " + ((err as Error).message || ""),
+      );
       setLoading(false);
     }
   };
@@ -191,22 +209,30 @@ export default function WalletSetupPage() {
 
             // Update wallet address on backend
             const result = await userApi.putWalletAddress(pubKey);
-            if (!result?.ok || (result.stellar_address && result.stellar_address !== pubKey)) {
-              throw new Error("Backend did not accept the wallet address. Please retry.");
+            if (
+              !result?.ok ||
+              (result.stellar_address && result.stellar_address !== pubKey)
+            ) {
+              throw new Error(
+                "Backend did not accept the wallet address. Please retry.",
+              );
             }
 
             // Confirm wallet activation on backend
             try {
               await userApi.postWalletConfirm({ wallet_address: pubKey });
             } catch (err) {
-              logger.warn("Wallet confirm failed, but wallet address was set.", err);
+              logger.warn(
+                "Wallet confirm failed, but wallet address was set.",
+                err,
+              );
             }
 
             setSuccess("Wallet connected successfully!");
             await refreshStellarAddress();
-            
+
             setTimeout(() => {
-              router.push("/");
+              router.push(`/${locale}`);
             }, 1500);
           } catch (e: unknown) {
             setError((e as Error).message || "Failed to connect wallet");
@@ -225,33 +251,38 @@ export default function WalletSetupPage() {
       <div className="page-header">
         <div className="px-4 py-3">
           <h1 className="page-title">Finish Wallet Setup</h1>
-          <p className="text-xs text-muted-foreground">Complete your wallet activation</p>
+          <p className="text-muted-foreground text-xs">
+            Complete your wallet activation
+          </p>
         </div>
       </div>
 
       <PageContainer>
-        <Card className="border-border p-6 space-y-6">
+        <Card className="border-border space-y-6 p-6">
           {error && (
             <div
               id="wallet-setup-error"
               role="alert"
-              className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
+              className="border-destructive/30 bg-destructive/10 flex gap-3 rounded-lg border p-3"
             >
-              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
-              <p className="text-sm text-destructive">{error}</p>
+              <AlertCircle
+                className="text-destructive mt-0.5 h-4 w-4 flex-shrink-0"
+                aria-hidden="true"
+              />
+              <p className="text-destructive text-sm">{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10">
-              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className="flex gap-3 rounded-lg border border-green-500/30 bg-green-500/10 p-3">
+              <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
               <p className="text-sm text-green-600">{success}</p>
             </div>
           )}
 
           {!option ? (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 How would you like to set up your wallet?
               </p>
 
@@ -262,11 +293,11 @@ export default function WalletSetupPage() {
                   setOption(1);
                 }}
                 disabled={loading}
-                className="w-full h-auto py-4 flex flex-col items-center"
+                className="flex h-auto w-full flex-col items-center py-4"
                 variant="outline"
               >
                 <span className="font-semibold">Generate New Wallet</span>
-                <span className="text-xs text-muted-foreground mt-1">
+                <span className="text-muted-foreground mt-1 text-xs">
                   Let us create a secure wallet for you
                 </span>
               </Button>
@@ -274,11 +305,11 @@ export default function WalletSetupPage() {
               <Button
                 onClick={() => setOption(2)}
                 disabled={loading}
-                className="w-full h-auto py-4 flex flex-col items-center"
+                className="flex h-auto w-full flex-col items-center py-4"
                 variant="outline"
               >
                 <span className="font-semibold">Import Existing Seed</span>
-                <span className="text-xs text-muted-foreground mt-1">
+                <span className="text-muted-foreground mt-1 text-xs">
                   Use an existing Stellar secret key
                 </span>
               </Button>
@@ -286,12 +317,12 @@ export default function WalletSetupPage() {
               <Button
                 onClick={handleConnectWallet}
                 disabled={loading}
-                className="w-full h-auto py-4 flex flex-col items-center bg-primary text-primary-foreground hover:bg-primary/90"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-auto w-full flex-col items-center py-4"
               >
                 <span className="font-semibold">
                   {loading ? "Connecting..." : "Connect External Wallet"}
                 </span>
-                <span className="text-xs text-primary-foreground/70 mt-1">
+                <span className="text-primary-foreground/70 mt-1 text-xs">
                   Connect Freighter, Lobstr, or others
                 </span>
               </Button>
@@ -304,29 +335,32 @@ export default function WalletSetupPage() {
                 className="mb-2 -ml-2 h-8 px-2"
                 disabled={loading}
               >
-                <ChevronLeft className="w-4 h-4 mr-1" />
+                <ChevronLeft className="mr-1 h-4 w-4" />
                 Back
               </Button>
 
               {option === 1 && (
                 <form onSubmit={handleGenerateConfirm} className="space-y-4">
                   <div>
-                    <h2 className="text-lg font-semibold mb-2">Your New Wallet</h2>
-                    
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-3">
-                      <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <h2 className="mb-2 text-lg font-semibold">
+                      Your New Wallet
+                    </h2>
+
+                    <div className="mb-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+                      <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                       <p className="text-xs text-blue-800 dark:text-blue-300">
-                        Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                        Your wallet secret will be encrypted with your account
+                        passcode and stored securely on this device.
                       </p>
                     </div>
 
-                    <p className="text-sm text-muted-foreground">
-                      Please save this secret key somewhere safe. It is required to
-                      recover your wallet if you switch devices.
+                    <p className="text-muted-foreground text-sm">
+                      Please save this secret key somewhere safe. It is required
+                      to recover your wallet if you switch devices.
                     </p>
                   </div>
 
-                  <div className="p-3 bg-muted rounded font-mono text-xs break-all border border-border max-h-32 overflow-y-auto">
+                  <div className="bg-muted border-border max-h-32 overflow-y-auto rounded border p-3 font-mono text-xs break-all">
                     {passphrase}
                   </div>
 
@@ -339,18 +373,19 @@ export default function WalletSetupPage() {
               {option === 2 && (
                 <form onSubmit={handleImportSeed} className="space-y-4">
                   <div>
-                    <h2 className="text-lg font-semibold mb-2">Import Seed</h2>
-                    
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-3">
-                      <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <h2 className="mb-2 text-lg font-semibold">Import Seed</h2>
+
+                    <div className="mb-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+                      <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                       <p className="text-xs text-blue-800 dark:text-blue-300">
-                        Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                        Your wallet secret will be encrypted with your account
+                        passcode and stored securely on this device.
                       </p>
                     </div>
 
-                    <p className="text-sm text-muted-foreground">
-                      Enter your Stellar secret key (starts with 'S'). It will be stored
-                      encrypted on this device.
+                    <p className="text-muted-foreground text-sm">
+                      Enter your Stellar secret key (starts with 'S'). It will
+                      be stored encrypted on this device.
                     </p>
                   </div>
 
