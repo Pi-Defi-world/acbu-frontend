@@ -21,8 +21,6 @@
  * npm run test
  */
 
-import React from 'react';
-
 /**
  * TEST 1: Verify confirmedAmount state is set when opening confirm dialog
  * 
