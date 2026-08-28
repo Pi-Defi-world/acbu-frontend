@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { errorReporter } from '@/lib/error-reporting';
+import type { ErrorContext } from '@/lib/error-reporting';
 
 function getUserId(): string | null {
   if (typeof window === 'undefined') return null;
@@ -28,10 +29,11 @@ export default function Error({
     errorReporter.reportError(error, {
       level: 'page',
       context: {
+        type: 'route-error',
         route: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
         digest: error.digest,
-        userId: getUserId(),
-      },
+        userId: getUserId() ?? undefined,
+      } satisfies ErrorContext,
     });
   }, [error]);
 
