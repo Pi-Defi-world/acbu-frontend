@@ -22,16 +22,26 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Chromium
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y chromium-browser
+      - name: Build project
+        run: pnpm build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          NEXT_PUBLIC_API_URL: https://api.acbu.io
+          NEXT_PUBLIC_BILLS_ENABLED: false
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install chromium --with-deps
 
       - name: Run LHCI
         env:
-          CHROME_BIN: /usr/bin/chromium-browser
-        run: npx @lhci/cli@0.11.0 autorun --config=.lighthouseci/config.cjs
+          CHROME_PATH: /ms-playwright/chromium-*/chrome-linux/chrome
+          NEXT_TELEMETRY_DISABLED: 1
+          NEXT_PUBLIC_API_URL: https://api.acbu.io
+          NEXT_PUBLIC_BILLS_ENABLED: false
+        run: npx @lhci/cli@0.13.0 autorun --config=.lighthouseci/config.cjs
