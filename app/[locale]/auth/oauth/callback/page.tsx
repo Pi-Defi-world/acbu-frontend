@@ -1,7 +1,28 @@
 "use client";
 
-import { useSearchParams, useRouter } from 'next/navigation';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+
+export function getSafeOAuthReturnPath(value: string | null): string {
+  if (!value) {
+    return "/";
+  }
+
+  const trimmedValue = value.trim();
+
+  if (
+    !trimmedValue ||
+    !trimmedValue.startsWith("/") ||
+    trimmedValue.startsWith("//") ||
+    /^https?:\/\//i.test(trimmedValue) ||
+    /^javascript:/i.test(trimmedValue) ||
+    /^data:/i.test(trimmedValue)
+  ) {
+    return "/";
+  }
+
+  return trimmedValue;
+}
 
 function OAuthCallbackContent() {
   const searchParams = useSearchParams();
@@ -37,7 +58,9 @@ function OAuthCallbackContent() {
 
     setStatus("success");
 
-    const returnPath = sessionStorage.getItem("oauth_return_path") || "/";
+    const returnPath = getSafeOAuthReturnPath(
+      sessionStorage.getItem("oauth_return_path"),
+    );
     sessionStorage.removeItem("oauth_return_path");
     router.replace(returnPath);
   }, [searchParams, router]);
