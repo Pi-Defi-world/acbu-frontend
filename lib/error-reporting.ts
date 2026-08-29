@@ -2,6 +2,15 @@
  * Error reporting utilities for the application
  */
 
+/** Discriminated union of all known error context payloads. */
+export type ErrorContext =
+  | { type: 'unhandledrejection' }
+  | { type: 'uncaughterror'; filename: string; lineno: number; colno: number }
+  | { type: 'global-error'; digest: string | undefined; critical: boolean }
+  | { type: 'page-error'; page: string; digest: string | undefined }
+  | { type: 'route-error'; route: string; digest: string | undefined; userId: string | undefined }
+  | { type: 'component-error'; componentStack: string | null; boundary: string };
+
 export interface ErrorReport {
   message: string;
   stack?: string;
@@ -10,7 +19,7 @@ export interface ErrorReport {
   userAgent: string;
   url: string;
   level: 'app' | 'page' | 'component';
-  context?: Record<string, unknown>;
+  context?: ErrorContext;
 }
 
 export class ErrorReporter {
@@ -110,7 +119,7 @@ export function setupGlobalErrorHandling(): void {
     const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
     reporter.reportError(error, {
       level: 'app',
-      context: { type: 'unhandledrejection' }
+      context: { type: 'unhandledrejection' } satisfies ErrorContext
     });
   });
 
@@ -124,7 +133,7 @@ export function setupGlobalErrorHandling(): void {
         filename: event.filename,
         lineno: event.lineno,
         colno: event.colno
-      }
+      } satisfies ErrorContext
     });
   });
 }
