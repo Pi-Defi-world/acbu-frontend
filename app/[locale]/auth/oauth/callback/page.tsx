@@ -1,32 +1,15 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
-
-export function getSafeOAuthReturnPath(value: string | null): string {
-  if (!value) {
-    return "/";
-  }
-
-  const trimmedValue = value.trim();
-
-  if (
-    !trimmedValue ||
-    !trimmedValue.startsWith("/") ||
-    trimmedValue.startsWith("//") ||
-    /^https?:\/\//i.test(trimmedValue) ||
-    /^javascript:/i.test(trimmedValue) ||
-    /^data:/i.test(trimmedValue)
-  ) {
-    return "/";
-  }
-
-  return trimmedValue;
-}
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import * as authApi from '@/lib/api/auth';
+import { useAuth } from '@/contexts/auth-context';
+import { logger } from '@/lib/logger';
 
 function OAuthCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { login } = useAuth();
   const calledRef = useRef(false);
   const [status, setStatus] = useState<"validating" | "success" | "error">(
     "validating",
@@ -37,33 +20,65 @@ function OAuthCallbackContent() {
     if (calledRef.current) return;
     calledRef.current = true;
 
-    const code = searchParams.get("code");
-    const state = searchParams.get("state");
+    const exchangeCode = async () => {
+      try {
+        const code = searchParams.get("code");
+        const state = searchParams.get("state");
 
-    if (!code) {
-      setStatus("error");
-      setErrorMessage("Missing authorization code.");
-      return;
-    }
+        if (!code) {
+          setStatus("error");
+          setErrorMessage("Missing authorization code.");
+          return;
+        }
 
-    const storedState = sessionStorage.getItem("oauth_state");
+        const storedState = sessionStorage.getItem("oauth_state");
 
-    if (!state || !storedState || state !== storedState) {
-      setStatus("error");
-      setErrorMessage("Invalid state parameter. Possible CSRF attack.");
-      return;
-    }
+        if (!state || !storedState || state !== storedState) {
+          setStatus("error");
+          setErrorMessage("Invalid state parameter. Possible CSRF attack.");
+          return;
+        }
 
-    sessionStorage.removeItem("oauth_state");
+        sessionStorage.removeItem("oauth_state");
 
-    setStatus("success");
+        // Exchange authorization code for session
+        let result;
+        try {
+          result = await authApi.exchangeOAuthCode(code, state);
+        } catch (error) {
+          logger.error("OAuth code exchange failed", error);
+          setStatus("error");
+          setErrorMessage(
+            error instanceof Error ? error.message : "Authorization failed. Please try again."
+          );
+          return;
+        }
 
-    const returnPath = getSafeOAuthReturnPath(
-      sessionStorage.getItem("oauth_return_path"),
-    );
-    sessionStorage.removeItem("oauth_return_path");
-    router.replace(returnPath);
-  }, [searchParams, router]);
+        // Verify we got valid credentials
+        if (!result.user_id) {
+          logger.error("OAuth code exchange returned invalid response - missing user_id");
+          setStatus("error");
+          setErrorMessage("Authentication failed: invalid response from server.");
+          return;
+        }
+
+        // Establish authenticated session
+        login(result.user_id, result.stellar_address);
+
+        setStatus("success");
+
+        const returnPath = sessionStorage.getItem("oauth_return_path") || "/";
+        sessionStorage.removeItem("oauth_return_path");
+        router.replace(returnPath);
+      } catch (err) {
+        logger.error("Unexpected error during OAuth callback", err);
+        setStatus("error");
+        setErrorMessage("An unexpected error occurred. Please try again.");
+      }
+    };
+
+    void exchangeCode();
+  }, [searchParams, router, login]);
 
   if (status === "validating") {
     return (
