@@ -38,6 +38,14 @@ export async function verify2fa(
   return post<SigninResponse>('/auth/signin/verify-2fa', { challenge_token: challengeToken, code }, opts);
 }
 
+export async function exchangeOAuthCode(
+  code: string,
+  state: string,
+  opts?: RequestOptions
+): Promise<SigninResponse> {
+  return post<SigninResponse>('/auth/oauth/callback', { code, state }, opts);
+}
+
 export async function signout(opts?: RequestOptions): Promise<{ ok: boolean }> {
   return post<{ ok: boolean }>('/auth/signout', undefined, opts);
 }
