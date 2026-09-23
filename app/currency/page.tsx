@@ -33,6 +33,8 @@ import { logger } from "@/lib/logger";
 import { useAuth } from "@/contexts/auth-context";
 import { submitBurnRedeemSingleClient } from "@/lib/stellar/burning";
 import { useWalletSetup } from "@/hooks/use-wallet-setup";
+import { useConfig } from "@/hooks/use-config";
+import { getBurnFeeText, getMintFeeText } from "@/lib/fee-text";
 
 /** Local currency units per 1 ACBU from the `/rates` oracle, or null if missing. */
 function localPerAcbu(currency: string, rates: RatesResponse | null): number | null {
@@ -70,6 +72,7 @@ export default function CurrencyPage() {
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const { userId, stellarAddress } = useAuth();
   const { getWalletSigner } = useWalletSetup();
+  const { config } = useConfig();
   const { toast } = useToast();
   const {
     balance,
@@ -177,6 +180,8 @@ export default function CurrencyPage() {
 
   const estimatedMintAcbu = estimateAcbuFromUsd(mintNumeric, rates);
   const estimatedBurnNgn = estimateLocalFromAcbu(burnNumeric, "NGN", rates);
+  const mintFeeText = getMintFeeText(config, mintNumeric, "USD");
+  const burnFeeText = getBurnFeeText(config, burnNumeric);
   const intlPayoutAmount =
     intlQuote?.payout_amount ??
     intlQuote?.receive_amount ??
@@ -444,9 +449,9 @@ export default function CurrencyPage() {
 
               <Card className="border-border bg-muted p-3 mt-4">
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-muted-foreground">Fee</span>
+                  <span className="text-muted-foreground">Mint fee</span>
                   <span className="font-medium text-foreground">
-                    Calculated at confirmation
+                    {mintFeeText}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -582,9 +587,9 @@ export default function CurrencyPage() {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Fee</span>
+                  <span className="text-muted-foreground">Burn fee</span>
                   <span className="font-medium text-foreground">
-                    Calculated at confirmation
+                    {burnFeeText}
                   </span>
                 </div>
               </Card>
@@ -785,9 +790,16 @@ export default function CurrencyPage() {
               </span>
             </div>
             <div className="flex justify-between text-sm border-t border-border pt-2">
-              <span className="text-muted-foreground">Processing fee:</span>
+              <span className="text-muted-foreground">
+                {activeTab === 'mint' && 'Mint fee:'}
+                {activeTab === 'burn' && 'Burn fee:'}
+                {activeTab === 'international' && 'Fees:'}
+              </span>
               <span className="font-medium text-foreground">
-                Calculated by backend
+                {activeTab === 'mint' && mintFeeText}
+                {activeTab === 'burn' && burnFeeText}
+                {activeTab === 'international' &&
+                  (intlFeeAmount != null ? `ACBU ${formatAmount(intlFeeAmount)}` : 'Included in quote')}
               </span>
             </div>
           </div>

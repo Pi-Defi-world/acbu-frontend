@@ -18,6 +18,8 @@ import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
 import { useWalletSetup } from "@/hooks/use-wallet-setup";
 import { submitBurnRedeemSingleClient } from "@/lib/stellar/burning";
+import { useConfig } from "@/hooks/use-config";
+import { getBurnFeeText } from "@/lib/fee-text";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -145,7 +147,10 @@ export function BurnPageContent() {
   });
 
   const currency = form.watch("currency");
+  const acbuAmount = form.watch("acbuAmount");
   const { isValid } = form.formState;
+  const { config } = useConfig();
+  const burnFeeText = getBurnFeeText(config, acbuAmount);
 
   const onSubmit = async (values: BurnFormValues) => {
     clearError();
@@ -391,6 +396,15 @@ export function BurnPageContent() {
                   </FormItem>
                 )}
               />
+
+              <Card className="border-border bg-muted p-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Burn fee</span>
+                  <span className="font-medium text-foreground" data-testid="burn-fee">
+                    {burnFeeText}
+                  </span>
+                </div>
+              </Card>
 
               <Button
                 type="submit"
