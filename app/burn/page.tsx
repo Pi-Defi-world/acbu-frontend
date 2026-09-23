@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SkeletonList } from "@/components/ui/skeleton-list";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
@@ -14,9 +16,7 @@ import * as burnApi from "@/lib/api/burn";
 import type { ApiError } from "@/lib/api/client";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
-import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
-import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
-import { Keypair } from "@stellar/stellar-sdk";
+import { useWalletSetup } from "@/hooks/use-wallet-setup";
 import { submitBurnRedeemSingleClient } from "@/lib/stellar/burning";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -73,7 +73,6 @@ const burnSchema = z.object({
       });
     }
   } else {
-    // Generic fallback for other currencies
     if (!/^\d+$/.test(data.accountNumber)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -87,7 +86,7 @@ const burnSchema = z.object({
         path: ["accountNumber"],
       });
     }
-    
+
     if (!/^[A-Za-z0-9]+$/.test(data.bankCode)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -120,19 +119,24 @@ const formatCurrency = (amount: string, currency: string) => {
   }
 };
 
-export default function BurnPage() {
+export function BurnPageContent() {
   const opts = useApiOpts();
   const { userId, stellarAddress } = useAuth();
-  const kit = useStellarWalletsKit();
+  const { getWalletSigner } = useWalletSetup();
+  const searchParams = useSearchParams();
+
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const [loading, setLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
 
+  const initialAmount = searchParams.get('amount') || '';
+  const initialCurrency = searchParams.get('currency') || 'NGN';
+
   const form = useForm<BurnFormValues>({
     resolver: zodResolver(burnSchema),
     defaultValues: {
-      acbuAmount: "",
-      currency: "NGN",
+      acbuAmount: initialAmount,
+      currency: initialCurrency,
       accountNumber: "",
       bankCode: "",
       accountName: "",
@@ -141,7 +145,7 @@ export default function BurnPage() {
   });
 
   const currency = form.watch("currency");
-  const isValid = form.formState.isValid;
+  const { isValid } = form.formState;
 
   const onSubmit = async (values: BurnFormValues) => {
     clearError();
@@ -159,57 +163,16 @@ export default function BurnPage() {
         type: "bank",
       };
 
-      const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
-      let burnTxHash: string;
+      const signer = await getWalletSigner();
+      const submit = await submitBurnRedeemSingleClient({
+        userAddress: stellarAddress,
+        amountAcbu: values.acbuAmount,
+        currency: values.currency,
+        userSecret: signer.userSecret,
+        external: signer.external,
+      });
 
-      if (secret) {
-        const localPubKey = Keypair.fromSecret(secret).publicKey();
-        if (stellarAddress && localPubKey !== stellarAddress) {
-          throw new Error(
-            `Local wallet (${localPubKey.slice(0, 6)}…${localPubKey.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Re-import the correct seed from Settings, or update the wallet address, then retry.`,
-          );
-        }
-        const submit = await submitBurnRedeemSingleClient({
-          userAddress: stellarAddress,
-          amountAcbu: values.acbuAmount,
-          currency: values.currency,
-          userSecret: secret,
-        });
-        burnTxHash = submit.transactionHash;
-      } else {
-        if (!kit) {
-          throw new Error(
-            "Your wallet secret isn't available on this device and the wallet connector isn't ready yet. Please wait a moment and retry.",
-          );
-        }
-        const address = await new Promise<string>((resolve, reject) => {
-          kit
-            .openModal({
-              onWalletSelected: async (selectedOption: { id: string }) => {
-                try {
-                  kit.setWallet(selectedOption.id);
-                  const { address } = await kit.getAddress();
-                  resolve(address);
-                } catch (err) {
-                  reject(err);
-                }
-              },
-            })
-            .catch(reject);
-        });
-        if (stellarAddress && address !== stellarAddress) {
-          throw new Error(
-            `Connected wallet (${address.slice(0, 6)}…${address.slice(-4)}) doesn't match the account on record (${stellarAddress.slice(0, 6)}…${stellarAddress.slice(-4)}). Connect the correct wallet (or update your linked wallet), then retry.`,
-          );
-        }
-        const submit = await submitBurnRedeemSingleClient({
-          userAddress: stellarAddress,
-          amountAcbu: values.acbuAmount,
-          currency: values.currency,
-          external: { kit, address },
-        });
-        burnTxHash = submit.transactionHash;
-      }
+      const burnTxHash = submit.transactionHash;
 
       const res = await burnApi.burnAcbu(
         values.acbuAmount,
@@ -220,12 +183,11 @@ export default function BurnPage() {
       );
       setTxId(res.transaction_id);
       form.reset({ ...values, acbuAmount: "" });
-    } catch (e) {
-      const apiError = e as ApiError;
-      // Handle server-side validation errors if they follow a specific format
-      if (apiError?.status === 400 && apiError?.details) {
-        const details = apiError.details as { errors?: Record<string, string>; error?: unknown };
-        const errors = details.errors || (details.error && typeof details.error === 'object' ? (details.error as Record<string, string>) : null);
+    } catch (e: unknown) {
+      const err = e as Record<string, unknown>;
+      if (err.status === 400 && err.details) {
+        const details = err.details as Record<string, unknown>;
+        const errors: unknown = details.errors || (typeof details.error === 'object' && details.error ? details.error : null);
 
         if (errors && typeof errors === 'object') {
           const fieldKeys = ['accountNumber', 'bankCode', 'accountName', 'acbuAmount', 'currency'] as const;
@@ -234,15 +196,14 @@ export default function BurnPage() {
             (fieldKeys as readonly string[]).includes(value);
 
           Object.entries(errors).forEach(([key, msg]) => {
-            const formKey =
-              key === 'account_number' ? 'accountNumber' :
-              key === 'bank_code' ? 'bankCode' :
-              key === 'account_name' ? 'accountName' :
-              key === 'acbu_amount' ? 'acbuAmount' :
-              key;
+            const formKey: string = key === 'account_number' ? 'accountNumber' :
+                            key === 'bank_code' ? 'bankCode' :
+                            key === 'account_name' ? 'accountName' :
+                            key === 'acbu_amount' ? 'acbuAmount' :
+                            key;
 
-            if (isFieldKey(formKey)) {
-              form.setError(formKey, { type: 'server', message: String(msg) });
+            if (['accountNumber', 'bankCode', 'accountName', 'acbuAmount', 'currency'].includes(formKey)) {
+              form.setError(formKey as 'accountNumber' | 'bankCode' | 'accountName' | 'acbuAmount' | 'currency', { type: 'server', message: String(msg) });
             }
           });
         } else {
@@ -258,16 +219,16 @@ export default function BurnPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="px-4 py-3 flex items-center gap-3">
+      <div className="page-header">
+        <div className="page-header-row">
           <Link
             href="/mint"
-            aria-label="Go back to Mint page" 
-            className="flex items-center justify-center min-w-[44px] min-h-[44px] -m-2"
+            aria-label="Go back to Mint page"
+            className="touch-target"
           >
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
-          <h1 className="text-lg font-bold text-foreground">Withdraw (Burn)</h1>
+          <h1 className="page-title">Withdraw (Burn)</h1>
         </div>
       </div>
       <PageContainer>
@@ -278,7 +239,7 @@ export default function BurnPage() {
           {uiError && (
             <ApiErrorDisplay error={uiError} onDismiss={clearError} />
           )}
-          
+
           {txId && (
             <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
               <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
@@ -287,7 +248,7 @@ export default function BurnPage() {
               </p>
             </div>
           )}
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -366,8 +327,8 @@ export default function BurnPage() {
                       />
                     </FormControl>
                     <FormDescription>
-                      {currency === "NGN" 
-                        ? "Nigerian NUBAN accounts must be 10 digits." 
+                      {currency === "NGN"
+                        ? "Nigerian NUBAN accounts must be 10 digits."
                         : currency === "KES"
                         ? "Kenyan account numbers are typically 5-15 digits."
                         : "Standard bank account number (digits only)."}
@@ -443,5 +404,31 @@ export default function BurnPage() {
         </Card>
       </PageContainer>
     </>
+  );
+}
+
+function BurnPageSkeleton() {
+  return (
+    <>
+      <div className="page-header">
+        <div className="page-header-row">
+          <div className="w-9 h-9" />
+          <div className="h-6 w-40 bg-accent animate-pulse rounded-md" />
+        </div>
+      </div>
+      <PageContainer>
+        <Card className="border-border p-4 space-y-4">
+          <SkeletonList count={5} itemHeight="h-14" />
+        </Card>
+      </PageContainer>
+    </>
+  );
+}
+
+export default function BurnPage() {
+  return (
+    <Suspense fallback={<BurnPageSkeleton />}>
+      <BurnPageContent />
+    </Suspense>
   );
 }

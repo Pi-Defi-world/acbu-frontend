@@ -36,6 +36,8 @@ import { formatAmount } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { getWalletSecretAnyLocal } from "@/lib/wallet-storage";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
+import { useConfig } from "@/hooks/use-config";
+import { getTransferNetworkFeeText } from "@/lib/fee-text";
 import {
   looksLikeStellarAddress,
   submitAcbuPaymentClient,
@@ -75,6 +77,7 @@ function getStatusBadgeClassName(status: string): string {
  */
 export default function SendPage() {
   const opts = useApiOpts();
+  const { config } = useConfig();
   const { userId, stellarAddress } = useAuth();
   const kit = useStellarWalletsKit();
   const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
@@ -98,6 +101,7 @@ export default function SendPage() {
   const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const transferNetworkFeeText = getTransferNetworkFeeText(config);
 
   const virtualizedContacts = useMemo(() => {
     return contacts.map((c) => (
@@ -431,7 +435,17 @@ export default function SendPage() {
                       <SelectValue placeholder="Select a contact" />
                     </SelectTrigger>
                     <SelectContent>
-                      {virtualizedContacts}
+                      {loadingContacts ? (
+                        <SelectItem value="__loading" disabled>
+                          Loading contacts...
+                        </SelectItem>
+                      ) : contacts.length > 0 ? (
+                        virtualizedContacts
+                      ) : (
+                        <SelectItem value="__empty" disabled>
+                          No contacts found
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </TabsContent>
@@ -505,7 +519,7 @@ export default function SendPage() {
             <Card className="border-border bg-muted p-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Network Fee</span>
-                <span className="font-medium text-foreground">Free</span>
+                <span className="font-medium text-foreground">{transferNetworkFeeText}</span>
               </div>
             </Card>
 
@@ -565,7 +579,7 @@ export default function SendPage() {
                 ACBU {formatAmount(confirmedAmount)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Network Fee: Free
+                Network Fee: {transferNetworkFeeText}
               </p>
             </div>
             {note && (

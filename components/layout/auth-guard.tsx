@@ -1,19 +1,43 @@
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-context';
+import React, { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
+import { locales } from "@/i18n/locales";
 
-const PUBLIC_PATHS = ['/auth/signin', '/auth/signup', '/auth/2fa', '/recovery'];
-const LOCALE_PREFIX = /^\/(en|en-NG|en-KE)(?=\/|$)/;
+// Bare (non-locale-prefixed) auth paths kept for backward compat
+const AUTH_SEGMENTS = [
+  "/auth/signin",
+  "/auth/signup",
+  "/auth/2fa",
+  "/recovery",
+];
 
-function getPathWithoutLocale(pathname: string | null) {
-  return pathname?.replace(LOCALE_PREFIX, '') || '/';
+function isPublicPath(pathname: string): boolean {
+  // Match bare paths: /auth/signin, /recovery, etc.
+  if (AUTH_SEGMENTS.some((p) => pathname === p || pathname.startsWith(p + "/")))
+    return true;
+  // Match locale-prefixed paths: /en/auth/signin, /ar/auth/2fa, etc.
+  for (const locale of locales) {
+    const prefix = `/${locale}`;
+    if (
+      AUTH_SEGMENTS.some(
+        (p) => pathname === prefix + p || pathname.startsWith(prefix + p + "/"),
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
-function getSignInPath(pathname: string | null) {
-  const locale = pathname?.match(LOCALE_PREFIX)?.[1] ?? 'en';
-  return `/${locale}/auth/signin`;
+/** Extract the locale segment from a pathname, e.g. /en/... → 'en'. */
+function getLocaleFromPath(pathname: string): string {
+  for (const locale of locales) {
+    if (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`))
+      return locale;
+  }
+  return "en";
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -25,15 +49,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const signInPath = getSignInPath(pathname);
 
   useEffect(() => {
-    if (!isPublic && isHydrated && !isAuthenticated && pathname !== signInPath) {
-      router.replace(signInPath);
+    if (!isPublicPath(pathname) && isHydrated && !isAuthenticated) {
+      const locale = getLocaleFromPath(pathname);
+      router.replace(`/${locale}/auth/signin`);
+      return;
     }
   }, [isAuthenticated, isHydrated, isPublic, pathname, router, signInPath, state.stellarAddress]);
 
-  if (!isPublic && (!isHydrated || !isAuthenticated)) {
+  if (!isPublicPath(pathname) && (!isHydrated || !isAuthenticated)) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <div className="text-muted-foreground animate-pulse">Loading...</div>
       </div>
     );
   }
