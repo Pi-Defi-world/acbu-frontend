@@ -4,6 +4,10 @@ const withNextIntl = createNextIntlPlugin();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Emit the self-contained `.next/standalone` bundle so the app can be
+  // packaged into the Docker image (see Dockerfile). Safe on Vercel, which
+  // uses its own server runtime.
+  output: 'standalone',
   images: {
     unoptimized: true,
   },
