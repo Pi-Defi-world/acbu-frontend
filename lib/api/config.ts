@@ -24,10 +24,14 @@ export interface PublicAssetsConfig {
     mint?: {
       network_fee_text?: string | null;
       fee_text?: string | null;
+      /** Fractional fee rate, e.g. 0.003 for 0.3%. */
+      fee_rate?: number | null;
     } | null;
     burn?: {
       processing_fee_text?: string | null;
       fee_text?: string | null;
+      /** Fractional fee rate, e.g. 0.003 for 0.3%. */
+      fee_rate?: number | null;
     } | null;
     transfer?: {
       network_fee_text?: string | null;
