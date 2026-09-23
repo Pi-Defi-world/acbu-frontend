@@ -29,7 +29,7 @@ const menuItems = [
     ] 
   },
   { section: 'Support', items: [
-    { title: 'Activity History', icon: Clock, href: '/activity' },
+    { title: 'Activity History', icon: Clock, href: '/me/activity' },
     { title: 'Help Center', icon: HelpCircle, href: '/help' }
   ] },
 ];
@@ -101,7 +101,7 @@ export default function MePage() {
   const handleLogout = async () => {
     setShowLogoutConfirm(false);
     await logout();
-    router.replace('/auth/signin');
+    router.replace('/en/auth/signin');
   };
 
   if (loading) {

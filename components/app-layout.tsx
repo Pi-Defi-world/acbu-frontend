@@ -5,6 +5,7 @@ import { PageTransition } from './page-transition';
 import { usePathname } from 'next/navigation';
 
 const PUBLIC_PATHS = ['/auth/signin', '/auth/signup', '/auth/2fa', '/recovery'];
+const LOCALE_PREFIX = /^\/(en|en-NG|en-KE)(?=\/|$)/;
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -12,7 +13,8 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
-  const isPublic = PUBLIC_PATHS.some((p) => pathname?.startsWith(p) || pathname === p);
+  const pathWithoutLocale = pathname?.replace(LOCALE_PREFIX, '') || '/';
+  const isPublic = PUBLIC_PATHS.some((path) => pathWithoutLocale.startsWith(path));
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
