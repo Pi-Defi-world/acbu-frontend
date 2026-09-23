@@ -14,31 +14,14 @@ import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
 import { getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
+import {
+  readForceWalletSetupFlag,
+  clearForceWalletSetupFlag,
+} from "@/lib/force-wallet-setup";
 import { AlertCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 import { logger } from "@/lib/logger";
 import { useI18n } from "@/contexts/i18n-context";
-
-const FORCE_WALLET_SETUP_KEY = "force_wallet_setup";
-
-function readForceWalletSetupFlag(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return localStorage.getItem(FORCE_WALLET_SETUP_KEY);
-  } catch {
-    // Privacy modes / disabled storage can throw SecurityError
-    return null;
-  }
-}
-
-function clearForceWalletSetupFlag(): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.removeItem(FORCE_WALLET_SETUP_KEY);
-  } catch {
-    // Privacy modes / disabled storage can throw SecurityError
-  }
-}
 
 export function WalletSetupModal() {
   const { t } = useI18n();

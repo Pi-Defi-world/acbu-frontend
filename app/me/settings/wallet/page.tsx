@@ -11,6 +11,7 @@ import { useApiOpts } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth-context";
 import { removeStoredWallet, hasStoredWallet } from "@/lib/wallet-storage";
 import * as userApi from "@/lib/api/user";
+import { setForceWalletSetup } from "@/lib/force-wallet-setup";
 
 export default function WalletPage() {
   const opts = useApiOpts();
@@ -66,12 +67,10 @@ export default function WalletPage() {
         await removeStoredWallet(userId);
       }
 
-      setSuccess(
-        "Wallet removed. Reloading so you can set up a fresh wallet…",
-      );
+      setSuccess("Wallet removed. Reloading so you can set up a fresh wallet…");
       setHasLocalSecret(false);
 
-      localStorage.setItem("force_wallet_setup", "true");
+      setForceWalletSetup();
 
       window.location.reload();
     } catch (err) {
@@ -84,17 +83,14 @@ export default function WalletPage() {
     <>
       <div className="page-header">
         <div className="page-header-row">
-          <Link
-            href="/me/settings"
-            className="touch-target"
-          >
-            <ArrowLeft className="w-5 h-5 text-primary" />
+          <Link href="/me/settings" className="touch-target">
+            <ArrowLeft className="text-primary h-5 w-5" />
           </Link>
           <h1 className="page-title">Wallet Settings</h1>
         </div>
       </div>
       <PageContainer>
-        <Card className="border-border p-6 space-y-6">
+        <Card className="border-border space-y-6 p-6">
           {loading ? (
             <div className="space-y-4">
               <Skeleton className="h-4 w-full" />
@@ -103,39 +99,41 @@ export default function WalletPage() {
           ) : (
             <>
               {error && (
-                <div className="flex gap-2 rounded-lg bg-destructive/10 p-3 border border-destructive/20">
-                  <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-destructive">{error}</p>
+                <div className="bg-destructive/10 border-destructive/20 flex gap-2 rounded-lg border p-3">
+                  <AlertCircle className="text-destructive mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <p className="text-destructive text-sm">{error}</p>
                 </div>
               )}
               {success && (
-                <div className="flex gap-2 rounded-lg bg-green-500/10 p-3 border border-green-500/20">
-                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="flex gap-2 rounded-lg border border-green-500/20 bg-green-500/10 p-3">
+                  <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
                   <p className="text-sm text-green-600">{success}</p>
                 </div>
               )}
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Key className="w-4 h-4" /> Connected Stellar Address
+                <label className="text-foreground flex items-center gap-2 text-sm font-medium">
+                  <Key className="h-4 w-4" /> Connected Stellar Address
                 </label>
                 {stellarAddress ? (
-                  <div className="p-3 rounded-lg bg-muted border border-border">
-                    <p className="text-xs font-mono text-muted-foreground break-all">
+                  <div className="bg-muted border-border rounded-lg border p-3">
+                    <p className="text-muted-foreground font-mono text-xs break-all">
                       {stellarAddress}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No wallet connected.</p>
+                  <p className="text-muted-foreground text-sm">
+                    No wallet connected.
+                  </p>
                 )}
               </div>
 
-              <div className="space-y-2 pt-4 border-t border-border">
-                <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+              <div className="border-border space-y-2 border-t pt-4">
+                <h3 className="text-foreground flex items-center gap-2 text-sm font-medium">
                   Local Keystore
                 </h3>
-                <p className="text-xs text-muted-foreground">
-                  {hasLocalSecret 
+                <p className="text-muted-foreground text-xs">
+                  {hasLocalSecret
                     ? "Your secret key is stored on this device (IndexedDB)."
                     : "No secret key is stored on this device. You may be using an external wallet."}
                 </p>
@@ -144,16 +142,18 @@ export default function WalletPage() {
               <div className="pt-6">
                 <Button
                   variant="destructive"
-                  className="w-full flex items-center gap-2"
+                  className="flex w-full items-center gap-2"
                   onClick={handleRemoveWallet}
                   disabled={loading}
                 >
-                  <Trash2 className="w-4 h-4" />
-                  {hasLocalSecret ? "Remove Local Wallet" : "Reset Wallet Connection"}
+                  <Trash2 className="h-4 w-4" />
+                  {hasLocalSecret
+                    ? "Remove Local Wallet"
+                    : "Reset Wallet Connection"}
                 </Button>
-                <p className="text-xs text-muted-foreground mt-3 text-center">
-                  Removing your wallet will disconnect it from this device. 
-                  You will need your secret phrase or external wallet to reconnect.
+                <p className="text-muted-foreground mt-3 text-center text-xs">
+                  Removing your wallet will disconnect it from this device. You
+                  will need your secret phrase or external wallet to reconnect.
                 </p>
               </div>
             </>
