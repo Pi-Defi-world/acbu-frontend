@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { useTranslations, useFormatter } from 'next-intl';
+import { useTranslations, useFormatter, useLocale } from 'next-intl';
 import {
   Send,
   TrendingUp,
@@ -112,6 +112,7 @@ export default function Home() {
   const [ratesLoading, setRatesLoading] = useState(true);
 
   const t = useTranslations('home');
+  const locale = useLocale();
   const format = useFormatter();
 
   const features = [
@@ -289,7 +290,7 @@ export default function Home() {
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <h3 className="text-sm font-semibold text-foreground">{t('recent_activity')}</h3>
-              <Link href="/activity" className="text-xs text-primary font-medium">{t('view_all')}</Link>
+              <Link href={`/${locale}/activity`} className="text-xs text-primary font-medium">{t('view_all')}</Link>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             {loading ? (
