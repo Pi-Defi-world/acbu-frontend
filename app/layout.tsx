@@ -74,9 +74,6 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Preconnect to third-party domains to eliminate DNS+TCP latency (#509) */}
-        <link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://va.vercel-scripts.com" />
         <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
       </head>
       <body className="font-sans antialiased">
