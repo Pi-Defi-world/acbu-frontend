@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,6 +28,8 @@ import { logger } from "@/lib/logger";
  */
 export default function WalletSetupPage() {
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) ?? "en";
   const { userId, stellarAddress, refreshStellarAddress, isAuthenticated } = useAuth();
   const { generateWallet, importWallet, connectExternalWallet } = useWalletSetup();
   
@@ -134,7 +136,7 @@ export default function WalletSetupPage() {
       await refreshStellarAddress();
       
       setTimeout(() => {
-        router.push("/");
+        router.push(`/${locale}`);
       }, 1500);
     } catch (err: unknown) {
       setError((err as Error).message || "Failed to connect wallet");
