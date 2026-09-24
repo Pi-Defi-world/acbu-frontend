@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Savings | ACBU',
-  description: 'Grow your wealth with ACBU savings accounts. Earn competitive APY interest and set savings goals.',
+  description: 'Grow your wealth with ACBU savings accounts and set savings goals.',
 };
 
 import { logger } from "@/lib/logger";
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, PiggyBank, TrendingUp, Plus, AlertCircle } from "lucide-react";
+import { ArrowLeft, PiggyBank, Plus, AlertCircle } from "lucide-react";
 import type { LucideIcon } from 'lucide-react';
 import { PageContainer } from "@/components/layout/page-container";
 import { useApiOpts } from "@/hooks/use-api";
@@ -218,13 +218,7 @@ export default function SavingsPage() {
             <p className="text-3xl font-bold text-foreground mb-1">
               {positionsLoading ? "—" : `ACBU ${formatAmount(totalSavings)}`}
             </p>
-            <p className="text-xs text-muted-foreground mb-3">
-              Earning 8% APY interest
-            </p>
-            <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
-              <TrendingUp className="w-3 h-3" />
-            <span>+ACBU {formatAmount((totalSavings * 0.08) / 12)} this month</span>
-            </div>
+
           </Card>
 
           <div className="space-y-4">
