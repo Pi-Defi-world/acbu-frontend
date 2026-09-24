@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -161,7 +161,7 @@ function TwoFactorForm() {
           {checked && !challengeToken && (
             <p className="mt-4 text-sm text-destructive">
               {t('missing_challenge_token')}{' '}
-              <Link href="/auth/signin" className="underline">
+              <Link href={`/${locale}/auth/signin`} className="underline">
                 {t('sign_in_again')}
               </Link>
               .
