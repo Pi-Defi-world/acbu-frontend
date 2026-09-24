@@ -5,6 +5,7 @@ import {
   Operation,
   TransactionBuilder,
 } from "@stellar/stellar-sdk";
+import { logger } from "@/lib/logger";
 import type { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit";
 import { getAssetsConfig } from "@/lib/api/config";
 
@@ -112,9 +113,9 @@ export async function submitAcbuPaymentClient(params: {
           await new Promise((r) => setTimeout(r, 2000));
         }
       }
-      if (!found) console.warn(`Stellar tx ${txHash} submitted but not found within ${timeoutMs}ms`);
+      if (!found) logger.warn(`Stellar tx ${txHash} submitted but not found within ${timeoutMs}ms`);
     } catch (e) {
-      console.warn('Error polling Horizon for tx confirmation', e);
+      logger.warn('Error polling Horizon for tx confirmation', e);
     }
     return { transactionHash: txHash, sourceAddress };
   }
@@ -139,9 +140,9 @@ export async function submitAcbuPaymentClient(params: {
         await new Promise((r) => setTimeout(r, 2000));
       }
     }
-    if (!found) console.warn(`Stellar tx ${txHash} submitted but not found within ${timeoutMs}ms`);
+    if (!found) logger.warn(`Stellar tx ${txHash} submitted but not found within ${timeoutMs}ms`);
   } catch (e) {
-    console.warn('Error polling Horizon for tx confirmation', e);
+    logger.warn('Error polling Horizon for tx confirmation', e);
   }
   return { transactionHash: txHash, sourceAddress };
 }

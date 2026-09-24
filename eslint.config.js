@@ -4,10 +4,10 @@ import tseslint from "typescript-eslint";
 
 export default [
   { 
-    ignores: [".next/**"] 
+    ignores: [".next/**", ".kilo/**"] 
   },
   { 
-    files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"], 
+    files: ["**/*.{js,mjs,cjs,ts,jsx,tsx,json}"], 
     languageOptions: { 
       parserOptions: { ecmaFeatures: { jsx: true } }, 
       globals: globals.browser 
@@ -24,6 +24,12 @@ export default [
   {
     rules: {
       "no-console": ["warn", { "allow": ["warn", "error"] }]
+    }
+  },
+  {
+    files: ["lib/logger.ts"],
+    rules: {
+      "no-console": "off"
     }
   }
 ];

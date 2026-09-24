@@ -1,40 +1,20 @@
-/**
- * Test file for SendPage component - Amount Preservation Fix
- * 
- * This test verifies that the amount is properly preserved in state
- * until the confirmation dialog is dismissed, addressing the issue:
- * "Users cannot confirm how much was sent"
- * 
- * Acceptance Criteria:
- * - Amount should be non-empty when displayed in confirmation dialog
- * - Amount should be preserved until dialog is dismissed
- * - Amount should be cleared only after successful transfer or dialog close
- * 
- * Test Cases:
- * 1. Amount is captured when opening confirm dialog
- * 2. Amount is displayed in confirmation dialog (non-empty)
- * 3. Amount is cleared when dialog is dismissed without sending
- * 4. Amount is cleared after successful transfer
- * 
- * To run these tests with Jest or Vitest:
- * npm install --save-dev @testing-library/react @testing-library/jest-dom jest @types/jest
- * npm run test
- */
-
-import React from 'react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import SendPage from './page'
+import * as authContext from '@/contexts/auth-context'
+import * as useBalanceHook from '@/hooks/use-balance'
+import * as useApiHook from '@/hooks/use-api'
+import * as transfersApi from '@/lib/api/transfers'
+import * as userApi from '@/lib/api/user'
 
 /**
- * TEST 1: Verify confirmedAmount state is set when opening confirm dialog
- * 
- * Steps:
- * 1. Render SendPage component
- * 2. Enter amount value "100"
- * 3. Click "Continue" button
- * 4. Assert: confirmedAmount state should equal "100"
- * 5. Assert: The confirmation dialog displays "ACBU 100"
- * 
- * Expected Result: ✓ PASS
- * The [data-testid="confirm-amount"] element should contain "ACBU 100"
+ * Amount preservation across the send confirmation flow.
+ *
+ * The "Amount" field is frozen into `confirmedAmount` the moment the confirm
+ * dialog opens, so it can't drift if the underlying form state changes before
+ * the transfer is actually submitted. Addresses: "Users cannot confirm how
+ * much was sent".
  */
 export const TEST_1_CONFIRM_AMOUNT_DISPLAYED = `
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -48,7 +28,7 @@ test('Amount is displayed and non-empty in confirmation dialog', async () => {
   fireEvent.click(screen.getByText('New Transfer'));
   
   // Enter amount
-  const amountInput = screen.getByPlaceholderText('0.00');
+  const amountInput = screen.getByLabelText('Amount');
   await userEvent.type(amountInput, '100');
   
   // Click Continue to open confirm dialog
@@ -86,7 +66,7 @@ test('Amount is preserved in form after canceling confirmation', async () => {
   
   // Open send dialog and enter amount
   fireEvent.click(screen.getByText('New Transfer'));
-  const amountInput = screen.getByPlaceholderText('0.00');
+  const amountInput = screen.getByLabelText('Amount');
   await userEvent.type(amountInput, '50');
   
   // Open confirm dialog
@@ -131,7 +111,7 @@ test('Amount is cleared after successful transfer', async () => {
   
   // Open send dialog and enter amount
   fireEvent.click(screen.getByText('New Transfer'));
-  const amountInput = screen.getByPlaceholderText('0.00');
+  const amountInput = screen.getByLabelText('Amount');
   await userEvent.type(amountInput, '25');
   
   // Fill recipient (would need proper mock setup)
@@ -150,49 +130,81 @@ test('Amount is cleared after successful transfer', async () => {
 });
 `;
 
-/**
- * MANUAL VERIFICATION STEPS (for visual regression testing)
- * 
- * 1. Navigate to /send page
- * 2. Click "New Transfer"
- * 3. Enter amount: "123.45"
- * 4. Select a recipient (contact or address)
- * 5. Click "Continue"
- * 6. VERIFY: Confirmation dialog displays "ACBU 123.45" prominently
- * 7. VERIFY: The button also shows "Send ACBU 123.45"
- * 8. Click "Cancel"
- * 9. VERIFY: Amount "123.45" is still in the amount field
- * 10. Click "Continue" again
- * 11. VERIFY: Amount is shown again as "ACBU 123.45" in confirmation
- * 
- * Expected Result: ✓ PASS
- * Amount is always visible in confirmation dialog and preserved across operations
- */
+    vi.mocked(useApiHook.useApiOpts).mockReturnValue({})
 
-/**
- * COMPONENT CHANGES SUMMARY
- * 
- * The following changes were made to fix the amount preservation issue:
- * 
- * 1. Added new state variable:
- *    const [confirmedAmount, setConfirmedAmount] = useState("");
- * 
- * 2. Updated "Continue" button handler:
- *    - Captures amount to confirmedAmount when opening confirm dialog
- *    - Ensures amount is frozen during confirmation
- * 
- * 3. Updated Confirm Dialog:
- *    - Uses confirmedAmount instead of amount
- *    - Added data-testid="confirm-amount" for testing
- *    - Clear confirmedAmount on dismiss (if not sending)
- * 
- * 4. Updated handleConfirmTransfer:
- *    - Uses confirmedAmount for transfer execution
- *    - Clears confirmedAmount after success
- * 
- * Benefits:
- * - Amount cannot be accidentally modified during confirmation
- * - User can see the exact amount they're confirming
- * - Amount is preserved if user cancels and wants to retry
- * - Clear state separation between edit form and confirmation
- */
+    vi.mocked(transfersApi.getTransfers).mockResolvedValue({ transfers: [] })
+    vi.mocked(userApi.getContacts).mockResolvedValue({ contacts: [] })
+  })
+
+  async function openConfirmDialogWithAmount(value: string) {
+    render(<SendPage />)
+    await screen.findByText('Send Money')
+
+    fireEvent.click(screen.getByText('New Transfer'))
+
+    const newAddressTab = screen.getByRole('tab', { name: /New Address/i })
+    fireEvent.click(newAddressTab)
+
+    const addressInput = await screen.findByPlaceholderText('Wallet address or email')
+    fireEvent.change(addressInput, { target: { value: 'target-address' } })
+
+    const amountInput = screen.getByPlaceholderText('0.00')
+    await userEvent.type(amountInput, value)
+
+    await waitFor(() => {
+      expect(screen.getByText('Continue')).not.toBeDisabled()
+    })
+    fireEvent.click(screen.getByText('Continue'))
+
+    return amountInput as HTMLInputElement
+  }
+
+  it('displays the confirmed amount, non-empty, in the confirmation dialog', async () => {
+    await openConfirmDialogWithAmount('100')
+
+    const confirmAmount = await screen.findByTestId('confirm-amount')
+    expect(confirmAmount).toBeInTheDocument()
+    expect(confirmAmount.textContent).not.toBe('')
+    expect(confirmAmount.textContent).toContain('100')
+  })
+
+  it('preserves the amount in the form after canceling confirmation', async () => {
+    const amountInput = await openConfirmDialogWithAmount('50')
+
+    const alertDialog = await screen.findByRole('alertdialog')
+    fireEvent.click(within(alertDialog).getByText('Cancel'))
+
+    expect(amountInput).toHaveValue(50)
+
+    // Re-opening confirm should show the same amount again.
+    fireEvent.click(screen.getByText('Continue'))
+    const confirmAmount = await screen.findByTestId('confirm-amount')
+    expect(confirmAmount.textContent).toContain('50')
+  })
+
+  it('clears the amount after a successful transfer', async () => {
+    vi.mocked(transfersApi.createTransfer).mockResolvedValue({
+      transaction_id: 'tx-1',
+      status: 'completed',
+    })
+
+    await openConfirmDialogWithAmount('25')
+
+    const alertDialog = await screen.findByRole('alertdialog')
+    fireEvent.click(within(alertDialog).getByText(/Send ACBU 25/i))
+
+    await screen.findByText('Transfer Sent!')
+
+    // The success dialog auto-closes and clears the form after 2.5s; the send
+    // dialog (and its amount input) unmounts along with it, so re-open it to
+    // check the form was actually reset rather than reading a stale node.
+    await waitFor(
+      () => {
+        expect(screen.queryByText('Transfer Sent!')).not.toBeInTheDocument()
+      },
+      { timeout: 4000 },
+    )
+    fireEvent.click(screen.getByText('New Transfer'))
+    expect(screen.getByPlaceholderText('0.00')).toHaveValue(null)
+  }, 8000)
+})

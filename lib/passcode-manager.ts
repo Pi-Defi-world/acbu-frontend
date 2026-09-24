@@ -1,14 +1,34 @@
 /**
  * Secure passcode manager for wallet operations.
- * 
+ *
  * SECURITY NOTE: Passcode is stored in memory only, not in sessionStorage.
  * This reduces XSS attack surface while maintaining usability.
- * 
+ *
  * The passcode is needed to decrypt wallet secrets stored in IndexedDB.
  * It's cleared on logout or page refresh (user must re-authenticate).
  */
 
-let inMemoryPasscode: string | null = null;
+// Passcode is stored in a closure, not on the module scope.
+// Prevents XSS payloads from accessing the passcode via window/globalThis
+// or module monkey-patching.
+const passcodeHolder = (() => {
+  let passcode: string | null = null;
+  return {
+    set(pass: string) {
+      passcode = pass;
+    },
+    get() {
+      return passcode;
+    },
+    clear() {
+      passcode = null;
+    },
+    has() {
+      return passcode !== null;
+    },
+  };
+})();
+
 let inMemoryTempPassphrase: string | null = null;
 
 /**

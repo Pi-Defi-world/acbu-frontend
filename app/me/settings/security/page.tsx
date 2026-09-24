@@ -1,13 +1,9 @@
 'use client';
 
-import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Security Settings | ACBU',
-  description: 'Manage your ACBU security settings including two-factor authentication, active sessions, and security preferences.',
-};
 
 import React, { useMemo, useState } from 'react';
+import { plural } from '@/lib/plural';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
@@ -119,7 +115,7 @@ export default function SecurityPage() {
                 <p className="text-sm text-muted-foreground">Review signed-in sessions and revoke any compromised access.</p>
               </div>
               <span className="rounded-full bg-secondary/15 px-3 py-1 text-xs font-medium text-secondary-foreground">
-                {activeSessionCount} active
+                {plural(activeSessionCount, { one: '# active', other: '# active' })}
               </span>
             </div>
             <div className="space-y-3">
@@ -189,7 +185,7 @@ export default function SecurityPage() {
               </div>
               <div className="flex-1 min-w-0 space-y-3">
                 <div>
-                  <h2 className="text-base font-medium text-destructive truncate">Danger Zone</h2>
+                  <h2 className="text-base font-medium text-destructive truncate" title="Danger Zone">Danger Zone</h2>
                   <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data. This action cannot be undone.</p>
                 </div>
                 <Button variant="destructive" className="w-full sm:w-auto">

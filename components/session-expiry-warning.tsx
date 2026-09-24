@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, LogIn } from 'lucide-react';
+import { AlertCircle, LogIn, X } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -85,7 +85,7 @@ export function SessionExpiryWarning({
           aria-label="Dismiss warning"
           className="shrink-0 rounded p-1 hover:bg-yellow-200 dark:hover:bg-yellow-800"
         >
-          ✕
+          <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
     );
