@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 
 /**
  * Gets all focusable elements within a container
@@ -65,8 +65,8 @@ export function useFocusTrap(
 
     if (focusableElements.length === 0) return
 
-    const firstElement = focusableElements[0]
-    const lastElement = focusableElements[focusableElements.length - 1]
+    const firstElement = focusableElements[0]!
+    const lastElement = focusableElements[focusableElements.length - 1]!
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Tab') return

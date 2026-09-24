@@ -1,6 +1,6 @@
-@import 'tailwindcss' source(none);
-@import 'tw-animate-css';
-@config '../tailwind.config.ts';
+@import "tailwindcss" source(none);
+@import "tw-animate-css";
+@config "../tailwind.config.ts";
 
 /* Only scan shipped app routes and shared source code.
    Legacy routes like /burn, /currency, /reserves, and /test-locale stay out
@@ -58,10 +58,10 @@
   --secondary: oklch(0.75 0.06 280);
   --secondary-foreground: oklch(0.15 0 0);
   --muted: oklch(0.92 0 0);
-  --muted-foreground: oklch(0.55 0 0);
-  --accent: oklch(0.55 0.15 160);
+  --muted-foreground: oklch(0.4 0 0);
+  --accent: oklch(0.42 0.15 160);
   --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.45 0.245 27.325);
   --destructive-foreground: oklch(0.98 0 0);
   --border: oklch(0.92 0 0);
   --input: oklch(0.92 0 0);
@@ -76,7 +76,7 @@
   --sidebar-foreground: oklch(0.15 0 0);
   --sidebar-primary: oklch(0.35 0.12 280);
   --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.55 0.15 160);
+  --sidebar-accent: oklch(0.42 0.15 160);
   --sidebar-accent-foreground: oklch(0.98 0 0);
   --sidebar-border: oklch(0.92 0 0);
   --sidebar-ring: oklch(0.35 0.12 280);
@@ -88,7 +88,11 @@
   --status-warning-border: oklch(0.88 0.06 95);
   --status-neutral: var(--secondary);
   --status-neutral-foreground: var(--secondary-foreground);
-  --status-neutral-border: color-mix(in oklab, var(--secondary) 70%, var(--border));
+  --status-neutral-border: color-mix(
+    in oklab,
+    var(--secondary) 70%,
+    var(--border)
+  );
 }
 
 .dark {
@@ -106,7 +110,7 @@
   --muted-foreground: oklch(0.75 0 0);
   --accent: oklch(0.65 0.15 160);
   --accent-foreground: oklch(0.12 0 0);
-  --destructive: oklch(0.55 0.2 20);
+  --destructive: oklch(0.4 0.2 20);
   --destructive-foreground: oklch(0.95 0 0);
   --border: oklch(0.28 0 0);
   --input: oklch(0.28 0 0);
@@ -132,12 +136,16 @@
   --status-warning-border: oklch(0.44 0.07 95);
   --status-neutral: var(--secondary);
   --status-neutral-foreground: var(--secondary-foreground);
-  --status-neutral-border: color-mix(in oklab, var(--secondary) 75%, var(--border));
+  --status-neutral-border: color-mix(
+    in oklab,
+    var(--secondary) 75%,
+    var(--border)
+  );
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -196,19 +204,19 @@
 
 @layer components {
   .page-header {
-    @apply sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm;
+    @apply border-border bg-card/95 sticky top-0 z-10 border-b backdrop-blur-sm;
   }
 
   .page-header-row {
-    @apply px-4 py-3 flex items-center gap-3;
+    @apply flex items-center gap-3 px-4 py-3;
   }
 
   .page-title {
-    @apply text-lg font-bold text-foreground;
+    @apply text-foreground text-lg font-bold;
   }
 
   .form-label {
-    @apply text-sm font-medium text-foreground mb-2 block;
+    @apply text-foreground mb-2 block text-sm font-medium;
   }
 
   .error-state {
@@ -216,7 +224,7 @@
   }
 
   .error-icon-wrapper {
-    @apply rounded-full bg-red-100 dark:bg-red-900/30 p-3;
+    @apply rounded-full bg-red-100 p-3 dark:bg-red-900/30;
   }
 
   .error-icon {
@@ -224,7 +232,7 @@
   }
 
   .touch-target {
-    @apply flex items-center justify-center min-w-[44px] min-h-[44px] -m-2;
+    @apply -m-2 flex min-h-[44px] min-w-[44px] items-center justify-center;
   }
 
   /*
@@ -254,7 +262,7 @@
 
     /* Increase touch targets for tablet */
     .touch-target {
-      @apply min-w-[48px] min-h-[48px];
+      @apply min-h-[48px] min-w-[48px];
     }
   }
 }
@@ -268,19 +276,19 @@
 @layer utilities {
   /* Flip directional icons (ArrowLeft, ChevronLeft, etc.) in RTL.
      Apply .icon-directional to any icon that implies a horizontal direction. */
-  [dir='rtl'] .icon-directional {
+  [dir="rtl"] .icon-directional {
     transform: scaleX(-1);
   }
 
   /* Ensure numeric/currency values stay LTR inside RTL layouts */
-  [dir='rtl'] .numeric {
+  [dir="rtl"] .numeric {
     direction: ltr;
     unicode-bidi: embed;
   }
 
   /* Page header row: reverse flex order so back-button stays on the
      visual "start" edge (right in RTL) */
-  [dir='rtl'] .page-header-row {
+  [dir="rtl"] .page-header-row {
     flex-direction: row-reverse;
   }
 }
@@ -339,7 +347,9 @@
     --secondary: oklch(0.15 0 0);
     --secondary-foreground: oklch(1 0 0);
     --muted: oklch(0.15 0 0);
-    --muted-foreground: oklch(0.85 0 0); /* Very light gray text for high contrast */
+    --muted-foreground: oklch(
+      0.85 0 0
+    ); /* Very light gray text for high contrast */
     --accent: oklch(0.85 0.05 160);
     --accent-foreground: oklch(0 0 0);
     --destructive: oklch(0.85 0.1 25);
@@ -368,16 +378,22 @@
   }
 
   /* Global element overrides for high contrast and solid backgrounds */
-  input, select, textarea {
+  input,
+  select,
+  textarea {
     background-color: var(--background) !important;
   }
-  
-  .dark input, .dark select, .dark textarea {
+
+  .dark input,
+  .dark select,
+  .dark textarea {
     background-color: var(--background) !important;
   }
 
   /* Disable backdrop-filter effects globally */
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
@@ -386,40 +402,49 @@
   .bg-card\/95 {
     background-color: var(--card) !important;
   }
-  
+
   .dark .dark\:bg-input\/30 {
     background-color: var(--background) !important;
   }
-  
+
   .dark .dark\:hover\:bg-input\/50:hover {
     background-color: var(--secondary) !important;
   }
 
-  .bg-primary\/20, .bg-primary\/10, .bg-primary\/5 {
+  .bg-primary\/20,
+  .bg-primary\/10,
+  .bg-primary\/5 {
     background-color: var(--muted) !important;
     color: var(--foreground) !important;
   }
 
-  .bg-destructive\/10, .bg-destructive\/5 {
+  .bg-destructive\/10,
+  .bg-destructive\/5 {
     background-color: var(--background) !important;
     border: 2px solid var(--destructive) !important;
   }
 
-  .bg-green-500\/10, .bg-green-500\/5 {
+  .bg-green-500\/10,
+  .bg-green-500\/5 {
     background-color: var(--background) !important;
     border: 2px solid var(--status-success-border) !important;
   }
 
-  .bg-amber-500\/10, .bg-amber-500\/5 {
+  .bg-amber-500\/10,
+  .bg-amber-500\/5 {
     background-color: var(--background) !important;
     border: 2px solid var(--status-warning-border) !important;
   }
 
-  .bg-blue-50, .dark .dark\:bg-blue-900\/20 {
+  .bg-blue-50,
+  .dark .dark\:bg-blue-900\/20 {
     background-color: var(--muted) !important;
   }
 
-  .bg-gradient-to-br, .bg-gradient-to-b, .bg-gradient-to-t, .bg-gradient-to-r {
+  .bg-gradient-to-br,
+  .bg-gradient-to-b,
+  .bg-gradient-to-t,
+  .bg-gradient-to-r {
     background-image: none !important;
     background-color: var(--background) !important;
   }

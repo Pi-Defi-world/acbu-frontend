@@ -37,6 +37,10 @@ vi.mock('@/contexts/auth-context', () => ({
     useAuth: () => ({ userId: 'user-1', stellarAddress: PUB }),
 }));
 
+vi.mock('@/hooks/use-config', () => ({
+    useConfig: () => ({ config: null, loading: false, error: '', refresh: () => { } }),
+}));
+
 // Prevent next/navigation hooks from breaking in test env
 vi.mock('next/navigation', () => ({
     useSearchParams: () => new URLSearchParams(),
@@ -48,6 +52,18 @@ import * as burnApi from '@/lib/api/burn';
 describe('Burn page confirmation flow', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it('shows the documented 0.3% burn fee for the entered amount', async () => {
+        const { container } = render(<BurnPageContent />);
+        expect(screen.getByTestId('burn-fee').textContent).toBe('0.3%');
+
+        const amount = await screen.findByLabelText(/ACBU amount/i, {}, { container });
+        fireEvent.change(amount, { target: { value: '1000' } });
+
+        await waitFor(() => {
+            expect(screen.getByTestId('burn-fee').textContent).toBe('0.3% (≈ ACBU 3)');
+        });
     });
 
     it('does not call burn API until user confirms in the dialog', async () => {

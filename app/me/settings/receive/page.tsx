@@ -1,11 +1,6 @@
 'use client';
 
-import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Receive Money | ACBU',
-  description: 'View your ACBU payment address and QR code to receive money from other users.',
-};
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';

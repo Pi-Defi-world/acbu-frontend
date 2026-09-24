@@ -1,11 +1,6 @@
 'use client';
 
-import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Business Services | ACBU',
-  description: 'Explore ACBU business solutions including merchant services, payroll, and enterprise payment solutions.',
-};
 
 import React, { useEffect, useState } from 'react';
 import { PageContainer } from '@/components/layout/page-container';

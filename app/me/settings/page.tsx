@@ -1,11 +1,6 @@
 'use client';
 
-import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Settings | ACBU',
-  description: 'Manage your ACBU account settings including security, wallet, contacts, and guardians.',
-};
 
 import React from 'react';
 import { useRouter } from 'next/navigation';

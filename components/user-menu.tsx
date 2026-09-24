@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface MenuItem {
@@ -70,10 +71,10 @@ export function UserMenu({ displayName }: UserMenuProps) {
           const Icon = item.icon;
           return (
             <DropdownMenuItem key={item.href} asChild>
-              <a href={item.href} className="cursor-pointer">
+              <Link href={item.href} className="cursor-pointer">
                 <Icon className="mr-2 h-4 w-4" />
                 <span>{item.title}</span>
-              </a>
+              </Link>
             </DropdownMenuItem>
           );
         })}
@@ -82,10 +83,10 @@ export function UserMenu({ displayName }: UserMenuProps) {
           const Icon = item.icon;
           return (
             <DropdownMenuItem key={item.href} asChild>
-              <a href={item.href} className="cursor-pointer">
+              <Link href={item.href} className="cursor-pointer">
                 <Icon className="mr-2 h-4 w-4" />
                 <span>{item.title}</span>
-              </a>
+              </Link>
             </DropdownMenuItem>
           );
         })}

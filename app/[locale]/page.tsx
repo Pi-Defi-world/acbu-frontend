@@ -1,15 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import type { Metadata } from 'next';
+import React, { useState, useEffect, useMemo } from 'react';
 
-export const metadata: Metadata = {
-  title: 'Dashboard | ACBU',
-  description: 'View your ACBU wallet balance, recent transactions, and access key features like sending money, minting tokens, and managing savings.',
-};
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { useTranslations, useFormatter } from 'next-intl';
+import { useTranslations, useFormatter, useLocale } from 'next-intl';
 import {
   Send,
   TrendingUp,
@@ -27,9 +22,10 @@ import { BalanceSkeleton } from '@/components/ui/balance-skeleton';
 import { RetryErrorBlock } from '@/components/ui/retry-error-block';
 import { useApiOpts } from '@/hooks/use-api';
 import { useBalance } from '@/hooks/use-balance';
+import { useFiatAccounts } from '@/hooks/use-fiat-accounts';
 import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import * as transactionsApi from '@/lib/api/transactions';
-import * as fiatApi from '@/lib/api/fiat';
+import type { FiatAccount } from '@/lib/api/fiat';
 import { useRates } from '@/lib/api/rates';
 import type { TransactionListItem, RatesResponse } from '@/types/api';
 import { formatAcbu, formatAmount, parseUtcDate } from '@/lib/utils';
@@ -72,7 +68,7 @@ function acbuBalanceToUsd(
 
 /** Converts each simulated bank balance (local units) to USD via ACBU cross rates. */
 function sumSimulatedFiatUsd(
-  accounts: fiatApi.FiatAccount[],
+  accounts: FiatAccount[],
   rates: RatesResponse | null,
 ): { usd: number; partial: boolean } {
   const usdPerAcbu = getUsdPerAcbu(rates);
@@ -120,8 +116,10 @@ export default function Home() {
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [fiatAccounts, setFiatAccounts] = useState<fiatApi.FiatAccount[]>([]);
-  const [fiatLoading, setFiatLoading] = useState(true);
+  const {
+    accounts: fiatAccounts,
+    loading: fiatLoading,
+  } = useFiatAccounts();
   const {
     data: rates,
     loading: ratesLoading,
@@ -130,34 +128,16 @@ export default function Home() {
   } = useRates(opts);
 
   const t = useTranslations('home');
+  const locale = useLocale();
   const format = useFormatter();
   useScrollRestoration('/', !loading);
 
-  const features = [
+  const features = useMemo(() => [
     { title: t('features.send.title'), description: t('features.send.description'), icon: Send, href: '/send', color: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
     { title: t('features.mint.title'), description: t('features.mint.description'), icon: Coins, href: '/mint', color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
     { title: t('features.simulated_bank.title'), description: t('features.simulated_bank.description'), icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
     { title: t('features.rates.title'), description: t('features.rates.description'), icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
-  ];
-
-  useEffect(() => {
-    let cancelled = false;
-    setFiatLoading(true);
-    fiatApi
-      .getFiatAccounts(opts)
-      .then((data) => {
-        if (!cancelled) setFiatAccounts(data.accounts ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setFiatAccounts([]);
-      })
-      .finally(() => {
-        if (!cancelled) setFiatLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [opts.token]);
+  ], [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -234,36 +214,13 @@ export default function Home() {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
                   {t('acbu')}
                 </p>
-
-                <p className="text-[10px] text-muted-foreground mb-1">{t('wallet_balance')}</p>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
+                <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">{t('wallet_balance')}</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums md:text-4xl">
                   {acbuAmountText}
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
+                <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">
                   {acbuUsdText}
                 </p>
-               <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">{t('wallet_balance')}</p>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums md:text-4xl">
-                  {!showBalance
-                    ? '••••••'
-                    : balanceLoading
-                      ? '...'
-                      : `ACBU ${balance != null ? format.number(balance, { minimumFractionDigits: 0, maximumFractionDigits: 7 }) : '—'}`}
-                </div>
-                {!showBalance ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base">••••••</p>
-                ) : balanceLoading || ratesLoading ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base"><BalanceSkeleton variant="compact" /></p>
-                ) : balance == null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base">{t('approx_usd')} —</p>
-                ) : acbuUsd != null ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 tabular-nums md:text-base">
-                    {t('approx_usd')} {format.number(acbuUsd, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground mt-1.5 md:text-base">{t('approx_usd')} —</p>
-                )}
-
               </div>
               <div className="flex-1 min-w-0 text-right">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
