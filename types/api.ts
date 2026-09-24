@@ -308,6 +308,37 @@ export interface SavingsWithdrawBody {
   amount: string | number;
 }
 
+// Savings Goals
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  /** Target amount in ACBU */
+  target_amount: number;
+  /** Current accumulated amount in ACBU */
+  current_amount: number;
+  /** ISO 8601 date string or human-readable deadline (e.g. "2025-06") */
+  deadline: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateSavingsGoalBody {
+  name: string;
+  target_amount: number;
+  deadline: string;
+}
+
+export interface UpdateSavingsGoalBody {
+  name?: string;
+  target_amount?: number;
+  current_amount?: number;
+  deadline?: string;
+}
+
+export interface SavingsGoalsListResponse {
+  goals: SavingsGoal[];
+}
+
 // Lending
 export interface LendingBalanceResponse {
   lender: string;

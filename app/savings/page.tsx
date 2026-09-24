@@ -1,7 +1,7 @@
 "use client";
 
 import { logger } from "@/lib/logger";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -59,6 +59,10 @@ function getInitialGoals(t: (path: string) => string): SavingsGoal[] {
 
 /**
  * Savings management page.
+ *
+ * Goals are fetched from and persisted to the backend (/savings/goals).
+ * The previous implementation stored goals only in local React state,
+ * which caused them to vanish on refresh and never reach the server.
  */
 export default function SavingsPage() {
   const { t } = useI18n();
@@ -89,23 +93,53 @@ export default function SavingsPage() {
     setNewGoalDeadline("");
   };
 
-  const handleCreateGoal = (event: React.FormEvent<HTMLFormElement>) => {
+  /** Fetch goals from the backend and refresh local state. */
+  const loadGoals = useCallback(async () => {
+    setGoalsLoading(true);
+    setGoalsError("");
+    try {
+      const fetched = await savingsApi.getSavingsGoals(opts);
+      setGoals(fetched);
+    } catch (e) {
+      logger.error("Failed to load savings goals", e);
+      setGoalsError(
+        e instanceof Error ? e.message : "Failed to load savings goals",
+      );
+    } finally {
+      setGoalsLoading(false);
+    }
+    // opts is a new object each render; opts.token is the stable auth identity signal
+  }, [opts.token]);
+
+  /** POST new goal to backend, optimistically append, then reconcile. */
+  const handleCreateGoal = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!isNewGoalFormValid || goalSubmitting) return;
 
-    if (!isNewGoalFormValid) return;
-
-    const parsedAmount = Number.parseFloat(newGoalTarget);
-    const newGoal: SavingsGoal = {
-      id: crypto.randomUUID(),
-      name: newGoalName.trim(),
-      targetAmount: parsedAmount,
-      currentAmount: 0,
-      deadline: newGoalDeadline,
-    };
-
-    setGoals((prev) => [...prev, newGoal]);
-    setShowNewGoalDialog(false);
-    resetNewGoalForm();
+    setGoalSubmitting(true);
+    setGoalsError("");
+    try {
+      const created = await savingsApi.createSavingsGoal(
+        {
+          name: newGoalName.trim(),
+          target_amount: Number.parseFloat(newGoalTarget),
+          deadline: newGoalDeadline,
+        },
+        opts,
+      );
+      setGoals((prev) => [...prev, created]);
+      setShowNewGoalDialog(false);
+      resetNewGoalForm();
+      // Full refresh to pick up any server-assigned fields
+      await loadGoals();
+    } catch (e) {
+      logger.error("Failed to create savings goal", e);
+      setGoalsError(
+        e instanceof Error ? e.message : "Failed to create savings goal",
+      );
+    } finally {
+      setGoalSubmitting(false);
+    }
   };
 
   useEffect(() => {
@@ -317,10 +351,10 @@ export default function SavingsPage() {
                         style={{ width: `${progress}%` }}
                       />
                     </div>
-                  </div>
-                </Card>
-              );
-            })}
+                  </Card>
+                );
+              })
+            )}
           </div>
         </div>
       </PageContainer>
@@ -334,6 +368,12 @@ export default function SavingsPage() {
             </DialogDescription>
           </DialogHeader>
           <form className="space-y-4" onSubmit={handleCreateGoal}>
+            {goalsError && (
+              <div className="border-destructive/20 bg-destructive/5 text-destructive flex items-center gap-2 rounded-lg border p-3 text-sm">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <p>{goalsError}</p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="new-goal-name" className="text-foreground">
                 {t("savings.goal_name_label")}
