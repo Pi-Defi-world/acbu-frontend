@@ -1,12 +1,5 @@
 "use client";
 
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Help & Support | ACBU',
-  description: 'Get help with ACBU. Browse FAQs, contact support, and find answers to common questions about using the platform.',
-};
-
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -183,11 +176,7 @@ export default function HelpPage() {
           </div>
 
           <Accordion type="single" collapsible className="w-full">
-<<<<<<< HEAD
-            {FAQ_ITEMS.map((item, index) => (
-=======
             {FAQ_ITEMS.map((item) => (
->>>>>>> origin/dev
               <AccordionItem key={item.question} value={item.question}>
                 <AccordionTrigger className="text-left">
                   {item.question}

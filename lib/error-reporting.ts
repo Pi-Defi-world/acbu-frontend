@@ -2,6 +2,15 @@
  * Error reporting utilities for the application
  */
 
+/** Discriminated union of all known error context payloads. */
+export type ErrorContext =
+  | { type: 'unhandledrejection' }
+  | { type: 'uncaughterror'; filename: string; lineno: number; colno: number }
+  | { type: 'global-error'; digest: string | undefined; critical: boolean }
+  | { type: 'page-error'; page: string; digest: string | undefined }
+  | { type: 'route-error'; route: string; digest: string | undefined; userId: string | undefined }
+  | { type: 'component-error'; componentStack: string | null; boundary: string };
+
 export interface ErrorReport {
   message: string;
   stack?: string;
@@ -10,7 +19,68 @@ export interface ErrorReport {
   userAgent: string;
   url: string;
   level: 'app' | 'page' | 'component';
-  context?: Record<string, unknown>;
+  context?: ErrorContext;
+}
+
+/**
+ * Parameter name segments that must never leave the browser inside an error
+ * report. Matching happens per segment so that `currency_code` and
+ * `accessToken` are caught while `keyword` and `author` are not.
+ */
+const SENSITIVE_PARAM_SEGMENTS = new Set([
+  'token',
+  'secret',
+  'password',
+  'passcode',
+  'passphrase',
+  'key',
+  'apikey',
+  'credential',
+  'credentials',
+  'signature',
+  'assertion',
+  'jwt',
+  'otp',
+  'pin',
+  'auth',
+  'authorization',
+  'bearer',
+  'session',
+  'code',
+]);
+
+function isSensitiveParam(name: string): boolean {
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[^a-zA-Z0-9]+/)
+    .some((segment) => SENSITIVE_PARAM_SEGMENTS.has(segment.toLowerCase()));
+}
+
+/**
+ * Reduce a location to the parts that are useful for debugging while dropping
+ * everything that can carry a credential.
+ *
+ * The origin and fragment are dropped: single-page apps and OAuth implicit/PKCE
+ * callbacks put access tokens in the fragment, and the origin adds nothing that
+ * the route does not already say. Sensitive query values become `[redacted]`
+ * instead of disappearing so the shape of the request stays visible.
+ */
+export function sanitizeUrlForReporting(raw: string): string {
+  if (!raw) return raw;
+
+  try {
+    const url = new URL(raw, 'http://localhost');
+    const params = new URLSearchParams();
+    for (const [name, value] of url.searchParams) {
+      params.append(name, isSensitiveParam(name) ? '[redacted]' : value);
+    }
+    const query = params.toString();
+    return `${url.pathname}${query ? `?${query}` : ''}`;
+  } catch {
+    // Unparseable input: keep everything up to the query/fragment markers.
+    const [path] = raw.split(/[?#]/);
+    return path ?? raw;
+  }
 }
 
 export class ErrorReporter {
@@ -41,6 +111,16 @@ export class ErrorReporter {
       level: 'component',
       ...context,
     };
+
+    // Callers may override `url`, and route context repeats the location: strip
+    // credentials from both before anything is stored or transmitted.
+    report.url = sanitizeUrlForReporting(report.url);
+    if (report.context?.type === 'route-error') {
+      report.context = {
+        ...report.context,
+        route: sanitizeUrlForReporting(report.context.route),
+      };
+    }
 
     // Log to console in development only
     if (process.env.NODE_ENV !== 'production') {
@@ -110,7 +190,7 @@ export function setupGlobalErrorHandling(): void {
     const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
     reporter.reportError(error, {
       level: 'app',
-      context: { type: 'unhandledrejection' }
+      context: { type: 'unhandledrejection' } satisfies ErrorContext
     });
   });
 
@@ -124,7 +204,7 @@ export function setupGlobalErrorHandling(): void {
         filename: event.filename,
         lineno: event.lineno,
         colno: event.colno
-      }
+      } satisfies ErrorContext
     });
   });
 }

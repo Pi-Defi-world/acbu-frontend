@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import SendPage from './page'
 import * as authContext from '@/contexts/auth-context'
@@ -88,7 +88,7 @@ describe('SendPage', () => {
     vi.mocked(useBalanceHook.useBalance).mockReturnValue({
       balance: 100,
       loading: false,
-      refresh: vi.fn(),
+      refetch: vi.fn(),
       error: '',
     })
 
@@ -120,10 +120,10 @@ describe('SendPage', () => {
     
     fireEvent.click(screen.getByText('New Transfer'))
     
-    const amountInput = screen.getByPlaceholderText('0.00')
+    const amountInput = screen.getByLabelText('Amount')
     fireEvent.change(amountInput, { target: { value: '150' } })
-    
-    expect(screen.getByText('Insufficient balance.')).toBeInTheDocument()
+
+    expect(await screen.findByText('Insufficient balance.')).toBeInTheDocument()
     expect(screen.getByText('Continue')).toBeDisabled()
   })
 
@@ -137,12 +137,14 @@ describe('SendPage', () => {
     const newAddressTab = screen.getByRole('tab', { name: /New Address/i })
     fireEvent.click(newAddressTab)
     
-    const addressInput = await screen.findByPlaceholderText('Wallet address or email')
+    const addressInput = await screen.findByLabelText('Recipient address')
     fireEvent.change(addressInput, { target: { value: 'target-address' } })
     
-    const amountInput = screen.getByPlaceholderText('0.00')
+    const amountInput = screen.getByLabelText('Amount')
     fireEvent.change(amountInput, { target: { value: '50' } })
-    
-    expect(screen.getByText('Continue')).not.toBeDisabled()
+
+    await waitFor(() => {
+      expect(screen.getByText('Continue')).not.toBeDisabled()
+    })
   })
 })

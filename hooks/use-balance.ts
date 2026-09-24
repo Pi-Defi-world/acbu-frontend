@@ -10,13 +10,8 @@ interface UseBalanceReturn {
   balanceSource?: string;
   loading: boolean;
   error: string;
-  /**
-   * Triggers a re-fetch of the balance.
-   * `refetch` is preferred in UI; `refresh` kept for backwards-compat.
-   */
+  /** Triggers a re-fetch of the balance. */
   refetch: () => void;
-  /** @deprecated Prefer `refetch()` */
-  refresh: () => void;
 }
 
 /**
@@ -32,27 +27,44 @@ export function useBalance(): UseBalanceReturn {
   const [tick, setTick] = useState(0);
 
   const refetch = useCallback(() => setTick((t) => t + 1), []);
-  const refresh = refetch;
 
-  // Auto-refresh balance every 30 seconds to catch external transactions
+  // Auto-refresh balance every 30 seconds to catch external transactions.
+  // No stale closure risk: `interval` is captured in the same effect scope, so
+  // the cleanup always clears the correct interval ID. `refresh` is stable
+  // (useCallback with no deps) because setTick uses a functional updater.
   useEffect(() => {
-    const interval = setInterval(() => {
-      refetch();
-    }, 30000);
+    let interval: ReturnType<typeof setInterval> | null = null;
 
-    return () => clearInterval(interval);
-  }, [refetch]);
+    const startInterval = () => {
+      if (interval !== null) return; // already running
+      interval = setInterval(() => refetch(), 30_000);
+    };
 
-  // Refresh balance when tab/window regains focus
-  useEffect(() => {
+    const stopInterval = () => {
+      if (interval === null) return;
+      clearInterval(interval);
+      interval = null;
+    };
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        refetch();
+        refetch();      // immediate refresh on tab focus
+        startInterval();
+      } else {
+        stopInterval(); // pause while hidden
       }
     };
 
+    // Only start the interval if the tab is already visible on mount.
+    if (document.visibilityState === 'visible') {
+      startInterval();
+    }
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      stopInterval();
+    };
   }, [refetch]);
 
   useEffect(() => {
@@ -61,7 +73,7 @@ export function useBalance(): UseBalanceReturn {
     setError('');
 
     userApi
-      .getBalance(opts)
+      .getBalance({ ...opts, priority: 'high' })
       .then((data) => {
         if (cancelled) return;
         const raw = data.balance;
@@ -84,5 +96,5 @@ export function useBalance(): UseBalanceReturn {
     };
   }, [opts.token, tick]);
 
-  return { balance, balanceSource, loading, error, refetch, refresh };
+  return { balance, balanceSource, loading, error, refetch };
 }

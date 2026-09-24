@@ -40,7 +40,7 @@ function formatSorobanError(resultXdr: string): string {
     if (txResult.result().switch() === xdr.TransactionResultCode.txFailed()) {
       const results = txResult.result().results();
       if (results && results.length > 0) {
-        const opResult = results[0];
+        const opResult = results[0]!;
         const tr = opResult.tr();
         if (tr && tr.switch().value === xdr.OperationType.invokeHostFunction().value) {
           detail = `: ${tr.invokeHostFunctionResult().switch().name}`;

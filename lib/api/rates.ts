@@ -19,6 +19,7 @@ export async function getRates(opts?: RequestOptions): Promise<RatesResponse> {
   return data;
 }
 
+
 export interface UseRatesResult {
   data: RatesResponse | null;
   loading: boolean;
@@ -39,23 +40,23 @@ export function useRates(opts?: RequestOptions): UseRatesResult {
   const refetch = useCallback(() => setTick((t) => t + 1), []);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     setLoading(true);
     setError('');
-    getRates(opts)
+    getRates({ ...opts, signal: controller.signal })
       .then((d) => {
-        if (!cancelled) setData(d);
+        if (!controller.signal.aborted) setData(d);
       })
       .catch((e) => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         setData(null);
         setError(e instanceof Error ? e.message : 'Failed to load rates');
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       });
     return () => {
-      cancelled = true;
+      controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick]);
