@@ -33,7 +33,7 @@ import { formatAmount } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
 import { logger } from '@/lib/logger';
 import { useConfig } from '@/hooks/use-config';
-import { getBurnProcessingFeeText, getMintNetworkFeeText } from '@/lib/fee-text';
+import { getBurnFeeText, getMintFeeText } from '@/lib/fee-text';
 
 /** `acbu_*` from API = local currency units per 1 ACBU → ACBU = fiat / localPerAcbu. */
 function estimateAcbuFromFiat(
@@ -75,8 +75,8 @@ export default function MintPage() {
   const [fiatAmount, setFiatAmount] = useState('');
   const debouncedFiatAmount = useDebounce(fiatAmount, 300);
   const debouncedBurnAmount = useDebounce(burnAmount, 300);
-  const mintNetworkFeeText = getMintNetworkFeeText(config);
-  const burnProcessingFeeText = getBurnProcessingFeeText(config);
+  const mintFeeText = getMintFeeText(config, debouncedFiatAmount, selectedFiatCurrency);
+  const burnFeeText = getBurnFeeText(config, debouncedBurnAmount);
   const [mintQuoteRates, setMintQuoteRates] = useState<RatesResponse | null>(null);
   const [mintAcbuReceived, setMintAcbuReceived] = useState<number | null>(null);
   const rateRows = Array.isArray((rates as { rates?: Array<{ currency?: string; rate?: number }> } | null)?.rates)
@@ -465,10 +465,10 @@ export default function MintPage() {
                             <Card className="border-border bg-muted p-3 mt-4">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">
-                                        Network Fee
+                                        Mint Fee
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {mintNetworkFeeText}
+                                        {mintFeeText}
                                     </span>
                                 </div>
                             </Card>
@@ -562,10 +562,10 @@ export default function MintPage() {
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">
-                                        Processing Fee
+                                        Burn Fee
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {burnProcessingFeeText}
+                                        {burnFeeText}
                                     </span>
                                 </div>
                             </Card>
