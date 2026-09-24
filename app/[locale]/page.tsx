@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { useTranslations, useFormatter } from 'next-intl';
+import { useTranslations, useFormatter, useLocale } from 'next-intl';
 import {
   Send,
   TrendingUp,
@@ -128,6 +128,7 @@ export default function Home() {
   } = useRates(opts);
 
   const t = useTranslations('home');
+  const locale = useLocale();
   const format = useFormatter();
   useScrollRestoration('/', !loading);
 

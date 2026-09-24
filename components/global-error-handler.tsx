@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { setupGlobalErrorHandling } from '@/lib/error-reporting';
+import { logger } from '@/lib/logger';
 
 /**
  * Global error handler component that sets up unhandled error and promise rejection handlers

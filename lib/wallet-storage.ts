@@ -1,5 +1,4 @@
 import localforage from 'localforage';
-import { getPasscode } from './passcode-manager';
 
 localforage.config({
   name: 'ACBU_Wallet',
