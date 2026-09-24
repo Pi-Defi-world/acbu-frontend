@@ -1,4 +1,5 @@
 import localforage from 'localforage';
+import { getPasscode } from './passcode-manager';
 
 localforage.config({
   name: 'ACBU_Wallet',
@@ -6,6 +7,8 @@ localforage.config({
 });
 
 const KEY_STORE_PREFIX = 'stellar_secret_';
+// Legacy dev-only plaintext slot. Never written anymore and never read for
+// signing; only cleaned up by removeStoredWallet.
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
 
 const textEncoder = new TextEncoder();
@@ -128,8 +131,10 @@ export async function getWalletSecret(userId: string, passcode: string): Promise
 }
 
 /**
- * Best-effort wallet secret lookup:
- * - encrypted slot decrypted with passcode from memory or argument
+ * Wallet secret lookup for client-side signing.
+ * Decrypts the encrypted slot written by storeWalletSecret during onboarding,
+ * using the passcode passed in or the one held in memory since sign-in.
+ * Returns null when no wallet is stored or no passcode is available.
  */
 export async function getWalletSecretAnyLocal(
   userId: string,
@@ -152,8 +157,7 @@ export async function getWalletSecretAnyLocal(
 export async function hasStoredWallet(userId: string): Promise<boolean> {
   if (!userId) return false;
   const encrypted = await localforage.getItem<string>(`${KEY_STORE_PREFIX}${userId}`);
-  const plaintext = await localforage.getItem<string>(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`);
-  return !!encrypted || !!plaintext;
+  return !!encrypted;
 }
 
 export async function removeStoredWallet(userId: string): Promise<void> {
