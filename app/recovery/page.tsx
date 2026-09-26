@@ -2,12 +2,28 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import * as recoveryApi from "@/lib/api/recovery";
+import { locales } from "@/i18n/locales";
+
+/**
+ * Derive the active locale from the current pathname so the post-unlock
+ * redirect lands on the correct locale-prefixed sign-in route (e.g.
+ * /en/auth/signin) rather than the bare /auth/signin which has no route
+ * and resolves to a 404.
+ */
+function getLocaleFromPath(pathname: string): string {
+  for (const locale of locales) {
+    if (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)) {
+      return locale;
+    }
+  }
+  return "en";
+}
 
 /**
  * Account recovery / unlock (no API key required).
@@ -15,6 +31,10 @@ import * as recoveryApi from "@/lib/api/recovery";
  */
 export default function RecoveryUnlockPage() {
     const router = useRouter();
+    const pathname = usePathname();
+    const locale = getLocaleFromPath(pathname);
+    const signInPath = `/${locale}/auth/signin`;
+
     const [recoveryCode, setRecoveryCode] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -30,7 +50,7 @@ export default function RecoveryUnlockPage() {
                 return;
             }
             await recoveryApi.unlock({ recovery_code: recoveryCode.trim() });
-            router.push("/auth/signin");
+            router.push(signInPath);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Unlock failed");
         } finally {
@@ -43,7 +63,7 @@ export default function RecoveryUnlockPage() {
             <Card className="w-full max-w-md border-border">
                 <div className="p-6 md:p-8">
                     <Link
-                        href="/auth/signin"
+                        href={signInPath}
                         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
                     >
                         <ArrowLeft className="w-4 h-4" />
