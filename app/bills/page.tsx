@@ -18,6 +18,9 @@ import { AlertCircle, CheckCircle, Zap, RefreshCw } from "lucide-react";
 import { formatAmount } from "@/lib/utils";
 import { CURRENCY } from "@/lib/currency";
 import { logger } from "@/lib/logger";
+import { useBalance } from "@/hooks/use-balance";
+import { useApiOpts } from "@/hooks/use-api";
+import { payBill } from "@/lib/api/bills";
 
 const BILLS_ENABLED = process.env.NEXT_PUBLIC_BILLS_ENABLED === "true";
 
@@ -86,8 +89,11 @@ export default function BillsPage() {
   const [reference, setReference] = useState("");
   const [paymentStep, setPaymentStep] = useState<"input" | "confirm" | "success">("input");
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [transactionReference, setTransactionReference] = useState<string | null>(null);
 
-  const mockBalance = 5000;
+  const { balance, loading: balanceLoading, error: balanceError } = useBalance();
+  const apiOpts = useApiOpts();
 
   const handleSelectProvider = (provider: BillProvider) => {
     setSelectedProvider(provider);
@@ -96,6 +102,8 @@ export default function BillsPage() {
     setAmount("");
     setReference("");
     setPaymentError(null);
+    setIsSubmitting(false);
+    setTransactionReference(null);
   };
 
   const handlePaymentConfirm = () => {
@@ -104,13 +112,54 @@ export default function BillsPage() {
   };
 
   const handlePaymentExecute = async () => {
+    if (!selectedProvider || !amount || !reference || isSubmitting) {
+      return;
+    }
+
+    // Validate amount
+    const numericAmount = parseFloat(amount);
+    if (numericAmount < selectedProvider.minAmount || numericAmount > selectedProvider.maxAmount) {
+      setPaymentError(`Amount must be between ACBU ${selectedProvider.minAmount} and ACBU ${selectedProvider.maxAmount}`);
+      return;
+    }
+
+    // Validate sufficient balance
+    if (balance !== null && numericAmount > balance) {
+      setPaymentError("Insufficient balance for this payment");
+      return;
+    }
+
     setPaymentError(null);
+    setIsSubmitting(true);
+
     try {
+      const response = await payBill(
+        {
+          biller_id: selectedProvider.id,
+          amount: amount,
+          reference: reference,
+        },
+        apiOpts
+      );
+
+      // Extract transaction reference from response if available
+      let txRef = null;
+      if (response && typeof response === "object" && "transaction_reference" in response) {
+        txRef = (response as { transaction_reference?: string }).transaction_reference;
+      } else if (response && typeof response === "object" && "reference" in response) {
+        txRef = (response as { reference?: string }).reference;
+      } else if (response && typeof response === "object" && "id" in response) {
+        txRef = (response as { id?: string }).id;
+      }
+      
+      setTransactionReference(txRef);
       setPaymentStep("success");
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Payment processing failed";
       setPaymentError(message);
-      logger.error("Bill payment failed", { error: message });
+      logger.error("Bill payment failed", { error: message, provider: selectedProvider.id, amount });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -121,6 +170,8 @@ export default function BillsPage() {
     setReference("");
     setSelectedProvider(null);
     setPaymentError(null);
+    setIsSubmitting(false);
+    setTransactionReference(null);
   };
 
   if (!BILLS_ENABLED) {
@@ -170,9 +221,19 @@ export default function BillsPage() {
             <p className="text-sm font-medium opacity-90">
               Available Balance
             </p>
-            <p className="text-3xl font-bold">
-              ACBU {formatAmount(mockBalance)}
-            </p>
+            {balanceLoading ? (
+              <div className="text-3xl font-bold">
+                <div className="bg-white/20 h-8 w-32 animate-pulse rounded" />
+              </div>
+            ) : balanceError ? (
+              <div className="text-sm text-red-200">
+                Failed to load balance
+              </div>
+            ) : (
+              <p className="text-3xl font-bold">
+                ACBU {balance !== null ? formatAmount(balance) : "0"}
+              </p>
+            )}
           </Card>
         </div>
 
@@ -265,7 +326,7 @@ export default function BillsPage() {
                 </div>
                 <div className="border-border flex justify-between border-t pt-2 text-sm">
                   <span className="text-muted-foreground">Fee:</span>
-                  <span className="text-foreground font-medium">Free</span>
+                  <span className="text-foreground font-medium">Calculated at processing</span>
                 </div>
                 {paymentError && (
                   <div className="border-destructive/30 bg-destructive/5 text-destructive mt-2 flex items-start gap-2 rounded-lg border p-3 text-xs">
@@ -279,10 +340,16 @@ export default function BillsPage() {
             {paymentStep === "success" && (
               <div className="py-4 text-center">
                 <CheckCircle className="mx-auto mb-3 h-12 w-12 text-green-600" />
-                <p className="text-muted-foreground mb-4 text-sm">
-                  Transaction reference: TXN_
-                  {Date.now().toString().slice(-8)}
-                </p>
+                {transactionReference && (
+                  <p className="text-muted-foreground mb-4 text-sm">
+                    Transaction reference: {transactionReference}
+                  </p>
+                )}
+                {!transactionReference && (
+                  <p className="text-muted-foreground mb-4 text-sm">
+                    Your payment has been processed successfully.
+                  </p>
+                )}
               </div>
             )}
 
@@ -297,7 +364,9 @@ export default function BillsPage() {
                   onClick={handlePaymentConfirm}
                   disabled={
                     !amount ||
-                    parseFloat(amount) < (selectedProvider?.minAmount || 0)
+                    !reference.trim() ||
+                    parseFloat(amount) < (selectedProvider?.minAmount || 0) ||
+                    parseFloat(amount) > (selectedProvider?.maxAmount || Infinity)
                   }
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
@@ -307,9 +376,15 @@ export default function BillsPage() {
               {paymentStep === "confirm" && (
                 <AlertDialogAction
                   onClick={handlePaymentExecute}
+                  disabled={isSubmitting}
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
-                  {paymentError ? (
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      Processing...
+                    </span>
+                  ) : paymentError ? (
                     <span className="flex items-center gap-1">
                       <RefreshCw className="h-3 w-3" />
                       Retry
