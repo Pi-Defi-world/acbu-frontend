@@ -83,7 +83,14 @@ function generateLocalId(): string {
   ) {
     return `local-${crypto.randomUUID()}`;
   }
-  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  // Fallback: use crypto.getRandomValues for a cryptographically random suffix
+  // instead of Math.random(), which is non-cryptographic and collision-prone.
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  const hex = Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `local-${Date.now()}-${hex}`;
 }
 
 export default function LendingPage() {
