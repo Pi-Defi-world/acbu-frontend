@@ -7,6 +7,17 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, CheckCircle, AlertCircle, Key, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useApiOpts } from "@/hooks/use-api";
 import { useAuth } from "@/contexts/auth-context";
 import { removeStoredWallet, hasStoredWallet } from "@/lib/wallet-storage";
@@ -45,14 +56,6 @@ export default function WalletPage() {
   }, [opts.token, userId]);
 
   const handleRemoveWallet = async () => {
-    if (
-      !window.confirm(
-        "Remove this wallet from your account? Your local secret will be deleted and the backend will forget the address. You'll be prompted to set up a new wallet on next use.",
-      )
-    ) {
-      return;
-    }
-
     try {
       setLoading(true);
       setError("");
@@ -140,17 +143,39 @@ export default function WalletPage() {
               </div>
 
               <div className="pt-6">
-                <Button
-                  variant="destructive"
-                  className="flex w-full items-center gap-2"
-                  onClick={handleRemoveWallet}
-                  disabled={loading}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  {hasLocalSecret
-                    ? "Remove Local Wallet"
-                    : "Reset Wallet Connection"}
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      className="flex w-full items-center gap-2"
+                      disabled={loading}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {hasLocalSecret
+                        ? "Remove Local Wallet"
+                        : "Reset Wallet Connection"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remove wallet?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Your local secret will be deleted and the backend will
+                        forget the address. You&apos;ll be prompted to set up a
+                        new wallet on next use. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleRemoveWallet}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Remove wallet
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
                 <p className="text-muted-foreground mt-3 text-center text-xs">
                   Removing your wallet will disconnect it from this device. You
                   will need your secret phrase or external wallet to reconnect.
