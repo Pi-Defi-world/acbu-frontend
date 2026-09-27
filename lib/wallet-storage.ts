@@ -10,7 +10,6 @@ const KEY_STORE_PREFIX = 'stellar_secret_';
 // Legacy dev-only plaintext slot. Never written anymore and never read for
 // signing; only cleaned up by removeStoredWallet.
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
-const KEY_STORE_PLAINTEXT_ADDRESS_PREFIX = 'stellar_secret_plain_addr_';
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -18,11 +17,18 @@ const SALT_SIZE = 16;
 const IV_SIZE = 12;
 const PBKDF2_ITERATIONS = 200_000;
 
+export interface EncryptedWalletPayload {
+  version: number;
+  salt: string;
+  iv: string;
+  ciphertext: string;
+}
+
 function toBase64(buffer: ArrayBuffer | Uint8Array): string {
   const bytes = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i += 1) {
-    binary += String.fromCharCode(bytes[i]);
+    binary += String.fromCharCode(bytes[i]!);
   }
   return btoa(binary);
 }
@@ -47,7 +53,7 @@ async function deriveKey(passcode: string, salt: Uint8Array): Promise<CryptoKey>
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: salt as BufferSource,
+      salt: salt as unknown as BufferSource,
       iterations: PBKDF2_ITERATIONS,
       hash: 'SHA-256',
     },
@@ -66,37 +72,43 @@ async function encryptSecret(secret: string, passcode: string): Promise<string> 
   const iv = crypto.getRandomValues(new Uint8Array(IV_SIZE));
   const key = await deriveKey(passcode, salt);
   const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
+    { name: 'AES-GCM', iv: iv as unknown as BufferSource },
     key,
     textEncoder.encode(secret),
   );
 
-  return JSON.stringify({
+  const payload: EncryptedWalletPayload = {
     version: 1,
     salt: toBase64(salt),
     iv: toBase64(iv),
     ciphertext: toBase64(ciphertext),
-  });
+  };
+  return JSON.stringify(payload);
 }
 
 async function decryptSecret(encrypted: string, passcode: string): Promise<string | null> {
   try {
-    const payload = JSON.parse(encrypted) as {
-      version: number;
-      salt: string;
-      iv: string;
-      ciphertext: string;
-    };
-    if (payload.version !== 1) return null;
+    if (!encrypted) return null;
+    const payload = JSON.parse(encrypted) as EncryptedWalletPayload;
+    if (
+      !payload ||
+      typeof payload !== 'object' ||
+      payload.version !== 1 ||
+      typeof payload.salt !== 'string' ||
+      typeof payload.iv !== 'string' ||
+      typeof payload.ciphertext !== 'string'
+    ) {
+      return null;
+    }
 
     const salt = fromBase64(payload.salt);
     const iv = fromBase64(payload.iv);
     const ciphertext = fromBase64(payload.ciphertext);
     const key = await deriveKey(passcode, salt);
     const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: iv as BufferSource },
+      { name: 'AES-GCM', iv: iv as unknown as BufferSource },
       key,
-      ciphertext as BufferSource,
+      ciphertext as unknown as BufferSource,
     );
     return textDecoder.decode(decrypted);
   } catch {

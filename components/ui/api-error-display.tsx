@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { UIError } from "@/hooks/use-api-error";
+import type { UIError } from "@/types/api";
 
 interface ApiErrorDisplayProps {
   error: UIError;
