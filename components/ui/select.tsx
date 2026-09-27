@@ -5,11 +5,107 @@ import * as SelectPrimitive from '@radix-ui/react-select'
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 function Select({
+  children,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />
+}: React.ComponentProps<typeof SelectPrimitive.Root> & {
+  children?: React.ReactNode
+}) {
+  const isMobile = useIsMobile()
+  
+  // On mobile, use native select for better touch experience and native picker
+  // Only use native select when explicitly on mobile (true)
+  // Default to Radix UI during SSR/initial render (undefined) to avoid hydration mismatch
+  if (isMobile === true) {
+    return <NativeSelect {...props}>{children}</NativeSelect>
+  }
+  
+  // On desktop or during SSR, use Radix UI custom dropdown
+  return <SelectPrimitive.Root data-slot="select" {...props}>{children}</SelectPrimitive.Root>
+}
+
+// Native select for mobile devices
+function NativeSelect({
+  children,
+  value,
+  onValueChange,
+  disabled,
+  defaultValue,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Root> & {
+  children?: React.ReactNode
+}) {
+  const [selectedValue, setSelectedValue] = React.useState(value || defaultValue || '')
+  
+  // Extract options from SelectItem children
+  const options = React.useMemo(() => {
+    const extractOptions = (node: React.ReactNode): Array<{ value: string; label: string }> => {
+      const result: Array<{ value: string; label: string }> = []
+      
+      React.Children.forEach(node, (child: React.ReactNode) => {
+        if (!React.isValidElement(child)) return
+        
+        // Check if it's a SelectItem by checking if it has value prop
+        if ('value' in child.props && child.props.value !== undefined) {
+          result.push({
+            value: String(child.props.value),
+            label: String(child.props.children || '')
+          })
+        }
+        
+        // Recursively handle nested children (e.g., SelectGroup)
+        if (child.props.children) {
+          result.push(...extractOptions(child.props.children))
+        }
+      })
+      
+      return result
+    }
+    
+    return extractOptions(children)
+  }, [children])
+  
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newValue = e.target.value
+    setSelectedValue(newValue)
+    onValueChange?.(newValue)
+  }
+  
+  // Sync with controlled value
+  React.useEffect(() => {
+    if (value !== undefined) {
+      setSelectedValue(value)
+    }
+  }, [value])
+  
+  return (
+    <div className="relative">
+      <select
+        value={selectedValue}
+        onChange={handleChange}
+        disabled={disabled}
+        className={cn(
+          "border-input data-[placeholder]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 appearance-none pr-8",
+        )}
+        {...props}
+      >
+        {options.length > 0 ? (
+          options.map((option: { value: string; label: string }) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))
+        ) : (
+          <option value="" disabled>
+            No options
+          </option>
+        )}
+      </select>
+      <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 size-4 opacity-50 pointer-events-none" />
+    </div>
+  )
 }
 
 function SelectGroup({
@@ -107,12 +203,12 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 rtl:pr-2 rtl:pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className,
       )}
       {...props}
     >
-      <span className="absolute right-2 flex size-3.5 items-center justify-center">
+      <span className="absolute right-2 rtl:right-auto rtl:left-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
           <CheckIcon className="size-4" />
         </SelectPrimitive.ItemIndicator>
