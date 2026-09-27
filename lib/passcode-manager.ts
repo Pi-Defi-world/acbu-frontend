@@ -40,3 +40,22 @@ export function clearPasscode(): void {
 export function hasPasscode(): boolean {
   return inMemoryPasscode !== null;
 }
+
+let inMemoryTempPassphrase: string | null = null;
+
+/**
+ * Store the backend-generated wallet passphrase in memory only.
+ * Never written to sessionStorage/localStorage to prevent XSS exfiltration.
+ * Cleared after wallet setup completes or on logout/refresh.
+ */
+export function setTempPassphrase(passphrase: string): void {
+  inMemoryTempPassphrase = passphrase;
+}
+
+export function getTempPassphrase(): string | null {
+  return inMemoryTempPassphrase;
+}
+
+export function clearTempPassphrase(): void {
+  inMemoryTempPassphrase = null;
+}

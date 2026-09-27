@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import * as authApi from "@/lib/api/auth";
-import { setPasscode as storePasscode } from "@/lib/passcode-manager";
+import { setPasscode as storePasscode, setTempPassphrase } from "@/lib/passcode-manager";
 
 export default function SignInPage() {
     return (
@@ -75,7 +75,7 @@ function SignInForm() {
         login(result.user_id, result.stellar_address);
         
         if (result.wallet_created && result.passphrase) {
-          sessionStorage.setItem('temp_passphrase', result.passphrase);
+          setTempPassphrase(result.passphrase);
           router.push('/auth/wallet-setup');
         } else {
           router.push("/");
