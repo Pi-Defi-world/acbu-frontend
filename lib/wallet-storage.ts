@@ -164,4 +164,5 @@ export async function removeStoredWallet(userId: string): Promise<void> {
   if (!userId) return;
   await localforage.removeItem(`${KEY_STORE_PREFIX}${userId}`);
   await localforage.removeItem(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`);
+  await localforage.removeItem(`${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${userId}`);
 }

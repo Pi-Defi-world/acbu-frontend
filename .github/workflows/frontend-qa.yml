@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main, dev]
 
+permissions:
+  # AX-001: least-privilege token – read-only is enough for checkouts/builds.
+  contents: read
+
 jobs:
   quality-gate:
     runs-on: ubuntu-latest
