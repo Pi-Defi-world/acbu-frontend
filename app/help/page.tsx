@@ -196,6 +196,7 @@ export default function HelpPage() {
               href="https://docs.acbu.io"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Documentation – opens in new tab"
               className="flex items-center justify-between"
             >
               <div>
@@ -206,7 +207,7 @@ export default function HelpPage() {
                   Technical guides
                 </p>
               </div>
-              <ExternalLink className="w-4 h-4 text-muted-foreground" />
+              <ExternalLink className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
             </a>
           </Card>
 
@@ -215,6 +216,7 @@ export default function HelpPage() {
               href="https://status.acbu.io"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="System Status – opens in new tab"
               className="flex items-center justify-between"
             >
               <div>
@@ -225,7 +227,7 @@ export default function HelpPage() {
                   Service uptime
                 </p>
               </div>
-              <ExternalLink className="w-4 h-4 text-muted-foreground" />
+              <ExternalLink className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
             </a>
           </Card>
 
@@ -234,6 +236,7 @@ export default function HelpPage() {
               href="https://community.acbu.io"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Community – opens in new tab"
               className="flex items-center justify-between"
             >
               <div>
@@ -242,7 +245,7 @@ export default function HelpPage() {
                   Join discussions
                 </p>
               </div>
-              <ExternalLink className="w-4 h-4 text-muted-foreground" />
+              <ExternalLink className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
             </a>
           </Card>
         </div>
