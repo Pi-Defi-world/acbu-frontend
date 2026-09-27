@@ -1,4 +1,5 @@
 import localforage from 'localforage';
+import { getPasscode } from './passcode-manager';
 
 localforage.config({
   name: 'ACBU_Wallet',
@@ -6,21 +7,10 @@ localforage.config({
 });
 
 const KEY_STORE_PREFIX = 'stellar_secret_';
+// Legacy dev-only plaintext slot. Never written anymore and never read for
+// signing; only cleaned up by removeStoredWallet.
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
 const KEY_STORE_PLAINTEXT_ADDRESS_PREFIX = 'stellar_secret_plain_addr_';
-// KEY_STORE_PASSPHRASE intentionally removed (F-003):
-// The passcode must never be persisted in sessionStorage — it must only live
-// in memory for the duration of a single decrypt operation.  Any caller that
-// previously relied on the sessionStorage round-trip must pass the passcode
-// explicitly as a function argument instead.
-
-function assertDevOnly(): void {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      'Plaintext wallet storage is development-only and cannot be used in production',
-    );
-  }
-}
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -115,11 +105,13 @@ async function decryptSecret(encrypted: string, passcode: string): Promise<strin
 }
 
 export async function storeWalletSecret(userId: string, secret: string, passcode: string): Promise<void> {
+  if (!userId) return;
   const encrypted = await encryptSecret(secret, passcode);
   await localforage.setItem(`${KEY_STORE_PREFIX}${userId}`, encrypted);
 }
 
 export async function getWalletSecret(userId: string, passcode: string): Promise<string | null> {
+  if (!userId || !passcode) return null;
   const encrypted = await localforage.getItem<string>(`${KEY_STORE_PREFIX}${userId}`);
   if (!encrypted) return null;
   
@@ -127,65 +119,22 @@ export async function getWalletSecret(userId: string, passcode: string): Promise
 }
 
 /**
- * Store wallet secret in IndexedDB without passcode.
- * This matches the "decrypt without passcode" requirement, but is NOT secure.
- * Only use for dev/test flows.
+ * Wallet secret lookup for client-side signing.
+ * Decrypts the encrypted slot written by storeWalletSecret during onboarding,
+ * using the passcode passed in or the one held in memory since sign-in.
+ * Returns null when no wallet is stored or no passcode is available.
  */
-export async function storeWalletSecretLocalPlaintext(
+export async function getWalletSecretAnyLocal(
   userId: string,
-  secret: string,
-  stellarAddress?: string,
-): Promise<void> {
-  assertDevOnly();
-  const userKey = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
-  await localforage.setItem(userKey, secret);
-  if (stellarAddress) {
-    await localforage.setItem(
-      `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`,
-      secret,
-    );
-  }
-  // Fallback: IndexedDB can be unavailable in some browser modes; keep a copy in localStorage.
-  // (Still per-origin; this is not meant as a security measure.)
-  try {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(userKey, secret);
-      if (stellarAddress) {
-        window.localStorage.setItem(
-          `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`,
-          secret,
-        );
-      }
-    }
-  } catch {
-    // ignore
-  }
-}
-
-/**
- * Read wallet secret from IndexedDB without passcode.
- */
-export async function getWalletSecretLocalPlaintext(
-  userId: string,
-  stellarAddress?: string | null,
+  _stellarAddress?: string | null,
+  passcode?: string | null,
 ): Promise<string | null> {
-  assertDevOnly();
-  const userKey = `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`;
-  const addressKey = stellarAddress
-    ? `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${stellarAddress}`
-    : null;
-
-  const byUser = await localforage.getItem<string>(userKey);
-  if (byUser) return byUser;
-  if (addressKey) {
-    const byAddress = await localforage.getItem<string>(addressKey);
-    if (byAddress) return byAddress;
-  }
+  if (!userId) return null;
   try {
-    if (typeof window !== 'undefined') {
-      const lsByUser = window.localStorage.getItem(userKey);
-      if (lsByUser) return lsByUser;
-      if (addressKey) return window.localStorage.getItem(addressKey);
+    const activePasscode = passcode ?? getPasscode();
+    if (activePasscode) {
+      const decrypted = await getWalletSecret(userId, activePasscode);
+      if (decrypted) return decrypted;
     }
   } catch {
     // ignore
@@ -193,29 +142,15 @@ export async function getWalletSecretLocalPlaintext(
   return null;
 }
 
-/**
- * Best-effort wallet secret lookup (dev/test flows only).
- *
- * Returns the plaintext secret from the dev storage slot.
- * The former sessionStorage passcode path has been intentionally removed (F-003):
- * passcodes must be held in memory only and passed explicitly to `getWalletSecret()`
- * by callers that perform authenticated decryption.
- */
-export async function getWalletSecretAnyLocal(
-  userId: string,
-  stellarAddress?: string | null,
-): Promise<string | null> {
-  assertDevOnly();
-  return getWalletSecretLocalPlaintext(userId, stellarAddress);
-}
-
 export async function hasStoredWallet(userId: string): Promise<boolean> {
+  if (!userId) return false;
   const encrypted = await localforage.getItem<string>(`${KEY_STORE_PREFIX}${userId}`);
-  const plaintext = await localforage.getItem<string>(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`);
-  return !!encrypted || !!plaintext;
+  return !!encrypted;
 }
 
 export async function removeStoredWallet(userId: string): Promise<void> {
+  if (!userId) return;
   await localforage.removeItem(`${KEY_STORE_PREFIX}${userId}`);
   await localforage.removeItem(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`);
+  await localforage.removeItem(`${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${userId}`);
 }
