@@ -62,7 +62,7 @@ jobs:
             NEXT_PUBLIC_BILLS_ENABLED=${{ vars.NEXT_PUBLIC_BILLS_ENABLED || 'false' }}
 
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
           format: sarif
