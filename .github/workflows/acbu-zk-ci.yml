@@ -203,7 +203,7 @@ jobs:
 
       - name: Install pnpm
         if: steps.sdk-check.outputs.exists == 'true'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 10
 
