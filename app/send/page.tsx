@@ -96,6 +96,7 @@ export default function SendPage() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [selectedContact, setSelectedContact] = useState<ContactItem | null>(null);
   const [amount, setAmount] = useState("");
+  const debouncedAmount = useDebounce(amount, 300);
   const [confirmedAmount, setConfirmedAmount] = useState("");
   const [lastSentAmount, setLastSentAmount] = useState("");
   const [note, setNote] = useState("");
@@ -149,6 +150,34 @@ export default function SendPage() {
         : customRecipient.trim(),
     [useContact, selectedContact, customRecipient],
   );
+
+  const handleSendDialogChange = useCallback((open: boolean) => {
+    setShowSendDialog(open);
+  }, []);
+
+  const handleContactSelect = useCallback((contactId: string) => {
+    setSelectedContact(contacts.find((contact) => contact.id === contactId) ?? null);
+  }, [contacts]);
+
+  const handleCustomRecipientChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setCustomRecipient(event.target.value);
+  }, []);
+
+  const handleAmountChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setAmount(event.target.value);
+  }, []);
+
+  const handleNoteChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setNote(event.target.value);
+  }, []);
+
+  const handleConfirmDialogChange = useCallback((open: boolean) => {
+    setShowConfirmDialog(open);
+  }, []);
+
+  const handleSuccessDialogChange = useCallback((open: boolean) => {
+    setShowSuccessDialog(open);
+  }, []);
 
   const handleConfirmTransfer = useCallback(async () => {
     triggerHaptic('heavy');
