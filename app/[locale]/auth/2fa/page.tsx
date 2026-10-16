@@ -116,6 +116,7 @@ function TwoFactorForm() {
               <div
                 id="twofa-error"
                 role="alert"
+                aria-live="assertive"
                 className="border-destructive/30 bg-destructive/10 flex gap-3 rounded-lg border p-3"
               >
                 <AlertCircle
@@ -145,6 +146,7 @@ function TwoFactorForm() {
                 className="border-border text-center font-mono text-lg tracking-widest"
                 disabled={loading}
                 autoFocus
+                aria-invalid={Boolean(error)}
                 aria-describedby={error ? "twofa-error" : undefined}
               />
             </div>
@@ -159,7 +161,11 @@ function TwoFactorForm() {
           </form>
 
           {checked && !challengeToken && (
-            <p className="mt-4 text-sm text-destructive">
+            <p
+              role="alert"
+              aria-live="assertive"
+              className="mt-4 text-sm text-destructive"
+            >
               {t('missing_challenge_token')}{' '}
               <Link href={`/${locale}/auth/signin`} className="underline">
                 {t('sign_in_again')}

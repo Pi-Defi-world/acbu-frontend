@@ -51,8 +51,16 @@ export default function SavingsDepositPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user.trim() || !amount || parseFloat(amount) <= 0) return;
         setError("");
+        setSuccess("");
+        if (!user.trim()) {
+            setError("Your account address is still loading. Please try again shortly.");
+            return;
+        }
+        if (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+            setError("Enter an amount greater than zero.");
+            return;
+        }
         setLoading(true);
         try {
             await savingsApi.savingsDeposit(
@@ -86,10 +94,24 @@ export default function SavingsDepositPage() {
             <PageContainer>
                 <Card className="border-border p-4 space-y-4">
                     {error && (
-                        <p className="text-destructive text-sm">{error}</p>
+                        <p
+                            id="deposit-error"
+                            role="alert"
+                            aria-live="assertive"
+                            className="text-destructive text-sm"
+                        >
+                            {error}
+                        </p>
                     )}
                     {success && (
-                        <p className="text-green-600 text-sm">{success}</p>
+                        <p
+                            id="deposit-success"
+                            role="status"
+                            aria-live="polite"
+                            className="text-green-600 text-sm"
+                        >
+                            {success}
+                        </p>
                     )}
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
@@ -104,6 +126,7 @@ export default function SavingsDepositPage() {
                                 value={user}
                                 readOnly
                                 className="border-border font-mono text-sm bg-muted"
+                                aria-describedby={error ? "deposit-error" : undefined}
                             />
                         </div>
                         <div>
@@ -119,8 +142,13 @@ export default function SavingsDepositPage() {
                                 min="0"
                                 step="any"
                                 value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
+                                onChange={(e) => {
+                                    setAmount(e.target.value);
+                                    setError("");
+                                }}
                                 className="border-border"
+                                aria-invalid={Boolean(error)}
+                                aria-describedby={error ? "deposit-error" : undefined}
                             />
                         </div>
                         <div>
@@ -135,13 +163,18 @@ export default function SavingsDepositPage() {
                                 type="number"
                                 min="0"
                                 value={termSeconds}
-                                onChange={(e) => setTermSeconds(e.target.value)}
+                                onChange={(e) => {
+                                    setTermSeconds(e.target.value);
+                                    setError("");
+                                }}
                                 className="border-border"
+                                aria-invalid={Boolean(error)}
+                                aria-describedby={error ? "deposit-error" : undefined}
                             />
                         </div>
                         <Button
                             type="submit"
-                            disabled={loading || !user.trim() || !amount}
+                            disabled={loading}
                         >
                             Deposit
                         </Button>
