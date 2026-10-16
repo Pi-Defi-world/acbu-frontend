@@ -4,6 +4,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, Inbox, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,8 @@ import {
  * real backend is online, this same page can be repointed at the server.
  */
 export default function LendingAdminPage() {
+  const locale = useLocale();
+  const format = useTranslations();
   const [applications, setApplications] = useState<StoredLoanApplication[]>([]);
 
   const refresh = () => setApplications(listApplications());
@@ -136,7 +139,7 @@ export default function LendingAdminPage() {
                       </dd>
                       <dt className="text-muted-foreground">Submitted</dt>
                       <dd className="text-foreground">
-                        {new Date(app.submittedAt).toLocaleString()}
+                        {format.dateTime(new Date(app.submittedAt), 'short')}
                       </dd>
                       <dt className="text-muted-foreground">Reference</dt>
                       <dd className="text-foreground font-mono truncate" title={app.id}>{app.id}</dd>

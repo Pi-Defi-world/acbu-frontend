@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
@@ -9,24 +9,28 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Share2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useApiOpts } from "@/hooks/use-api";
+import { useFormatter } from "next-intl";
 import * as transactionsApi from "@/lib/api/transactions";
 import type { TransactionDetail } from "@/types/api";
 import { formatAmount, parseUtcDate } from "@/lib/utils";
 
-function formatDate(iso: string) {
-  return parseUtcDate(iso).toLocaleString(undefined, {
+function formatDate(iso: string, formatter: ReturnType<typeof useFormatter>) {
+  return formatter.dateTime(parseUtcDate(iso), {
     dateStyle: "medium",
     timeStyle: "short",
   });
 }
 
-async function shareTransaction(data: TransactionDetail) {
+async function shareTransaction(
+  data: TransactionDetail,
+  formatter: ReturnType<typeof useFormatter>,
+) {
   const amount = data.amount_acbu != null
-    ? `ACBU ${formatAmount(data.amount_acbu)}`
+    ? `ACBA ${formatAmount(data.amount_acbu)}`
     : data.local_amount != null
     ? `${data.currency ?? ""} ${formatAmount(data.local_amount)}`
     : "—";
-  const date = data.created_at ? formatDate(data.created_at) : "—";
+  const date = data.created_at ? formatDate(data.created_at, formatter) : "—";
   const hash = data.blockchain_tx_hash ?? "—";
   const url = window.location.href;
 
@@ -48,12 +52,13 @@ async function shareTransaction(data: TransactionDetail) {
 }
 
 /**
- * Detailed view of a specific transaction by ID.
+ * Detailed view of a specific transaction by id.
  */
 export default function TransactionDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const opts = useApiOpts();
+  const format = useFormatter();
   const [data, setData] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -61,12 +66,12 @@ export default function TransactionDetailPage() {
 
   const handleShare = useCallback(async () => {
     if (!data) return;
-    await shareTransaction(data);
+    await shareTransaction(data, format);
     if (!navigator.share) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [data]);
+  }, [data, format]);
 
   useEffect(() => {
     if (!id) {
@@ -192,7 +197,7 @@ export default function TransactionDetailPage() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">Amount</span>
               <span className="font-semibold">
-                ACBU {formatAmount(data.amount_acbu)}
+                ACBA {formatAmount(data.amount_acbu)}
               </span>
             </div>
           ) : null}
@@ -205,13 +210,13 @@ export default function TransactionDetailPage() {
           {data.created_at && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Created</span>
-              <span>{formatDate(data.created_at)}</span>
+              <span>{formatDate(data.created_at, format)}</span>
             </div>
           )}
           {data.completed_at && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Completed</span>
-              <span>{formatDate(data.completed_at)}</span>
+              <span>{formatDate(data.completed_at, format)}</span>
             </div>
           )}
           {data.note && (
