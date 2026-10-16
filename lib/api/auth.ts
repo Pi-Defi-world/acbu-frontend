@@ -8,6 +8,38 @@ export interface SignupResponse {
   message: string;
 }
 
+function normalizeSigninResponse(payload: unknown): SigninResponse | SigninRequires2FA {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Invalid sign-in response');
+  }
+
+  const response = payload as Record<string, unknown>;
+  if (response.requires_2fa === true) {
+    if (typeof response.challenge_token !== 'string') {
+      throw new Error('Invalid two-factor sign-in response');
+    }
+    return { requires_2fa: true, challenge_token: response.challenge_token };
+  }
+
+  if (typeof response.user_id !== 'string') {
+    throw new Error('Invalid sign-in response');
+  }
+
+  return {
+    user_id: response.user_id,
+    ...(typeof response.api_key === 'string' ? { api_key: response.api_key } : {}),
+    ...(typeof response.stellar_address === 'string' || response.stellar_address === null
+      ? { stellar_address: response.stellar_address }
+      : {}),
+    ...(typeof response.wallet_created === 'boolean'
+      ? { wallet_created: response.wallet_created }
+      : {}),
+    ...(typeof response.encryption_method_required === 'boolean'
+      ? { encryption_method_required: response.encryption_method_required }
+      : {}),
+  };
+}
+
 export async function signup(
   username: string,
   passcode: string,
@@ -27,7 +59,8 @@ export async function signin(
   passcode: string,
   opts?: RequestOptions
 ): Promise<SigninResponse | SigninRequires2FA> {
-  return post<SigninResponse | SigninRequires2FA>('/auth/signin', { identifier, passcode }, opts);
+  const response = await post<unknown>('/auth/signin', { identifier, passcode }, opts);
+  return normalizeSigninResponse(response);
 }
 
 export async function verify2fa(
@@ -35,7 +68,16 @@ export async function verify2fa(
   code: string,
   opts?: RequestOptions
 ): Promise<SigninResponse> {
-  return post<SigninResponse>('/auth/signin/verify-2fa', { challenge_token: challengeToken, code }, opts);
+  const response = await post<unknown>(
+    '/auth/signin/verify-2fa',
+    { challenge_token: challengeToken, code },
+    opts,
+  );
+  const normalized = normalizeSigninResponse(response);
+  if ('requires_2fa' in normalized) {
+    throw new Error('Invalid two-factor verification response');
+  }
+  return normalized;
 }
 
 export async function signout(opts?: RequestOptions): Promise<{ ok: boolean }> {

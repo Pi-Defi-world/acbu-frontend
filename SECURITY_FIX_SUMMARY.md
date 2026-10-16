@@ -33,7 +33,7 @@
 ### 4. Secure Passcode Management
 - **File:** `lib/passcode-manager.ts` (NEW)
   - Created in-memory passcode storage
-  - Passcode is NOT stored in sessionStorage (XSS-safe)
+  - Passcode is NOT stored in sessionStorage (reduces persistence exposure; active XSS can still access it)
   - Cleared on logout or page refresh
   - Only used for local wallet decryption
 
@@ -98,7 +98,7 @@ Based on code comments, the backend already supports this.
 
 1. **Passcode in Memory:** Passcode is stored in memory for wallet operations. It's cleared on page refresh, requiring users to log in again for wallet operations. This is more secure than sessionStorage but less convenient.
 
-2. **Temporary Passphrase:** The `temp_passphrase` for new wallet setup is still in sessionStorage temporarily. This is short-lived and only for the wallet setup flow.
+2. **Wallet custody boundary (W10-SEC-018):** New keys are generated in the browser and encrypted in local IndexedDB. Wallet address updates send only the public Stellar address; authentication responses are allowlisted and private-key/passphrase fields are discarded. Local encryption protects data at rest, not against active XSS or a compromised device. The backend must also remove legacy encrypted-key persistence and must never return wallet secrets; this frontend cannot change backend storage behavior.
 
 3. **2FA Challenge Token:** Still in sessionStorage but this is acceptable as it's:
    - Short-lived (expires quickly)

@@ -33,9 +33,6 @@ export function WalletSetupModal() {
       return;
     }
     
-    // Check if we have an auto-generated passphrase from signin
-    const autoGenPassphrase = sessionStorage.getItem("temp_passphrase");
-    
     // Check if user has removed their local wallet from settings
     // If they have no stellarAddress, we definitely show it.
     // If they have a stellarAddress, but want to re-import, we need a way to trigger it.
@@ -44,25 +41,19 @@ export function WalletSetupModal() {
     // just because they lack local storage. 
     // However, if the user specifically clears the wallet (which reloads the page) 
     // AND they have no `stellarAddress` OR we want them to re-setup, we should show it.
-    // For now, if `!stellarAddress || autoGenPassphrase` it shows up.
+    // For now, if `!stellarAddress` it shows up.
     // If they clicked "Remove Local Wallet", they probably want to re-import, but if stellarAddress is still there,
     // they can't. Let's add a flag in localStorage "force_wallet_setup".
     const forceSetup = localStorage.getItem("force_wallet_setup");
 
-    if (!stellarAddress || autoGenPassphrase || forceSetup) {
+    if (!stellarAddress || forceSetup) {
       setOpen(true);
-      
-      if (autoGenPassphrase) {
-        setPassphrase(autoGenPassphrase);
-        setOption(1); // Default to showing the generated passphrase if it exists
-      }
     } else {
       setOpen(false);
     }
   }, [isAuthenticated, stellarAddress]);
 
   const handleFinish = async () => {
-    sessionStorage.removeItem("temp_passphrase");
     localStorage.removeItem("force_wallet_setup");
     await refreshStellarAddress();
     setOpen(false);
@@ -192,9 +183,8 @@ export function WalletSetupModal() {
 
   return (
     <Dialog open={open} onOpenChange={(val) => {
-      // Prevent closing the modal if the user doesn't have a wallet or needs to confirm passphrase
-      const hasTempPassphrase = sessionStorage.getItem("temp_passphrase");
-      if (isAuthenticated && (!stellarAddress || hasTempPassphrase)) return;
+      // Prevent closing the modal until a wallet address has been set.
+      if (isAuthenticated && !stellarAddress) return;
       setOpen(val);
     }}>
       <DialogContent className="sm:max-w-md">
@@ -272,7 +262,7 @@ export function WalletSetupModal() {
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                   <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-blue-800 dark:text-blue-300">
-                    Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                    Your secret is generated in your browser and encrypted in this device's IndexedDB. ACBU receives only your public address. This protects stored data at rest, not against malicious code running in your browser.
                   </p>
                 </div>
 
@@ -297,7 +287,7 @@ export function WalletSetupModal() {
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                   <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-blue-800 dark:text-blue-300">
-                    Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                    Your secret is generated in your browser and encrypted in this device's IndexedDB. ACBU receives only your public address. This protects stored data at rest, not against malicious code running in your browser.
                   </p>
                 </div>
 

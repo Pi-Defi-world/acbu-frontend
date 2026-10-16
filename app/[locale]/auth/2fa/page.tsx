@@ -70,9 +70,10 @@ function TwoFactorForm() {
       }
 
       const result = await authApi.verify2fa(challengeToken, code);
-      login(result.user_id, result.stellar_address);
+      const existingAddress = result.wallet_created ? null : result.stellar_address;
+      login(result.user_id, existingAddress);
       sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
-      router.push('/');
+      router.push(result.wallet_created || !result.stellar_address ? '/auth/wallet-setup' : '/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {

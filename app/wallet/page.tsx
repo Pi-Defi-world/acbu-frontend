@@ -303,7 +303,7 @@ export default function WalletPage() {
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                     <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-blue-800 dark:text-blue-300">
-                      Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                      Your secret is generated in your browser and encrypted in this device's IndexedDB. ACBU receives only your public address. This protects stored data at rest, not against malicious code running in your browser.
                     </p>
                   </div>
 
@@ -328,7 +328,7 @@ export default function WalletPage() {
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                     <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-blue-800 dark:text-blue-300">
-                      Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                      Your secret is generated in your browser and encrypted in this device's IndexedDB. ACBU receives only your public address. This protects stored data at rest, not against malicious code running in your browser.
                     </p>
                   </div>
 

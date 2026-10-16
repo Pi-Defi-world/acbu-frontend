@@ -34,7 +34,6 @@ export default function WalletSetupPage() {
   const [option, setOption] = useState<number | null>(null);
   const [importSeed, setImportSeed] = useState("");
 
-  // Load auto-generated passphrase from session if available
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/auth/signin");
@@ -44,23 +43,12 @@ export default function WalletSetupPage() {
     // Guard: Check if passcode is available in memory
     const passcode = getPasscode();
     if (!passcode) {
-      // Passcode lost on refresh, clear temp data and redirect to signin
-      sessionStorage.removeItem("temp_passphrase");
       router.push("/auth/signin");
       return;
     }
 
-    // If user already has a wallet address, skip setup and go home
-    if (stellarAddress && !sessionStorage.getItem("temp_passphrase")) {
+    if (stellarAddress) {
       router.push("/");
-      return;
-    }
-
-    // Check if we have an auto-generated passphrase from signin
-    const autoGenPassphrase = sessionStorage.getItem("temp_passphrase");
-    if (autoGenPassphrase) {
-      setPassphrase(autoGenPassphrase);
-      setOption(1); // Show the confirmation step
     }
   }, [isAuthenticated, stellarAddress, router]);
 
@@ -115,9 +103,6 @@ export default function WalletSetupPage() {
       await syncWalletToBackend(passphrase);
       setSuccess("Wallet set up successfully!");
       
-      // Clean up session storage
-      sessionStorage.removeItem("temp_passphrase");
-      
       // Refresh user context to update stellar address
       await refreshStellarAddress();
       
@@ -146,9 +131,6 @@ export default function WalletSetupPage() {
       Keypair.fromSecret(importSeed);
       await syncWalletToBackend(importSeed);
       setSuccess("Wallet imported successfully!");
-      
-      // Clean up session storage
-      sessionStorage.removeItem("temp_passphrase");
       
       // Refresh user context
       await refreshStellarAddress();
@@ -304,7 +286,7 @@ export default function WalletSetupPage() {
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-3">
                       <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                       <p className="text-xs text-blue-800 dark:text-blue-300">
-                        Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                        Your secret is generated in your browser and encrypted in this device's IndexedDB. ACBU receives only your public address. This protects stored data at rest, not against malicious code running in your browser.
                       </p>
                     </div>
 
@@ -332,7 +314,7 @@ export default function WalletSetupPage() {
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-3">
                       <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                       <p className="text-xs text-blue-800 dark:text-blue-300">
-                        Your wallet secret will be encrypted with your account passcode and stored securely on this device.
+                        Your secret is generated in your browser and encrypted in this device's IndexedDB. ACBU receives only your public address. This protects stored data at rest, not against malicious code running in your browser.
                       </p>
                     </div>
 
