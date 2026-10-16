@@ -4,9 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, HelpCircle, CheckCircle2, Clock3, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useBalance } from '@/hooks/use-balance';
 import { useApiOpts } from '@/hooks/use-api';
@@ -217,7 +216,7 @@ export default function MePage() {
   const handleLogout = async () => {
     setShowLogoutConfirm(false);
     await logout();
-    router.replace('/auth/signin');
+    router.replace('/en/auth/signin');
   };
 
   if (loading) {

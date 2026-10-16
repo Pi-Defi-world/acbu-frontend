@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { errorReporter } from '@/lib/error-reporting';
+import type { ErrorContext } from '@/lib/error-reporting';
 
 export default function SendError({
   error,
@@ -16,9 +17,10 @@ export default function SendError({
     errorReporter.reportError(error, {
       level: 'page',
       context: {
+        type: 'page-error',
         page: 'send',
         digest: error.digest,
-      }
+      } satisfies ErrorContext
     });
   }, [error]);
 

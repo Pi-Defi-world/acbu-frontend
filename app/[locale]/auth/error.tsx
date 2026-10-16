@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, LogIn } from 'lucide-react';
 import { errorReporter } from '@/lib/error-reporting';
+import type { ErrorContext } from '@/lib/error-reporting';
 
 export default function AuthError({
   error,
@@ -16,9 +17,10 @@ export default function AuthError({
     errorReporter.reportError(error, {
       level: 'page',
       context: {
+        type: 'page-error',
         page: 'auth',
         digest: error.digest,
-      }
+      } satisfies ErrorContext
     });
   }, [error]);
 

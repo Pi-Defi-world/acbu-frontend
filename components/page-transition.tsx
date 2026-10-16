@@ -46,6 +46,14 @@ export function PageTransition({ children }: PageTransitionProps) {
 
   useEffect(() => {
     setAnimationsDisabled(shouldSkipPageTransitions());
+
+    if (typeof window === 'undefined') return;
+
+    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleChange = () => setAnimationsDisabled(shouldSkipPageTransitions());
+
+    reducedMotionQuery.addEventListener('change', handleChange);
+    return () => reducedMotionQuery.removeEventListener('change', handleChange);
   }, []);
 
   const transitionKey = useMemo(() => pathname ?? 'root', [pathname]);

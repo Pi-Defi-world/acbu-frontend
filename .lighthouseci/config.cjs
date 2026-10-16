@@ -1,12 +1,12 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: 'pnpm dev',
+      startServerCommand: 'pnpm start',
       url: ['http://localhost:3000'],
       numberOfRuns: 3,
       settings: {
         // run Chrome headless with no sandbox for CI
-        chromeFlags: '--no-sandbox --headless=new',
+        chromeFlags: '--no-sandbox --headless=new --disable-gpu --disable-dev-shm-usage',
       },
     },
     assert: {

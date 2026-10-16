@@ -151,8 +151,8 @@ describe('SendPage', () => {
     
     const amountInput = screen.getByLabelText('Amount')
     fireEvent.change(amountInput, { target: { value: '150' } })
-    
-    expect(screen.getByText('Insufficient balance.')).toBeInTheDocument()
+
+    expect(await screen.findByText('Insufficient balance.')).toBeInTheDocument()
     expect(screen.getByText('Continue')).toBeDisabled()
   })
 
@@ -207,6 +207,9 @@ describe('SendPage', () => {
         expect.objectContaining({ amount_acbu: '50' }),
         expect.anything(),
       )
+
+    await waitFor(() => {
+      expect(screen.getByText('Continue')).not.toBeDisabled()
     })
   })
 })

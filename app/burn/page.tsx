@@ -13,10 +13,13 @@ import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as burnApi from "@/lib/api/burn";
+import type { ApiError } from "@/lib/api/client";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
 import { useWalletSetup } from "@/hooks/use-wallet-setup";
 import { submitBurnRedeemSingleClient } from "@/lib/stellar/burning";
+import { useConfig } from "@/hooks/use-config";
+import { getBurnFeeText } from "@/lib/fee-text";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -144,7 +147,10 @@ export function BurnPageContent() {
   });
 
   const currency = form.watch("currency");
+  const acbuAmount = form.watch("acbuAmount");
   const { isValid } = form.formState;
+  const { config } = useConfig();
+  const burnFeeText = getBurnFeeText(config, acbuAmount);
 
   const onSubmit = async (values: BurnFormValues) => {
     clearError();
@@ -189,6 +195,11 @@ export function BurnPageContent() {
         const errors: unknown = details.errors || (typeof details.error === 'object' && details.error ? details.error : null);
 
         if (errors && typeof errors === 'object') {
+          const fieldKeys = ['accountNumber', 'bankCode', 'accountName', 'acbuAmount', 'currency'] as const;
+          type FieldKey = (typeof fieldKeys)[number];
+          const isFieldKey = (value: string): value is FieldKey =>
+            (fieldKeys as readonly string[]).includes(value);
+
           Object.entries(errors).forEach(([key, msg]) => {
             const formKey: string = key === 'account_number' ? 'accountNumber' :
                             key === 'bank_code' ? 'bankCode' :
@@ -385,6 +396,15 @@ export function BurnPageContent() {
                   </FormItem>
                 )}
               />
+
+              <Card className="border-border bg-muted p-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Burn fee</span>
+                  <span className="font-medium text-foreground" data-testid="burn-fee">
+                    {burnFeeText}
+                  </span>
+                </div>
+              </Card>
 
               <Button
                 type="submit"

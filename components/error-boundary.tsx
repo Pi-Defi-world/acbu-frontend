@@ -4,6 +4,7 @@ import React, { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import { errorReporter } from '@/lib/error-reporting';
+import type { ErrorContext } from '@/lib/error-reporting';
 import { useI18n } from '@/contexts/i18n-context';
 
 interface Props {
@@ -32,9 +33,10 @@ class ErrorBoundaryImpl extends Component<Props, State> {
     errorReporter.reportError(error, {
       level: this.props.level ?? 'component',
       context: {
+        type: 'component-error',
         componentStack: errorInfo.componentStack,
         boundary: 'ErrorBoundary',
-      },
+      } satisfies ErrorContext,
     });
   }
 
