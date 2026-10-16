@@ -141,7 +141,7 @@
     "your_applications": "Your applications",
     "view_all": "View all",
     "no_applications": "No applications yet. Submit one above to see it here.",
-    "application_summary": "ACBU {amount} · {term} months",
+    "application_summary": "ACBA {amount} · {term} months",
     "reference": "Ref: {id}",
     "products": {
       "personal": {
@@ -227,7 +227,7 @@
       "description": "Mint ACBU via custodial on-ramp (demo basket fiat held on the minting contract).",
       "currency": "Basket currency (demo fiat path)",
       "amount": "Amount to Exchange",
-      "estimated": "Estimated ACBU (from latest rates)",
+      "estimated": "Estimated ACBQ (from latest rates)",
       "submit": "Mint ACBU"
     },
     "burn": {
@@ -242,7 +242,7 @@
       "empty": "No rates available. Use the API to load rates.",
       "how_it_works": "How it works",
       "mint_explanation": "Mint converts local fiat to native ACBU",
-      "burn_explanation": "Burn redeems ACBU for fiat",
+      "burn_explanation": "Burn redeems ACBQ for fiat",
       "source": "Rates from backend"
     },
     "confirm": {
@@ -260,7 +260,7 @@
       "title": "Operation Complete",
       "description": "Your {operation} operation has been submitted successfully.",
       "transaction_id": "Transaction ID: {id}",
-      "credited": "ACBU credited (app ledger): {amount} ACBU",
+      "credited": "ACBA credited (app ledger): {amount} ACBU",
       "ledger_notice": "If the Stellar mint contract errors, tokens are still recorded in the app; your balance may show \"app ledger\" until on-chain mint works.",
       "done": "Done"
     },
@@ -271,6 +271,72 @@
       "mint_failed": "Mint failed",
       "no_wallet_address": "No linked Stellar wallet address.",
       "burn_failed": "Burn failed"
+    }
+  },
+  "auth": {
+    "signin": {
+      "title": "Sign in",
+      "description": "Enter your credentials to access your account",
+      "email_label": "Email",
+      "email_placeholder": "you@example.com",
+      "password_label": "Password",
+      "password_placeholder": "Enter your password",
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "no_account": "Don't have an account?",
+      "signup_link": "Sign up",
+      "errors": {
+        "invalid_credentials": "Invalid email or password",
+        "unexpected": "An unexpected error occurred. Please try again."
+      }
+    },
+    "signup": {
+      "title": "Create account",
+      "description": "Sign up to get started with ACBU",
+      "email_label": "Email",
+      "email_placeholder": "you@example.com",
+      "password_label": "Password",
+      "password_placeholder": "Create a password",
+      "confirm_password_label": "Confirm Password",
+      "confirm_password_placeholder": "Confirm your password",
+      "submit": "Sign up",
+      "submitting": "Signing up...",
+      "has_account": "Already have an account?",
+      "signin_link": "Sign in",
+      "errors": {
+        "password_mismatch": "Passwords do not match",
+        "password_too_short": "Password must be at least 8 characters",
+        "invalid_email": "Please enter a valid email address",
+        "signup_failed": "Signup failed. Please try again.",
+        "unexpected": "An unexpected error occurred. Please try again."
+      }
+    },
+    "wallet_setup": {
+      "title": "Set up your wallet",
+      "description": "Choose how you want to set up your Stellar wallet",
+      "generate_title": "Generate a new wallet",
+      "generate_description": "Create a brand new Stellar wallet on this device",
+      "import_title": "Import an existing wallet",
+      "import_description": "Use an existing Stellar secret key",
+      "connect_title": "Connect an external wallet",
+      "connect_description": "Connect Freighter, Lobstr, or others",
+      "continue": "Continue",
+      "skip": "Skip for now",
+      "errors": {
+        "not_logged_in": "Not logged in",
+        "address_rejected": "Backend did not accept the wallet address. Please retry.",
+        "seed_required": "Seed is required.",
+        "kit_initializing": "Wallet Kit is still initializing...",
+        "save_failed": "Failed to save wallet",
+        "import_failed": "Invalid seed or failed to import.",
+        "connect_failed": "Failed to connect wallet",
+        "passcode_unavailable": "Passcode not available. Please log in again to set up your wallet."
+      },
+      "success": {
+        "created": "New wallet created successfully!",
+        "imported": "Wallet imported successfully!",
+        "connected": "External wallet connected successfully!"
+      }
     }
   }
 }

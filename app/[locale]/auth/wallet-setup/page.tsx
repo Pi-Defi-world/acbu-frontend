@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import { logger } from "@/lib/logger";
  * the wallet to the backend and calls postWalletConfirm to activate it.
  */
 export default function WalletSetupPage() {
+  const t = useTranslations("auth.walletSetup");
   const router = useRouter();
   const params = useParams();
   const locale = (params?.locale as string) ?? "en";
@@ -77,14 +79,14 @@ export default function WalletSetupPage() {
     setError("");
 
     if (!passphrase) {
-      setError("Passphrase is required.");
+      setError(t("errors.passphraseRequired"));
       return;
     }
 
     setLoading(true);
     try {
       await generateWallet(passphrase);
-      setSuccess("Wallet set up successfully!");
+      setSuccess(t("success.walletSetUp"));
       
       clearTempPassphrase();
       await refreshStellarAddress();
@@ -93,7 +95,7 @@ export default function WalletSetupPage() {
         router.push(`/${locale}`);
       }, 1500);
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to set up wallet");
+      setError((err as Error).message || t("errors.setupFailed"));
       setLoading(false);
     }
   };
@@ -103,14 +105,14 @@ export default function WalletSetupPage() {
     setError("");
 
     if (!importSeed) {
-      setError("Seed is required.");
+      setError(t("errors.seedRequired"));
       return;
     }
 
     setLoading(true);
     try {
       await importWallet(importSeed);
-      setSuccess("Wallet imported successfully!");
+      setSuccess(t("success.walletImported"));
       
       clearTempPassphrase();
       await refreshStellarAddress();
@@ -120,7 +122,7 @@ export default function WalletSetupPage() {
       }, 1500);
     } catch (err: unknown) {
       setError(
-        "Invalid seed or failed to import. " + ((err as Error).message || ""),
+        t("errors.importFailed") + " " + ((err as Error).message || ""),
       );
       setLoading(false);
     }
@@ -132,14 +134,14 @@ export default function WalletSetupPage() {
     setLoading(true);
     try {
       await connectExternalWallet();
-      setSuccess("Wallet connected successfully!");
+      setSuccess(t("success.walletConnected"));
       await refreshStellarAddress();
       
       setTimeout(() => {
         router.push(`/${locale}`);
       }, 1500);
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to connect wallet");
+      setError((err as Error).message || t("errors.connectFailed"));
       setLoading(false);
     }
   };
@@ -148,9 +150,9 @@ export default function WalletSetupPage() {
     <>
       <div className="page-header">
         <div className="px-4 py-3">
-          <h1 className="page-title">Finish Wallet Setup</h1>
+          <h1 className="page-title">{t("title")}</h1>
           <p className="text-muted-foreground text-xs">
-            Complete your wallet activation
+            {t("subtitle")}
           </p>
         </div>
       </div>
@@ -159,9 +161,9 @@ export default function WalletSetupPage() {
         <Dialog open>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Set Up Your Wallet</DialogTitle>
+              <DialogTitle>{t("dialogTitle")}</DialogTitle>
               <DialogDescription>
-                ACBU uses the Stellar network. How would you like to set up your wallet?
+                {t("dialogDescription")}
               </DialogDescription>
             </DialogHeader>
 
@@ -186,7 +188,7 @@ export default function WalletSetupPage() {
             {!option ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  How would you like to set up your wallet?
+                  {t("chooseMethod")}
                 </p>
 
               <Button
@@ -199,9 +201,9 @@ export default function WalletSetupPage() {
                 className="flex h-auto w-full flex-col items-center py-4"
                 variant="outline"
               >
-                <span className="font-semibold">Generate New Wallet</span>
+                <span className="font-semibold">{t("generate.title")}</span>
                 <span className="text-muted-foreground mt-1 text-xs">
-                  Let us create a secure wallet for you
+                  {t("generate.description")}
                 </span>
               </Button>
 
@@ -211,9 +213,9 @@ export default function WalletSetupPage() {
                 className="flex h-auto w-full flex-col items-center py-4"
                 variant="outline"
               >
-                <span className="font-semibold">Import Existing Seed</span>
+                <span className="font-semibold">{t("import.title")}</span>
                 <span className="text-muted-foreground mt-1 text-xs">
-                  Use an existing Stellar secret key
+                  {t("import.description")}
                 </span>
               </Button>
 
@@ -223,10 +225,10 @@ export default function WalletSetupPage() {
                 className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-auto w-full flex-col items-center py-4"
               >
                 <span className="font-semibold">
-                  {loading ? "Connecting..." : "Connect External Wallet"}
+                  {loading ? t("connect.connecting") : t("connect.title")}
                 </span>
                 <span className="text-primary-foreground/70 mt-1 text-xs">
-                  Connect Freighter, Lobstr, or others
+                  {t("connect.description")}
                 </span>
               </Button>
               </div>
@@ -239,27 +241,25 @@ export default function WalletSetupPage() {
                 disabled={loading}
               >
                 <ChevronLeft className="mr-1 h-4 w-4" />
-                Back
+                {t("back")}
               </Button>
 
               {option === 1 && (
                 <form onSubmit={handleGenerateConfirm} className="space-y-4">
                   <div>
                     <h2 className="mb-2 text-lg font-semibold">
-                      Your New Wallet
+                      {t("generate.newWalletTitle")}
                     </h2>
 
                     <div className="mb-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
                       <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                       <p className="text-xs text-blue-800 dark:text-blue-300">
-                        Your wallet secret will be encrypted with your account
-                        passcode and stored securely on this device.
+                        {t("securityNotice")}
                       </p>
                     </div>
 
                     <p className="text-muted-foreground text-sm">
-                      Please save this secret key somewhere safe. It is required
-                      to recover your wallet if you switch devices.
+                      {t("generate.saveWarning")}
                     </p>
                   </div>
 
@@ -268,7 +268,7 @@ export default function WalletSetupPage() {
                   </div>
 
                   <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Saving..." : "I have saved my key"}
+                    {loading ? t("generate.saving") : t("generate.savedKey")}
                   </Button>
                 </form>
               )}
@@ -276,26 +276,24 @@ export default function WalletSetupPage() {
               {option === 2 && (
                 <form onSubmit={handleImportSeed} className="space-y-4">
                   <div>
-                    <h2 className="mb-2 text-lg font-semibold">Import Seed</h2>
+                    <h2 className="mb-2 text-lg font-semibold">{t("import.title")}</h2>
 
                     <div className="mb-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
                       <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                       <p className="text-xs text-blue-800 dark:text-blue-300">
-                        Your wallet secret will be encrypted with your account
-                        passcode and stored securely on this device.
+                        {t("securityNotice")}
                       </p>
                     </div>
 
                     <p className="text-muted-foreground text-sm">
-                      Enter your Stellar secret key (starts with 'S'). It will
-                      be stored encrypted on this device.
+                      {t("import.instructions")}
                     </p>
                   </div>
 
                   <Input
                     id="import-seed"
                     type="password"
-                    placeholder="Starts with S..."
+                    placeholder={t("import.placeholder")}
                     value={importSeed}
                     onChange={(e) => setImportSeed(e.target.value)}
                     disabled={loading}
@@ -303,7 +301,7 @@ export default function WalletSetupPage() {
                   />
 
                   <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Importing..." : "Import Wallet"}
+                    {loading ? t("import.importing") : t("import.importWallet")}
                   </Button>
                 </form>
               )}
