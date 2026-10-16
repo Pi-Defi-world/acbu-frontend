@@ -22,6 +22,7 @@ export default function FiatSimPage() {
   const { accounts, loading, error: accountsError, refetch: refetchAccounts } = useFiatAccounts();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [lastFaucetTx, setLastFaucetTx] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState("");
 
   const [faucetAmount, setFaucetAmount] = useState('');
   const [faucetCurrency, setFaucetCurrency] = useState('NGN');
@@ -35,7 +36,12 @@ export default function FiatSimPage() {
 
   const handleFaucet = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!faucetAmount || parseFloat(faucetAmount) <= 0) return;
+    setValidationError("");
+    if (!faucetAmount || !Number.isFinite(Number(faucetAmount)) || Number(faucetAmount) <= 0) {
+      clearError();
+      setValidationError("Enter an amount greater than zero.");
+      return;
+    }
 
     setActionLoading('faucet');
     clearError();
@@ -71,11 +77,27 @@ export default function FiatSimPage() {
         </div>
 
         {uiError && (
-          <ApiErrorDisplay error={uiError} onDismiss={clearError} />
+          <div id="faucet-error">
+            <ApiErrorDisplay error={uiError} onDismiss={clearError} />
+          </div>
+        )}
+        {validationError && (
+          <p
+            id="faucet-validation-error"
+            role="alert"
+            aria-live="assertive"
+            className="text-sm text-destructive"
+          >
+            {validationError}
+          </p>
         )}
 
         {lastFaucetTx && (
-          <Card className="p-4 text-sm border-primary/30 bg-primary/5">
+          <Card
+            role="status"
+            aria-live="polite"
+            className="p-4 text-sm border-primary/30 bg-primary/5"
+          >
             <p className="font-medium text-foreground">Last faucet transaction</p>
             <p className="text-xs text-muted-foreground break-all mt-1">{lastFaucetTx}</p>
           </Card>
@@ -91,10 +113,18 @@ export default function FiatSimPage() {
               Amount is in whole units of the selected currency (e.g. 100 = one hundred).
             </p>
             <form onSubmit={handleFaucet} className="flex flex-wrap gap-2">
+              <label htmlFor="faucet-currency" className="sr-only">
+                Currency
+              </label>
               <select
+                id="faucet-currency"
                 className="bg-background border rounded px-2 text-sm"
                 value={faucetCurrency}
-                onChange={(e) => setFaucetCurrency(e.target.value)}
+                onChange={(e) => {
+                  setFaucetCurrency(e.target.value);
+                  setValidationError("");
+                }}
+                aria-describedby={uiError ? "faucet-error" : undefined}
               >
                 {['NGN', 'GHS', 'KES', 'EGP', 'ZAR', 'RWF', 'XOF', 'MAD', 'TZS', 'UGX'].map((c) => (
                   <option key={c} value={c}>
@@ -103,11 +133,26 @@ export default function FiatSimPage() {
                 ))}
               </select>
               <Input
+                id="faucet-amount"
                 type="number"
+                min="0"
+                step="any"
                 placeholder="Amount"
                 value={faucetAmount}
-                onChange={(e) => setFaucetAmount(e.target.value)}
+                onChange={(e) => {
+                  setFaucetAmount(e.target.value);
+                  setValidationError("");
+                }}
                 className="flex-1 min-w-[120px]"
+                aria-label="Amount"
+                aria-invalid={Boolean(validationError)}
+                aria-describedby={
+                  validationError
+                    ? "faucet-validation-error"
+                    : uiError
+                      ? "faucet-error"
+                      : undefined
+                }
               />
               <Button type="submit" disabled={!!actionLoading || isSubmitDisabled}>
                 {actionLoading === 'faucet' ? '...' : 'Get tokens'}
