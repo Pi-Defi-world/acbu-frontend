@@ -2,6 +2,7 @@ import { normalizeUsername } from '@/lib/utils';
 import { post } from './client';
 import type { RequestOptions } from './client';
 import type { SigninResponse, SigninRequires2FA } from '@/types/api';
+import { setAuth } from '@/contexts/auth-context';
 
 export interface SignupResponse {
   user_id: string;
@@ -27,7 +28,15 @@ export async function signin(
   passcode: string,
   opts?: RequestOptions
 ): Promise<SigninResponse | SigninRequires2FA> {
-  return post<SigninResponse | SigninRequires2FA>('/auth/signin', { identifier, passcode }, opts);
+  const response = await post<SigninResponse | SigninRequires2FA>(
+    '/auth/signin',
+    { identifier, passcode },
+    opts
+  );
+  if ('api_key' in response && response.api_key) {
+    setAuth(response.api_key, response.user_id, response.username);
+  }
+  return response;
 }
 
 export async function verify2fa(
@@ -35,7 +44,13 @@ export async function verify2fa(
   code: string,
   opts?: RequestOptions
 ): Promise<SigninResponse> {
-  return post<SigninResponse>('/auth/signin/verify-2fa', { challenge_token: challengeToken, code }, opts);
+  const response = await post<SigninResponse>(
+    '/auth/signin/verify-2fa',
+    { challenge_token: challengeToken, code },
+    opts
+  );
+  setAuth(response.api_key, response.user_id, response.username);
+  return response;
 }
 
 export async function exchangeOAuthCode(
@@ -43,7 +58,13 @@ export async function exchangeOAuthCode(
   state: string,
   opts?: RequestOptions
 ): Promise<SigninResponse> {
-  return post<SigninResponse>('/auth/oauth/callback', { code, state }, opts);
+  const response = await post<SigninResponse>(
+    '/auth/oauth/callback',
+    { code, state },
+    opts
+  );
+  setAuth(response.api_key, response.user_id, response.username);
+  return response;
 }
 
 export async function signout(opts?: RequestOptions): Promise<{ ok: boolean }> {

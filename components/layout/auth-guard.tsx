@@ -41,20 +41,16 @@ function getLocaleFromPath(pathname: string): string {
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isHydrated, ...state } = useAuth();
+  const { isAuthenticated, isHydrated } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const pathWithoutLocale = getPathWithoutLocale(pathname);
-  const isPublic = PUBLIC_PATHS.some((path) => pathWithoutLocale.startsWith(path));
-  const signInPath = getSignInPath(pathname);
 
   useEffect(() => {
     if (!isPublicPath(pathname) && isHydrated && !isAuthenticated) {
       const locale = getLocaleFromPath(pathname);
       router.replace(`/${locale}/auth/signin`);
-      return;
     }
-  }, [isAuthenticated, isHydrated, isPublic, pathname, router, signInPath, state.stellarAddress]);
+  }, [isAuthenticated, isHydrated, pathname, router]);
 
   if (!isPublicPath(pathname) && (!isHydrated || !isAuthenticated)) {
     return (
