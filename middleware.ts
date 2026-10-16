@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { PUBLIC_PATHS } from "@/components/layout/auth-guard";
 
 // Keep in sync with i18n/locales.ts
 const SUPPORTED_LOCALES = ["en", "en-NG", "en-KE", "ar", "ru", "pl"] as const;
@@ -69,6 +70,32 @@ function shouldSkipLocaleRedirect(pathname: string): boolean {
   return SKIP_REDIRECT_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
+/**
+ * Strip a leading locale prefix (e.g. /en, /en-NG) from a pathname so that
+ * public-path checks can be performed against the locale-agnostic route.
+ */
+function stripLocalePrefix(pathname: string): string {
+  for (const locale of SUPPORTED_LOCALES) {
+    if (pathname === `/${locale}`) return "/";
+    if (pathname.startsWith(`/${locale}/`)) {
+      return pathname.slice(locale.length + 1);
+    }
+  }
+  return pathname;
+}
+
+/**
+ * Returns true if the (locale-stripped) pathname matches a public auth route.
+ * PUBLIC_PATHS are declared without a locale prefix (e.g. "/auth/signin"),
+ * so we compare against the stripped pathname.
+ */
+function isPublicPath(pathname: string): boolean {
+  const stripped = stripLocalePrefix(pathname);
+  return PUBLIC_PATHS.some(
+    (p) => stripped === p || stripped.startsWith(`${p}/`),
+  );
+}
+
 export function middleware(request: NextRequest) {
   // Block .md files
   if (request.nextUrl.pathname.endsWith(".md")) {
@@ -76,6 +103,11 @@ export function middleware(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl;
+
+  // Public auth routes (locale-prefixed) must not be redirected or guarded.
+  if (isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
 
   // ── Locale redirect ────────────────────────────────────────────────────
   // If the request does not already carry a locale prefix (e.g. /en/mint)
