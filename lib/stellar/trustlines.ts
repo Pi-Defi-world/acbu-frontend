@@ -6,9 +6,10 @@ import {
   TransactionBuilder,
 } from "@stellar/stellar-sdk";
 import { acbuAsset, demoFiatAsset } from "./demo-fiat";
-import { getAssetsConfig } from "../api/config";
+import { getAssetsConfig } from "@/lib/api/config";
+import { post } from "@/lib/api/client";
 import type { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit";
-import { logger } from '@/lib/logger';
+import { logger } from "@/lib/logger";
 
 const TESTNET_HORIZON_URL =
   process.env.NEXT_PUBLIC_STELLAR_HORIZON_URL ??
@@ -21,10 +22,12 @@ async function hasTrustline(
 ): Promise<boolean> {
   const code = asset.getCode();
   const issuer = asset.getIssuer();
-  return account.balances.some((b: { asset_type: string; asset_code?: string; asset_issuer?: string }) => {
-    if (b.asset_type === "native") return false;
-    return b.asset_code === code && b.asset_issuer === issuer;
-  });
+  return account.balances.some(
+    (b: { asset_type: string; asset_code?: string; asset_issuer?: string }) => {
+      if (b.asset_type === "native") return false;
+      return b.asset_code === code && b.asset_issuer === issuer;
+    },
+  );
 }
 
 async function resolveHorizonUrl(): Promise<string> {
@@ -56,30 +59,27 @@ async function ensureTestnetAccountExists(
     await server.loadAccount(address);
     return;
   } catch (e: unknown) {
-    if ((e as { response?: { status?: number } })?.response?.status !== 404) throw e;
+    if ((e as { response?: { status?: number } })?.response?.status !== 404)
+      throw e;
   }
 
-  const res = await fetch("/v1/users/me/wallet/activate", {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(
-      `Failed to activate wallet via backend (${res.status}). ${body}`,
-    );
-  }
+  // Use the shared API client so the request is routed through the correct
+  // base URL (NEXT_PUBLIC_API_BASE_URL), which may include a path prefix such
+  // as /api/v1.  A raw fetch("/v1/…") would bypass that prefix and hit the
+  // Next.js origin instead, returning 404/405 on any correctly-configured
+  // deployment.
+  await post("/users/me/wallet/activate");
 
-    for (let i = 0; i < 5; i++) {
-      try {
-        await server.loadAccount(address);
-        return;
-      } catch (e: unknown) {
-        if ((e as { response?: { status?: number } })?.response?.status !== 404) throw e;
-        await new Promise((r) => setTimeout(r, 800 * (i + 1)));
-      }
+  for (let i = 0; i < 5; i++) {
+    try {
+      await server.loadAccount(address);
+      return;
+    } catch (e: unknown) {
+      if ((e as { response?: { status?: number } })?.response?.status !== 404)
+        throw e;
+      await new Promise((r) => setTimeout(r, 800 * (i + 1)));
     }
+  }
   throw new Error(
     "Wallet activation submitted but account not visible on Horizon yet.",
   );
@@ -149,10 +149,13 @@ async function addTrustlineForAsset(params: {
     .build();
   let res: Horizon.HorizonApi.SubmitTransactionResponse;
   if (params.external?.kit) {
-    const { signedTxXdr } = await params.external.kit.signTransaction(tx.toXDR(), {
-      address: accountId,
-      networkPassphrase,
-    });
+    const { signedTxXdr } = await params.external.kit.signTransaction(
+      tx.toXDR(),
+      {
+        address: accountId,
+        networkPassphrase,
+      },
+    );
     const signed = TransactionBuilder.fromXDR(signedTxXdr, networkPassphrase);
     res = await server.submitTransaction(signed);
   } else {
@@ -193,7 +196,11 @@ export async function ensureDemoFiatTrustlineClient(params: {
   } catch {
     asset = demoFiatAsset(params.currency);
   }
-  return addTrustlineForAsset({ userSecret: params.userSecret, external: params.external, asset });
+  return addTrustlineForAsset({
+    userSecret: params.userSecret,
+    external: params.external,
+    asset,
+  });
 }
 
 /**
@@ -218,9 +225,13 @@ export async function ensureAcbuTrustlineClient(params: {
   } catch {
     asset = acbuAsset();
   }
-    logger.info("[trustline] ensuring ACBU trustline", {
-      code: asset.getCode(),
-      issuer: asset.getIssuer(),
-    });
-  return addTrustlineForAsset({ userSecret: params.userSecret, external: params.external, asset });
+  logger.info("[trustline] ensuring ACBU trustline", {
+    code: asset.getCode(),
+    issuer: asset.getIssuer(),
+  });
+  return addTrustlineForAsset({
+    userSecret: params.userSecret,
+    external: params.external,
+    asset,
+  });
 }
