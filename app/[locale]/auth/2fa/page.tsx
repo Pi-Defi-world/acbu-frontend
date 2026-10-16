@@ -26,7 +26,7 @@ export default function TwoFactorPage() {
           <div className="animate-pulse text-muted-foreground">{t('loading')}</div>
         </Card>
       </div>
-    }>
+}>
       <TwoFactorForm />
     </Suspense>
   );
