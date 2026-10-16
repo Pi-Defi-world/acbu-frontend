@@ -152,7 +152,7 @@ export default function TransactionDetailPage() {
           {data.usdc_amount != null && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">USDC</span>
-              <span>{data.usdc_amount}</span>
+              <span>{formatAmount(data.usdc_amount)}</span>
             </div>
           )}
           {data.created_at && (
