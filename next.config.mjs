@@ -41,6 +41,64 @@ const nextConfig = {
   poweredByHeader: false,
 
   /**
+   * Security headers — W10-F-010
+   *
+   * Applied to every response via the `headers()` hook below.  The CSP is
+   * intentionally strict and reports violations to the existing
+   * /api/csp-report endpoint (W2-F-036) so the endpoint is no longer dead.
+   *
+   * Notes:
+   *   - 'unsafe-inline' is required for Next.js' inline bootstrap scripts
+   *     and styled-jsx; tighten with nonces once the app is migrated.
+   *   - 'unsafe-eval' is only enabled in development for React Refresh.
+   *   - connect-src includes the API origin so XHR/fetch to the backend
+   *     is permitted without opening the policy to arbitrary hosts.
+   */
+  async headers() {
+    const isDev = process.env.NODE_ENV !== 'production';
+
+    const apiOrigin = process.env.NEXT_PUBLIC_API_BASE_URL
+      ? new URL(process.env.NEXT_PUBLIC_API_BASE_URL).origin
+      : '';
+
+    const cspDirectives = [
+      "default-src 'self'",
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ''} https://*.sentry.io`,
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
+      'report-uri /api/csp-report',
+    ];
+
+    const securityHeaders = [
+      { key: 'Content-Security-Policy', value: cspDirectives.join('; ') },
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      {
+        key: 'Permissions-Policy',
+        value: 'camera=(), microphone=(), geolocation=(), payment=()',
+      },
+      {
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload',
+      },
+    ];
+
+    return [
+      {
+        source: '/:path*',
+        headers: securityHeaders,
+      },
+    ];
+  },
+
+  /**
    * Image optimisation — intentional configuration (see docs/adr/image-pipeline.md)
    *
    * Optimisation is ENABLED (unoptimized is not set / defaults to false).
