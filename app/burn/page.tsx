@@ -11,6 +11,7 @@ import { useApiOpts } from "@/hooks/use-api";
 import { useApiError } from "@/hooks/use-api-error";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import * as burnApi from "@/lib/api/burn";
+import type { ApiError } from "@/lib/api/client";
 import type { BurnRecipientAccount } from "@/types/api";
 import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
@@ -40,7 +41,7 @@ const burnSchema = z.object({
   accountName: z.string()
     .min(3, "Account name is too short")
     .max(100, "Account name is too long"),
-}).superRefine((data: any, ctx: any) => {
+}).superRefine((data, ctx) => {
   if (data.currency === "NGN") {
     if (!/^\d{10}$/.test(data.accountNumber)) {
       ctx.addIssue({
@@ -219,22 +220,29 @@ export default function BurnPage() {
       );
       setTxId(res.transaction_id);
       form.reset({ ...values, acbuAmount: "" });
-    } catch (e: any) {
+    } catch (e) {
+      const apiError = e as ApiError;
       // Handle server-side validation errors if they follow a specific format
-      if (e?.status === 400 && e?.details) {
-        const details = e.details as any;
-        const errors = details.errors || (details.error && typeof details.error === 'object' ? details.error : null);
-        
+      if (apiError?.status === 400 && apiError?.details) {
+        const details = apiError.details as { errors?: Record<string, string>; error?: unknown };
+        const errors = details.errors || (details.error && typeof details.error === 'object' ? (details.error as Record<string, string>) : null);
+
         if (errors && typeof errors === 'object') {
+          const fieldKeys = ['accountNumber', 'bankCode', 'accountName', 'acbuAmount', 'currency'] as const;
+          type FieldKey = (typeof fieldKeys)[number];
+          const isFieldKey = (value: string): value is FieldKey =>
+            (fieldKeys as readonly string[]).includes(value);
+
           Object.entries(errors).forEach(([key, msg]) => {
-            const formKey = key === 'account_number' ? 'accountNumber' :
-                            key === 'bank_code' ? 'bankCode' :
-                            key === 'account_name' ? 'accountName' :
-                            key === 'acbu_amount' ? 'acbuAmount' :
-                            key as any;
-            
-            if (['accountNumber', 'bankCode', 'accountName', 'acbuAmount', 'currency'].includes(formKey)) {
-              form.setError(formKey as any, { type: 'server', message: msg as string });
+            const formKey =
+              key === 'account_number' ? 'accountNumber' :
+              key === 'bank_code' ? 'bankCode' :
+              key === 'account_name' ? 'accountName' :
+              key === 'acbu_amount' ? 'acbuAmount' :
+              key;
+
+            if (isFieldKey(formKey)) {
+              form.setError(formKey, { type: 'server', message: String(msg) });
             }
           });
         } else {
@@ -285,7 +293,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="acbuAmount"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>ACBU amount</FormLabel>
                     <FormControl>
@@ -314,7 +322,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="currency"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Currency (3 letters)</FormLabel>
                     <FormControl>
@@ -340,7 +348,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="accountNumber"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Account number</FormLabel>
                     <FormControl>
@@ -372,7 +380,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="bankCode"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Bank code</FormLabel>
                     <FormControl>
@@ -403,7 +411,7 @@ export default function BurnPage() {
               <FormField
                 control={form.control}
                 name="accountName"
-                render={({ field }: { field: any }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Account name</FormLabel>
                     <FormControl>

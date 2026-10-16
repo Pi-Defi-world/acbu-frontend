@@ -78,6 +78,7 @@ describe('useApiError', () => {
   it('handleError handles null gracefully', () => {
     const { result } = renderHook(() => useApiError());
     act(() => result.current.setApiError(null as unknown));
-    expect(result.current.uiError?.message ?? '').toBe('Something went wrong. Please try again.');
+    // mapApiError treats null/undefined as "no error" so callers can pass any caught value safely.
+    expect(result.current.uiError).toBeNull();
   });
 });

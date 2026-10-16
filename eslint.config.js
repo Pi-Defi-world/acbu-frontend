@@ -19,5 +19,11 @@ export default [
     rules: {
       "no-console": ["warn", { "allow": ["warn", "error"] }]
     }
+  },
+  {
+    files: ["lib/logger.ts"],
+    rules: {
+      "no-console": "off"
+    }
   }
 ];

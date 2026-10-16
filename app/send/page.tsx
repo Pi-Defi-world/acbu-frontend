@@ -59,17 +59,6 @@ function formatDate(iso: string) {
   return d.toLocaleDateString();
 }
 
-function getStatusColor(status: string): string {
-  switch (status) {
-    case "completed":
-      return "text-green-600";
-    case "pending":
-      return "text-amber-600";
-    default:
-      return "text-gray-600";
-  }
-}
-
 function getStatusBadgeClassName(status: string): string {
   switch (status) {
     case "completed":
@@ -105,7 +94,7 @@ export default function SendPage() {
   const [transfers, setTransfers] = useState<TransferItem[]>([]);
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loadingTransfers, setLoadingTransfers] = useState(true);
-  const [loadingContacts, setLoadingContacts] = useState(true);
+  const [, setLoadingContacts] = useState(true);
   const [submitError, setSubmitError] = useState("");
   const [sending, setSending] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -269,58 +258,6 @@ export default function SendPage() {
       !exceedsBalance &&
       ((useContact && selectedContact) || (!useContact && customRecipient.trim()));
   }, [debouncedAmount, exceedsBalance, useContact, selectedContact, customRecipient]);
-
-  const transfersList = useMemo(() => {
-    if (loadingTransfers) {
-      return <SkeletonList count={2} itemHeight="h-14" />;
-    }
-    if (transfers.length === 0) {
-      return (
-        <div className="rounded-lg border border-border bg-card p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            No transfers yet
-          </p>
-        </div>
-      );
-    }
-    return (
-      <div className="space-y-2">
-        {transfers.map((t: TransferItem) => (
-          <Link
-            key={t.transaction_id}
-            href={`/send/${t.transaction_id}`}
-            className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors active:bg-muted"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-foreground truncate">
-                Transfer
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {formatDate(t.created_at)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="font-semibold text-foreground">
-                ACBU {formatAmount(t.amount_acbu)}
-              </p>
-              <Badge
-                variant="outline"
-                className={`mt-1 text-xs ${getStatusColor(t.status)}`}
-              >
-                {t.status === "completed" && (
-                  <Check className="mr-1 h-3 w-3" />
-                )}
-                {t.status === "pending" && (
-                  <AlertCircle className="mr-1 h-3 w-3" />
-                )}
-                {t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : "Unknown"}
-              </Badge>
-            </div>
-          </Link>
-        ))}
-      </div>
-    );
-  }, [transfers, loadingTransfers]);
 
   return (
     <>
@@ -624,8 +561,8 @@ export default function SendPage() {
             </div>
             <div className="rounded-lg border border-border bg-muted p-4">
               <p className="text-xs text-muted-foreground">Amount</p>
-              <p className="text-2xl font-bold text-foreground">
-                ACBU {formatAmount(amount)}
+              <p className="text-2xl font-bold text-foreground" data-testid="confirm-amount">
+                ACBU {formatAmount(confirmedAmount)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 Network Fee: Free
