@@ -300,14 +300,14 @@ export default function LendingPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <p className="font-semibold text-foreground">{product.name}</p>
-                          <Badge variant="secondary" className="text-[10px]">
+                          <Badge variant="secondary" className="text-xs">
                             {product.ratePct}% APR
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {product.description}
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           ACBU {product.minAmount}–{product.maxAmount} ·{' '}
                           {product.minTerm}–{product.maxTerm} months
                         </p>
@@ -425,13 +425,13 @@ export default function LendingPage() {
                         <p className="text-xs text-muted-foreground">
                           ACBU {formatAmount(app.amount)} · {app.term} months
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 truncate" title={`Ref: ${app.id}`}>
+                        <p className="text-xs text-muted-foreground mt-1 truncate" title={`Ref: ${app.id}`}>
                           Ref: {app.id}
                         </p>
                       </div>
                       <Badge
                         variant={app.syncedWithBackend ? 'default' : 'secondary'}
-                        className="text-[10px] capitalize"
+                        className="text-xs capitalize"
                       >
                         {app.status}
                       </Badge>

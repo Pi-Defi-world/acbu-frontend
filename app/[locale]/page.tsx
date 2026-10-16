@@ -231,18 +231,18 @@ export default function Home() {
             </div>
             <div className="flex items-start gap-3 pr-12 mb-1 md:gap-6 md:pr-16">
               <div className="flex-1 min-w-0 border-r border-border/60 pr-3 md:pr-6">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
                   {t('acbu')}
                 </p>
 
-                <p className="text-[10px] text-muted-foreground mb-1">{t('wallet_balance')}</p>
+                <p className="text-xs text-muted-foreground mb-1">{t('wallet_balance')}</p>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
                   {acbuAmountText}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1.5 tabular-nums">
                   {acbuUsdText}
                 </p>
-               <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">{t('wallet_balance')}</p>
+               <p className="text-xs text-muted-foreground mb-1">{t('wallet_balance')}</p>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums md:text-4xl">
                   {!showBalance
                     ? '••••••'
@@ -266,10 +266,10 @@ export default function Home() {
 
               </div>
               <div className="flex-1 min-w-0 text-right">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 md:text-xs">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
                   {t('fiat')}
                 </p>
-                <p className="text-[10px] text-muted-foreground mb-1 md:text-xs">{t('simulated_usd_equivalent')}</p>
+                <p className="text-xs text-muted-foreground mb-1">{t('simulated_usd_equivalent')}</p>
                 <div className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums space-y-1 md:text-4xl">
                   {!showBalance ? (
                     <p>••••••</p>
@@ -282,7 +282,7 @@ export default function Home() {
                         {format.number(fiatUsdInfo?.usd ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                       </p>
                       {fiatUsdInfo?.partial && fiatAccounts.length > 0 && (
-                        <p className="text-[10px] font-normal text-muted-foreground md:text-xs">
+                        <p className="text-xs font-normal text-muted-foreground">
                           {t('some_currencies_missing_rate')}
                         </p>
                       )}
