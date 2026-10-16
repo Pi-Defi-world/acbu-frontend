@@ -82,7 +82,7 @@ function SignInForm() {
       if ("user_id" in result) {
         storePasscode(passcode);
 
-        login(result.user_id, result.stellar_address);
+        login(result.user_id, result.stellar_address, result.api_key);
 
         if (result.wallet_created && result.passphrase) {
           setTempPassphrase(result.passphrase);
