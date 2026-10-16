@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { locales } from "@/i18n/locales";
+import { locales } from "@/i8n/locales";
 
 // Bare (non-locale-prefixed) auth paths kept for backward compat
 const AUTH_SEGMENTS = [
@@ -41,20 +41,16 @@ function getLocaleFromPath(pathname: string): string {
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isHydrated, ...state } = useAuth();
+  const { isAuthenticated, isHydrated } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const pathWithoutLocale = getPathWithoutLocale(pathname);
-  const isPublic = PUBLIC_PATHS.some((path) => pathWithoutLocale.startsWith(path));
-  const signInPath = getSignInPath(pathname);
 
   useEffect(() => {
     if (!isPublicPath(pathname) && isHydrated && !isAuthenticated) {
       const locale = getLocaleFromPath(pathname);
       router.replace(`/${locale}/auth/signin`);
-      return;
     }
-  }, [isAuthenticated, isHydrated, isPublic, pathname, router, signInPath, state.stellarAddress]);
+  }, [isAuthenticated, isHydrated, pathname, router]);
 
   if (!isPublicPath(pathname) && (!isHydrated || !isAuthenticated)) {
     return (
@@ -64,5 +60,5 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return <React.Fragment>{children}</React.Fragment>;
 }
