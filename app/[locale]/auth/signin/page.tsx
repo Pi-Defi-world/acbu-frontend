@@ -72,10 +72,10 @@ function SignInForm() {
         // Store passcode in memory for wallet operations (more secure than sessionStorage)
         storePasscode(passcode);
         
-            const existingAddress = result.wallet_created ? null : result.stellar_address;
-            login(result.user_id, existingAddress);
+        const existingAddress = result.wallet_created ? null : result.stellar_address;
+        login(result.user_id, existingAddress);
         
-            if (result.wallet_created || !result.stellar_address) {
+        if (result.wallet_created || !result.stellar_address) {
           router.push('/auth/wallet-setup');
         } else {
           router.push("/");
