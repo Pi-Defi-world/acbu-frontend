@@ -46,7 +46,7 @@ export default function ActivityPage() {
     <>
       <div className="page-header">
         <div className="page-header-row">
-          <Link href="/me"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+          <Link href="/me" aria-label="Back" className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" /></Link>
           <h1 className="page-title">Activity</h1>
         </div>
       </div>
