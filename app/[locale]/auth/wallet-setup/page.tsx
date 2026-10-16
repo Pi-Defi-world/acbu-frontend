@@ -1,30 +1,37 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { PageContainer } from "@/components/layout/page-container";
 import { useAuth } from "@/contexts/auth-context";
-import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
-import * as userApi from "@/lib/api/user";
-import { storeWalletSecret } from "@/lib/wallet-storage";
-import { getPasscode } from "@/lib/passcode-manager";
+import { getPasscode, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, CheckCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
+import { useWalletSetup } from "@/hooks/use-wallet-setup";
+import { logger } from "@/lib/logger";
 
 /**
  * Wallet Setup Confirmation Page
- * 
+ *
  * This page is shown after user signs up/signs in with a newly created wallet.
  * It allows the user to confirm and complete their wallet setup, then syncs
  * the wallet to the backend and calls postWalletConfirm to activate it.
  */
 export default function WalletSetupPage() {
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) ?? "en";
   const { userId, stellarAddress, refreshStellarAddress, isAuthenticated } = useAuth();
-  const kit = useStellarWalletsKit();
+  const { generateWallet, importWallet, connectExternalWallet } = useWalletSetup();
   
   const [passphrase, setPassphrase] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,58 +42,25 @@ export default function WalletSetupPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/auth/signin");
+      router.push(`/${locale}/auth/signin`);
       return;
     }
 
     // Guard: Check if passcode is available in memory
     const passcode = getPasscode();
     if (!passcode) {
-      router.push("/auth/signin");
+      clearTempPassphrase();
+      router.push(`/${locale}/auth/signin`);
       return;
     }
 
     if (stellarAddress) {
-      router.push("/");
+      router.push(`/${locale}`);
+      return;
     }
-  }, [isAuthenticated, stellarAddress, router]);
+  }, [isAuthenticated, stellarAddress, router, locale]);
 
-  /**
-   * Sync wallet to backend: 
-   * 1. Put wallet address to backend
-   * 2. Store secret encrypted with passcode
-   * 3. Call postWalletConfirm to complete activation
-   */
-  const syncWalletToBackend = async (secret: string): Promise<void> => {
-    if (!userId) throw new Error("Not logged in");
-    
-    const passcode = getPasscode();
-    if (!passcode) {
-      throw new Error("Passcode not available. Please log in again to set up your wallet.");
-    }
-    
-    const kp = Keypair.fromSecret(secret);
-    const publicKey = kp.publicKey();
 
-    // Step 1: Update wallet address on backend
-    const result = await userApi.putWalletAddress(publicKey);
-    if (!result?.ok || (result.stellar_address && result.stellar_address !== publicKey)) {
-      throw new Error(
-        "Backend did not accept the new wallet address. Please retry.",
-      );
-    }
-
-    // Step 2: Store secret encrypted with passcode
-    await storeWalletSecret(userId, secret, passcode);
-
-    // Step 3: Confirm wallet activation on backend
-    try {
-      await userApi.postWalletConfirm({ wallet_address: publicKey });
-    } catch (err) {
-      console.warn("Wallet confirm failed, but wallet address was set. User can continue.", err);
-      // Don't throw - the address is set, confirmation can retry later if needed
-    }
-  };
 
   const handleGenerateConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,15 +73,13 @@ export default function WalletSetupPage() {
 
     setLoading(true);
     try {
-      await syncWalletToBackend(passphrase);
+      await generateWallet(passphrase);
       setSuccess("Wallet set up successfully!");
-      
-      // Refresh user context to update stellar address
+      clearTempPassphrase();
       await refreshStellarAddress();
       
-      // Redirect to home after a brief delay
       setTimeout(() => {
-        router.push("/");
+        router.push(`/${locale}`);
       }, 1500);
     } catch (err: unknown) {
       setError((err as Error).message || "Failed to set up wallet");
@@ -126,103 +98,84 @@ export default function WalletSetupPage() {
 
     setLoading(true);
     try {
-      // Validate seed format
-      Keypair.fromSecret(importSeed);
-      await syncWalletToBackend(importSeed);
+      await importWallet(importSeed);
       setSuccess("Wallet imported successfully!");
-      
-      // Refresh user context
+      clearTempPassphrase();
       await refreshStellarAddress();
-      
-      // Redirect to home after a brief delay
+
       setTimeout(() => {
-        router.push("/");
+        router.push(`/${locale}`);
       }, 1500);
     } catch (err: unknown) {
-      setError("Invalid seed or failed to import. " + ((err as Error).message || ""));
+      setError(
+        "Invalid seed or failed to import. " + ((err as Error).message || ""),
+      );
       setLoading(false);
     }
   };
 
   const handleConnectWallet = async () => {
     setError("");
-    if (!kit) {
-      setError("Wallet Kit is still initializing...");
-      return;
-    }
 
     setLoading(true);
     try {
-      if (!userId) throw new Error("Not logged in");
+      await connectExternalWallet();
+      setSuccess("Wallet connected successfully!");
+      await refreshStellarAddress();
 
-      // Open wallet connector modal
-      await kit.openModal({
-        onWalletSelected: async (selectedOption: { id: string }) => {
-          try {
-            kit.setWallet(selectedOption.id);
-            const { address: pubKey } = await kit.getAddress();
-
-            // Update wallet address on backend
-            const result = await userApi.putWalletAddress(pubKey);
-            if (!result?.ok || (result.stellar_address && result.stellar_address !== pubKey)) {
-              throw new Error("Backend did not accept the wallet address. Please retry.");
-            }
-
-            // Confirm wallet activation on backend
-            try {
-              await userApi.postWalletConfirm({ wallet_address: pubKey });
-            } catch (err) {
-              console.warn("Wallet confirm failed, but wallet address was set.", err);
-            }
-
-            setSuccess("Wallet connected successfully!");
-            await refreshStellarAddress();
-            
-            setTimeout(() => {
-              router.push("/");
-            }, 1500);
-          } catch (e: unknown) {
-            setError((e as Error).message || "Failed to connect wallet");
-            setLoading(false);
-          }
-        },
-      });
+      setTimeout(() => {
+        router.push(`/${locale}`);
+      }, 1500);
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to open wallet modal");
+      setError((err as Error).message || "Failed to connect wallet");
       setLoading(false);
     }
   };
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+      <div className="page-header">
         <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-foreground">Finish Wallet Setup</h1>
-          <p className="text-xs text-muted-foreground">Complete your wallet activation</p>
+          <h1 className="page-title">Finish Wallet Setup</h1>
+          <p className="text-muted-foreground text-xs">
+            Complete your wallet activation
+          </p>
         </div>
       </div>
 
       <PageContainer>
-        <Card className="border-border p-6 space-y-6">
-          {error && (
-            <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
+        <Dialog open>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Set Up Your Wallet</DialogTitle>
+              <DialogDescription>
+                ACBU uses the Stellar network. How would you like to set up your wallet?
+              </DialogDescription>
+            </DialogHeader>
 
-          {success && (
-            <div className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10">
-              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-green-600">{success}</p>
-            </div>
-          )}
+            {error && (
+              <div
+                id="wallet-setup-error"
+                role="alert"
+                className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/10"
+              >
+                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
 
-          {!option ? (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                How would you like to set up your wallet?
-              </p>
+            {success && (
+              <div className="flex gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10">
+                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-green-600">{success}</p>
+              </div>
+            )}
+
+            {!option ? (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  How would you like to set up your wallet?
+                </p>
 
               <Button
                 onClick={() => {
@@ -231,11 +184,11 @@ export default function WalletSetupPage() {
                   setOption(1);
                 }}
                 disabled={loading}
-                className="w-full h-auto py-4 flex flex-col items-center"
+                className="flex h-auto w-full flex-col items-center py-4"
                 variant="outline"
               >
                 <span className="font-semibold">Generate New Wallet</span>
-                <span className="text-xs text-muted-foreground mt-1">
+                <span className="text-muted-foreground mt-1 text-xs">
                   Let us create a secure wallet for you
                 </span>
               </Button>
@@ -243,11 +196,11 @@ export default function WalletSetupPage() {
               <Button
                 onClick={() => setOption(2)}
                 disabled={loading}
-                className="w-full h-auto py-4 flex flex-col items-center"
+                className="flex h-auto w-full flex-col items-center py-4"
                 variant="outline"
               >
                 <span className="font-semibold">Import Existing Seed</span>
-                <span className="text-xs text-muted-foreground mt-1">
+                <span className="text-muted-foreground mt-1 text-xs">
                   Use an existing Stellar secret key
                 </span>
               </Button>
@@ -255,47 +208,52 @@ export default function WalletSetupPage() {
               <Button
                 onClick={handleConnectWallet}
                 disabled={loading}
-                className="w-full h-auto py-4 flex flex-col items-center bg-primary text-primary-foreground hover:bg-primary/90"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-auto w-full flex-col items-center py-4"
               >
                 <span className="font-semibold">
                   {loading ? "Connecting..." : "Connect External Wallet"}
                 </span>
-                <span className="text-xs text-primary-foreground/70 mt-1">
+                <span className="text-primary-foreground/70 mt-1 text-xs">
                   Connect Freighter, Lobstr, or others
                 </span>
               </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
+              </div>
+            ) : (
+              <div className="space-y-4">
               <Button
                 variant="ghost"
                 onClick={() => setOption(null)}
                 className="mb-2 -ml-2 h-8 px-2"
                 disabled={loading}
               >
-                <ChevronLeft className="w-4 h-4 mr-1" />
+                <ChevronLeft className="mr-1 h-4 w-4" />
                 Back
               </Button>
 
               {option === 1 && (
                 <form onSubmit={handleGenerateConfirm} className="space-y-4">
                   <div>
-                    <h2 className="text-lg font-semibold mb-2">Your New Wallet</h2>
-                    
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-3">
-                      <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <h2 className="mb-2 text-lg font-semibold">
+                      Your New Wallet
+                    </h2>
+
+                    <div className="mb-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+                      <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                       <p className="text-xs text-blue-800 dark:text-blue-300">
-                        Your secret is generated in your browser and encrypted in this device's IndexedDB. ACBU receives only your public address. This protects stored data at rest, not against malicious code running in your browser.
+                        Your key is generated in your browser and encrypted in
+                        this device's IndexedDB. ACBU receives only your public
+                        address. This protects data at rest, not against active
+                        XSS or a compromised device.
                       </p>
                     </div>
 
-                    <p className="text-sm text-muted-foreground">
-                      Please save this secret key somewhere safe. It is required to
-                      recover your wallet if you switch devices.
+                    <p className="text-muted-foreground text-sm">
+                      Please save this secret key somewhere safe. It is required
+                      to recover your wallet if you switch devices.
                     </p>
                   </div>
 
-                  <div className="p-3 bg-muted rounded font-mono text-xs break-all border border-border max-h-32 overflow-y-auto">
+                  <div className="bg-muted border-border max-h-32 overflow-y-auto rounded border p-3 font-mono text-xs break-all">
                     {passphrase}
                   </div>
 
@@ -308,27 +266,32 @@ export default function WalletSetupPage() {
               {option === 2 && (
                 <form onSubmit={handleImportSeed} className="space-y-4">
                   <div>
-                    <h2 className="text-lg font-semibold mb-2">Import Seed</h2>
-                    
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-3">
-                      <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <h2 className="mb-2 text-lg font-semibold">Import Seed</h2>
+
+                    <div className="mb-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+                      <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                       <p className="text-xs text-blue-800 dark:text-blue-300">
-                        Your secret is generated in your browser and encrypted in this device's IndexedDB. ACBU receives only your public address. This protects stored data at rest, not against malicious code running in your browser.
+                        Your key is generated in your browser and encrypted in
+                        this device's IndexedDB. ACBU receives only your public
+                        address. This protects data at rest, not against active
+                        XSS or a compromised device.
                       </p>
                     </div>
 
-                    <p className="text-sm text-muted-foreground">
-                      Enter your Stellar secret key (starts with 'S'). It will be stored
-                      encrypted on this device.
+                    <p className="text-muted-foreground text-sm">
+                      Enter your Stellar secret key (starts with 'S'). It will
+                      be stored encrypted on this device.
                     </p>
                   </div>
 
                   <Input
+                    id="import-seed"
                     type="password"
                     placeholder="Starts with S..."
                     value={importSeed}
                     onChange={(e) => setImportSeed(e.target.value)}
                     disabled={loading}
+                    aria-describedby={error ? "wallet-setup-error" : undefined}
                   />
 
                   <Button type="submit" disabled={loading} className="w-full">
@@ -336,9 +299,10 @@ export default function WalletSetupPage() {
                   </Button>
                 </form>
               )}
-            </div>
-          )}
-        </Card>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </PageContainer>
     </>
   );

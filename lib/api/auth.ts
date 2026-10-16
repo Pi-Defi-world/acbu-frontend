@@ -1,4 +1,4 @@
-import { normalizeUsername } from '../utils';
+import { normalizeUsername } from '@/lib/utils';
 import { post } from './client';
 import type { RequestOptions } from './client';
 import type { SigninResponse, SigninRequires2FA } from '@/types/api';
@@ -78,6 +78,14 @@ export async function verify2fa(
     throw new Error('Invalid two-factor verification response');
   }
   return normalized;
+}
+
+export async function exchangeOAuthCode(
+  code: string,
+  state: string,
+  opts?: RequestOptions
+): Promise<SigninResponse> {
+  return post<SigninResponse>('/auth/oauth/callback', { code, state }, opts);
 }
 
 export async function signout(opts?: RequestOptions): Promise<{ ok: boolean }> {
