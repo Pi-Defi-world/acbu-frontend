@@ -55,6 +55,10 @@ export function getApiErrorMessage(e: unknown): string {
 
 export interface RequestOptions {
   signal?: AbortSignal;
+  /**
+   * @deprecated Auth is exclusively handled via httpOnly cookies (credentials: 'include').
+   * Token is unused for session auth and kept only for backward compatibility.
+   */
   token?: string;
 }
 
