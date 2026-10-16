@@ -1,4 +1,10 @@
 {
+  "not_found": {
+    "label": "Błąd 404",
+    "title": "Strona nie znaleziona",
+    "description": "Strona, której szukasz, nie istnieje lub mogła zostać przeniesiona.",
+    "cta": "Przejdź do pulpitu"
+  },
   "home": {
     "acbu": "ACBU",
     "wallet_balance": "Saldo portfela",

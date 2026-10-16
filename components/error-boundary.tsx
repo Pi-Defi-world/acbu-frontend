@@ -4,11 +4,14 @@ import React, { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import { errorReporter } from '@/lib/error-reporting';
+import type { ErrorContext } from '@/lib/error-reporting';
+import { useI18n } from '@/contexts/i18n-context';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   level?: 'component' | 'page' | 'app';
+  translations?: { title: string; description: string; retry: string };
 }
 
 interface State {
@@ -16,7 +19,7 @@ interface State {
   error?: Error;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundaryImpl extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false };
@@ -30,9 +33,10 @@ export class ErrorBoundary extends Component<Props, State> {
     errorReporter.reportError(error, {
       level: this.props.level ?? 'component',
       context: {
+        type: 'component-error',
         componentStack: errorInfo.componentStack,
         boundary: 'ErrorBoundary',
-      },
+      } satisfies ErrorContext,
     });
   }
 
@@ -55,11 +59,11 @@ export class ErrorBoundary extends Component<Props, State> {
             <AlertTriangle className="h-6 w-6 text-red-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Something went wrong</h2>
-            <p className="text-sm text-muted-foreground mt-1">An unexpected error occurred</p>
+            <h2 className="text-lg font-semibold text-foreground">{this.props.translations?.title}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{this.props.translations?.description}</p>
           </div>
           <Button onClick={this.handleReset} variant="outline">
-            Try again
+            {this.props.translations?.retry}
           </Button>
         </div>
       );
@@ -67,4 +71,18 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return this.props.children;
   }
+}
+
+export function ErrorBoundary(props: Omit<Props, 'translations'>) {
+  const { t } = useI18n();
+  return (
+    <ErrorBoundaryImpl
+      {...props}
+      translations={{
+        title: t('errors.boundary.title'),
+        description: t('errors.boundary.description'),
+        retry: t('errors.boundary.retry'),
+      }}
+    />
+  );
 }

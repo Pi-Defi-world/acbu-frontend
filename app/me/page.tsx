@@ -1,17 +1,11 @@
 'use client';
 
-import type { Metadata } from 'next';
 import React, { useState, useEffect, useRef } from 'react';
 import { PageContainer } from '@/components/layout/page-container';
 
-export const metadata: Metadata = {
-  title: 'My Account | ACBU',
-  description: 'Manage your ACBU account, profile, and settings.',
-};
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, HelpCircle, CheckCircle2, Clock3, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowRight, User, Settings, LogOut, Eye, Clock, Building2, Shield, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useBalance } from '@/hooks/use-balance';
 import { useApiOpts } from '@/hooks/use-api';
@@ -84,9 +78,9 @@ function LocalKycBadge({ status, loading }: { status: KycStatus | undefined | nu
   if (loading) {
     return <div className="h-5 w-24 rounded-full bg-muted animate-pulse" />;
   }
-  const { label, className, Icon } = getKycBadgeConfig(status);
+  const { label, variant, className, Icon } = getKycBadgeConfig(status);
   return (
-    <Badge variant="outline" className={`text-xs font-medium gap-1 px-2 py-0.5 ${className}`}>
+    <Badge variant={variant} className={`text-xs font-medium gap-1 px-2 py-0.5 ${className}`}>
       <Icon className="w-3 h-3 flex-shrink-0" />
       {label}
     </Badge>
@@ -222,7 +216,7 @@ export default function MePage() {
   const handleLogout = async () => {
     setShowLogoutConfirm(false);
     await logout();
-    router.replace('/auth/signin');
+    router.replace('/en/auth/signin');
   };
 
   if (loading) {
