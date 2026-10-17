@@ -9,10 +9,7 @@ import { Card } from "@/components/ui/card";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import * as authApi from "@/lib/api/auth";
-import {
-  setPasscode as storePasscode,
-  setTempPassphrase,
-} from "@/lib/passcode-manager";
+import { setPasscode as storePasscode } from "@/lib/passcode-manager";
 import { isSafeRedirect } from "@/lib/redirect";
 
 export default function SignInPage() {
@@ -82,10 +79,10 @@ function SignInForm() {
       if ("user_id" in result) {
         storePasscode(passcode);
 
-        login(result.user_id, result.stellar_address);
+        const existingAddress = result.wallet_created ? null : result.stellar_address;
+        login(result.user_id, existingAddress);
 
-        if (result.wallet_created && result.passphrase) {
-          setTempPassphrase(result.passphrase);
+        if (result.wallet_created || !result.stellar_address) {
           router.push(`/${locale}/auth/wallet-setup`);
         } else {
           const safe = isSafeRedirect(redirectParam);

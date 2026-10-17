@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { useStellarWalletsKit } from "@/lib/stellar-wallets-kit";
 import * as userApi from "@/lib/api/user";
-import { getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
+import { clearTempPassphrase } from "@/lib/passcode-manager";
 import {
   readForceWalletSetupFlag,
   clearForceWalletSetupFlag,
@@ -44,10 +44,6 @@ export function WalletSetupModal() {
       setOpen(false);
       return;
     }
-
-    // Check if we have an auto-generated passphrase from signin
-    const autoGenPassphrase = getTempPassphrase();
-
     // Check if user has removed their local wallet from settings
     // If they have no stellarAddress, we definitely show it.
     // If they have a stellarAddress, but want to re-import, we need a way to trigger it.
@@ -56,18 +52,13 @@ export function WalletSetupModal() {
     // just because they lack local storage.
     // However, if the user specifically clears the wallet (which reloads the page)
     // AND they have no `stellarAddress` OR we want them to re-setup, we should show it.
-    // For now, if `!stellarAddress || autoGenPassphrase` it shows up.
+    // For now, if `!stellarAddress` it shows up.
     // If they clicked "Remove Local Wallet", they probably want to re-import, but if stellarAddress is still there,
     // they can't. Let's add a flag in localStorage "force_wallet_setup".
     const forceSetup = readForceWalletSetupFlag();
 
-    if (!stellarAddress || autoGenPassphrase || forceSetup) {
+    if (!stellarAddress || forceSetup) {
       setOpen(true);
-
-      if (autoGenPassphrase) {
-        setPassphrase(autoGenPassphrase);
-        setOption(1);
-      }
     } else {
       setOpen(false);
     }
@@ -167,9 +158,8 @@ export function WalletSetupModal() {
     <Dialog
       open={open}
       onOpenChange={(val) => {
-        // Prevent closing the modal if the user doesn't have a wallet or needs to confirm passphrase
-        const hasTempPassphrase = getTempPassphrase();
-        if (isAuthenticated && (!stellarAddress || hasTempPassphrase)) return;
+        // Prevent closing setup until a wallet address has been set.
+        if (isAuthenticated && !stellarAddress) return;
         setOpen(val);
       }}
     >
