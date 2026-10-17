@@ -8,6 +8,9 @@ const DEFAULT_LOCALE: Locale = "en";
 // Cookie name used by next-intl and set by setLocale() in lib/i18n/index.ts
 const LOCALE_COOKIE = "NEXT_LOCALE";
 
+// Request header used to forward the resolved locale to the root layout.
+const LOCALE_HEADER = "x-locale";
+
 /**
  * Resolve the preferred locale for a request.
  *
@@ -106,6 +109,12 @@ export function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
+  // Resolve the locale for requests that already carry a prefix (or are
+  // skipped from redirect) so the root layout can render the correct `lang`.
+  const resolvedLocale = hasLocalePrefix(pathname)
+    ? (pathname.split("/")[1] as Locale)
+    : resolveLocale(request);
+
   // ── CSP / Security headers ─────────────────────────────────────────────
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
 
@@ -147,12 +156,14 @@ export function middleware(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set(LOCALE_HEADER, resolvedLocale);
 
   const response = NextResponse.next({
     request: { headers: requestHeaders },
   });
 
   response.headers.set("Content-Security-Policy", cspString);
+  response.headers.set(LOCALE_HEADER, resolvedLocale);
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");

@@ -15,18 +15,19 @@ function TranslationsFallback() {
 
 export default async function LocaleLayout({
   children,
+  params,
 }: Readonly<{
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }>) {
-  // params is needed to satisfy Next.js dynamic segment typing; locale is
-  // resolved by next-intl's request config so getMessages() picks it up
-  // automatically without us having to forward it explicitly.
-  await params;
+  // Resolve the locale from the dynamic route segment so the root layout
+  // can announce the correct lang to assistive tech and crawlers.
+  const { locale } = await params;
   const messages = await getMessages();
 
   return (
     <Suspense fallback={<TranslationsFallback />}>
-      <NextIntlClientProvider messages={messages}>
+      <NextIntlClientProvider messages={messages} locale={locale}>
         <NavigationGuardProvider>
           <AuthGuard>
             {children}
