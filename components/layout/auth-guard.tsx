@@ -11,6 +11,7 @@ const AUTH_SEGMENTS = [
   "/auth/signup",
   "/auth/2fa",
   "/recovery",
+  "/auth/oauth/callback",
 ];
 
 function isPublicPath(pathname: string): boolean {
@@ -44,9 +45,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isHydrated, ...state } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const pathWithoutLocale = getPathWithoutLocale(pathname);
-  const isPublic = PUBLIC_PATHS.some((path) => pathWithoutLocale.startsWith(path));
-  const signInPath = getSignInPath(pathname);
 
   useEffect(() => {
     if (!isPublicPath(pathname) && isHydrated && !isAuthenticated) {
@@ -54,7 +52,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       router.replace(`/${locale}/auth/signin`);
       return;
     }
-  }, [isAuthenticated, isHydrated, isPublic, pathname, router, signInPath, state.stellarAddress]);
+  }, [isAuthenticated, isHydrated, pathname, router, state.stellarAddress]);
 
   if (!isPublicPath(pathname) && (!isHydrated || !isAuthenticated)) {
     return (
