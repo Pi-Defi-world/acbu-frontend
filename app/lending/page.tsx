@@ -357,7 +357,7 @@ export default function LendingPage() {
                               `lending.products.${product.translationKey}.name`,
                             )}
                           </p>
-                          <Badge variant="secondary" className="text-[10px]">
+                          <Badge variant="secondary" className="text-xs">
                             {t("lending.apr", { rate: product.ratePct })}
                           </Badge>
                         </div>
@@ -366,7 +366,7 @@ export default function LendingPage() {
                             `lending.products.${product.translationKey}.description`,
                           )}
                         </p>
-                        <p className="text-muted-foreground mt-1 text-[10px]">
+                        <p className="text-muted-foreground mt-1 text-xs">
                           ACBU {product.minAmount}–{product.maxAmount} ·{" "}
                           {t("lending.term_months", {
                             min: product.minTerm,
@@ -496,7 +496,7 @@ export default function LendingPage() {
                           })}
                         </p>
                         <p
-                          className="text-muted-foreground mt-1 truncate text-[10px]"
+                          className="text-muted-foreground mt-1 truncate text-xs"
                           title={t("lending.reference", { id: app.id })}
                         >
                           {t("lending.reference", { id: app.id })}
@@ -506,7 +506,7 @@ export default function LendingPage() {
                         variant={
                           app.syncedWithBackend ? "default" : "secondary"
                         }
-                        className="text-[10px] capitalize"
+                        className="text-xs capitalize"
                       >
                         {t(`lending.status.${app.status}`)}
                       </Badge>

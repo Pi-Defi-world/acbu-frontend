@@ -116,13 +116,13 @@ export default function LendingAdminPage() {
                                 ? 'destructive'
                                 : 'secondary'
                           }
-                          className="text-[10px] capitalize"
+                          className="text-xs capitalize"
                         >
                           {app.status}
                         </Badge>
                         <Badge
                           variant="outline"
-                          className="text-[9px] uppercase tracking-wide"
+                          className="text-xs uppercase tracking-wide"
                         >
                           {app.syncedWithBackend ? 'synced' : 'local'}
                         </Badge>
