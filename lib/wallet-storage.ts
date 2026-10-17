@@ -10,6 +10,7 @@ const KEY_STORE_PREFIX = 'stellar_secret_';
 // Legacy dev-only plaintext slot. Never written anymore and never read for
 // signing; only cleaned up by removeStoredWallet.
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
+const KEY_STORE_PLAINTEXT_ADDRESS_PREFIX = 'stellar_secret_plain_addr_';
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
