@@ -20,8 +20,29 @@ export function invariant(
 
 type NumberLocale = string | string[];
 
+let currentAppLocale: NumberLocale | undefined;
+
+/**
+ * Set the current application locale for formatting.
+ */
+export function setAppLocale(locale?: NumberLocale): void {
+  currentAppLocale = locale;
+}
+
+/**
+ * Get the currently configured application locale, if any.
+ */
+export function getAppLocale(): NumberLocale | undefined {
+  return currentAppLocale;
+}
+
 function resolveNumberLocale(locale?: NumberLocale): NumberLocale | undefined {
   if (locale) return locale;
+  if (currentAppLocale) return currentAppLocale;
+  if (typeof document !== "undefined") {
+    const htmlLang = document.documentElement?.lang?.trim();
+    if (htmlLang) return htmlLang;
+  }
   if (typeof navigator === "undefined") return undefined;
 
   return navigator.languages?.length
