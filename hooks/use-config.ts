@@ -17,6 +17,12 @@ import {
  */
 const STALE_TIME = 5 * 60 * 1000; // 5 minutes
 let cachedAt = 0;
+
+export function clearConfigCache(): void {
+  cachedAt = 0;
+  clearAssetsConfigCache();
+}
+
 function isFresh(): boolean {
   return cachedAt > 0 && Date.now() - cachedAt < STALE_TIME;
 }

@@ -19,6 +19,11 @@ export async function getRates(opts?: RequestOptions): Promise<RatesResponse> {
   return data;
 }
 
+export function clearRatesCache(): void {
+  cachedRates = null;
+  cacheExpiry = 0;
+}
+
 
 export interface UseRatesResult {
   data: RatesResponse | null;
