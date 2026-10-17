@@ -28,7 +28,7 @@ const FAQ_ITEMS = [
   {
     question: "How do I mint ACBU tokens?",
     answer:
-      "Go to the Mint page, connect your wallet, enter the amount of USDC you want to convert, and confirm the transaction. Your ACBU tokens will be minted based on the current exchange rate.",
+      "Go to the Mint page, connect your wallet, select your basket fiat currency (NGN, KES, etc.), enter the amount you want to convert, and confirm the transaction. Your ACBU tokens will be minted based on the current exchange rate.",
   },
   {
     question: "What are the transaction fees?",
