@@ -82,15 +82,19 @@ docs/
 The application uses **AFK (ACBU)** as the only currency:
 - All balances displayed in AFK
 - All transactions in AFK
-- All fees in AFK
+- ACBU processing fees displayed in AFK
+- Stellar network fees are paid in XLM (stroops), separately from ACBU fees
 - Stellar network for blockchain operations
 - No USD, USDC, or external currency conversions
 
 ### Key Numbers
 - 1 AFK = 1 unit of native ACBU
-- Network fee: Free (Stellar protocol)
-- Processing fees: 0.50-1.00 AFK per operation
+- Stellar network fees: not free; the backend's configured fallback base fee is 100 stroops, while dynamic fees and payment surge buffering can increase the transaction fee
+- Soroban transactions can include resource fees; ledger-entry rent or minimum-balance reserves may also apply depending on the operation
+- ACBU processing fees: variable by operation and reserve conditions; see the [backend fee policy](https://github.com/Pi-Defi-world/acbu-backend/blob/dev/src/services/feePolicy/feePolicyService.ts)
 - Exchange displayed in rates tabs (informational only)
+
+The backend resolves Stellar base and payment fees in its [Stellar fee manager](https://github.com/Pi-Defi-world/acbu-backend/blob/dev/src/services/stellar/feeManager.ts). Network fees are separate from ACBU processing fees; minimum-balance reserves are locked funds, not network fees.
 
 ## 🔐 Security & Authentication
 
