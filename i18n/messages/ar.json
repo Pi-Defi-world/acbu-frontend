@@ -19,7 +19,19 @@
     "usd": "USD",
     "approx_usd": "≈ USD",
     "transaction_count": "{count, plural, zero {# معاملات} one {معاملة واحدة} two {معاملتان} few {# معاملات} many {# معاملة} other {# معاملة}}",
-    "session_count": "{count, plural, zero {# جلسات نشطة} one {جلسة نشطة واحدة} two {جلستان نشطتان} few {# جلسات نشطة} many {# جلسة نشطة} other {# جلسة نشطة}}"
+    "session_count": "{count, plural, zero {# جلسات نشطة} one {جلسة نشطة واحدة} two {جلستان نشطتان} few {# جلسات نشطة} many {# جلسة نشطة} other {# جلسة نشطة}}",
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "tx_type": {
+      "mint": "سك",
+      "burn": "حرق",
+      "transfer": "تحويل"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "completed": "مكتمل",
+      "failed": "فشل"
+    }
   },
   "features": {
     "send": {

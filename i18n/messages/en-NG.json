@@ -18,7 +18,19 @@
     "some_currencies_missing_rate": "Some currencies missing a rate",
     "usd": "USD",
     "transaction_count": "{count, plural, one {# transaction} other {# transactions}}",
-    "session_count": "{count, plural, one {# active session} other {# active sessions}}"
+    "session_count": "{count, plural, one {# active session} other {# active sessions}}",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tx_type": {
+      "mint": "Mint",
+      "burn": "Burn",
+      "transfer": "Transfer"
+    },
+    "status": {
+      "pending": "Pending",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
   },
   "features": {
     "send": {
