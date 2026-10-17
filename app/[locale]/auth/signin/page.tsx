@@ -161,7 +161,7 @@ function SignInForm() {
                 <Input
                   id="signin-passcode"
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder="•••••••"
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
                   className="border-border pr-10"
