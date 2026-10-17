@@ -40,7 +40,7 @@ function formatSorobanError(resultXdr: string): string {
     if (txResult.result().switch() === xdr.TransactionResultCode.txFailed()) {
       const results = txResult.result().results();
       if (results && results.length > 0) {
-        const opResult = results[0];
+        const opResult = results[0]!;
         const tr = opResult.tr();
         if (tr && tr.switch().value === xdr.OperationType.invokeHostFunction().value) {
           detail = `: ${tr.invokeHostFunctionResult().switch().name}`;
@@ -140,10 +140,13 @@ export async function submitBurnRedeemSingleClient(params: {
       }),
     ),
   });
-
   const rpcServer = new rpc.Server(rpcUrl);
+  // Fetch current network base fee and apply a small multiplier to reduce
+  // chance of a transaction being delayed due to low fee.
+  const baseFee = await server.fetchBaseFee();
+  const fee = String(Math.max(100, Math.ceil(baseFee * 2)));
   const tx = new TransactionBuilder(sourceAccount, {
-    fee: "100",
+    fee,
     networkPassphrase,
   })
     .addOperation(invokeOp)
