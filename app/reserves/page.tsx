@@ -21,16 +21,27 @@ import { formatAmount } from '@/lib/utils';
 const DOCS_URL = '/docs/RESERVE_MANAGEMENT';
 
 function MetricLabel({ label, tip }: { label: string; tip: string }) {
+  const tipId = React.useId();
+
   return (
     <span className="flex items-center gap-1 text-muted-foreground">
       {label}
       <Tooltip>
         <TooltipTrigger asChild>
-          <a href={DOCS_URL} target="_blank" rel="noopener noreferrer" aria-label={`Learn more: ${label}`}>
+          <a
+            href={DOCS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Learn more: ${label}`}
+            aria-describedby={tipId}
+          >
             <Info className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-primary transition-colors" />
+            <span id={tipId} className="sr-only">
+              {tip}
+            </span>
           </a>
         </TooltipTrigger>
-        <TooltipContent>{tip}</TooltipContent>
+        <TooltipContent aria-hidden="true">{tip}</TooltipContent>
       </Tooltip>
     </span>
   );
