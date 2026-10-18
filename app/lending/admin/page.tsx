@@ -23,8 +23,22 @@ import {
  */
 export default function LendingAdminPage() {
   const [applications, setApplications] = useState<StoredLoanApplication[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const refresh = () => setApplications(listApplications());
+  const refresh = () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      setApplications(listApplications());
+    } catch (err) {
+      setLoadError(
+        err instanceof Error ? err.message : 'Failed to load applications',
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     refresh();
@@ -81,10 +95,31 @@ export default function LendingAdminPage() {
 
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-foreground">
-              All applications ({applications.length})
+              All applications ({isLoading ? '…' : applications.length})
             </h2>
 
-            {applications.length === 0 ? (
+            {isLoading ? (
+              <Card className="border-border p-6 flex flex-col items-center text-center gap-3">
+                <RefreshCw className="w-8 h-8 text-muted-foreground animate-spin" />
+                <p className="text-sm text-muted-foreground">Loading applications…</p>
+              </Card>
+            ) : loadError ? (
+              <Card className="border-border p-6 flex flex-col items-center text-center gap-3">
+                <XCircle className="w-8 h-8 text-destructive" />
+                <p className="text-sm font-medium text-foreground">
+                  Failed to load applications
+                </p>
+                <p className="text-xs text-muted-foreground">{loadError}</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={refresh}
+                  className="border-border bg-transparent"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 mr-1" /> Try again
+                </Button>
+              </Card>
+            ) : applications.length === 0 ? (
               <Card className="border-border p-6 flex flex-col items-center text-center gap-3">
                 <Inbox className="w-10 h-10 text-muted-foreground" />
                 <p className="text-sm font-medium text-foreground">No applications yet</p>
