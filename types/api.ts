@@ -31,7 +31,6 @@ export interface SigninResponse {
   user_id: string;
   stellar_address?: string | null;
   wallet_created?: boolean;
-  passphrase?: string;
   encryption_method_required?: boolean;
 }
 
