@@ -164,4 +164,3 @@ export default function FiatSimPage() {
     </PageContainer>
   );
 }
-
