@@ -68,7 +68,7 @@ export default async function RootLayout({
 }>) {
   const headersList = await headers();
   const nonce = headersList.get("x-nonce") ?? undefined;
-  const lang = "en";
+  const lang = headersList.get("x-locale") ?? "en";
 
   // Compute at render time to avoid module-scope env access (Edge / SSR safe)
   const apiOrigin = getApiOrigin();
