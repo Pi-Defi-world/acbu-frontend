@@ -1,7 +1,7 @@
 import { normalizeUsername } from '@/lib/utils';
 import { post } from './client';
 import type { RequestOptions } from './client';
-import type { SigninResponse, SigninRequires2FA } from '@/types/api';
+import type { SigninResponse, SigninRequires2FA, SessionResponse } from '@/types/api';
 
 export interface SignupResponse {
   user_id: string;
@@ -43,7 +43,7 @@ function normalizeSigninResponse(payload: unknown): SigninResponse | SigninRequi
 export async function signup(
   username: string,
   passcode: string,
-  opts?: RequestOptions
+  opts?: RequestOptions,
 ): Promise<SignupResponse> {
   const normalizedUsername = normalizeUsername(username);
 
@@ -90,4 +90,8 @@ export async function exchangeOAuthCode(
 
 export async function signout(opts?: RequestOptions): Promise<{ ok: boolean }> {
   return post<{ ok: boolean }>('/auth/signout', undefined, opts);
+}
+
+export async function getSession(opts?: RequestOptions): Promise<SessionResponse> {
+  return post<SessionResponse>('/auth/session', undefined, opts);
 }
