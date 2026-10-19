@@ -1,12 +1,22 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
+import { AuthGuard } from '@/components/layout/auth-guard';
+import { Spinner } from '@/components/ui/spinner';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+
+function TranslationsFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <Spinner className="size-6 text-muted-foreground" />
+    </div>
+  );
+}
 
 export default async function LocaleLayout({
   children,
   params,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
   params: Promise<{ locale: string }>;
 }>) {
   // Resolve the locale from the dynamic route segment so the root layout
@@ -17,11 +27,9 @@ export default async function LocaleLayout({
   return (
     <Suspense fallback={<TranslationsFallback />}>
       <NextIntlClientProvider messages={messages} locale={locale}>
-        <NavigationGuardProvider>
-          <AuthGuard>
-            {children}
-          </AuthGuard>
-        </NavigationGuardProvider>
+        {/* The navigation guard lives in the root AppLayout so that the
+            navigations and the page content share the same state. */}
+        <AuthGuard>{children}</AuthGuard>
       </NextIntlClientProvider>
     </Suspense>
   );

@@ -2,27 +2,17 @@
 
 import React, { useRef, useState, useEffect, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Send, Coins, Briefcase, User, Wallet } from "lucide-react";
 import { useNavigationGuard } from "@/contexts/navigation-guard-context";
+import {
+  isNavItemActive,
+  primaryNavItems,
+} from "@/components/navigation/nav-items";
 
-interface NavItem {
+interface MobileNavItem {
   name: string;
   href: string;
   icon: React.ReactNode;
 }
-
-const navItems: NavItem[] = [
-  { name: "Home", href: "/", icon: <Home className="h-5 w-5" /> },
-  { name: "Send", href: "/send", icon: <Send className="h-5 w-5" /> },
-  { name: "Mint", href: "/mint", icon: <Coins className="h-5 w-5" /> },
-  {
-    name: "Business",
-    href: "/business",
-    icon: <Briefcase className="h-5 w-5" />,
-  },
-  { name: "Wallet", href: "/wallet", icon: <Wallet className="h-5 w-5" /> },
-  { name: "Me", href: "/me", icon: <User className="h-5 w-5" /> },
-];
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -31,6 +21,17 @@ export function MobileNav() {
   const navigatingTo = useRef<string | null>(null);
   const [bottomOffset, setBottomOffset] = useState(0);
   const { confirmNavigation } = useNavigationGuard();
+
+  // The tab bar and the desktop sidebar share the same destination list, so
+  // they can never drift apart.
+  const navItems: MobileNavItem[] = primaryNavItems.map((item) => {
+    const Icon = item.icon;
+    return {
+      name: item.name,
+      href: item.href,
+      icon: <Icon className="h-5 w-5" />,
+    };
+  });
 
   useEffect(() => {
     navigatingTo.current = null;
@@ -59,7 +60,8 @@ export function MobileNav() {
   }, []);
 
   async function handleNav(href: string) {
-    if (isPending || navigatingTo.current !== null || pathname === href) return;
+    if (isPending || navigatingTo.current !== null) return;
+    if (isNavItemActive(pathname, href)) return;
     const confirmed = await confirmNavigation();
     if (!confirmed) return;
     navigatingTo.current = href;
@@ -71,14 +73,15 @@ export function MobileNav() {
 
   return (
     <nav
-      className="border-border bg-card fixed right-0 bottom-0 left-0 z-40 border-t transition-[bottom] duration-150 ease-out md:h-auto"
+      data-testid="mobile-nav"
+      className="border-border bg-card fixed right-0 bottom-0 left-0 z-40 border-t transition-[bottom] duration-150 ease-out md:hidden"
       role="navigation"
       aria-label="Mobile navigation"
       style={{ bottom: `${bottomOffset}px` }}
     >
       <div className="flex h-20 items-center justify-between px-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = isNavItemActive(pathname, item.href);
           return (
             <button
               key={item.href}

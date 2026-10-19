@@ -4,13 +4,14 @@ A modern, mobile-first fintech application built with Next.js 16 and React 19, f
 
 ## 🎯 Quick Start
 
-The application uses a **5-tab mobile navigation** system for primary feature access:
+The application uses a **responsive navigation** system for primary feature access — a bottom tab bar on mobile and a sidebar from the `md` breakpoint upwards:
 
 ```
 ┌─ Home       ─ Dashboard & overview
 ├─ Send       ─ P2P transfers, international, history
 ├─ Mint       ─ Create/redeem AFK currency
 ├─ Business   ─ SME, payroll, enterprise tools
+├─ Wallet     ─ Wallet balance and details
 └─ Me         ─ Account, settings, security
 ```
 
@@ -48,7 +49,9 @@ app/
     └── 2fa/                # 2FA verification
 
 components/
-├── mobile-nav.tsx          # Bottom navigation
+├── mobile-nav.tsx          # Bottom navigation (mobile only)
+├── desktop-sidebar.tsx     # Sidebar navigation (desktop only)
+├── navigation/nav-items.ts # Shared navigation destinations
 ├── app-layout.tsx          # Main layout wrapper
 └── ui/                     # shadcn/ui components
 
@@ -170,7 +173,9 @@ POST   /bills/pay         # Pay bill
 - **State**: React hooks (SWR ready)
 
 ### Key Files to Know
-- `/components/mobile-nav.tsx` - Navigation configuration
+- `/components/navigation/nav-items.ts` - Navigation configuration
+- `/components/mobile-nav.tsx` - Bottom navigation (mobile only)
+- `/components/desktop-sidebar.tsx` - Sidebar navigation (desktop only)
 - `/components/app-layout.tsx` - Layout wrapper
 - `/app/globals.css` - Design tokens and theme
 - `/docs/ROUTES.md` - Complete routing reference

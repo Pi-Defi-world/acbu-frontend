@@ -167,6 +167,14 @@ Updated History
 <RootLayout>
   └─ <body>
      └─ <AppLayout>
+        ├─ <DesktopSidebar> (md and up, sticky left)
+        │  ├─ <SidebarLink> Home
+        │  ├─ <SidebarLink> Send
+        │  ├─ <SidebarLink> Mint
+        │  ├─ <SidebarLink> Business
+        │  ├─ <SidebarLink> Wallet
+        │  └─ <SidebarLink> Me
+        │
         ├─ <main> (Dynamic Content)
         │  ├─ [Page Content]
         │  ├─ <Card>
@@ -174,11 +182,12 @@ Updated History
         │  ├─ <Dialog>
         │  └─ <Tabs>
         │
-        └─ <MobileNav> (Fixed Bottom)
+        └─ <MobileNav> (Fixed Bottom, below md)
            ├─ <NavItem> Home
            ├─ <NavItem> Send
            ├─ <NavItem> Mint
            ├─ <NavItem> Business
+           ├─ <NavItem> Wallet
            └─ <NavItem> Me
 ```
 
@@ -219,13 +228,25 @@ Examples:
 │                                     │
 │                                     │
 ├─────────────────────────────────────┤
-│      (Empty space for nav)          │  ← pb-24 padding
+│      (Empty space for nav)          │  ← pb-24 padding (mobile only)
 │                                     │
 │                                     │
 └─────────────────────────────────────┘
     ┌───────────────────────────────┐
-    │   Mobile Navigation Bar       │  ← Fixed bottom
+    │   Mobile Navigation Bar       │  ← Fixed bottom, hidden from md
     └───────────────────────────────┘
+```
+
+On `md` and up the tab bar is replaced by a fixed-width sidebar on the left
+and the `pb-24` clearance is dropped (`md:pb-0`):
+
+```
+┌────────────┬────────────────────────────┐
+│            │      STICKY HEADER         │
+│  SIDEBAR   ├────────────────────────────┤
+│  (sticky)  │      SCROLLABLE CONTENT    │
+│            │                            │
+└────────────┴────────────────────────────┘
 ```
 
 ## 8. User Journey Map
