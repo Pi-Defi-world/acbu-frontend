@@ -57,6 +57,7 @@ docs/
 ├── ROUTES.md              # Complete routing guide
 └── README.md              # This file
 ```
+- **USSD_SMS_CHANNEL.md** - Proposed USSD/SMS fallback channel for feature phones and low connectivity
 
 ## 🎨 Design System
 
@@ -168,6 +169,8 @@ POST   /bills/pay         # Pay bill
 - **Styling**: Tailwind CSS v4
 - **Icons**: Lucide React
 - **State**: React hooks (SWR ready)
+
+6. **Offline access**: Add a USSD/SMS fallback channel for feature phones and low-connectivity users (see `docs/USSD_SMS_CHANNEL.md`)
 
 ### Key Files to Know
 - `/components/mobile-nav.tsx` - Navigation configuration
