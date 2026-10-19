@@ -1,17 +1,6 @@
-import React, { Suspense } from "react"
-import { NavigationGuardProvider } from '@/contexts/navigation-guard-context'
-import { AuthGuard } from '@/components/layout/auth-guard';
-import { Spinner } from '@/components/ui/spinner';
+import type { ReactNode } from "react";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
-
-function TranslationsFallback() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Spinner className="size-6 text-muted-foreground" />
-    </div>
-  );
-}
 
 export default async function LocaleLayout({
   children,
