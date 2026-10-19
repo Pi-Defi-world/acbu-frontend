@@ -12,6 +12,8 @@ import * as authApi from "@/lib/api/auth";
 import { onAuthError } from "@/lib/api/client";
 import { clearPasscode, clearTempPassphrase } from "@/lib/passcode-manager";
 import { logger } from "@/lib/logger";
+import { clearRatesCache } from "@/hooks/use-rates";
+import { clearConfigCache } from "@/hooks/use-config";
 
 /**
  * Auth is cookie-only: the backend issues an httpOnly session cookie and
@@ -118,6 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         clearPasscode();
         setSessionError("");
+        clearRatesCache();
+        clearConfigCache();
         setState({
           userId: null,
           stellarAddress: null,
@@ -169,6 +173,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!userId,
         isHydrated: true,
       });
+
+      // Invalidate shared caches on authentication / user identity change
+      clearRatesCache();
+      clearConfigCache();
     },
     [],
   );

@@ -24,6 +24,14 @@ let cachedAt = 0;
 let lastErrorAt = 0;
 let inFlightPromise: Promise<RatesResponse> | null = null;
 
+export function clearRatesCache(): void {
+  cachedRates = null;
+  cachedAt = 0;
+  lastErrorAt = 0;
+  inFlightPromise = null;
+  ratesApi.clearRatesCache();
+}
+
 function isFresh(): boolean {
   if (cachedRates === null) return false;
   // If an error occurred after the last successful fetch and the error TTL
