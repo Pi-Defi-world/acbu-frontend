@@ -45,6 +45,7 @@ jobs:
       - name: Run lint
         run: pnpm lint
 
+      # W10-TEST-007: Run next build to ensure build-breaking changes are caught in CI
       - name: Run build
         run: pnpm build
         env:

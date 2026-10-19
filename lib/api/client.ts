@@ -81,8 +81,6 @@ export function getApiErrorString(e: unknown): string {
 
 export interface RequestOptions {
   signal?: AbortSignal;
-  /** @deprecated Auth is via httpOnly cookies; this field is unused. */
-  token?: string;
   /** Number of retry attempts on 5xx errors or network drops. Defaults to 3. */
   retries?: number;
   /** Base delay time in milliseconds for exponential backoff retry logic. */
