@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useLocale } from "next-intl";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { SkeletonList } from "@/components/ui/skeleton-list";
@@ -11,6 +12,7 @@ import { useRates } from "@/lib/api/rates";
 import type { RatesResponse } from "@/types/api";
 
 export default function RatesPage() {
+  const locale = useLocale();
   const opts = useApiOpts();
   const { data: rates, loading, error, refetch } = useRates(opts);
 
@@ -24,7 +26,7 @@ export default function RatesPage() {
     const precision = 4;
     const formatted = Number(rate.toPrecision(precision));
 
-    return formatted.toLocaleString(undefined, {
+    return formatted.toLocaleString(locale, {
       useGrouping: true,
       maximumFractionDigits: 8, // Allow decimals for small numbers
     });

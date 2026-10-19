@@ -20,42 +20,29 @@ export function invariant(
 
 type NumberLocale = string | string[];
 
+let currentAppLocale: NumberLocale | undefined;
+
 /**
- * Resolve the active number formatting locale.
- * Priority:
- *  1. Explicit locale passed by caller
- *  2. In-app chosen route/document locale (<html lang="...">)
- *  3. In-app chosen stored locale or NEXT_LOCALE cookie
- *  4. Browser language (navigator.languages / navigator.language)
+ * Set the current application locale for formatting.
  */
+export function setAppLocale(locale?: NumberLocale): void {
+  currentAppLocale = locale;
+}
+
+/**
+ * Get the currently configured application locale, if any.
+ */
+export function getAppLocale(): NumberLocale | undefined {
+  return currentAppLocale;
+}
+
 function resolveNumberLocale(locale?: NumberLocale): NumberLocale | undefined {
   if (locale) return locale;
-
+  if (currentAppLocale) return currentAppLocale;
   if (typeof document !== "undefined") {
-    const docLang = document.documentElement?.getAttribute("lang")?.trim();
-    if (docLang) return docLang;
-
-    // Check NEXT_LOCALE cookie if available
-    const cookieMatch = document.cookie?.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/);
-    if (cookieMatch?.[1]) {
-      try {
-        const decoded = decodeURIComponent(cookieMatch[1]).trim();
-        if (decoded) return decoded;
-      } catch {
-        // malformed cookie encoding
-      }
-    }
+    const htmlLang = document.documentElement?.lang?.trim();
+    if (htmlLang) return htmlLang;
   }
-
-  if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
-    try {
-      const stored = localStorage.getItem("acbu_locale")?.trim();
-      if (stored) return stored;
-    } catch {
-      // Storage unavailable
-    }
-  }
-
   if (typeof navigator === "undefined") return undefined;
 
   return navigator.languages?.length
