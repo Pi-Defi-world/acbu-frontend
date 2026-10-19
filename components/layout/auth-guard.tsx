@@ -11,6 +11,7 @@ const AUTH_SEGMENTS = [
   "/auth/signup",
   "/auth/2fa",
   "/recovery",
+  "/auth/oauth/callback",
 ];
 
 function isPublicPath(pathname: string): boolean {
