@@ -23,7 +23,7 @@ const FAQ_ITEMS = [
   {
     question: "How do I create an ACBU wallet?",
     answer:
-      "Sign up for an account, and a wallet will be automatically created for you during the registration process. You'll receive a secure passphrase - make sure to save it in a safe place.",
+      "After signing in, choose Generate New Wallet to create a Stellar key in your browser, then save the secret key offline. The encrypted key is stored on this device; ACBU receives your public address, not your secret key.",
   },
   {
     question: "How do I mint ACBU tokens?",
