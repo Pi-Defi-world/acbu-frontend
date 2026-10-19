@@ -378,40 +378,14 @@ export default function SendPage() {
             <h1 className="text-foreground mb-3 text-lg font-bold">
               Send Money
             </h1>
-            <div
-              className="flex gap-2"
-              role="tablist"
-              aria-label="Send money options"
-            >
-              <button
-                id="tab-send"
-                role="tab"
-                aria-selected={activeTab === "send"}
-                aria-controls="panel-send"
-                onClick={() => setActiveTab("send")}
-                className={`focus:ring-primary rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${
-                  activeTab === "send"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-              >
+            <TabsList aria-label="Send money options">
+              <TabsTrigger value="send">
                 Send
-              </button>
-              <button
-                id="tab-history"
-                role="tab"
-                aria-selected={activeTab === "history"}
-                aria-controls="panel-history"
-                onClick={() => setActiveTab("history")}
-                className={`focus:ring-primary rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${
-                  activeTab === "history"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-              >
+              </TabsTrigger>
+              <TabsTrigger value="history">
                 History
-              </button>
-            </div>
+              </TabsTrigger>
+            </TabsList>
           </div>
         </header>
 
@@ -451,9 +425,6 @@ export default function SendPage() {
 
           <TabsContent
             value="history"
-            id="panel-history"
-            role="tabpanel"
-            aria-labelledby="tab-history"
             className="space-y-3"
           >
             <div>
