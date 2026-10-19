@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { errorReporter } from '@/lib/error-reporting';
+import type { ErrorContext } from '@/lib/error-reporting';
 
 /**
  * Global error boundary for the entire application
@@ -21,10 +22,10 @@ export default function GlobalError({
     errorReporter.reportError(error, {
       level: 'app',
       context: {
-        digest: error.digest,
         type: 'global-error',
-        critical: true
-      }
+        digest: error.digest,
+        critical: true,
+      } satisfies ErrorContext
     });
   }, [error]);
 

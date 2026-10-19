@@ -1,6 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+
+
+import React, { useMemo, useState } from 'react';
+import { plural } from '@/lib/plural';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout/page-container';
@@ -55,6 +59,14 @@ export default function SecurityPage() {
             <p className="text-sm text-muted-foreground">
               Account security settings
             </p>
+      <div className="page-header">
+        <div className="page-header-row">
+          <Link href="/me/settings">
+            <ArrowLeft className="w-5 h-5 text-primary" />
+          </Link>
+          <div>
+            <h1 className="page-title">Security</h1>
+            <p className="text-sm text-muted-foreground">Manage account protection, sessions, and API access.</p>
           </div>
         </div>
       </div>
@@ -70,6 +82,73 @@ export default function SecurityPage() {
               authentication are not available here. No security changes are
               made from this page.
             </p>
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-base font-medium text-foreground">Active Sessions</h2>
+                <p className="text-sm text-muted-foreground">Review signed-in sessions and revoke any compromised access.</p>
+              </div>
+              <span className="rounded-full bg-secondary/15 px-3 py-1 text-xs font-medium text-secondary-foreground">
+                {plural(activeSessionCount, { one: '# active', other: '# active' })}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {sessions.map((session) => (
+                <div key={session.id} className="flex flex-col gap-3 rounded-xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{session.device}</p>
+                    <p className="text-sm text-muted-foreground">{session.location}</p>
+                    <p className="text-xs text-muted-foreground">Last seen: {session.lastSeen}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {session.current ? (
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">Current session</span>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={() => revokeSession(session.id)}>
+                        Revoke
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {sessions.length === 0 && (
+                <p className="text-sm text-muted-foreground">No active sessions found.</p>
+              )}
+            </div>
+          </Card>
+
+          <Card className="border-border p-4">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="bg-primary/10 p-2 rounded-full">
+                <Key className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-base font-medium text-foreground">API Keys</h2>
+                <p className="text-sm text-muted-foreground">Generate API keys for programmatic access.</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {apiKeys.map((key) => (
+                <div key={key.id} className="flex flex-col gap-2 rounded-xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{key.name}</p>
+                    <p className="text-xs text-muted-foreground">Created: {key.createdAt}</p>
+                    <p className="text-xs text-muted-foreground">Last used: {key.lastUsed}</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => revokeApiKey(key.id)}>
+                    Revoke
+                  </Button>
+                </div>
+              ))}
+              {apiKeys.length === 0 && (
+                <p className="text-sm text-muted-foreground">No API keys created yet.</p>
+              )}
+            </div>
+            <div className="mt-4">
+              <Button onClick={createApiKey} className="w-full sm:w-auto">
+                <Globe className="w-4 h-4 mr-2" />
+                Create API key
+              </Button>
+            </div>
           </Card>
 
           <Card className="border-destructive/20 border p-4">
@@ -86,6 +165,8 @@ export default function SecurityPage() {
                     Permanently delete your account and associated data. This
                     action cannot be undone.
                   </p>
+                  <h2 className="text-base font-medium text-destructive truncate" title="Danger Zone">Danger Zone</h2>
+                  <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data. This action cannot be undone.</p>
                 </div>
                 <Button
                   variant="destructive"

@@ -5,6 +5,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Invariant function that throws an error if the condition is falsy.
+ * Use this instead of console.assert for invariant checks in production.
+ */
+export function invariant(
+  condition: unknown,
+  message?: string
+): asserts condition {
+  if (!condition) {
+    throw new Error(message ?? "Invariant violation");
+  }
+}
+
 type NumberLocale = string | string[];
 
 function resolveNumberLocale(locale?: NumberLocale): NumberLocale | undefined {
@@ -78,3 +91,16 @@ export function formatAcbu(
 export const normalizeUsername = (input: string) => {
   return input.toLowerCase().trim();
 }
+
+/**
+ * Safe conversion of UTC timestamp strings from the API (which may lack a trailing Z or timezone indicator)
+ * into a local Date object, ensuring the user's local timezone offset is applied.
+ */
+export function parseUtcDate(iso: string | null | undefined): Date {
+  if (!iso) return new Date();
+  const trimmed = String(iso).trim();
+  const hasTimezone = /Z|[+-]\d{2}:?\d{2}$/.test(trimmed);
+  const utcString = hasTimezone ? trimmed : (trimmed.includes(' ') ? trimmed.replace(' ', 'T') : trimmed) + 'Z';
+  return new Date(utcString);
+}
+

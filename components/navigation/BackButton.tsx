@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { useNavigationGuard } from '@/contexts/navigation-guard-context';
 
 interface BackButtonProps {
   fallbackHref: string; // required — explicit in-app fallback route
@@ -19,6 +20,9 @@ interface BackButtonProps {
  * never accidentally leave the app shell when arriving via direct URL,
  * external link, or browser bookmark.
  * 
+ * The ArrowLeft icon is automatically flipped for RTL locales via CSS
+ * (the [dir=rtl] selector rotates it 180°, making it point right).
+ * 
  * @example
  * <BackButton fallbackHref="/dashboard" />
  * @example
@@ -31,8 +35,11 @@ export function BackButton({
   children 
 }: BackButtonProps) {
   const router = useRouter();
+  const { confirmNavigation } = useNavigationGuard();
 
-  const handleBack = () => {
+  const handleBack = async () => {
+    const confirmed = await confirmNavigation();
+    if (!confirmed) return;
     // Only use browser back if we have in-app history
     // window.history.state.idx is set by Next.js router — 0 means
     // this was the entry page (direct URL, external link, etc.)
@@ -52,7 +59,8 @@ export function BackButton({
     >
       {children || (
         <>
-          <ArrowLeft className="w-5 h-5 text-primary" />
+          {/* rtl:rotate-180 flips the arrow so it points right in RTL */}
+          <ArrowLeft className="w-5 h-5 text-primary rtl:rotate-180" />
           {label && <span className="sr-only">{label}</span>}
         </>
       )}
