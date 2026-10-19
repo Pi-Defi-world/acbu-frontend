@@ -12,8 +12,6 @@ export function GlobalErrorHandler() {
   useEffect(() => {
     // Set up global error handling on mount
     setupGlobalErrorHandling();
-
-    logger.debug('[GlobalErrorHandler] Error reporting initialized');
   }, []);
 
   // This component doesn't render anything

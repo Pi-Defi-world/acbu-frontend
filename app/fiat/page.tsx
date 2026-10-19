@@ -5,42 +5,33 @@ import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useApiOpts, useApiError } from '@/hooks/use-api';
+import { useApiOpts } from '@/hooks/use-api';
+import { useApiError } from '@/hooks/use-api-error';
+import { useFiatAccounts } from '@/hooks/use-fiat-accounts';
 import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import * as fiatApi from '@/lib/api/fiat';
-import { useAuth } from '@/contexts/auth-context';
-import { getWalletSecretAnyLocal } from '@/lib/wallet-storage';
 import { ensureDemoFiatTrustlineClient } from '@/lib/stellar/trustlines';
-import { useStellarWalletsKit } from '@/lib/stellar-wallets-kit';
+import { useWalletSetup } from '@/hooks/use-wallet-setup';
 import { Building2, Plus } from 'lucide-react';
-import { Keypair } from '@stellar/stellar-sdk';
+import { Badge } from '@/components/ui/badge';
+
 export default function FiatSimPage() {
   const opts = useApiOpts();
-  const { userId, stellarAddress } = useAuth();
-  const kit = useStellarWalletsKit();
+  const { getWalletSigner } = useWalletSetup();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
-  const [accounts, setAccounts] = useState<fiatApi.FiatAccount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { accounts, loading, error: accountsError, refetch: refetchAccounts } = useFiatAccounts();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [lastFaucetTx, setLastFaucetTx] = useState<string | null>(null);
 
   const [faucetAmount, setFaucetAmount] = useState('');
   const [faucetCurrency, setFaucetCurrency] = useState('NGN');
 
-  const fetchAccounts = async () => {
-    try {
-      const data = await fiatApi.getFiatAccounts(opts);
-      setAccounts(data.accounts || []);
-    } catch (e: unknown) {
-      setApiError(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Surface hook-level fetch errors through the shared API error UI.
   useEffect(() => {
-    fetchAccounts();
-  }, [opts.token]);
+    if (accountsError) {
+      setApiError(new Error(accountsError));
+    }
+  }, [accountsError, setApiError]);
 
   const handleFaucet = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,44 +41,17 @@ export default function FiatSimPage() {
     clearError();
     setLastFaucetTx(null);
     try {
-      if (!userId) throw new Error('Not logged in');
-      const secret = await getWalletSecretAnyLocal(userId, stellarAddress);
-
-      let recipient: string;
-      if (secret) {
-        recipient = Keypair.fromSecret(secret).publicKey();
-        await ensureDemoFiatTrustlineClient({ userSecret: secret, currency: faucetCurrency });
-      } else {
-        if (!kit) {
-          throw new Error(
-            'No local wallet secret found and wallet connector is not ready yet. Please wait a moment and retry.',
-          );
-        }
-        const address = await new Promise<string>((resolve, reject) => {
-          kit
-            .openModal({
-              onWalletSelected: async (selectedOption: { id: string }) => {
-                try {
-                  kit.setWallet(selectedOption.id);
-                  const { address } = await kit.getAddress();
-                  resolve(address);
-                } catch (err) {
-                  reject(err);
-                }
-              },
-            })
-            .catch(reject);
-        });
-
-        recipient = address;
-        await ensureDemoFiatTrustlineClient({
-          external: { kit, address },
-          currency: faucetCurrency,
-        });
-      }
+      const signer = await getWalletSigner();
+      const recipient = signer.address;
+      await ensureDemoFiatTrustlineClient({
+        userSecret: signer.userSecret,
+        external: signer.external,
+        currency: faucetCurrency,
+      });
       const res = await fiatApi.postFaucet(faucetCurrency, faucetAmount, recipient, opts);
       setLastFaucetTx(res.transaction_hash);
       setFaucetAmount('');
+      refetchAccounts();
     } catch (e: unknown) {
       setApiError(e);
     } finally {
@@ -170,6 +134,7 @@ export default function FiatSimPage() {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <p className="text-xs font-bold text-primary">{acc.bank_name}</p>
+                      <p className="text-xs text-muted-foreground">{acc.account_name}</p>
                       <p className="text-xs text-muted-foreground">{acc.account_number}</p>
                     </div>
                     <Badge variant="secondary">{acc.currency}</Badge>
@@ -200,18 +165,3 @@ export default function FiatSimPage() {
   );
 }
 
-function Badge({
-  children,
-  variant = 'default',
-}: {
-  children: React.ReactNode;
-  variant?: string;
-}) {
-  const styles =
-    variant === 'secondary'
-      ? 'bg-secondary text-secondary-foreground'
-      : 'bg-primary text-primary-foreground';
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${styles}`}>{children}</span>
-  );
-}
