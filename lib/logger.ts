@@ -83,6 +83,8 @@ function sendProductionTelemetry(
     console.warn('Failed to send client telemetry', error);
   });
 }
+function logMessage(level: LogLevel, message: string, data?: unknown) {
+  if (!isDebug) return;
 
 function logMessage(level: LogLevel, message: string, data?: LogData) {
   const logEntry: LogEntry = {
@@ -102,8 +104,8 @@ function logMessage(level: LogLevel, message: string, data?: LogData) {
 }
 
 export const logger = {
-  info: (message: string, data?: LogData) => logMessage('info', message, data),
-  warn: (message: string, data?: LogData) => logMessage('warn', message, data),
-  error: (message: string, data?: LogData) => logMessage('error', message, data),
-  debug: (message: string, data?: LogData) => logMessage('debug', message, data),
+  info: (message: string, data?: unknown) => logMessage('info', message, data),
+  warn: (message: string, data?: unknown) => logMessage('warn', message, data),
+  error: (message: string, data?: unknown) => logMessage('error', message, data),
+  debug: (message: string, data?: unknown) => logMessage('debug', message, data),
 };
