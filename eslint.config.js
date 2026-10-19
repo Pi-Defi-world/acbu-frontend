@@ -23,7 +23,28 @@ export default [
   ...tseslint.configs.recommended,
   {
     rules: {
-      "no-console": ["warn", { "allow": ["warn", "error"] }]
+      "no-console": ["warn", { "allow": ["warn", "error"] }],
+      // Guard against reintroducing the legacy stellar-sdk@13 dependency.
+      // All Stellar code must use @stellar/stellar-sdk (v15). See #995.
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "stellar-sdk",
+              message:
+                "Use @stellar/stellar-sdk (v15) instead of the legacy stellar-sdk package (#995).",
+            },
+          ],
+          patterns: [
+            {
+              group: ["stellar-sdk/*"],
+              message:
+                "Use @stellar/stellar-sdk (v15) instead of the legacy stellar-sdk package (#995).",
+            },
+          ],
+        },
+      ],
     }
   },
   {
