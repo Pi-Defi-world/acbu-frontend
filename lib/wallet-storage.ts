@@ -7,9 +7,15 @@ localforage.config({
 });
 
 const KEY_STORE_PREFIX = 'stellar_secret_';
-// Legacy dev-only plaintext slot. Never written anymore and never read for
+// Legacy dev-only plaintext slots. Never written anymore and never read for
 // signing; only cleaned up by removeStoredWallet.
+//
+// Wore 10: the old dev fallback mirrored the secret to plaintext localStorage
+// and could be retrieved by stellar address alone. These prefixes are kept only
+// so the cleanup path can purge any stale copies from existing installs.
+// The address-keyed slot is the most sensitive one and must never be read.
 const KEY_STORE_PLAINTEXT_PREFIX = 'stellar_secret_plain_';
+const KEY_STORE_PLAINTEXT_ADDRESS_PREFIX = 'stellar_secret_plain_addr_';
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -120,11 +126,14 @@ export async function storeWalletSecret(userId: string, secret: string, passcode
   if (!userId) return;
   const encrypted = await encryptSecret(secret, passcode);
   await localforage.setItem(`${KEY_STORE_PREFIX}${userId}`, encrypted);
+  // Never mirror the secret to plaintext localStorage. Purge any legacy copies
+  // that may still be present from earlier dev builds.
+  await clearLegacyPlaintextSlots(userId);
 }
 
 export async function getWalletSecret(userId: string, passcode: string): Promise<string | null> {
   if (!userId || !passcode) return null;
-  const encrypted = await localforage.getItem<string>(`${KEY_STORE_PREFIX}${userId}`);
+  const encrypted = await localforage.getItem<string>(` ${KEY_STORE_PREFIX}${userId}`);
   if (!encrypted) return null;
   
   return await decryptSecret(encrypted, passcode);
@@ -135,6 +144,10 @@ export async function getWalletSecret(userId: string, passcode: string): Promise
  * Decrypts the encrypted slot written by storeWalletSecret during onboarding,
  * using the passcode passed in or the one held in memory since sign-in.
  * Returns null when no wallet is stored or no passcode is available.
+ *
+ * The `_stellarAddress` parameter is ignored on purpose: plaintext lookups
+ * by address are no longer performed and the legacy address-keyed slot is
+ * purged by removeStoredWallet.
  */
 export async function getWalletSecretAnyLocal(
   userId: string,
@@ -160,9 +173,36 @@ export async function hasStoredWallet(userId: string): Promise<boolean> {
   return !!encrypted;
 }
 
+/**
+ * Remove every storage slot associated with the user, including legacy
+ * plaintext copies in localStorage and in the localforage store.
+ */
 export async function removeStoredWallet(userId: string): Promise<void> {
   if (!userId) return;
   await localforage.removeItem(`${KEY_STORE_PREFIX}${userId}`);
   await localforage.removeItem(`${KEY_STORE_PLAINTEXT_PREFIX}${userId}`);
   await localforage.removeItem(`${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${userId}`);
+  await clearLegacyPlaintextSlots(userId);
+}
+
+/**
+ * Purge legacy dev-plaintext slots from both localforage and
+ * window.localStorage. The old dev fallback wrote to `localStorage` with
+ * both a user-id key and an address-keyed key, so we clear both forms.
+ */
+async function clearLegacyPlaintextSlots(userId: string): Promise<void> {
+  if (!userId) return;
+  const keys = [
+    `${KEY_STORE_PLAINTEXT_PREFIX}${userId}`,
+    `${KEY_STORE_PLAINTEXT_ADDRESS_PREFIX}${userId}`,
+  ];
+  if (typeof window !== 'undefined' && window.localStorage) {
+    for (const key of keys) {
+      try {
+        window.localStorage.removeItem(key);
+      } catch {
+        // ignore storage access errors (e.g. private mode)
+      }
+    }
+  }
 }

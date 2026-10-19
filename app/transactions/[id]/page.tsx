@@ -96,8 +96,12 @@ export default function TransactionDetailPage() {
       <>
         <div className="page-header">
           <div className="page-header-row">
-            <Link href="/activity">
-              <ArrowLeft className="w-5 h-5 text-primary" />
+            <Link
+              href="/activity"
+              aria-label="Back to activity"
+              className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-primary transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             </Link>
             <h1 className="page-title">Transaction</h1>
           </div>
@@ -114,8 +118,12 @@ export default function TransactionDetailPage() {
       <>
         <div className="page-header">
           <div className="page-header-row">
-            <Link href="/activity">
-              <ArrowLeft className="w-5 h-5 text-primary" />
+            <Link
+              href="/activity"
+              aria-label="Back to activity"
+              className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-primary transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             </Link>
             <h1 className="page-title">Transaction</h1>
           </div>
@@ -132,8 +140,12 @@ export default function TransactionDetailPage() {
       <>
         <div className="page-header">
           <div className="page-header-row">
-            <Link href="/activity">
-              <ArrowLeft className="w-5 h-5 text-primary" />
+            <Link
+              href="/activity"
+              aria-label="Back to activity"
+              className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-primary transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             </Link>
             <h1 className="page-title">Transaction</h1>
           </div>
@@ -153,8 +165,12 @@ export default function TransactionDetailPage() {
     <>
       <div className="page-header">
         <div className="page-header-row">
-          <Link href="/activity">
-            <ArrowLeft className="w-5 h-5 text-primary" />
+          <Link
+            href="/activity"
+            aria-label="Back to activity"
+            className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md text-primary transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
           </Link>
           <h1 className="page-title truncate" title="Transaction">
             Transaction

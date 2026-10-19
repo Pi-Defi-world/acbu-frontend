@@ -68,7 +68,11 @@ export default function SecurityPage() {
     <>
       <div className="page-header">
         <div className="page-header-row">
-          <Link href="/me/settings">
+          <Link
+            href="/me/settings"
+            aria-label="Back to settings"
+            className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
           <div>
@@ -92,10 +96,14 @@ export default function SecurityPage() {
                 <Shield className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-base font-medium text-foreground">Two-Factor Authentication</h2>
+                <h2 id="2fa-label" className="text-base font-medium text-foreground">Two-Factor Authentication</h2>
                 <p className="text-sm text-muted-foreground">Protect your account with an additional security step on sign in.</p>
               </div>
-              <Switch checked={is2faEnabled} onCheckedChange={setIs2faEnabled} />
+              <Switch
+                checked={is2faEnabled}
+                onCheckedChange={setIs2faEnabled}
+                aria-labelledby="2fa-label"
+              />
             </div>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">

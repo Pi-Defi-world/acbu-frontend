@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 
 // Keep in sync with i18n/locales.ts
 const SUPPORTED_LOCALES = ["en", "en-NG", "en-KE", "ar", "ru", "pl"] as const;
@@ -75,7 +76,8 @@ function shouldSkipLocaleRedirect(pathname: string): boolean {
 export function middleware(request: NextRequest) {
   // Block .md files
   if (request.nextUrl.pathname.endsWith(".md")) {
-    return new NextResponse(null, { status: 404 });
+    const notFound = new NextResponse(null, { status: 404 });
+    return applySecurityHeaders(notFound, request);
   }
 
   const { pathname } = request.nextUrl;
@@ -106,6 +108,7 @@ export function middleware(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 365,
     });
 
+    applySecurityHeaders(redirectResponse, request);
     return redirectResponse;
   }
 
@@ -116,7 +119,7 @@ export function middleware(request: NextRequest) {
     : resolveLocale(request);
 
   // ── CSP / Security headers ─────────────────────────────────────────────
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const nonce = Buffer.from(randomUUID()).toString("base64");
 
   const isDev = process.env.NODE_ENV === "development";
 
@@ -137,6 +140,7 @@ export function middleware(request: NextRequest) {
     "form-action": ["'self'"],
     "frame-ancestors": ["'none'"],
     "report-uri": ["/api/csp-report"],
+    "report-to": ["csp-endpoint"],
     "connect-src": [
       "'self'",
       "https://*.stellar.org",
@@ -156,7 +160,7 @@ export function middleware(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
-  requestHeaders.set(LOCALE_HEADER, resolvedLocale);
+  requestHeaders.set("Content-Security-Policy", cspString);
 
   const response = NextResponse.next({
     request: { headers: requestHeaders },
@@ -171,6 +175,10 @@ export function middleware(request: NextRequest) {
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=()",
   );
+  response.headers.set(
+    "Reporting-Endpoints",
+    'csp-endpoint="/api/csp-report"',
+  );
   if (!isDev) {
     response.headers.set(
       "Strict-Transport-Security",
@@ -178,6 +186,32 @@ export function middleware(request: NextRequest) {
     );
   }
 
+  return response;
+}
+
+/**
+ * Attach the standard security headers to a response that is returned
+ * before the main CSP block runs (e.g. redirects, 404s). Keeps every
+ * response from the middleware hardened, not just the pass-through case.
+ */
+function applySecurityHeaders(
+  response: NextResponse,
+  request: NextRequest,
+): NextResponse {
+  const isDev = process.env.NODE_ENV === "development";
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()",
+  );
+  if (!isDev) {
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains; preload",
+    );
+  }
   return response;
 }
 

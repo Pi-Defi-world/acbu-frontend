@@ -31,7 +31,6 @@ Disallow: /admin/
 # Internal / API routes
 Disallow: /api/
 Disallow: /_next/
-Disallow: /test-locale
 
 # Block URLs with session tokens or user-specific query params
 Disallow: /*?token=
