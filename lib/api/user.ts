@@ -10,6 +10,10 @@ export async function patchMe(data: PatchMeBody, opts?: RequestOptions): Promise
   return patch<UserMe>('/users/me', data, opts);
 }
 
+export async function deleteMe(opts?: RequestOptions): Promise<void> {
+  return del<void>('/users/me', opts);
+}
+
 export async function getBalance(opts?: RequestOptions): Promise<BalanceResponse> {
   return get<BalanceResponse>('/users/me/balance', opts);
 }
