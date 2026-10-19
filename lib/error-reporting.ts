@@ -1,6 +1,7 @@
 /**
  * Error reporting utilities for the application
  */
+import { logger } from './logger';
 
 export interface ErrorReport {
   message: string;
@@ -45,17 +46,14 @@ export class ErrorReporter {
     // Log to console in development only
     if (process.env.NODE_ENV !== 'production') {
       console.error('Error Report:', report);
+    } else {
+      logger.error('Frontend error report', {
+        error,
+        digest: report.digest,
+      });
     }
 
     try {
-      // In production, you would send this to your error reporting service
-      // Examples:
-      // - Sentry: Sentry.captureException(error, { extra: report });
-      // - LogRocket: LogRocket.captureException(error);
-      // - Bugsnag: Bugsnag.notify(error, event => { event.addMetadata('context', report); });
-      // - Custom API: await fetch('/api/errors', { method: 'POST', body: JSON.stringify(report) });
-
-      // For now, we'll just store it locally for debugging
       if (typeof window !== 'undefined') {
         const errors = this.getStoredErrors();
         errors.push(report);

@@ -25,9 +25,66 @@ function serializeData(data: unknown): unknown {
   return data;
 }
 
-function logMessage(level: LogLevel, message: string, data?: LogData) {
-  if (!isDebug) return;
+function redactTelemetryText(value: string): string {
+  return value
+    .replace(/\bBearer\s+[A-Za-z0-9._~+/-]+=*/gi, 'Bearer [REDACTED]')
+    .replace(
+      /([?&](?:access_token|refresh_token|token|api[_-]?key|secret|password|passcode|authorization)=)[^&#\s]*/gi,
+      '$1[REDACTED]',
+    )
+    .replace(
+      /\b(authorization|cookie|password|passcode|token|secret|api[_-]?key)\s*[:=]\s*[^\s,;]+/gi,
+      '$1=[REDACTED]',
+    )
+    .slice(0, 500);
+}
 
+function getErrorDetails(data: unknown): { name: string; message: string } | undefined {
+  const error = data instanceof Error
+    ? data
+    : data && typeof data === 'object' && 'error' in data && data.error instanceof Error
+      ? data.error
+      : undefined;
+
+  if (!error) return undefined;
+
+  return {
+    name: redactTelemetryText(error.name),
+    message: redactTelemetryText(error.message),
+  };
+}
+
+function sendProductionTelemetry(
+  level: 'warn' | 'error',
+  message: string,
+  data?: LogData,
+): void {
+  const entry = {
+    level,
+    message: redactTelemetryText(message),
+    error: getErrorDetails(data),
+  };
+
+  if (typeof window === 'undefined') {
+    consoleWriters[level](JSON.stringify(entry));
+    return;
+  }
+
+  void fetch('/api/client-logs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(entry),
+    keepalive: true,
+  }).then((response) => {
+    if (!response.ok) {
+      throw new Error(`Telemetry endpoint returned HTTP ${response.status}`);
+    }
+  }).catch((error: unknown) => {
+    console.warn('Failed to send client telemetry', error);
+  });
+}
+
+function logMessage(level: LogLevel, message: string, data?: LogData) {
   const logEntry: LogEntry = {
     timestamp: new Date().toISOString(),
     level,
@@ -35,7 +92,13 @@ function logMessage(level: LogLevel, message: string, data?: LogData) {
     ...(data !== undefined && { data: serializeData(data) }),
   };
 
-  consoleWriters[level](JSON.stringify(logEntry));
+  if (isDebug) {
+    consoleWriters[level](JSON.stringify(logEntry));
+  }
+
+  if (process.env.NODE_ENV === 'production' && (level === 'warn' || level === 'error')) {
+    sendProductionTelemetry(level, message, data);
+  }
 }
 
 export const logger = {
