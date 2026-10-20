@@ -15,12 +15,18 @@ describe("middleware CSP reporting", () => {
     expect(policy).toContain("report-uri /api/csp-report");
     expect(policy).toContain("default-src 'self'");
     expect(policy).toContain("object-src 'none'");
+    expect(policy).toContain("frame-ancestors 'none'");
+    expect(policy).toContain("base-uri 'self'");
+    expect(policy).toContain("form-action 'self'");
     expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(response.headers.get("X-Frame-Options")).toBe("DENY");
     expect(response.headers.get("Referrer-Policy")).toBe(
       "strict-origin-when-cross-origin",
     );
     expect(response.headers.get("Permissions-Policy")).toContain("camera=()");
+    expect(response.headers.get("Strict-Transport-Security")).toContain(
+      "max-age=",
+    );
   });
 });
 
@@ -67,6 +73,7 @@ describe("middleware locale redirect", () => {
     const response = middleware(request);
 
     expect(response.status).not.toBe(307);
+    expect(response.headers.get("Content-Security-Policy")).toBeTruthy();
   });
 
   it("negotiates locale from Accept-Language header when no cookie", () => {
@@ -77,6 +84,7 @@ describe("middleware locale redirect", () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toContain("/ar/burn");
+    expect(response.headers.get("Content-Security-Policy")).toBeTruthy();
   });
 
   it("falls back to 'en' when Accept-Language lists no supported locale", () => {
@@ -96,6 +104,7 @@ describe("middleware locale redirect", () => {
     expect(response.status).toBe(307);
     const setCookie = response.headers.get("set-cookie") ?? "";
     expect(setCookie).toContain("NEXT_LOCALE=en");
+    expect(response.headers.get("Content-Security-Policy")).toBeTruthy();
   });
 
   it("returns 404 for .md paths regardless of locale prefix", () => {
@@ -103,5 +112,6 @@ describe("middleware locale redirect", () => {
     const response = middleware(request);
 
     expect(response.status).toBe(404);
+    expect(response.headers.get("X-Frame-Options")).toBe("DENY");
   });
 });

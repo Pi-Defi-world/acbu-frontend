@@ -60,6 +60,7 @@ jobs:
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://api.acbu.io' }}
             NEXT_PUBLIC_API_BASE_URL=${{ vars.NEXT_PUBLIC_API_BASE_URL || '' }}
             NEXT_PUBLIC_BILLS_ENABLED=${{ vars.NEXT_PUBLIC_BILLS_ENABLED || 'false' }}
+            NEXT_PUBLIC_STELLAR_NETWORK=${{ vars.NEXT_PUBLIC_STELLAR_NETWORK || 'TESTNET' }}
 
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0

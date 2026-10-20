@@ -13,6 +13,7 @@ import { AppLayout } from "@/components/app-layout";
 import { WalletSetupModal } from "@/components/wallet-setup-modal";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { NavigationGuardProvider } from "@/contexts/navigation-guard-context";
 
 function getApiOrigin(): string | null {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
@@ -68,7 +69,7 @@ export default async function RootLayout({
 }>) {
   const headersList = await headers();
   const nonce = headersList.get("x-nonce") ?? undefined;
-  const lang = "en";
+  const lang = headersList.get("x-locale") ?? "en";
 
   // Compute at render time to avoid module-scope env access (Edge / SSR safe)
   const apiOrigin = getApiOrigin();
@@ -140,19 +141,21 @@ export default async function RootLayout({
           <OfflineIndicator />
           <ErrorBoundary level="app">
             <I18nProvider>
-              <AuthProvider>
-                <AppLayout>
-                  <AuthGuard>{children}</AuthGuard>
-                </AppLayout>
-                <WalletSetupModal />
-                <Toaster />
-                {/*
-                  F-065 SRI review: analytics is non-critical, so it is
-                  dynamically loaded on the client instead of being emitted as a
-                  beforeInteractive script that can block initial rendering.
-                */}
-                <VercelAnalytics />
-              </AuthProvider>
+              <NavigationGuardProvider>
+                <AuthProvider>
+                  <AppLayout>
+                    <AuthGuard>{children}</AuthGuard>
+                  </AppLayout>
+                  <WalletSetupModal />
+                  <Toaster />
+                  {/*
+                    F-065 SRI review: analytics is non-critical, so it is
+                    dynamically loaded on the client instead of being emitted as a
+                    beforeInteractive script that can block initial rendering.
+                  */}
+                  <VercelAnalytics />
+                </AuthProvider>
+              </NavigationGuardProvider>
             </I18nProvider>
           </ErrorBoundary>
         </ThemeProvider>

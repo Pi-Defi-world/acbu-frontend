@@ -10,13 +10,14 @@ import { SkeletonList } from '@/components/ui/skeleton-list';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ArrowLeft, Clock } from 'lucide-react';
 import { useApiOpts } from '@/hooks/use-api';
+import { useLocale } from 'next-intl';
 import { useScrollRestoration } from '@/hooks/use-scroll-restoration';
 import * as transactionsApi from '@/lib/api/transactions';
 import type { TransactionListItem } from '@/types/api';
 import { formatAcbu, formatAmount, parseUtcDate } from '@/lib/utils';
 
-function formatDate(iso: string) {
-  return parseUtcDate(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+function formatDate(iso: string, locale: string) {
+  return parseUtcDate(iso).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' });
 }
 
 /**
@@ -24,6 +25,7 @@ function formatDate(iso: string) {
  */
 export default function ActivityPage() {
   const opts = useApiOpts();
+  const locale = useLocale();
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,7 +48,7 @@ export default function ActivityPage() {
     <>
       <div className="page-header">
         <div className="page-header-row">
-          <Link href="/me"><ArrowLeft className="w-5 h-5 text-primary" /></Link>
+          <Link href="/me" aria-label="Back" className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><ArrowLeft className="w-5 h-5 text-primary" aria-hidden="true" /></Link>
           <h1 className="page-title">Activity</h1>
         </div>
       </div>
@@ -69,7 +71,7 @@ export default function ActivityPage() {
                     <p className="font-medium text-foreground">
                       {t.type === 'mint' ? 'Mint' : t.type === 'burn' ? 'Burn' : 'Transfer'}
                     </p>
-                    <p className="text-xs text-muted-foreground">{formatDate(t.created_at)}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(t.created_at, locale)}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="font-semibold text-foreground">
