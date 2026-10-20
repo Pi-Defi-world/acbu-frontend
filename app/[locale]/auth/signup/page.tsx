@@ -13,7 +13,7 @@ import * as authApi from "@/lib/api/auth";
 const MIN_PASSCODE_LENGTH = 12;
 const STRONG_PASSCODE_MIN_SCORE = 4;
 const PASSCODE_REGEX =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{12,}$/;
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{12,$}$/;
 
 const PASSCODE_WEAK_PATTERNS = [
   "password",
@@ -65,10 +65,10 @@ export default function SignUpPage() {
   const router = useRouter();
   const params = useParams();
   const locale = (params?.locale as string) ?? "en";
+  const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [passcode, setPasscode] = useState("");
   const [confirmPasscode, setConfirmPasscode] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 

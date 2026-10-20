@@ -18,7 +18,19 @@
     "some_currencies_missing_rate": "Some currencies missing a rate",
     "usd": "USD",
     "transaction_count": "{count, plural, one {# transaction} other {# transactions}}",
-    "session_count": "{count, plural, one {# active session} other {# active sessions}}"
+    "session_count": "{count, plural, one {# active session} other {# active sessions}}",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tx_type": {
+      "mint": "Mint",
+      "burn": "Burn",
+      "transfer": "Transfer"
+    },
+    "status": {
+      "pending": "Pending",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
   },
   "features": {
     "send": {
@@ -114,7 +126,7 @@
     "current_address": "Current Wallet Address",
     "setup_title": "Change or Setup Wallet",
     "back": "← Back",
-    "security_notice": "Your wallet secret will be encrypted with your account passcode and stored securely on this device.",
+    "security_notice": "Your key is generated in your browser and encrypted in this device's IndexedDB. ACBU receives only your public address. This protects data at rest, not against active XSS or a compromised device.",
     "generate": {
       "title": "Generate New Wallet",
       "description": "Create a new secure wallet locally",

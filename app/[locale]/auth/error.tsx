@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, LogIn } from 'lucide-react';
 import { errorReporter } from '@/lib/error-reporting';
@@ -13,6 +15,9 @@ export default function AuthError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const params = useParams();
+  const locale = (params?.locale as string) ?? 'en';
+
   useEffect(() => {
     errorReporter.reportError(error, {
       level: 'page',
@@ -23,12 +28,6 @@ export default function AuthError({
       } satisfies ErrorContext
     });
   }, [error]);
-
-  const handleGoToSignIn = () => {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/auth/signin';
-    }
-  };
 
   return (
     <div className="error-state">
@@ -53,10 +52,12 @@ export default function AuthError({
           <RefreshCw className="w-4 h-4 mr-2" />
           Try again
         </Button>
-        <Button onClick={handleGoToSignIn} variant="default" size="sm">
-          <LogIn className="w-4 h-4 mr-2" />
-          Sign in
-        </Button>
+        <Link href={`/${locale}/auth/signin`}>
+          <Button variant="default" size="sm">
+            <LogIn className="w-4 h-4 mr-2" />
+            Sign in
+          </Button>
+        </Link>
       </div>
     </div>
   );

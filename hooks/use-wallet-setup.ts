@@ -25,7 +25,7 @@ export function useWalletSetup() {
   const kit = useStellarWalletsKit();
 
   /**
-   * Syncs a wallet secret to the backend and stores it encrypted locally.
+  * Stores the secret encrypted locally and sends only its public address to the backend.
    */
   const syncWalletToBackend = useCallback(
     async (secret: string, opts?: ApiOpts): Promise<string> => {

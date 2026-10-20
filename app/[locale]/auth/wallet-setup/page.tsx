@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { PageContainer } from "@/components/layout/page-container";
 import { useAuth } from "@/contexts/auth-context";
-import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
+import { getPasscode, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, CheckCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 import { useWalletSetup } from "@/hooks/use-wallet-setup";
@@ -42,7 +42,6 @@ export default function WalletSetupPage() {
   const [option, setOption] = useState<number | null>(null);
   const [importSeed, setImportSeed] = useState("");
 
-  // Load auto-generated passphrase from session if available
   useEffect(() => {
     if (!isAuthenticated) {
       router.push(`/${locale}/auth/signin`);
@@ -52,23 +51,14 @@ export default function WalletSetupPage() {
     // Guard: Check if passcode is available in memory
     const passcode = getPasscode();
     if (!passcode) {
-      // Passcode lost on refresh, clear temp data and redirect to signin
       clearTempPassphrase();
       router.push(`/${locale}/auth/signin`);
       return;
     }
 
-    // If user already has a wallet address, skip setup and go home
-    if (stellarAddress && !getTempPassphrase()) {
+    if (stellarAddress) {
       router.push(`/${locale}`);
       return;
-    }
-
-    // Check if we have an auto-generated passphrase from signin
-    const autoGenPassphrase = getTempPassphrase();
-    if (autoGenPassphrase) {
-      setPassphrase(autoGenPassphrase);
-      setOption(1); // Show the confirmation step
     }
   }, [isAuthenticated, stellarAddress, router, locale]);
 
@@ -116,7 +106,7 @@ export default function WalletSetupPage() {
       
       clearTempPassphrase();
       await refreshStellarAddress();
-      
+
       setTimeout(() => {
         router.push(`/${locale}`);
       }, 1500);
@@ -136,7 +126,7 @@ export default function WalletSetupPage() {
       await connectExternalWallet();
       setSuccess(t("success.walletConnected"));
       await refreshStellarAddress();
-      
+
       setTimeout(() => {
         router.push(`/${locale}`);
       }, 1500);

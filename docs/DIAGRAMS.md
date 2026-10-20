@@ -144,7 +144,7 @@ Confirmation Dialog
     ├─ Review All Details
     ├─ Recipient Name
     ├─ Amount (AFK)
-    └─ Fees (Free)
+      └─ Fees: Stellar network fee (XLM / stroops), ledger-entry rent/reserve if applicable, ACBU processing fee if applicable
     ↓
 User Confirms
     ↓

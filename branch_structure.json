@@ -1,0 +1,21 @@
+{
+  "default_branch": "dev",
+  "branches": [
+    "dev",
+    "fix/issue-1044-w10-i18n-001-entire-auth-flow-bypasses-next",
+    "fix/issue-1045-w10-i18n-002-dates-numbers-formatted-with",
+    "origin"
+  ],
+  "parent": {
+    "dev": null,
+    "fix/issue-1044-w10-i18n-001-entire-auth-flow-bypasses-next": "dev",
+    "fix/issue-1045-w10-i18n-002-dates-numbers-formatted-with": "dev",
+    "origin": "dev"
+  },
+  "order": [
+    "dev",
+    "fix/issue-1044-w10-i18n-001-entire-auth-flow-bypasses-next",
+    "fix/issue-1045-w10-i18n-002-dates-numbers-formatted-with",
+    "origin"
+  ]
+}

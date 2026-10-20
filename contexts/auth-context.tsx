@@ -1,4 +1,4 @@
-"use client";
+"tuse client";
 
 import React, {
   createContext,
@@ -12,6 +12,15 @@ import * as authApi from "@/lib/api/auth";
 import { onAuthError } from "@/lib/api/client";
 import { clearPasscode, clearTempPassphrase } from "@/lib/passcode-manager";
 import { logger } from "@/lib/logger";
+import { clearRatesCache } from "@/hooks/use-rates";
+import { clearConfigCache } from "@/hooks/use-config";
+
+/**
+ * Auth is cookie-only: the backend issues an httpOnly session cookie and
+ * all requests are made with `credentials: 'include'`. There is no client-side
+ * token to set or send. `isAuthenticated` is derived from a server session check
+ * (GET /users/me), not from a locally stored token.
+ */
 
 const USER_ID_KEY = "acbu_user_id";
 const STELLAR_ADDRESS_KEY = "acbu_stellar_address";
@@ -54,6 +63,8 @@ function getStoredAuth(): AuthState {
   return {
     userId,
     stellarAddress,
+    // Note: this flag is only a hint for initial render; the authoritative
+    // auth check is the server session validation in validateSession().
     isAuthenticated: !!userId,
     isHydrated: true,
   };
@@ -109,6 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         clearPasscode();
         setSessionError("");
+        clearRatesCache();
+        clearConfigCache();
         setState({
           userId: null,
           stellarAddress: null,
@@ -151,12 +164,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
+      // Auth is cookie-only; the authoritative check is the server session
+      // validation. When we just logged in, the cookie was set by the server,
+      // so we can trust the new state immediately.
       setState({
         userId,
         stellarAddress,
         isAuthenticated: !!userId,
         isHydrated: true,
       });
+
+      // Invalidate shared caches on authentication / user identity change
+      clearRatesCache();
+      clearConfigCache();
     },
     [],
   );
