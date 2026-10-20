@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,15 @@ export default function WalletPage() {
   const setError = (msg: string) => handleError(new Error(msg));
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+      }
+    };
+  }, []);
 
   // 1: auto-generated, 2: import seed, 3: connect wallet
   const [option, setOption] = useState<number | null>(null);
@@ -55,8 +64,12 @@ export default function WalletPage() {
     setOption(null);
     setImportSeed("");
     setPassphrase("");
-    setTimeout(() => {
+    if (successTimerRef.current) {
+      clearTimeout(successTimerRef.current);
+    }
+    successTimerRef.current = setTimeout(() => {
       setSuccessMsg("");
+      successTimerRef.current = null;
     }, 3000);
   };
 

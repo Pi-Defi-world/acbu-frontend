@@ -1,0 +1,18 @@
+{
+  "default_branch": "dev",
+  "branches": [
+    "dev",
+    "fix/issue-979-w10-f-003-authguard-public-paths-point-to-non",
+    "origin"
+  ],
+  "parent": {
+    "dev": null,
+    "fix/issue-979-w10-f-003-authguard-public-paths-point-to-non": "dev",
+    "origin": "dev"
+  },
+  "order": [
+    "dev",
+    "fix/issue-979-w10-f-003-authguard-public-paths-point-to-non",
+    "origin"
+  ]
+}
