@@ -1,7 +1,7 @@
 import { normalizeUsername } from '@/lib/utils';
 import { post } from './client';
 import type { RequestOptions } from './client';
-import type { SigninResponse, SigninRequires2FA } from '@/types/api';
+import type { SigninResponse, SigninRequires2FA, SessionResponse } from '@/types/api';
 import { setAuth } from '@/contexts/auth-context';
 
 export interface SignupResponse {
@@ -9,10 +9,42 @@ export interface SignupResponse {
   message: string;
 }
 
+function normalizeSigninResponse(payload: unknown): SigninResponse | SigninRequires2FA {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Invalid sign-in response');
+  }
+
+  const response = payload as Record<string, unknown>;
+  if (response.requires_2fa === true) {
+    if (typeof response.challenge_token !== 'string') {
+      throw new Error('Invalid two-factor sign-in response');
+    }
+    return { requires_2fa: true, challenge_token: response.challenge_token };
+  }
+
+  if (typeof response.user_id !== 'string') {
+    throw new Error('Invalid sign-in response');
+  }
+
+  return {
+    user_id: response.user_id,
+    ...(typeof response.api_key === 'string' ? { api_key: response.api_key } : {}),
+    ...(typeof response.stellar_address === 'string' || response.stellar_address === null
+      ? { stellar_address: response.stellar_address }
+      : {}),
+    ...(typeof response.wallet_created === 'boolean'
+      ? { wallet_created: response.wallet_created }
+      : {}),
+    ...(typeof response.encryption_method_required === 'boolean'
+      ? { encryption_method_required: response.encryption_method_required }
+      : {}),
+  };
+}
+
 export async function signup(
   username: string,
   passcode: string,
-  opts?: RequestOptions
+  opts?: RequestOptions,
 ): Promise<SignupResponse> {
   const normalizedUsername = normalizeUsername(username);
 
@@ -28,15 +60,12 @@ export async function signin(
   passcode: string,
   opts?: RequestOptions
 ): Promise<SigninResponse | SigninRequires2FA> {
-  const response = await post<SigninResponse | SigninRequires2FA>(
-    '/auth/signin',
-    { identifier, passcode },
-    opts
-  );
-  if ('api_key' in response && response.api_key) {
-    setAuth(response.api_key, response.user_id, response.username);
+  const response = await post<unknown>('/auth/signin', { identifier, passcode }, opts);
+  const normalized = normalizeSigninResponse(response);
+  if ('api_key' in normalized && normalized.api_key) {
+    setAuth(normalized.api_key, normalized.user_id, normalized.username);
   }
-  return response;
+  return normalized;
 }
 
 export async function verify2fa(
@@ -44,13 +73,19 @@ export async function verify2fa(
   code: string,
   opts?: RequestOptions
 ): Promise<SigninResponse> {
-  const response = await post<SigninResponse>(
+  const response = await post<unknown>(
     '/auth/signin/verify-2fa',
     { challenge_token: challengeToken, code },
-    opts
+    opts,
   );
-  setAuth(response.api_key, response.user_id, response.username);
-  return response;
+  const normalized = normalizeSigninResponse(response);
+  if ('requires_2fa' in normalized) {
+    throw new Error('Invalid two-factor verification response');
+  }
+  if (normalized.api_key) {
+    setAuth(normalized.api_key, normalized.user_id, normalized.username);
+  }
+  return normalized;
 }
 
 export async function exchangeOAuthCode(
@@ -69,4 +104,8 @@ export async function exchangeOAuthCode(
 
 export async function signout(opts?: RequestOptions): Promise<{ ok: boolean }> {
   return post<{ ok: boolean }>('/auth/signout', undefined, opts);
+}
+
+export async function getSession(opts?: RequestOptions): Promise<SessionResponse> {
+  return post<SessionResponse>('/auth/session', undefined, opts);
 }

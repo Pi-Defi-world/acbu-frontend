@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { PageContainer } from "@/components/layout/page-container";
 import { useAuth } from "@/contexts/auth-context";
-import { getPasscode, getTempPassphrase, clearTempPassphrase } from "@/lib/passcode-manager";
+import { getPasscode, clearTempPassphrase } from "@/lib/passcode-manager";
 import { AlertCircle, CheckCircle, ChevronLeft, Lock } from "lucide-react";
 import { Keypair } from "@stellar/stellar-sdk";
 import { useWalletSetup } from "@/hooks/use-wallet-setup";
@@ -40,7 +40,6 @@ export default function WalletSetupPage() {
   const [option, setOption] = useState<number | null>(null);
   const [importSeed, setImportSeed] = useState("");
 
-  // Load auto-generated passphrase from session if available
   useEffect(() => {
     if (!isAuthenticated) {
       router.push(`/${locale}/auth/signin`);
@@ -50,23 +49,14 @@ export default function WalletSetupPage() {
     // Guard: Check if passcode is available in memory
     const passcode = getPasscode();
     if (!passcode) {
-      // Passcode lost on refresh, clear temp data and redirect to signin
       clearTempPassphrase();
       router.push(`/${locale}/auth/signin`);
       return;
     }
 
-    // If user already has a wallet address, skip setup and go home
-    if (stellarAddress && !getTempPassphrase()) {
+    if (stellarAddress) {
       router.push(`/${locale}`);
       return;
-    }
-
-    // Check if we have an auto-generated passphrase from signin
-    const autoGenPassphrase = getTempPassphrase();
-    if (autoGenPassphrase) {
-      setPassphrase(autoGenPassphrase);
-      setOption(1); // Show the confirmation step
     }
   }, [isAuthenticated, stellarAddress, router, locale]);
 
@@ -85,7 +75,6 @@ export default function WalletSetupPage() {
     try {
       await generateWallet(passphrase);
       setSuccess("Wallet set up successfully!");
-      
       clearTempPassphrase();
       await refreshStellarAddress();
       
@@ -111,10 +100,9 @@ export default function WalletSetupPage() {
     try {
       await importWallet(importSeed);
       setSuccess("Wallet imported successfully!");
-      
       clearTempPassphrase();
       await refreshStellarAddress();
-      
+
       setTimeout(() => {
         router.push(`/${locale}`);
       }, 1500);
@@ -134,7 +122,7 @@ export default function WalletSetupPage() {
       await connectExternalWallet();
       setSuccess("Wallet connected successfully!");
       await refreshStellarAddress();
-      
+
       setTimeout(() => {
         router.push(`/${locale}`);
       }, 1500);
@@ -252,8 +240,10 @@ export default function WalletSetupPage() {
                     <div className="mb-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
                       <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                       <p className="text-xs text-blue-800 dark:text-blue-300">
-                        Your wallet secret will be encrypted with your account
-                        passcode and stored securely on this device.
+                        Your key is generated in your browser and encrypted in
+                        this device's IndexedDB. ACBU receives only your public
+                        address. This protects data at rest, not against active
+                        XSS or a compromised device.
                       </p>
                     </div>
 
@@ -281,8 +271,10 @@ export default function WalletSetupPage() {
                     <div className="mb-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
                       <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                       <p className="text-xs text-blue-800 dark:text-blue-300">
-                        Your wallet secret will be encrypted with your account
-                        passcode and stored securely on this device.
+                        Your key is generated in your browser and encrypted in
+                        this device's IndexedDB. ACBU receives only your public
+                        address. This protects data at rest, not against active
+                        XSS or a compromised device.
                       </p>
                     </div>
 

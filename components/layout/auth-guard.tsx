@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { locales } from "@/i18n/locales";
+import { locales } from "@/i8n/locales";
 
 // Bare (non-locale-prefixed) auth paths kept for backward compat
 const AUTH_SEGMENTS = [
@@ -11,6 +11,7 @@ const AUTH_SEGMENTS = [
   "/auth/signup",
   "/auth/2fa",
   "/recovery",
+  "/auth/oauth/callback",
 ];
 
 function isPublicPath(pathname: string): boolean {
@@ -60,5 +61,5 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return <React.Fragment>{children}</React.Fragment>;
 }
