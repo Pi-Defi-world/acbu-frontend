@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useEffect, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { Home, Send, Coins, Briefcase, User, Wallet } from "lucide-react";
 import { useNavigationGuard } from "@/contexts/navigation-guard-context";
 
@@ -11,20 +12,20 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-const navItems: NavItem[] = [
-  { name: "Home", href: "/", icon: <Home className="h-5 w-5" /> },
-  { name: "Send", href: "/send", icon: <Send className="h-5 w-5" /> },
-  { name: "Mint", href: "/mint", icon: <Coins className="h-5 w-5" /> },
-  {
-    name: "Business",
-    href: "/business",
-    icon: <Briefcase className="h-5 w-5" />,
-  },
-  { name: "Wallet", href: "/wallet", icon: <Wallet className="h-5 w-5" /> },
-  { name: "Me", href: "/me", icon: <User className="h-5 w-5" /> },
-];
-
 export function MobileNav() {
+  const locale = useLocale();
+  const navItems: NavItem[] = [
+    { name: "Home", href: `/${locale}`, icon: <Home className="h-5 w-5" /> },
+    { name: "Send", href: `/${locale}/send`, icon: <Send className="h-5 w-5" /> },
+    { name: "Mint", href: `/${locale}/mint`, icon: <Coins className="h-5 w-5" /> },
+    {
+      name: "Business",
+      href: `/${locale}/business`,
+      icon: <Briefcase className="h-5 w-5" />,
+    },
+    { name: "Wallet", href: `/${locale}/wallet`, icon: <Wallet className="h-5 w-5" /> },
+    { name: "Me", href: `/${locale}/me`, icon: <User className="h-5 w-5" /> },
+  ];
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -78,7 +79,7 @@ export function MobileNav() {
     >
       <div className="flex h-20 items-center justify-between px-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.href === `/${locale}` && (pathname === `/${locale}` || pathname === `/${locale}/`));
           return (
             <button
               key={item.href}
