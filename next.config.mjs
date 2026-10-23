@@ -1,7 +1,11 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import bundleAnalyzer from '@next/bundle-analyzer';
 import { validateEnv } from './lib/env-safety.js';
 
 validateEnv(process.env);
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
@@ -149,6 +153,16 @@ const nextConfig = {
   productionBrowserSourceMaps: true,
 
   webpack(config, { isServer, dev }) {
+    // --- Path alias (must match tsconfig.json `paths`) --------------------
+    // Keep the `@/*` alias in sync with tsconfig.json so that module
+    // specifiers such as `@/components` resolve identically in the IDE
+    // (TypeScript) and in the Next.js webpack build.  Without this the
+    // build fails with "Module not found" even though the IDE is happy.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname),
+    };
+
     // --- Source-map upload (production client builds only) ----------------
     if (!dev && !isServer && sentryWebpackPlugin) {
       config.plugins.push(
@@ -213,7 +227,7 @@ const nextConfig = {
       { source: '/account', destination: '/me', permanent: false },
       { source: '/account/profile', destination: '/me/profile', permanent: false },
       { source: '/account/kyc', destination: '/me/kyc', permanent: false },
-      { source: '/account/recovery', destination: '/recovery', permanent: false },
+      { source: '/account/recovery', destination: '/recovery', permanent: false }
     ];
   },
 };

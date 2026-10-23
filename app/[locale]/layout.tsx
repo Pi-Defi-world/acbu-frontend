@@ -1,28 +1,21 @@
 import type { ReactNode } from "react";
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
 
+/**
+ * Locale layout for the [locale] route segment.
+ *
+ * The root layout (app/layout.tsx) now wraps ALL children in
+ * NextIntlClientProvider, so non-locale pages (send, wallet, mint, bills,
+ * etc.) also receive the i18n context.  This locale layout previously
+ * duplicated that provider (and referenced Suspense/TranslationsFallback
+ * that were never imported, which would break the build).
+ *
+ * It is kept as a pass-through so the [locale] segment still resolves.
+ */
 export default async function LocaleLayout({
   children,
-  params,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
   params: Promise<{ locale: string }>;
 }>) {
-  // Resolve the locale from the dynamic route segment so the root layout
-  // can announce the correct lang to assistive tech and crawlers.
-  const { locale } = await params;
-  const messages = await getMessages();
-
-  return (
-    <Suspense fallback={<TranslationsFallback />}>
-      <NextIntlClientProvider messages={messages} locale={locale}>
-        <NavigationGuardProvider>
-          <AuthGuard>
-            {children}
-          </AuthGuard>
-        </NavigationGuardProvider>
-      </NextIntlClientProvider>
-    </Suspense>
-  );
+  return <>{children}</>;
 }
