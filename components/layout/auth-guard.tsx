@@ -5,24 +5,27 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { locales } from "@/i8n/locales";
 
-// Bare (non-locale-prefixed) auth paths kept for backward compat
-const AUTH_SEGMENTS = [
+// Auth route segments that are publicly accessible.
+// These are matched both as bare paths (/auth/signin) and locale-prefixed
+// paths (/en/auth/signin, /ar/auth/signin, etc.).
+const PUBLIC_PATHS = [
   "/auth/signin",
   "/auth/signup",
   "/auth/2fa",
+  "/auth/oauth/callback",
   "/recovery",
   "/auth/oauth/callback",
 ];
 
 function isPublicPath(pathname: string): boolean {
   // Match bare paths: /auth/signin, /recovery, etc.
-  if (AUTH_SEGMENTS.some((p) => pathname === p || pathname.startsWith(p + "/")))
+  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/")))
     return true;
   // Match locale-prefixed paths: /en/auth/signin, /ar/auth/2fa, etc.
   for (const locale of locales) {
     const prefix = `/${locale}`;
     if (
-      AUTH_SEGMENTS.some(
+      PUBLIC_PATHS.some(
         (p) => pathname === prefix + p || pathname.startsWith(prefix + p + "/"),
       )
     ) {
@@ -45,15 +48,16 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isHydrated } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const isPublic = isPublicPath(pathname);
 
   useEffect(() => {
-    if (!isPublicPath(pathname) && isHydrated && !isAuthenticated) {
+    if (!isPublic && isHydrated && !isAuthenticated) {
       const locale = getLocaleFromPath(pathname);
       router.replace(`/${locale}/auth/signin`);
     }
-  }, [isAuthenticated, isHydrated, pathname, router]);
+  }, [isAuthenticated, isHydrated, isPublic, pathname, router]);
 
-  if (!isPublicPath(pathname) && (!isHydrated || !isAuthenticated)) {
+  if (!isPublic && (!isHydrated || !isAuthenticated)) {
     return (
       <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="text-muted-foreground animate-pulse">Loading...</div>

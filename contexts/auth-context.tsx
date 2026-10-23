@@ -1,4 +1,4 @@
-"tuse client";
+"use client";
 
 import React, {
   createContext,
@@ -24,6 +24,7 @@ import { clearConfigCache } from "@/hooks/use-config";
 
 const USER_ID_KEY = "acbu_user_id";
 const STELLAR_ADDRESS_KEY = "acbu_stellar_address";
+const API_KEY_KEY = "acbu_api_key";
 
 interface AuthState {
   userId: string | null;
@@ -33,9 +34,17 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (userId: string, stellarAddress?: string | null) => void;
+  login: (
+    userId: string,
+    stellarAddress?: string | null,
+    apiKey?: string | null,
+  ) => void;
   logout: () => Promise<void>;
-  setAuth: (userId: string | null, stellarAddress?: string | null) => void;
+  setAuth: (
+    userId: string | null,
+    stellarAddress?: string | null,
+    apiKey?: string | null,
+  ) => void;
   refreshStellarAddress: () => Promise<void>;
   /**
    * Most recent session validation error (e.g. transient network failure).
@@ -59,6 +68,7 @@ function getStoredAuth(): AuthState {
   }
   const userId = sessionStorage.getItem(USER_ID_KEY);
   const stellarAddress = sessionStorage.getItem(STELLAR_ADDRESS_KEY);
+  const apiKey = sessionStorage.getItem(API_KEY_KEY);
 
   return {
     userId,
@@ -117,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (typeof window !== "undefined") {
           sessionStorage.removeItem(USER_ID_KEY);
           sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+          sessionStorage.removeItem(API_KEY_KEY);
         }
         clearPasscode();
         setSessionError("");
@@ -149,7 +160,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [validateSession]);
 
   const setAuth = useCallback(
-    (userId: string | null, stellarAddress: string | null = null) => {
+    (
+      userId: string | null,
+      stellarAddress: string | null = null,
+      apiKey: string | null = null,
+    ) => {
       if (typeof window !== "undefined") {
         if (userId) {
           sessionStorage.setItem(USER_ID_KEY, userId);
@@ -158,9 +173,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
           }
+          if (apiKey) {
+            sessionStorage.setItem(API_KEY_KEY, apiKey);
+          }
         } else {
           sessionStorage.removeItem(USER_ID_KEY);
           sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+          sessionStorage.removeItem(API_KEY_KEY);
         }
       }
 
@@ -170,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState({
         userId,
         stellarAddress,
-        isAuthenticated: !!userId,
+        isAuthenticated: !!userId && !!apiKey,
         isHydrated: true,
       });
 
@@ -196,8 +215,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [state.isAuthenticated, state.userId, setAuth]);
 
   const login = useCallback(
-    (userId: string, stellarAddress: string | null = null) => {
-      setAuth(userId, stellarAddress);
+    (
+      userId: string,
+      stellarAddress: string | null = null,
+      apiKey: string | null = null,
+    ) => {
+      setAuth(userId, stellarAddress, apiKey);
     },
     [setAuth],
   );

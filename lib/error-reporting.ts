@@ -1,6 +1,7 @@
 /**
  * Error reporting utilities for the application
  */
+import { logger } from './logger';
 
 /** Discriminated union of all known error context payloads. */
 export type ErrorContext =
@@ -125,6 +126,11 @@ export class ErrorReporter {
     // Log to console in development only
     if (process.env.NODE_ENV !== 'production') {
       console.error('Error Report:', report);
+    } else {
+      logger.error('Frontend error report', {
+        error,
+        digest: report.digest,
+      });
     }
 
     try {

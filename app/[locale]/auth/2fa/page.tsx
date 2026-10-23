@@ -79,8 +79,12 @@ function TwoFactorForm() {
       }
 
       const result = await authApi.verify2fa(challengeToken, code);
-      const existingAddress = result.wallet_created ? null : result.stellar_address;
-      login(result.user_id, existingAddress);
+      login(
+        result.user_id,
+        result.stellar_address,
+        result.apiKey,
+        result.token,
+      );
       sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
 
       // honor a stored safe post-auth redirect if present

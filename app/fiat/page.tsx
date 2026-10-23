@@ -93,7 +93,11 @@ export default function FiatSimPage() {
               Amount is in whole units of the selected currency (e.g. 100 = one hundred).
             </p>
             <form onSubmit={handleFaucet} className="flex flex-wrap gap-2">
+              <label htmlFor="faucet-currency" className="sr-only">
+                Currency
+              </label>
               <select
+                id="faucet-currency"
                 className="bg-background border rounded px-2 text-sm"
                 value={faucetCurrency}
                 onChange={(e) => setFaucetCurrency(e.target.value)}
@@ -104,7 +108,11 @@ export default function FiatSimPage() {
                   </option>
                 ))}
               </select>
+              <label htmlFor="faucet-amount" className="sr-only">
+                Amount
+              </label>
               <Input
+                id="faucet-amount"
                 type="number"
                 placeholder="Amount"
                 value={faucetAmount}

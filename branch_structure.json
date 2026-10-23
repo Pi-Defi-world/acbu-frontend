@@ -2,20 +2,20 @@
   "default_branch": "dev",
   "branches": [
     "dev",
-    "fix/issue-1044-w10-i18n-001-entire-auth-flow-bypasses-next",
-    "fix/issue-1045-w10-i18n-002-dates-numbers-formatted-with",
+    "fix/issue-978-w10-f-002-successful-sign-in-never-sets",
+    "fix/issue-991-w10-f-015-settoken-is-a-no-op-but-still-called",
     "origin"
   ],
   "parent": {
     "dev": null,
-    "fix/issue-1044-w10-i18n-001-entire-auth-flow-bypasses-next": "dev",
-    "fix/issue-1045-w10-i18n-002-dates-numbers-formatted-with": "dev",
+    "fix/issue-978-w10-f-002-successful-sign-in-never-sets": "dev",
+    "fix/issue-991-w10-f-015-settoken-is-a-no-op-but-still-called": "dev",
     "origin": "dev"
   },
   "order": [
     "dev",
-    "fix/issue-1044-w10-i18n-001-entire-auth-flow-bypasses-next",
-    "fix/issue-1045-w10-i18n-002-dates-numbers-formatted-with",
+    "fix/issue-978-w10-f-002-successful-sign-in-never-sets",
+    "fix/issue-991-w10-f-015-settoken-is-a-no-op-but-still-called",
     "origin"
   ]
 }

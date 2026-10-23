@@ -82,8 +82,7 @@ function SignInForm() {
       if ("user_id" in result) {
         storePasscode(passcode);
 
-        const existingAddress = result.wallet_created ? null : result.stellar_address;
-        login(result.user_id, existingAddress);
+        login(result.user_id, result.stellar_address, result.api_key);
 
         if (result.wallet_created || !result.stellar_address) {
           router.push(`/${locale}/auth/wallet-setup`);

@@ -140,6 +140,7 @@
       "description": "Use an existing Stellar secret key",
       "heading": "Import Seed",
       "seed_help": "Enter your Stellar secret key (starts with 'S'). It will be stored encrypted on this device.",
+      "seed_label": "Stellar secret key",
       "importing": "Importing...",
       "submit": "Import Wallet"
     },
