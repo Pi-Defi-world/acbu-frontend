@@ -7,7 +7,7 @@ import { viewport } from '@/app/layout';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 
-describe('layout viewport pinch-zoom guard (AF-012)', () => {
+describe('layout viewport pinch-zoom guard (AF-012, W10-F-005)', () => {
   it('does not disable zoom via userScalable', () => {
     expect(viewport.userScalable).not.toBe(false);
   });
@@ -16,7 +16,7 @@ describe('layout viewport pinch-zoom guard (AF-012)', () => {
     expect(viewport.maximumScale).toBeUndefined();
   });
 
-  it('locale layout source does not re-introduce maximumScale', () => {
+  it('locale layout source does not re-introduce maximumScale (W10-F-005)', () => {
     const localeLayoutPath = path.join(root, '..', '[locale]', 'layout.tsx');
     const source = fs.readFileSync(localeLayoutPath, 'utf8');
     expect(source).not.toMatch(/maximumScale/);

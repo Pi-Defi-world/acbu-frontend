@@ -11,16 +11,14 @@ import { useParams } from "next/navigation";
 import { useApiOpts } from "@/hooks/use-api";
 import * as transfersApi from "@/lib/api/transfers";
 import { formatAmount, parseUtcDate } from "@/lib/utils";
+import { useFormatter } from "next-intl";
 
 function safeFormatDate(iso: string | undefined) {
   if (!iso) return '';
   try {
     const date = new Date(iso);
     if (isNaN(date.getTime())) return '';
-    return date.toLocaleString(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
+    return '';
   } catch {
     return '';
   }
@@ -34,11 +32,26 @@ function safeFormatDate(iso: string | undefined) {
 export default function TransferDetailPage() {
   const params = useParams();
   const id = params?.id as string;
+  const format = useFormatter();
   const opts = useApiOpts();
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const formatDate = (iso: string | undefined) => {
+    if (!iso) return '';
+    try {
+      const date = new Date(iso);
+      if (isNaN(date.getTime())) return '';
+      return format.dateTime(date, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+    } catch {
+      return '';
+    }
+  };
 
   const handleShare = useCallback(async () => {
     if (!data) return;
@@ -53,7 +66,7 @@ export default function TransferDetailPage() {
     const amount = isFiatRecord
       ? `${localCurrency} ${formatAmount(localAmount)}`
       : `ACBU ${formatAmount(amountAcbu)}`;
-    const date = createdAt ? safeFormatDate(createdAt) : "—";
+    const date = createdAt ? formatDate(createdAt) : "—";
     const url = window.location.href;
 
     const shareData = {
@@ -73,7 +86,7 @@ export default function TransferDetailPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [data]);
+  }, [data, format]);
 
   useEffect(() => {
     if (!id) {
@@ -253,7 +266,7 @@ export default function TransferDetailPage() {
                   dateTime={new Date(createdAt).toISOString()}
                   aria-labelledby="created-label"
                 >
-                  {safeFormatDate(createdAt)}
+                  {formatDate(createdAt)}
                 </time>
               </div>
             )}
@@ -268,7 +281,7 @@ export default function TransferDetailPage() {
                   dateTime={new Date(completedAt).toISOString()}
                   aria-labelledby="completed-label"
                 >
-                  {safeFormatDate(completedAt)}
+                  {formatDate(completedAt)}
                 </time>
               </div>
             )}

@@ -97,7 +97,9 @@ interface User {
 ## Component Organization
 
 ### Shared Components
-- `/components/mobile-nav.tsx` - Bottom navigation
+- `/components/mobile-nav.tsx` - Bottom navigation (mobile only, `md:hidden`)
+- `/components/desktop-sidebar.tsx` - Sidebar navigation (desktop only, `hidden md:flex`)
+- `/components/navigation/nav-items.ts` - Shared destination list for both navigations
 - `/components/app-layout.tsx` - App wrapper
 - `/components/ui/*` - shadcn/ui components
 

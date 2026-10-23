@@ -19,7 +19,19 @@
     "usd": "USD",
     "approx_usd": "≈ USD",
     "transaction_count": "{count, plural, one {# transakcja} few {# transakcje} many {# transakcji} other {# transakcji}}",
-    "session_count": "{count, plural, one {# aktywna sesja} few {# aktywne sesje} many {# aktywnych sesji} other {# aktywnych sesji}}"
+    "session_count": "{count, plural, one {# aktywna sesja} few {# aktywne sesje} many {# aktywnych sesji} other {# aktywnych sesji}}",
+    "today": "Dzisiaj",
+    "yesterday": "Wczoraj",
+    "tx_type": {
+      "mint": "Wybicie",
+      "burn": "Spalenie",
+      "transfer": "Przelew"
+    },
+    "status": {
+      "pending": "Oczekująca",
+      "completed": "Zakończona",
+      "failed": "Nieudana"
+    }
   },
   "features": {
     "send": {

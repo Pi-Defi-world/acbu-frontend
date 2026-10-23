@@ -4,7 +4,7 @@ import { FileQuestion, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 /**
- * Root-level 404 fallback â€” rendered when Next.js cannot match any route
+ * Root-level 404 fallback — rendered when Next.js cannot match any route
  * outside the [locale] tree (e.g. bare /unknown-path with no locale prefix).
  * This component runs without next-intl context, so strings are hard-coded
  * in English. Locale-prefixed unknown routes are handled by

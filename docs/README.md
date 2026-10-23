@@ -4,13 +4,14 @@ A modern, mobile-first fintech application built with Next.js 16 and React 19, f
 
 ## 🎯 Quick Start
 
-The application uses a **5-tab mobile navigation** system for primary feature access:
+The application uses a **responsive navigation** system for primary feature access — a bottom tab bar on mobile and a sidebar from the `md` breakpoint upwards:
 
 ```
 ┌─ Home       ─ Dashboard & overview
 ├─ Send       ─ P2P transfers, international, history
 ├─ Mint       ─ Create/redeem AFK currency
 ├─ Business   ─ SME, payroll, enterprise tools
+├─ Wallet     ─ Wallet balance and details
 └─ Me         ─ Account, settings, security
 ```
 
@@ -48,7 +49,9 @@ app/
     └── 2fa/                # 2FA verification
 
 components/
-├── mobile-nav.tsx          # Bottom navigation
+├── mobile-nav.tsx          # Bottom navigation (mobile only)
+├── desktop-sidebar.tsx     # Sidebar navigation (desktop only)
+├── navigation/nav-items.ts # Shared navigation destinations
 ├── app-layout.tsx          # Main layout wrapper
 └── ui/                     # shadcn/ui components
 
@@ -57,6 +60,7 @@ docs/
 ├── ROUTES.md              # Complete routing guide
 └── README.md              # This file
 ```
+- **USSD_SMS_CHANNEL.md** - Proposed USSD/SMS fallback channel for feature phones and low connectivity
 
 ## 🎨 Design System
 
@@ -82,15 +86,19 @@ docs/
 The application uses **AFK (ACBU)** as the only currency:
 - All balances displayed in AFK
 - All transactions in AFK
-- All fees in AFK
+- ACBU processing fees displayed in AFK
+- Stellar network fees are paid in XLM (stroops), separately from ACBU fees
 - Stellar network for blockchain operations
 - No USD, USDC, or external currency conversions
 
 ### Key Numbers
 - 1 AFK = 1 unit of native ACBU
-- Network fee: Free (Stellar protocol)
-- Processing fees: 0.50-1.00 AFK per operation
+- Stellar network fees: not free; the backend's configured fallback base fee is 100 stroops, while dynamic fees and payment surge buffering can increase the transaction fee
+- Soroban transactions can include resource fees; ledger-entry rent or minimum-balance reserves may also apply depending on the operation
+- ACBU processing fees: variable by operation and reserve conditions; see the [backend fee policy](https://github.com/Pi-Defi-world/acbu-backend/blob/dev/src/services/feePolicy/feePolicyService.ts)
 - Exchange displayed in rates tabs (informational only)
+
+The backend resolves Stellar base and payment fees in its [Stellar fee manager](https://github.com/Pi-Defi-world/acbu-backend/blob/dev/src/services/stellar/feeManager.ts). Network fees are separate from ACBU processing fees; minimum-balance reserves are locked funds, not network fees.
 
 ## 🔐 Security & Authentication
 
@@ -165,8 +173,12 @@ POST   /bills/pay         # Pay bill
 - **Icons**: Lucide React
 - **State**: React hooks (SWR ready)
 
+6. **Offline access**: Add a USSD/SMS fallback channel for feature phones and low-connectivity users (see `docs/USSD_SMS_CHANNEL.md`)
+
 ### Key Files to Know
-- `/components/mobile-nav.tsx` - Navigation configuration
+- `/components/navigation/nav-items.ts` - Navigation configuration
+- `/components/mobile-nav.tsx` - Bottom navigation (mobile only)
+- `/components/desktop-sidebar.tsx` - Sidebar navigation (desktop only)
 - `/components/app-layout.tsx` - Layout wrapper
 - `/app/globals.css` - Design tokens and theme
 - `/docs/ROUTES.md` - Complete routing reference

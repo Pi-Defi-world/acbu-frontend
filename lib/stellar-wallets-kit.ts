@@ -17,8 +17,13 @@ export function getStellarWalletsKit(): StellarWalletsKit {
   }
 
   if (!swkInstance) {
+    const network =
+      process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'MAINNET'
+        ? WalletNetwork.MAINNET
+        : WalletNetwork.TESTNET;
+
     swkInstance = new StellarWalletsKit({
-      network: WalletNetwork.TESTNET,
+      network,
       selectedWalletId: 'freighter',
       modules: allowAllModules(),
     });

@@ -7,13 +7,12 @@ import { NextRequest, NextResponse } from 'next/server';
  * CSP) violation is detected. During the report-only phase this is the primary
  * signal for identifying directives that need relaxing before enforcement.
  *
- * In production you would forward these to a logging service (e.g. Sentry,
- * Datadog, or a custom store). For now we log to the server console so
- * violations are visible in Vercel / local dev logs.
+ * The middleware attaches a Content-Security-Policy header whose report-uri
+ * points at this route, so browsers will deliver violation reports here.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const body = await request.json() as {
+    const body = (await request.json()) as {
       'csp-report'?: Record<string, unknown>;
       [key: string]: unknown;
     };

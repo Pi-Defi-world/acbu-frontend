@@ -110,14 +110,18 @@
 1. Create `/app/[feature]/page.tsx`
 2. Import `AppLayout` component
 3. Wrap content in `<AppLayout>`
-4. Add bottom padding: `pb-24`
+4. Add bottom padding: `pb-24` (mobile only — use `pb-24 md:pb-0` on desktop)
 5. Link from existing nav or parent page
 
 ### Add Nav Item
-1. Edit `/components/mobile-nav.tsx`
-2. Add to `navItems` array
+1. Edit `/components/navigation/nav-items.ts`
+2. Add to the `primaryNavItems` array (or `secondaryNavItems` for the
+   desktop-only entries)
 3. Update icon imports
 4. Add corresponding route
+
+The bottom tab bar and the desktop sidebar both read from that list, so a
+single entry shows up in both navigations.
 
 ### Update Currency Display
 ```tsx
@@ -299,7 +303,9 @@ Styles:          globals.css (app-wide)
 | File | Purpose | When to Edit |
 |------|---------|--------------|
 | `/app/globals.css` | Design tokens | Update colors/fonts |
-| `/components/mobile-nav.tsx` | Navigation | Add/remove nav items |
+| `/components/navigation/nav-items.ts` | Navigation | Add/remove nav items |
+| `/components/mobile-nav.tsx` | Bottom tab bar (mobile) | Mobile navigation tweaks |
+| `/components/desktop-sidebar.tsx` | Sidebar (desktop) | Desktop navigation tweaks |
 | `/components/app-layout.tsx` | Layout wrapper | Change global layout |
 | `/docs/ROUTES.md` | Route reference | Update routes |
 | `/docs/ARCHITECTURE.md` | System design | Architecture changes |
@@ -310,7 +316,7 @@ Styles:          globals.css (app-wide)
 ## 💡 Tips & Tricks
 
 1. **Mobile Testing**: Always test on actual mobile device
-2. **Padding**: Remember `pb-24` for nav clearance
+2. **Padding**: Remember `pb-24` for nav clearance (drop it with `md:pb-0` on desktop)
 3. **Links**: Use `useRouter` from 'next/navigation'
 4. **Icons**: Import from 'lucide-react'
 5. **Colors**: Use design tokens in globals.css
@@ -327,6 +333,7 @@ Styles:          globals.css (app-wide)
 | Issue | Solution |
 |-------|----------|
 | Nav hidden behind content | Add `pb-24` to main |
+| Sidebar overlaps the page | Keep the content column next to the sidebar in `AppLayout` |
 | Currency showing $ | Change to `AFK ` format |
 | Route not found | Check `/docs/ROUTES.md` |
 | Component not styled | Check global colors |

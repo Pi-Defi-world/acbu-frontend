@@ -314,9 +314,14 @@ export default function WalletPage() {
                   </p>
 
                   <div>
+                    <label htmlFor="import-seed" className="sr-only">
+                      {t("wallet.import.seed_label")}
+                    </label>
                     <Input
+                      id="import-seed"
                       type="password"
                       placeholder="S..."
+                      aria-label={t("wallet.import.seed_label")}
                       value={importSeed}
                       onChange={(e) => setImportSeed(e.target.value)}
                       disabled={loading}

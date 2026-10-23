@@ -21,7 +21,8 @@ This app is built mobile-first with a 100% responsive design that feels like a n
 Key points:
 - Use `px-4` for mobile horizontal padding (16px)
 - Use `py-4` for vertical padding (16px)
-- Always add `pb-24` to account for fixed bottom navigation (96px)
+- Always add `pb-24` to account for fixed bottom navigation (96px), and drop it
+  with `md:pb-0` once the desktop sidebar takes over
 - Never use `mx-auto max-w-md` on mobile - reserve for desktop enhancements
 
 ### 2. Spacing & Gaps
@@ -128,7 +129,7 @@ Key points:
 ### 7. Navigation & Touch Targets
 ```tsx
 // CORRECT - Mobile nav height
-<nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-card z-40">
+<nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-card z-40 md:hidden">
   <div className="flex justify-between items-center h-20 px-1">
     {/* 80px nav height = comfortable touch targets */}
   </div>
@@ -139,11 +140,31 @@ Key points:
   {/* Touch-friendly 80px tall */}
 </button>
 
-// Bottom padding for nav overlay
-<main className="pb-24">
-  {/* 96px padding = nav height (80px) + margin */}
+// Bottom padding for nav overlay (mobile only)
+<main className="pb-24 md:pb-0">
+  {/* 96px padding = nav height (80px) + margin, dropped on desktop */}
 </main>
 ```
+
+### 7b. Desktop Layout (md and up)
+```tsx
+// CORRECT - Sidebar is hidden on mobile, shown from md upwards
+<nav className="hidden md:flex md:sticky md:top-0 md:h-screen md:w-64 flex-col border-r">
+  {/* Same destinations as the mobile tab bar */}
+</nav>
+
+// CORRECT - The page content sits next to the sidebar
+<div className="flex min-h-screen">
+  <DesktopSidebar />
+  <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+</div>
+```
+
+Both navigations read their destinations from
+`/components/navigation/nav-items.ts`, so the tab bar and the sidebar can
+never drift apart. Breakpoints are handled with CSS (`md:hidden` /
+`hidden md:flex`) instead of JavaScript, which keeps the first paint free of
+layout shifts.
 
 ### 8. Dialog & Modal Handling
 ```tsx

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { PUBLIC_PATHS } from "@/components/layout/auth-guard";
+import { randomUUID } from "crypto";
 
 // Keep in sync with i18n/locales.ts
 const SUPPORTED_LOCALES = ["en", "en-NG", "en-KE", "ar", "ru", "pl"] as const;
@@ -7,6 +9,9 @@ const DEFAULT_LOCALE: Locale = "en";
 
 // Cookie name used by next-intl and set by setLocale() in lib/i18n/index.ts
 const LOCALE_COOKIE = "NEXT_LOCALE";
+
+// Request header used to forward the resolved locale to the root layout.
+const LOCALE_HEADER = "x-locale";
 
 /**
  * Resolve the preferred locale for a request.
@@ -69,13 +74,45 @@ function shouldSkipLocaleRedirect(pathname: string): boolean {
   return SKIP_REDIRECT_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
+/**
+ * Strip a leading locale prefix (e.g. /en, /en-NG) from a pathname so that
+ * public-path checks can be performed against the locale-agnostic route.
+ */
+function stripLocalePrefix(pathname: string): string {
+  for (const locale of SUPPORTED_LOCALES) {
+    if (pathname === `/${locale}`) return "/";
+    if (pathname.startsWith(`/${locale}/`)) {
+      return pathname.slice(locale.length + 1);
+    }
+  }
+  return pathname;
+}
+
+/**
+ * Returns true if the (locale-stripped) pathname matches a public auth route.
+ * PUBLIC_PATHS are declared without a locale prefix (e.g. "/auth/signin"),
+ * so we compare against the stripped pathname.
+ */
+function isPublicPath(pathname: string): boolean {
+  const stripped = stripLocalePrefix(pathname);
+  return PUBLIC_PATHS.some(
+    (p) => stripped === p || stripped.startsWith(`${p}/`),
+  );
+}
+
 export function middleware(request: NextRequest) {
   // Block .md files
   if (request.nextUrl.pathname.endsWith(".md")) {
-    return new NextResponse(null, { status: 404 });
+    const notFound = new NextResponse(null, { status: 404 });
+    return applySecurityHeaders(notFound, request);
   }
 
   const { pathname } = request.nextUrl;
+
+  // Public auth routes (locale-prefixed) must not be redirected or guarded.
+  if (isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
 
   // ── Locale redirect ────────────────────────────────────────────────────
   // If the request does not already carry a locale prefix (e.g. /en/mint)
@@ -103,11 +140,18 @@ export function middleware(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 365,
     });
 
+    applySecurityHeaders(redirectResponse, request);
     return redirectResponse;
   }
 
+  // Resolve the locale for requests that already carry a prefix (or are
+  // skipped from redirect) so the root layout can render the correct `lang`.
+  const resolvedLocale = hasLocalePrefix(pathname)
+    ? (pathname.split("/")[1] as Locale)
+    : resolveLocale(request);
+
   // ── CSP / Security headers ─────────────────────────────────────────────
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const nonce = Buffer.from(randomUUID()).toString("base64");
 
   const isDev = process.env.NODE_ENV === "development";
 
@@ -128,6 +172,7 @@ export function middleware(request: NextRequest) {
     "form-action": ["'self'"],
     "frame-ancestors": ["'none'"],
     "report-uri": ["/api/csp-report"],
+    "report-to": ["csp-endpoint"],
     "connect-src": [
       "'self'",
       "https://*.stellar.org",
@@ -147,12 +192,45 @@ export function middleware(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", cspString);
 
   const response = NextResponse.next({
     request: { headers: requestHeaders },
   });
 
   response.headers.set("Content-Security-Policy", cspString);
+  response.headers.set(LOCALE_HEADER, resolvedLocale);
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()",
+  );
+  response.headers.set(
+    "Reporting-Endpoints",
+    'csp-endpoint="/api/csp-report"',
+  );
+  if (!isDev) {
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains; preload",
+    );
+  }
+
+  return response;
+}
+
+/**
+ * Attach the standard security headers to a response that is returned
+ * before the main CSP block runs (e.g. redirects, 404s). Keeps every
+ * response from the middleware hardened, not just the pass-through case.
+ */
+function applySecurityHeaders(
+  response: NextResponse,
+  request: NextRequest,
+): NextResponse {
+  const isDev = process.env.NODE_ENV === "development";
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -166,7 +244,6 @@ export function middleware(request: NextRequest) {
       "max-age=31536000; includeSubDomains; preload",
     );
   }
-
   return response;
 }
 

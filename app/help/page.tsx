@@ -23,12 +23,12 @@ const FAQ_ITEMS = [
   {
     question: "How do I create an ACBU wallet?",
     answer:
-      "Sign up for an account, and a wallet will be automatically created for you during the registration process. You'll receive a secure passphrase - make sure to save it in a safe place.",
+      "After signing in, choose Generate New Wallet to create a Stellar key in your browser, then save the secret key offline. The encrypted key is stored on this device; ACBU receives your public address, not your secret key.",
   },
   {
     question: "How do I mint ACBU tokens?",
     answer:
-      "Go to the Mint page, connect your wallet, enter the amount of USDC you want to convert, and confirm the transaction. Your ACBU tokens will be minted based on the current exchange rate.",
+      "Go to the Mint page, connect your wallet, select your basket fiat currency (NGN, KES, etc.), enter the amount you want to convert, and confirm the transaction. Your ACBU tokens will be minted based on the current exchange rate.",
   },
   {
     question: "What are the transaction fees?",

@@ -143,7 +143,10 @@ app/
 └── ... (other routes)
 
 components/
-├── mobile-nav.tsx        ← 5-tab navigation
+├── mobile-nav.tsx        ← Bottom tab bar (mobile only)
+├── desktop-sidebar.tsx   ← Sidebar (desktop only)
+├── navigation/
+│   └── nav-items.ts      ← Shared destinations for both navs
 ├── app-layout.tsx        ← Layout wrapper
 └── ui/                   ← shadcn components
 ```
@@ -310,14 +313,14 @@ Essential reading:
 
 ### Essential Files
 - 🎨 `/app/globals.css` - Design system
-- 🧭 `/components/mobile-nav.tsx` - Navigation
+- 🧭 `/components/navigation/nav-items.ts` - Navigation destinations
 - 🏗️ `/components/app-layout.tsx` - Layout
 
 ---
 
 ## ✨ Key Features
 
-- ✅ 5-tab mobile navigation
+- ✅ Responsive navigation (bottom tab bar on mobile, sidebar on desktop)
 - ✅ Hierarchical route organization
 - ✅ AFK-only currency system
 - ✅ Comprehensive documentation

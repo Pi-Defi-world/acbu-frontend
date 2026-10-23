@@ -1,6 +1,8 @@
 import React from "react";
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
 import OfflineIndicator from "@/components/offline-indicator-dynamic";
 import VercelAnalytics from "@/components/vercel-analytics-dynamic";
 import { AuthProvider } from "@/contexts/auth-context";
@@ -13,6 +15,7 @@ import { AppLayout } from "@/components/app-layout";
 import { WalletSetupModal } from "@/components/wallet-setup-modal";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { NavigationGuardProvider } from "@/contexts/navigation-guard-context";
 
 function getApiOrigin(): string | null {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
@@ -68,10 +71,16 @@ export default async function RootLayout({
 }>) {
   const headersList = await headers();
   const nonce = headersList.get("x-nonce") ?? undefined;
-  const lang = "en";
+  const lang = headersList.get("x-locale") ?? "en";
 
   // Compute at render time to avoid module-scope env access (Edge / SSR safe)
   const apiOrigin = getApiOrigin();
+
+  // Load next-intl messages for the resolved locale so that ALL pages
+  // (not just [locale]/...) have access to NextIntlClientProvider context.
+  // Non-locale pages (send, wallet, mint, bills, etc.) use useTranslations /
+  // useFormatter / useLocale from next-intl and need this provider.
+  const messages = await getMessages();
 
   if (
     process.env.NODE_ENV === "development" &&
@@ -139,21 +148,25 @@ export default async function RootLayout({
           <GlobalErrorHandler />
           <OfflineIndicator />
           <ErrorBoundary level="app">
-            <I18nProvider>
-              <AuthProvider>
-                <AppLayout>
-                  <AuthGuard>{children}</AuthGuard>
-                </AppLayout>
-                <WalletSetupModal />
-                <Toaster />
-                {/*
-                  F-065 SRI review: analytics is non-critical, so it is
-                  dynamically loaded on the client instead of being emitted as a
-                  beforeInteractive script that can block initial rendering.
-                */}
-                <VercelAnalytics />
-              </AuthProvider>
-            </I18nProvider>
+            <NextIntlClientProvider messages={messages} locale={lang}>
+              <I18nProvider>
+                <NavigationGuardProvider>
+                  <AuthProvider>
+                    <AppLayout>
+                      <AuthGuard>{children}</AuthGuard>
+                    </AppLayout>
+                    <WalletSetupModal />
+                    <Toaster />
+                    {/*
+                      F-065 SRI review: analytics is non-critical, so it is
+                      dynamically loaded on the client instead of being emitted as a
+                      beforeInteractive script that can block initial rendering.
+                    */}
+                    <VercelAnalytics />
+                  </AuthProvider>
+                </NavigationGuardProvider>
+              </I18nProvider>
+            </NextIntlClientProvider>
           </ErrorBoundary>
         </ThemeProvider>
       </body>
