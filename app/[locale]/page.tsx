@@ -137,10 +137,10 @@ export default function Home() {
   useScrollRestoration('/', !loading);
 
   const features = useMemo(() => [
-    { title: t('features.send.title'), description: t('features.send.description'), icon: Send, href: '/send', color: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
-    { title: t('features.mint.title'), description: t('features.mint.description'), icon: Coins, href: '/mint', color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
-    { title: t('features.simulated_bank.title'), description: t('features.simulated_bank.description'), icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
-    { title: t('features.rates.title'), description: t('features.rates.description'), icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
+    { title: t('features.send.title'), description: t('features.send.description'), icon: Send, href: `/${locale}/send`, color: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
+    { title: t('features.mint.title'), description: t('features.mint.description'), icon: Coins, href: `/${locale}/mint`, color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
+    { title: t('features.simulated_bank.title'), description: t('features.simulated_bank.description'), icon: Building2, href: `/${locale}/fiat`, color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
+    { title: t('features.rates.title'), description: t('features.rates.description'), icon: TrendingUp, href: `/${locale}/rates`, color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' }, [locale, t]);
   ], [t]);
 
   useEffect(() => {
@@ -249,7 +249,7 @@ export default function Home() {
                       )}
                       {!fiatAccounts.length && (
                         <p className="text-sm font-normal text-muted-foreground mt-1 md:text-base">
-                          <Link href="/fiat" as="/fiat" className="text-primary font-medium underline-offset-2 hover:underline">
+                          <Link href={`/${locale}/fiat`} as={`/${locale}/fiat`} className="text-primary font-medium underline-offset-2 hover:underline">
                             {t('add_demo_funds')}
                           </Link>
                         </p>
@@ -275,7 +275,7 @@ export default function Home() {
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
-                <Link key={feature.href} href={feature.href} as={feature.href} className="block">
+                <Link key={feature.href} href={feature.href} className="block">
                   <div className={`${feature.color} rounded-lg border border-border/50 p-4 h-full transition-all active:scale-95 md:p-5`}>
                     <Icon className={`w-6 h-6 ${feature.iconColor} mb-2 md:w-7 md:h-7 md:mb-3`} />
                     <h3 className="text-sm font-semibold text-foreground mb-0.5 md:text-base">{feature.title}</h3>
@@ -289,7 +289,7 @@ export default function Home() {
           <div className="space-y-3 md:space-y-4">
             <div className="flex items-center justify-between px-1">
               <h3 className="text-sm font-semibold text-foreground md:text-base">{t('recent_activity')}</h3>
-              <Link href="/activity" as="/activity" className="text-xs text-primary font-medium md:text-sm">{t('view_all')}</Link>
+              <Link href={`/${locale}/activity`} className="text-xs text-primary font-medium md:text-sm">{t('view_all')}</Link>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             {loading ? (
@@ -299,7 +299,7 @@ export default function Home() {
                 icon={<Clock className="w-10 h-10" />}
                 title={t('no_recent_activity')}
                 action={
-                  <Link href="/send" as="/send" className="text-xs text-primary font-medium">
+                  <Link href={`/${locale}/send`} className="text-xs text-primary font-medium">
                     {t('send_money')}
                   </Link>
                 }
@@ -307,7 +307,7 @@ export default function Home() {
             ) : (
               <div className="space-y-2 md:space-y-3">
                 {transactions.slice(0, 5).map((tx) => (
-                  <Link key={tx.transaction_id} href={`/transactions/${tx.transaction_id}`} as={`/transactions/${tx.transaction_id}`} className="block rounded-lg border border-border bg-card p-3 transition-colors active:bg-muted md:p-4">
+                  <Link key={tx.transaction_id} href={`/${locale}/transactions/${tx.transaction_id}`} className="block rounded-lg border border-border bg-card p-3 transition-colors active:bg-muted md:p-4">
                     <div className="flex items-center gap-3 mb-2">
                       <div
                         className={`p-2 rounded-full flex-shrink-0 md:p-3 ${
