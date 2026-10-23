@@ -178,7 +178,7 @@ export default function BillsPage() {
     return (
       <div className="pb-20">
         <div className="border-border border-b px-4 pt-6 pb-6">
-          <h1 className="text-foreground mb-2 text-2xl font-bold">Bills</h1>
+          <h1 className="text-foreground mb-2 text-lg font-bold">Bills</h1>
           <p className="text-muted-foreground text-sm">
             Pay bills and subscriptions easily
           </p>
@@ -205,7 +205,7 @@ export default function BillsPage() {
     <>
       <div className="border-border border-b">
         <div className="px-4 pt-6 pb-6">
-          <h1 className="text-foreground mb-2 text-2xl font-bold">
+          <h1 className="text-foreground mb-2 text-lg font-bold">
             Bills & Subscriptions
           </h1>
           <p className="text-muted-foreground text-sm">
