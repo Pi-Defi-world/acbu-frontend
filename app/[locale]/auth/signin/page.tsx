@@ -12,6 +12,10 @@ import { useAuth } from "@/contexts/auth-context";
 import * as authApi from "@/lib/api/auth";
 import { setPasscode as storePasscode } from "@/lib/passcode-manager";
 import { isSafeRedirect } from "@/lib/redirect";
+import {
+  setChallengeToken,
+  setPostAuthRedirect,
+} from "@/lib/auth-challenge-store";
 
 export default function SignInPage() {
   const t = useTranslations("auth.signin");
@@ -70,11 +74,10 @@ function SignInForm() {
       if ("requires_2fa" in result && result.requires_2fa) {
         storePasscode(passcode);
 
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("2fa_challenge_token", result.challenge_token);
-          const safe = isSafeRedirect(redirectParam);
-          if (safe) sessionStorage.setItem("post_auth_redirect", safe);
-        }
+        setChallengeToken(result.challenge_token);
+        const safe = isSafeRedirect(redirectParam);
+        if (safe) setPostAuthRedirect(safe);
+
         router.push(`/${locale}/auth/2fa`);
         return;
       }

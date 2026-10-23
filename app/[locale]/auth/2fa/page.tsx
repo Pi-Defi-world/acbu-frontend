@@ -12,9 +12,12 @@ import { useAuth } from '@/contexts/auth-context';
 import * as authApi from '@/lib/api/auth';
 import { getPasscode } from '@/lib/passcode-manager';
 import { isSafeRedirect } from '@/lib/redirect';
-
-const CHALLENGE_TOKEN_KEY = '2fa_challenge_token';
-const POST_AUTH_REDIRECT_KEY = 'post_auth_redirect';
+import {
+  getChallengeToken as getStoredChallengeToken,
+  clearChallengeToken as clearStoredChallengeToken,
+  getPostAuthRedirect as getStoredPostAuthRedirect,
+  clearPostAuthRedirect as clearStoredPostAuthRedirect,
+} from '@/lib/auth-challenge-store';
 
 export default function TwoFactorPage() {
   const t = useTranslations('auth_2fa');
@@ -45,14 +48,13 @@ function TwoFactorForm() {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const storedToken = sessionStorage.getItem(CHALLENGE_TOKEN_KEY);
+    const storedToken = getStoredChallengeToken();
     const passcode = getPasscode();
     if (storedToken && passcode) {
       setChallengeToken(storedToken);
     } else {
       // Always require a fresh challenge — clear stale token on mount
-      sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
+      clearStoredChallengeToken();
     }
     setChecked(true);
   }, []);
@@ -74,7 +76,7 @@ function TwoFactorForm() {
 
       if (!getPasscode()) {
         setError(t('errors.session_expired'));
-        sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
+        clearStoredChallengeToken();
         return;
       }
 
@@ -88,12 +90,8 @@ function TwoFactorForm() {
       sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
 
       // honor a stored safe post-auth redirect if present
-      const stored =
-        typeof window !== "undefined"
-          ? sessionStorage.getItem(POST_AUTH_REDIRECT_KEY)
-          : null;
-      if (typeof window !== "undefined")
-        sessionStorage.removeItem(POST_AUTH_REDIRECT_KEY);
+      const stored = getStoredPostAuthRedirect();
+      clearStoredPostAuthRedirect();
       const safe = isSafeRedirect(stored);
       router.push(
         result.wallet_created || !result.stellar_address
