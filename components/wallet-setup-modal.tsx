@@ -280,9 +280,14 @@ export function WalletSetupModal() {
                   {t("wallet.import.seed_help")}
                 </p>
 
+                <label htmlFor="wallet-setup-import-seed" className="sr-only">
+                  {t("wallet.import.seed_label")}
+                </label>
                 <Input
+                  id="wallet-setup-import-seed"
                   type="password"
                   placeholder="Starts with S..."
+                  aria-label={t("wallet.import.seed_label")}
                   value={importSeed}
                   onChange={(e) => setImportSeed(e.target.value)}
                   disabled={loading}
