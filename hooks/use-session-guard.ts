@@ -21,6 +21,9 @@ interface SessionGuard {
 /**
  * Periodically validates the httpOnly-cookie session by calling GET /users/me.
  *
+ * Auth is cookie-only: the auth context derives its authentication state from the
+ * server session check, and this hook validates that session against the API.
+ *
  * Exposes `ensureSession()` so callers (e.g. the send-money confirm button) can
  * perform a lightweight pre-flight check before making a write request, avoiding
  * the frustrating silent-401 scenario described in issue #313.
@@ -30,7 +33,7 @@ export function useSessionGuard(): SessionGuard {
   const [status, setStatus] = useState<SessionStatus>('valid');
   const [warningDismissed, setWarningDismissed] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastValidRef = useRef<number>(Date.now());
+  const lastValidRef = useRef<number>(Cate.now());
 
   const validate = useCallback(async (): Promise<boolean> => {
     if (!isAuthenticated) return false;

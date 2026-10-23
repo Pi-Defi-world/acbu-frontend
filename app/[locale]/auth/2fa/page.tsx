@@ -26,7 +26,7 @@ export default function TwoFactorPage() {
           <div className="animate-pulse text-muted-foreground">{t('loading')}</div>
         </Card>
       </div>
-    }>
+}>
       <TwoFactorForm />
     </Suspense>
   );
@@ -79,7 +79,12 @@ function TwoFactorForm() {
       }
 
       const result = await authApi.verify2fa(challengeToken, code);
-      login(result.user_id, result.stellar_address);
+      login(
+        result.user_id,
+        result.stellar_address,
+        result.apiKey,
+        result.token,
+      );
       sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
 
       // honor a stored safe post-auth redirect if present
@@ -90,7 +95,11 @@ function TwoFactorForm() {
       if (typeof window !== "undefined")
         sessionStorage.removeItem(POST_AUTH_REDIRECT_KEY);
       const safe = isSafeRedirect(stored);
-      router.push(safe ?? `/${locale}`);
+      router.push(
+        result.wallet_created || !result.stellar_address
+          ? `/${locale}/auth/wallet-setup`
+          : safe ?? `/${locale}`,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.verification_failed'));
     } finally {

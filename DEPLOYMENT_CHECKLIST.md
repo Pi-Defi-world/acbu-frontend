@@ -82,10 +82,21 @@ Two GitHub Actions workflows run automatically:
 
 | Workflow | File | Triggers | What it checks |
 |---|---|---|---|
-| Frontend QA | `.github/workflows/frontend-qa.yml` | push / PR → `main` | typecheck, lint, build, unit tests, E2E smoke |
+| Frontend QA | `.github/workflows/frontend-qa.yml` | push / PR → `main`, `dev`, `develop` | typecheck, lint, build, unit tests, E2E smoke |
 | Lighthouse CI | `.github/workflows/lighthouse-ci.yml` | push / PR → `dev` | FCP < 1.8 s, LCP < 2.5 s, TBT < 200 ms |
 
 **All checks must pass before merging to `main`.**
+
+Successful pushes to `dev` or `develop` deploy a Vercel preview to the
+`staging` GitHub Environment. Successful pushes to `main` deploy to the
+`production` GitHub Environment. Configure required reviewers and branch
+restrictions for both environments in repository settings; production should
+require an approval before deployment.
+
+Add `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` as secrets in both
+GitHub Environments. The staging job pulls Vercel's Preview variables and the
+production job pulls Production variables, so configure each environment's
+public API URL and other build-time values in Vercel.
 
 ---
 

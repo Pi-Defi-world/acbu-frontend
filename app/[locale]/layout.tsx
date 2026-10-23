@@ -1,38 +1,21 @@
-import React, { Suspense } from "react"
-import { NavigationGuardProvider } from '@/contexts/navigation-guard-context'
-import { AuthGuard } from '@/components/layout/auth-guard';
-import { Spinner } from '@/components/ui/spinner';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import type { ReactNode } from "react";
 
-function TranslationsFallback() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Spinner className="size-6 text-muted-foreground" />
-    </div>
-  );
-}
-
+/**
+ * Locale layout for the [locale] route segment.
+ *
+ * The root layout (app/layout.tsx) now wraps ALL children in
+ * NextIntlClientProvider, so non-locale pages (send, wallet, mint, bills,
+ * etc.) also receive the i18n context.  This locale layout previously
+ * duplicated that provider (and referenced Suspense/TranslationsFallback
+ * that were never imported, which would break the build).
+ *
+ * It is kept as a pass-through so the [locale] segment still resolves.
+ */
 export default async function LocaleLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }>) {
-  // params is needed to satisfy Next.js dynamic segment typing; locale is
-  // resolved by next-intl's request config so getMessages() picks it up
-  // automatically without us having to forward it explicitly.
-  await params;
-  const messages = await getMessages();
-
-  return (
-    <Suspense fallback={<TranslationsFallback />}>
-      <NextIntlClientProvider messages={messages}>
-        <NavigationGuardProvider>
-          <AuthGuard>
-            {children}
-          </AuthGuard>
-        </NavigationGuardProvider>
-      </NextIntlClientProvider>
-    </Suspense>
-  );
+  return <>{children}</>;
 }

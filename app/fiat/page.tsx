@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useFormatter } from 'next-intl';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 
 export default function FiatSimPage() {
   const opts = useApiOpts();
+  const format = useFormatter();
   const { getWalletSigner } = useWalletSetup();
   const { uiError, setApiError, clearError, isSubmitDisabled } = useApiError();
   const { accounts, loading, error: accountsError, refetch: refetchAccounts } = useFiatAccounts();
@@ -132,6 +134,9 @@ export default function FiatSimPage() {
                   </option>
                 ))}
               </select>
+              <label htmlFor="faucet-amount" className="sr-only">
+                Amount
+              </label>
               <Input
                 id="faucet-amount"
                 type="number"
@@ -186,12 +191,12 @@ export default function FiatSimPage() {
                   </div>
                   <div className="mt-1 space-y-1">
                     <p className="text-sm font-semibold text-foreground">
-                      {acc.currency} {Number(acc.balance || 0).toLocaleString()}
+                      {acc.currency} {format.number(Number(acc.balance || 0))}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       ≈ USD{' '}
                       {acc.usd_equivalent != null
-                        ? Number(acc.usd_equivalent).toLocaleString(undefined, {
+                        ? format.number(Number(acc.usd_equivalent), {
                             maximumFractionDigits: 2,
                           })
                         : '—'}
@@ -209,4 +214,3 @@ export default function FiatSimPage() {
     </PageContainer>
   );
 }
-

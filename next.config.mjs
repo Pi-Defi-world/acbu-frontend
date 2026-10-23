@@ -1,7 +1,11 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import bundleAnalyzer from '@next/bundle-analyzer';
 import { validateEnv } from './lib/env-safety.js';
 
 validateEnv(process.env);
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
@@ -39,6 +43,64 @@ const nextConfig = {
   },
   // Don't advertise the framework to reduce attack surface
   poweredByHeader: false,
+
+  /**
+   * Security headers — W10-F-010
+   *
+   * Applied to every response via the `headers()` hook below.  The CSP is
+   * intentionally strict and reports violations to the existing
+   * /api/csp-report endpoint (W2-F-036) so the endpoint is no longer dead.
+   *
+   * Notes:
+   *   - 'unsafe-inline' is required for Next.js' inline bootstrap scripts
+   *     and styled-jsx; tighten with nonces once the app is migrated.
+   *   - 'unsafe-eval' is only enabled in development for React Refresh.
+   *   - connect-src includes the API origin so XHR/fetch to the backend
+   *     is permitted without opening the policy to arbitrary hosts.
+   */
+  async headers() {
+    const isDev = process.env.NODE_ENV !== 'production';
+
+    const apiOrigin = process.env.NEXT_PUBLIC_API_BASE_URL
+      ? new URL(process.env.NEXT_PUBLIC_API_BASE_URL).origin
+      : '';
+
+    const cspDirectives = [
+      "default-src 'self'",
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ''} https://*.sentry.io`,
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
+      'report-uri /api/csp-report',
+    ];
+
+    const securityHeaders = [
+      { key: 'Content-Security-Policy', value: cspDirectives.join('; ') },
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      {
+        key: 'Permissions-Policy',
+        value: 'camera=(), microphone=(), geolocation=(), payment=()',
+      },
+      {
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload',
+      },
+    ];
+
+    return [
+      {
+        source: '/:path*',
+        headers: securityHeaders,
+      },
+    ];
+  },
 
   /**
    * Image optimisation — intentional configuration (see docs/adr/image-pipeline.md)
@@ -91,6 +153,16 @@ const nextConfig = {
   productionBrowserSourceMaps: true,
 
   webpack(config, { isServer, dev }) {
+    // --- Path alias (must match tsconfig.json `paths`) --------------------
+    // Keep the `@/*` alias in sync with tsconfig.json so that module
+    // specifiers such as `@/components` resolve identically in the IDE
+    // (TypeScript) and in the Next.js webpack build.  Without this the
+    // build fails with "Module not found" even though the IDE is happy.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname),
+    };
+
     // --- Source-map upload (production client builds only) ----------------
     if (!dev && !isServer && sentryWebpackPlugin) {
       config.plugins.push(
@@ -155,7 +227,7 @@ const nextConfig = {
       { source: '/account', destination: '/me', permanent: false },
       { source: '/account/profile', destination: '/me/profile', permanent: false },
       { source: '/account/kyc', destination: '/me/kyc', permanent: false },
-      { source: '/account/recovery', destination: '/recovery', permanent: false },
+      { source: '/account/recovery', destination: '/recovery', permanent: false }
     ];
   },
 };
