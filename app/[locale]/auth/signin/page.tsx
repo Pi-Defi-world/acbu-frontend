@@ -116,6 +116,7 @@ function SignInForm() {
               <div
                 id="signin-error"
                 role="alert"
+                aria-live="assertive"
                 className="border-destructive/30 bg-destructive/10 flex gap-3 rounded-lg border p-3"
               >
                 <AlertCircle
@@ -129,6 +130,7 @@ function SignInForm() {
               <div
                 id="signin-success"
                 role="status"
+                aria-live="polite"
                 className="flex gap-3 rounded-lg border border-green-500/30 bg-green-500/10 p-3"
               >
                 <p className="text-sm text-green-600">{success}</p>
@@ -148,6 +150,7 @@ function SignInForm() {
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="border-border"
                 disabled={loading}
+                aria-invalid={Boolean(error)}
                 aria-describedby={error ? "signin-error" : undefined}
               />
             </div>
@@ -165,6 +168,7 @@ function SignInForm() {
                   onChange={(e) => setPasscode(e.target.value)}
                   className="border-border pr-10"
                   disabled={loading}
+                  aria-invalid={Boolean(error)}
                   aria-describedby={error ? "signin-error" : undefined}
                 />
                 <button

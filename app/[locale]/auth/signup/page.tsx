@@ -148,6 +148,7 @@ export default function SignUpPage() {
               <div
                 id="signup-error"
                 role="alert"
+                aria-live="assertive"
                 className="border-destructive/30 bg-destructive/10 flex gap-3 rounded-lg border p-3"
               >
                 <AlertCircle
@@ -171,6 +172,7 @@ export default function SignUpPage() {
                 onChange={handleUsernameChange}
                 className="border-border"
                 disabled={loading}
+                aria-invalid={Boolean(error)}
                 aria-describedby={error ? "signup-error" : undefined}
               />
             </div>
@@ -188,7 +190,12 @@ export default function SignUpPage() {
                   onChange={(e) => setPasscode(e.target.value)}
                   className="border-border pr-10"
                   disabled={loading}
-                  aria-describedby={error ? "signup-error" : undefined}
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={
+                    [error && "signup-error", "signup-passcode-policy"]
+                      .filter(Boolean)
+                      .join(" ")
+                  }
                 />
                 <button
                   type="button"
@@ -242,6 +249,7 @@ export default function SignUpPage() {
                 onChange={(e) => setConfirmPasscode(e.target.value)}
                 className="border-border"
                 disabled={loading}
+                aria-invalid={Boolean(error)}
                 aria-describedby={error ? "signup-error" : undefined}
               />
             </div>
