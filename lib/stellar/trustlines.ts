@@ -140,8 +140,13 @@ async function addTrustlineForAsset(params: {
   }
 
   const op = Operation.changeTrust({ asset: params.asset });
+  // Use current network base fee instead of a hardcoded value to avoid
+  // transactions getting stuck during congestion. Apply a multiplier to
+  // increase the chance of timely inclusion.
+  const baseFee = await server.fetchBaseFee();
+  const fee = String(Math.max(100, Math.ceil(baseFee * 2)));
   const tx = new TransactionBuilder(account, {
-    fee: "100",
+    fee,
     networkPassphrase,
   })
     .addOperation(op)
