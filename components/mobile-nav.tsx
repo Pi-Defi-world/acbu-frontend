@@ -88,7 +88,7 @@ export function MobileNav() {
               aria-label={item.name}
               aria-current={isActive ? "page" : undefined}
               disabled={isPending}
-              className={`flex h-20 flex-1 flex-col items-center justify-center gap-1 transition-colors ${
+              className={`flex h-20 flex-1 flex-col items-center justify-center gap-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
