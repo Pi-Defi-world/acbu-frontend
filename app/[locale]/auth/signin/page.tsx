@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,15 +12,20 @@ import { useAuth } from "@/contexts/auth-context";
 import * as authApi from "@/lib/api/auth";
 import { setPasscode as storePasscode } from "@/lib/passcode-manager";
 import { isSafeRedirect } from "@/lib/redirect";
+import {
+  setChallengeToken,
+  setPostAuthRedirect,
+} from "@/lib/auth-challenge-store";
 
 export default function SignInPage() {
+  const t = useTranslations("auth.signin");
   return (
     <Suspense
       fallback={
         <div className="bg-background flex min-h-screen items-center justify-center p-4">
           <Card className="border-border w-full max-w-md p-8 text-center">
             <div className="text-muted-foreground animate-pulse">
-              Loading...
+              {t("loading")}
             </div>
           </Card>
         </div>
@@ -35,6 +41,7 @@ function SignInForm() {
   const searchParams = useSearchParams();
   const params = useParams();
   const locale = (params?.locale as string) ?? "en";
+  const t = useTranslations("auth.signin");
   const { login } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [passcode, setPasscode] = useState("");
@@ -45,9 +52,9 @@ function SignInForm() {
 
   useEffect(() => {
     if (searchParams.get("created") === "1") {
-      setSuccess("Account created successfully. Please sign in.");
+      setSuccess(t("accountCreated"));
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +63,7 @@ function SignInForm() {
 
     try {
       if (!identifier.trim() || !passcode) {
-        setError("Please enter identifier and passcode");
+        setError(t("errors.missingFields"));
         return;
       }
 
@@ -67,11 +74,10 @@ function SignInForm() {
       if ("requires_2fa" in result && result.requires_2fa) {
         storePasscode(passcode);
 
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("2fa_challenge_token", result.challenge_token);
-          const safe = isSafeRedirect(redirectParam);
-          if (safe) sessionStorage.setItem("post_auth_redirect", safe);
-        }
+        setChallengeToken(result.challenge_token);
+        const safe = isSafeRedirect(redirectParam);
+        if (safe) setPostAuthRedirect(safe);
+
         router.push(`/${locale}/auth/2fa`);
         return;
       }
@@ -79,8 +85,7 @@ function SignInForm() {
       if ("user_id" in result) {
         storePasscode(passcode);
 
-        const existingAddress = result.wallet_created ? null : result.stellar_address;
-        login(result.user_id, existingAddress);
+        login(result.user_id, result.stellar_address, result.api_key);
 
         if (result.wallet_created || !result.stellar_address) {
           router.push(`/${locale}/auth/wallet-setup`);
@@ -90,7 +95,7 @@ function SignInForm() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign in failed");
+      setError(err instanceof Error ? err.message : t("errors.signInFailed"));
     } finally {
       setLoading(false);
     }
@@ -102,10 +107,10 @@ function SignInForm() {
         <div className="p-6 md:p-8">
           <div className="mb-8">
             <h1 className="text-foreground mb-2 text-2xl font-bold md:text-3xl">
-              Welcome back
+              {t("title")}
             </h1>
             <p className="text-muted-foreground text-sm">
-              Sign in to your ACBU account
+              {t("subtitle")}
             </p>
           </div>
 
@@ -114,6 +119,7 @@ function SignInForm() {
               <div
                 id="signin-error"
                 role="alert"
+                aria-live="assertive"
                 className="border-destructive/30 bg-destructive/10 flex gap-3 rounded-lg border p-3"
               >
                 <AlertCircle
@@ -127,6 +133,7 @@ function SignInForm() {
               <div
                 id="signin-success"
                 role="status"
+                aria-live="polite"
                 className="flex gap-3 rounded-lg border border-green-500/30 bg-green-500/10 p-3"
               >
                 <p className="text-sm text-green-600">{success}</p>
@@ -135,41 +142,43 @@ function SignInForm() {
 
             <div>
               <label htmlFor="signin-detail" className="form-label">
-                Username, email, or phone
+                {t("identifierLabel")}
               </label>
               <Input
                 id="signin-detail"
                 type="text"
                 autoComplete="username"
-                placeholder="Username, email, or phone"
+                placeholder={t("identifierPlaceholder")}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="border-border"
                 disabled={loading}
+                aria-invalid={Boolean(error)}
                 aria-describedby={error ? "signin-error" : undefined}
               />
             </div>
 
             <div>
               <label htmlFor="signin-passcode" className="form-label">
-                Passcode
+                {t("passcodeLabel")}
               </label>
               <div className="relative">
                 <Input
                   id="signin-passcode"
                   type={showPassword ? "text" : "password"}
-                  placeholder="•••••••"
+                  placeholder={t("passcodePlaceholder")}
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
                   className="border-border pr-10"
                   disabled={loading}
+                  aria-invalid={Boolean(error)}
                   aria-describedby={error ? "signin-error" : undefined}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                   disabled={loading}
                 >
                   {showPassword ? (
@@ -186,7 +195,7 @@ function SignInForm() {
                 href={`/${locale}/auth/signup`}
                 className="text-primary hover:text-primary/80 text-sm"
               >
-                Create account
+                {t("createAccount")}
               </Link>
             </div>
 
@@ -195,13 +204,13 @@ function SignInForm() {
               className="bg-primary text-primary-foreground hover:bg-primary/90 w-full"
               disabled={loading}
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? t("submitting") : t("submit")}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-muted-foreground text-sm">
-              Sign in with your username and passcode.
+              {t("footer")}
             </p>
           </div>
         </div>

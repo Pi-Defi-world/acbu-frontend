@@ -1,6 +1,8 @@
 import React from "react";
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
 import OfflineIndicator from "@/components/offline-indicator-dynamic";
 import VercelAnalytics from "@/components/vercel-analytics-dynamic";
 import { AuthProvider } from "@/contexts/auth-context";
@@ -74,6 +76,12 @@ export default async function RootLayout({
   // Compute at render time to avoid module-scope env access (Edge / SSR safe)
   const apiOrigin = getApiOrigin();
 
+  // Load next-intl messages for the resolved locale so that ALL pages
+  // (not just [locale]/...) have access to NextIntlClientProvider context.
+  // Non-locale pages (send, wallet, mint, bills, etc.) use useTranslations /
+  // useFormatter / useLocale from next-intl and need this provider.
+  const messages = await getMessages();
+
   if (
     process.env.NODE_ENV === "development" &&
     !process.env.NEXT_PUBLIC_API_BASE_URL?.trim() &&
@@ -140,23 +148,25 @@ export default async function RootLayout({
           <GlobalErrorHandler />
           <OfflineIndicator />
           <ErrorBoundary level="app">
-            <I18nProvider>
-              <NavigationGuardProvider>
-                <AuthProvider>
-                  <AppLayout>
-                    <AuthGuard>{children}</AuthGuard>
-                  </AppLayout>
-                  <WalletSetupModal />
-                  <Toaster />
-                  {/*
-                    F-065 SRI review: analytics is non-critical, so it is
-                    dynamically loaded on the client instead of being emitted as a
-                    beforeInteractive script that can block initial rendering.
-                  */}
-                  <VercelAnalytics />
-                </AuthProvider>
-              </NavigationGuardProvider>
-            </I18nProvider>
+            <NextIntlClientProvider messages={messages} locale={lang}>
+              <I18nProvider>
+                <NavigationGuardProvider>
+                  <AuthProvider>
+                    <AppLayout>
+                      <AuthGuard>{children}</AuthGuard>
+                    </AppLayout>
+                    <WalletSetupModal />
+                    <Toaster />
+                    {/*
+                      F-065 SRI review: analytics is non-critical, so it is
+                      dynamically loaded on the client instead of being emitted as a
+                      beforeInteractive script that can block initial rendering.
+                    */}
+                    <VercelAnalytics />
+                  </AuthProvider>
+                </NavigationGuardProvider>
+              </I18nProvider>
+            </NextIntlClientProvider>
           </ErrorBoundary>
         </ThemeProvider>
       </body>

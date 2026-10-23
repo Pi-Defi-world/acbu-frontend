@@ -568,10 +568,9 @@ export default function SendPage() {
                 <Input
                   id="amount-input"
                   name="amount"
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="0.00"
-                  min="0"
-                  step="any"
                   value={amount}
                   onChange={handleAmountChange}
                   className="border-border text-lg font-semibold"

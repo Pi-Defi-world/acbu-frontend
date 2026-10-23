@@ -50,6 +50,45 @@
       "description": "Market rates"
     }
   },
+  "auth_signin": {
+    "title": "Sign in",
+    "description": "Sign in to your account",
+    "email_label": "Email",
+    "email_placeholder": "you@example.com",
+    "password_label": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in...",
+    "no_account": "Don't have an account?",
+    "signup_link": "Sign up",
+    "forgot_password": "Forgot password?",
+    "errors": {
+      "invalid_credentials": "Invalid email or password",
+      "required_fields": "Please enter your email and password",
+      "login_failed": "Sign in failed",
+      "unexpected": "An unexpected error occurred. Please try again."
+    }
+  },
+  "auth_signup": {
+    "title": "Create account",
+    "description": "Sign up to get started",
+    "name_label": "Full name",
+    "name_placeholder": "Jane Doe",
+    "email_label": "Email",
+    "email_placeholder": "you@example.com",
+    "password_label": "Password",
+    "confirm_password_label": "Confirm password",
+    "submit": "Sign up",
+    "submitting": "Creating account...",
+    "has_account": "Already have an account?",
+    "signin_link": "Sign in",
+    "errors": {
+      "required_fields": "Please fill in all required fields",
+      "password_mismatch": "Passwords do not match",
+      "password_too_short": "Password must be at least 8 characters",
+      "signup_failed": "Sign up failed",
+      "unexpected": "An unexpected error occurred. Please try again."
+    }
+  },
   "auth_2fa": {
     "loading": "Loading...",
     "title": "Two-Factor Authentication",
@@ -101,6 +140,7 @@
       "description": "Use an existing Stellar secret key",
       "heading": "Import Seed",
       "seed_help": "Enter your Stellar secret key (starts with 'S'). It will be stored encrypted on this device.",
+      "seed_label": "Stellar secret key",
       "importing": "Importing...",
       "submit": "Import Wallet"
     },
@@ -260,7 +300,7 @@
       "mint_title": "Confirm Mint",
       "burn_title": "Confirm Burn",
       "mint_description": "Mint ACBU by exchanging {currency} {amount}{estimate}",
-      "estimate": " (≈ {amount} ACBU at current rates)",
+      "estimate": " (» {amount} ACBU at current rates)",
       "burn_description": "Burn ACBU {amount} and withdraw to bank account",
       "amount": "Amount:",
       "cancel": "Cancel",
