@@ -23,6 +23,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint:staged": "lint-staged",
+    "deadcode": "knip",
     "prepare": "husky"
   },
   "dependencies": {
@@ -105,6 +106,7 @@
     "globals": "^17.12.0",
     "husky": "^9.1.7",
     "jsdom": "^30.1.0",
+    "knip": "^5.66.0",
     "lint-staged": "^16.2.7",
     "playwright": "^1.63.0",
     "postcss": "^8.5",
@@ -149,6 +151,37 @@
     ],
     "*.{json,css,md}": [
       "prettier --write"
+    ]
+  },
+  "knip": {
+    "entry": [
+      "app/**/{page,layout,template,loading,error,not-found,route,default,global-error}.{js,jsx,ts,tsx}",
+      "middleware.{js,ts}",
+      "next.config.{js,mjs,ts}",
+      "scripts/**/*.{js,mjs,ts}",
+      "**/*.{test,spec}.{js,jsx,ts,tsx}",
+      "**/*.config.{js,mjs,cjs,ts}"
+    ],
+    "project": [
+      "**/*.{js,jsx,ts,tsx}",
+      "!**/node_modules/**",
+      "!.next/**",
+      "!coverage/**",
+      "!playwright-report/**",
+      "!test-results/**"
+    ],
+    "ignore": [
+      "**/*.d.ts",
+      "public/**",
+      "scripts/generate-pwa-icons.mjs"
+    ],
+    "ignoreDependencies": [
+      "tailwindcss-animate",
+      "tw-animate-css",
+      "postcss-preset-env",
+      "autoprefixer",
+      "sharp",
+      "@next/bundle-analyzer"
     ]
   }
 }
