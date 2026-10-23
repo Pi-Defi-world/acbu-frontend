@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -10,8 +11,6 @@ import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import * as authApi from "@/lib/api/auth";
 
 const MIN_PASSCODE_LENGTH = 12;
-const PASSCODE_POLICY_MESSAGE =
-  "Passcode must be at least 12 characters and include uppercase, lowercase, number, and special character.";
 const STRONG_PASSCODE_MIN_SCORE = 4;
 const PASSCODE_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{12,$}$/;
@@ -25,7 +24,7 @@ const PASSCODE_WEAK_PATTERNS = [
   "abcdef",
 ];
 
-const getPasscodeStrength = (value: string) => {
+const getPasscodeStrength = (value: string, labels: string[]) => {
   let score = 0;
 
   if (value.length >= MIN_PASSCODE_LENGTH) score += 1;
@@ -45,7 +44,6 @@ const getPasscodeStrength = (value: string) => {
   }
 
   const normalizedScore = Math.max(0, Math.min(5, score));
-  const labels = ["Very weak", "Weak", "Fair", "Good", "Strong", "Very strong"];
   const barColors = [
     "bg-destructive/80",
     "bg-orange-500/80",
@@ -63,6 +61,7 @@ const getPasscodeStrength = (value: string) => {
 };
 
 export default function SignUpPage() {
+  const t = useTranslations("auth.signup");
   const router = useRouter();
   const params = useParams();
   const locale = (params?.locale as string) ?? "en";
@@ -73,6 +72,15 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const strengthLabels = [
+    t("strength.veryWeak"),
+    t("strength.weak"),
+    t("strength.fair"),
+    t("strength.good"),
+    t("strength.strong"),
+    t("strength.veryStrong"),
+  ];
+
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUsername(e.target.value.toLowerCase().trim());
   };
@@ -81,26 +89,26 @@ export default function SignUpPage() {
     e.preventDefault();
     setError("");
     if (passcode !== confirmPasscode) {
-      setError("Passcodes do not match");
+      setError(t("errors.passcodesDoNotMatch"));
       return;
     }
     if (passcode.length < MIN_PASSCODE_LENGTH) {
-      setError(`Passcode must be at least ${MIN_PASSCODE_LENGTH} characters`);
+      setError(t("errors.passcodeTooShort", { count: MIN_PASSCODE_LENGTH }));
       return;
     }
 
     if (!PASSCODE_REGEX.test(passcode)) {
-      setError(PASSCODE_POLICY_MESSAGE);
+      setError(t("errors.passcodePolicy"));
       return;
     }
 
-    const { score } = getPasscodeStrength(passcode);
+    const { score } = getPasscodeStrength(passcode, strengthLabels);
     if (score < STRONG_PASSCODE_MIN_SCORE) {
-      setError("Passcode is too weak. Please choose a stronger passcode.");
+      setError(t("errors.passcodeTooWeak"));
       return;
     }
     if (!username) {
-      setError("Please enter a username");
+      setError(t("errors.usernameRequired"));
       return;
     }
     setLoading(true);
@@ -108,13 +116,13 @@ export default function SignUpPage() {
       await authApi.signup(username, passcode);
       router.push(`/${locale}/auth/signin?created=1`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Create account failed");
+      setError(err instanceof Error ? err.message : t("errors.createFailed"));
     } finally {
       setLoading(false);
     }
   };
 
-  const passcodeStrength = getPasscodeStrength(passcode);
+  const passcodeStrength = getPasscodeStrength(passcode, strengthLabels);
 
   return (
     <div className="bg-background flex min-h-screen items-center justify-center p-4">
@@ -124,14 +132,14 @@ export default function SignUpPage() {
             href={`/${locale}/auth/signin`}
             className="text-muted-foreground hover:text-foreground mb-6 inline-flex items-center gap-2 text-sm"
           >
-            ← Back to sign in
+            {t("backToSignIn")}
           </Link>
           <div className="mb-8">
             <h1 className="text-foreground mb-2 text-2xl font-bold md:text-3xl">
-              Create account
+              {t("title")}
             </h1>
             <p className="text-muted-foreground text-sm">
-              Choose a username and passcode. No email required.
+              {t("subtitle")}
             </p>
           </div>
 
@@ -152,13 +160,13 @@ export default function SignUpPage() {
 
             <div>
               <label htmlFor="signup-username" className="form-label">
-                Username
+                {t("usernameLabel")}
               </label>
               <Input
                 id="signup-username"
                 type="text"
                 autoComplete="username"
-                placeholder="Username"
+                placeholder={t("usernamePlaceholder")}
                 value={username}
                 onChange={handleUsernameChange}
                 className="border-border"
@@ -169,13 +177,13 @@ export default function SignUpPage() {
 
             <div>
               <label htmlFor="signup-passcode" className="form-label">
-                Passcode (min 12 characters)
+                {t("passcodeLabel", { count: MIN_PASSCODE_LENGTH })}
               </label>
               <div className="relative">
                 <Input
                   id="signup-passcode"
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder={t("passcodePlaceholder")}
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
                   className="border-border pr-10"
@@ -210,7 +218,7 @@ export default function SignUpPage() {
                     ))}
                   </div>
                   <p className="text-muted-foreground text-xs">
-                    Strength:{" "}
+                    {t("strengthLabel")}{" "}
                     <span className="text-foreground font-medium">
                       {passcodeStrength.label}
                     </span>
@@ -218,18 +226,18 @@ export default function SignUpPage() {
                 </div>
               )}
               <p className="text-muted-foreground mt-2 text-xs">
-                {PASSCODE_POLICY_MESSAGE}
+                {t("passcodePolicy")}
               </p>
             </div>
 
             <div>
               <label htmlFor="confirm-passcode" className="form-label">
-                Confirm passcode
+                {t("confirmPasscodeLabel")}
               </label>
               <Input
                 id="confirm-passcode"
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
+                placeholder={t("passcodePlaceholder")}
                 value={confirmPasscode}
                 onChange={(e) => setConfirmPasscode(e.target.value)}
                 className="border-border"
@@ -243,18 +251,18 @@ export default function SignUpPage() {
               className="bg-primary text-primary-foreground hover:bg-primary/90 w-full"
               disabled={loading}
             >
-              {loading ? "Creating..." : "Create account"}
+              {loading ? t("creating") : t("submit")}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-muted-foreground text-sm">
-              Already have an account?{" "}
+              {t("haveAccount")}{" "}
               <Link
                 href={`/${locale}/auth/signin`}
                 className="text-primary font-medium"
               >
-                Sign in
+                {t("signIn")}
               </Link>
             </p>
           </div>
