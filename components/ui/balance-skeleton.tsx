@@ -25,7 +25,7 @@ export interface BalanceSkeletonProps {
  *   return <BalanceSkeleton variant="full" />;
  * }
  *
- * return <div>AFK {formatAmount(balance)}</div>;
+ * return <div>{CURRENCY} {formatAmount(balance)}</div>;
  * ```
  */
 export function BalanceSkeleton({
