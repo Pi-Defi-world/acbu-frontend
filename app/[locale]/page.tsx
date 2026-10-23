@@ -91,14 +91,18 @@ function sumSimulatedFiatUsd(
   return { usd: total, partial };
 }
 
-function formatDate(iso: string) {
+function formatDate(
+  iso: string,
+  locale: string,
+  labels: { today: string; yesterday: string },
+) {
   const d = parseUtcDate(iso);
   const today = new Date();
-  if (d.toDateString() === today.toDateString()) return 'Today';
+  if (d.toDateString() === today.toDateString()) return labels.today;
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  return d.toLocaleDateString();
+  if (d.toDateString() === yesterday.toDateString()) return labels.yesterday;
+  return d.toLocaleDateString(locale);
 }
 
 /**
@@ -133,10 +137,10 @@ export default function Home() {
   useScrollRestoration('/', !loading);
 
   const features = useMemo(() => [
-    { title: t('features.send.title'), description: t('features.send.description'), icon: Send, href: '/send', color: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
-    { title: t('features.mint.title'), description: t('features.mint.description'), icon: Coins, href: '/mint', color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
-    { title: t('features.simulated_bank.title'), description: t('features.simulated_bank.description'), icon: Building2, href: '/fiat', color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
-    { title: t('features.rates.title'), description: t('features.rates.description'), icon: TrendingUp, href: '/rates', color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' },
+    { title: t('features.send.title'), description: t('features.send.description'), icon: Send, href: `/${locale}/send`, color: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
+    { title: t('features.mint.title'), description: t('features.mint.description'), icon: Coins, href: `/${locale}/mint`, color: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
+    { title: t('features.simulated_bank.title'), description: t('features.simulated_bank.description'), icon: Building2, href: `/${locale}/fiat`, color: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
+    { title: t('features.rates.title'), description: t('features.rates.description'), icon: TrendingUp, href: `/${locale}/rates`, color: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' }, [locale, t]);
   ], [t]);
 
   useEffect(() => {
@@ -245,7 +249,7 @@ export default function Home() {
                       )}
                       {!fiatAccounts.length && (
                         <p className="text-sm font-normal text-muted-foreground mt-1 md:text-base">
-                          <Link href="/fiat" as="/fiat" className="text-primary font-medium underline-offset-2 hover:underline">
+                          <Link href={`/${locale}/fiat`} as={`/${locale}/fiat`} className="text-primary font-medium underline-offset-2 hover:underline">
                             {t('add_demo_funds')}
                           </Link>
                         </p>
@@ -271,7 +275,7 @@ export default function Home() {
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
-                <Link key={feature.href} href={feature.href} as={feature.href} className="block">
+                <Link key={feature.href} href={feature.href} className="block">
                   <div className={`${feature.color} rounded-lg border border-border/50 p-4 h-full transition-all active:scale-95 md:p-5`}>
                     <Icon className={`w-6 h-6 ${feature.iconColor} mb-2 md:w-7 md:h-7 md:mb-3`} />
                     <h3 className="text-sm font-semibold text-foreground mb-0.5 md:text-base">{feature.title}</h3>
@@ -285,7 +289,7 @@ export default function Home() {
           <div className="space-y-3 md:space-y-4">
             <div className="flex items-center justify-between px-1">
               <h3 className="text-sm font-semibold text-foreground md:text-base">{t('recent_activity')}</h3>
-              <Link href="/activity" as="/activity" className="text-xs text-primary font-medium md:text-sm">{t('view_all')}</Link>
+              <Link href={`/${locale}/activity`} className="text-xs text-primary font-medium md:text-sm">{t('view_all')}</Link>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             {loading ? (
@@ -295,55 +299,78 @@ export default function Home() {
                 icon={<Clock className="w-10 h-10" />}
                 title={t('no_recent_activity')}
                 action={
-                  <Link href="/send" as="/send" className="text-xs text-primary font-medium">
+                  <Link href={`/${locale}/send`} className="text-xs text-primary font-medium">
                     {t('send_money')}
                   </Link>
                 }
               />
             ) : (
               <div className="space-y-2 md:space-y-3">
-                {transactions.slice(0, 5).map((t) => (
-                  <Link key={t.transaction_id} href={`/transactions/${t.transaction_id}`} as={`/transactions/${t.transaction_id}`} className="block rounded-lg border border-border bg-card p-3 transition-colors active:bg-muted md:p-4">
+                {transactions.slice(0, 5).map((tx) => (
+                  <Link key={tx.transaction_id} href={`/${locale}/transactions/${tx.transaction_id}`} className="block rounded-lg border border-border bg-card p-3 transition-colors active:bg-muted md:p-4">
                     <div className="flex items-center gap-3 mb-2">
                       <div
                         className={`p-2 rounded-full flex-shrink-0 md:p-3 ${
-                          t.type === 'mint'
+                          tx.type === 'mint'
                             ? 'bg-green-100 dark:bg-green-900/30'
-                            : t.type === 'burn'
+                            : tx.type === 'burn'
                               ? 'bg-red-100 dark:bg-red-900/30'
                             : 'bg-blue-100 dark:bg-blue-900/30'
                         }`}
                       >
                         <ArrowUpRight
                           className={`w-4 h-4 md:w-5 md:h-5 ${
-                            t.type === 'mint'
+                            tx.type === 'mint'
                               ? 'text-green-600 dark:text-green-400'
-                              : t.type === 'burn'
+                              : tx.type === 'burn'
                                 ? 'text-red-600 dark:text-red-400'
                               : 'text-blue-600 dark:text-blue-400'
                           }`}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate md:text-base" title={t.type === 'mint' ? 'Mint' : t.type === 'burn' ? 'Burn' : 'Transfer'}>
-                          {t.type === 'mint' ? 'Mint' : t.type === 'burn' ? 'Burn' : 'Transfer'}
+                        {(() => {
+                          const typeLabel =
+                            tx.type === 'mint'
+                              ? t('tx_type.mint')
+                              : tx.type === 'burn'
+                                ? t('tx_type.burn')
+                                : t('tx_type.transfer');
+                          return (
+                            <p className="text-sm font-medium text-foreground truncate md:text-base" title={typeLabel}>
+                              {typeLabel}
+                            </p>
+                          );
+                        })()}
+                        <p className="text-xs text-muted-foreground md:text-sm">
+                          {formatDate(tx.created_at, locale, {
+                            today: t('today'),
+                            yesterday: t('yesterday'),
+                          })}
                         </p>
-                        <p className="text-xs text-muted-foreground md:text-sm">{formatDate(t.created_at)}</p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between pl-11 md:pl-14">
                       <p className="text-sm font-semibold text-foreground md:text-base">
-                        {t.type === 'burn'
-                          ? `- ACBU ${formatAcbu(t.acbu_amount_burned ?? t.amount_acbu)}`
-                          : t.type === 'mint'
-                            ? t.amount_acbu != null
-                              ? `+ ACBU ${formatAcbu(t.amount_acbu)}`
-                              : t.local_currency && t.local_amount
-                                ? `+ ${t.local_currency} ${formatAmount(t.local_amount)}`
+                        {tx.type === 'burn'
+                          ? `- ACBU ${formatAcbu(tx.acbu_amount_burned ?? tx.amount_acbu)}`
+                          : tx.type === 'mint'
+                            ? tx.amount_acbu != null
+                              ? `+ ACBU ${formatAcbu(tx.amount_acbu)}`
+                              : tx.local_currency && tx.local_amount
+                                ? `+ ${tx.local_currency} ${formatAmount(tx.local_amount)}`
                                 : '—'
-                            : `ACBU ${formatAcbu(t.amount_acbu)}`}
+                            : `ACBU ${formatAcbu(tx.amount_acbu)}`}
                       </p>
-                      <Badge variant="outline" className="text-xs md:text-sm">{t.status}</Badge>
+                      <Badge variant="outline" className="text-xs md:text-sm">
+                        {tx.status === 'completed'
+                          ? t('status.completed')
+                          : tx.status === 'pending'
+                            ? t('status.pending')
+                            : tx.status === 'failed'
+                              ? t('status.failed')
+                              : tx.status}
+                      </Badge>
                     </div>
                   </Link>
                 ))}

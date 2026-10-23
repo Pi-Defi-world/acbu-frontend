@@ -1,36 +1,21 @@
-import { Suspense, type ReactNode } from "react";
-import { AuthGuard } from '@/components/layout/auth-guard';
-import { Spinner } from '@/components/ui/spinner';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import type { ReactNode } from "react";
 
-function TranslationsFallback() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Spinner className="size-6 text-muted-foreground" />
-    </div>
-  );
-}
-
+/**
+ * Locale layout for the [locale] route segment.
+ *
+ * The root layout (app/layout.tsx) now wraps ALL children in
+ * NextIntlClientProvider, so non-locale pages (send, wallet, mint, bills,
+ * etc.) also receive the i18n context.  This locale layout previously
+ * duplicated that provider (and referenced Suspense/TranslationsFallback
+ * that were never imported, which would break the build).
+ *
+ * It is kept as a pass-through so the [locale] segment still resolves.
+ */
 export default async function LocaleLayout({
   children,
-  params,
 }: Readonly<{
   children: ReactNode;
   params: Promise<{ locale: string }>;
 }>) {
-  // Resolve the locale from the dynamic route segment so the root layout
-  // can announce the correct lang to assistive tech and crawlers.
-  const { locale } = await params;
-  const messages = await getMessages();
-
-  return (
-    <Suspense fallback={<TranslationsFallback />}>
-      <NextIntlClientProvider messages={messages} locale={locale}>
-        {/* The navigation guard lives in the root AppLayout so that the
-            navigations and the page content share the same state. */}
-        <AuthGuard>{children}</AuthGuard>
-      </NextIntlClientProvider>
-    </Suspense>
-  );
+  return <>{children}</>;
 }

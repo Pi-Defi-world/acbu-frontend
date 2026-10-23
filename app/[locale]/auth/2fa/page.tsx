@@ -12,9 +12,12 @@ import { useAuth } from '@/contexts/auth-context';
 import * as authApi from '@/lib/api/auth';
 import { getPasscode } from '@/lib/passcode-manager';
 import { isSafeRedirect } from '@/lib/redirect';
-
-const CHALLENGE_TOKEN_KEY = '2fa_challenge_token';
-const POST_AUTH_REDIRECT_KEY = 'post_auth_redirect';
+import {
+  getChallengeToken as getStoredChallengeToken,
+  clearChallengeToken as clearStoredChallengeToken,
+  getPostAuthRedirect as getStoredPostAuthRedirect,
+  clearPostAuthRedirect as clearStoredPostAuthRedirect,
+} from '@/lib/auth-challenge-store';
 
 export default function TwoFactorPage() {
   const t = useTranslations('auth_2fa');
@@ -26,7 +29,7 @@ export default function TwoFactorPage() {
           <div className="animate-pulse text-muted-foreground">{t('loading')}</div>
         </Card>
       </div>
-    }>
+}>
       <TwoFactorForm />
     </Suspense>
   );
@@ -45,14 +48,13 @@ function TwoFactorForm() {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const storedToken = sessionStorage.getItem(CHALLENGE_TOKEN_KEY);
+    const storedToken = getStoredChallengeToken();
     const passcode = getPasscode();
     if (storedToken && passcode) {
       setChallengeToken(storedToken);
     } else {
       // Always require a fresh challenge — clear stale token on mount
-      sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
+      clearStoredChallengeToken();
     }
     setChecked(true);
   }, []);
@@ -74,22 +76,22 @@ function TwoFactorForm() {
 
       if (!getPasscode()) {
         setError(t('errors.session_expired'));
-        sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
+        clearStoredChallengeToken();
         return;
       }
 
       const result = await authApi.verify2fa(challengeToken, code);
-      const existingAddress = result.wallet_created ? null : result.stellar_address;
-      login(result.user_id, existingAddress);
+      login(
+        result.user_id,
+        result.stellar_address,
+        result.apiKey,
+        result.token,
+      );
       sessionStorage.removeItem(CHALLENGE_TOKEN_KEY);
 
       // honor a stored safe post-auth redirect if present
-      const stored =
-        typeof window !== "undefined"
-          ? sessionStorage.getItem(POST_AUTH_REDIRECT_KEY)
-          : null;
-      if (typeof window !== "undefined")
-        sessionStorage.removeItem(POST_AUTH_REDIRECT_KEY);
+      const stored = getStoredPostAuthRedirect();
+      clearStoredPostAuthRedirect();
       const safe = isSafeRedirect(stored);
       router.push(
         result.wallet_created || !result.stellar_address
@@ -121,6 +123,7 @@ function TwoFactorForm() {
               <div
                 id="twofa-error"
                 role="alert"
+                aria-live="assertive"
                 className="border-destructive/30 bg-destructive/10 flex gap-3 rounded-lg border p-3"
               >
                 <AlertCircle
@@ -150,6 +153,7 @@ function TwoFactorForm() {
                 className="border-border text-center font-mono text-lg tracking-widest"
                 disabled={loading}
                 autoFocus
+                aria-invalid={Boolean(error)}
                 aria-describedby={error ? "twofa-error" : undefined}
               />
             </div>
@@ -164,7 +168,11 @@ function TwoFactorForm() {
           </form>
 
           {checked && !challengeToken && (
-            <p className="mt-4 text-sm text-destructive">
+            <p
+              role="alert"
+              aria-live="assertive"
+              className="mt-4 text-sm text-destructive"
+            >
               {t('missing_challenge_token')}{' '}
               <Link href={`/${locale}/auth/signin`} className="underline">
                 {t('sign_in_again')}

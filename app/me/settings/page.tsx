@@ -3,7 +3,6 @@
 
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
@@ -18,8 +17,6 @@ const items = [
 ];
 
 export default function SettingsPage() {
-  const router = useRouter();
-
   return (
     <>
       <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
@@ -35,9 +32,9 @@ export default function SettingsPage() {
           {items.map((item) => {
             const Icon = item.icon;
             return (
-              <button
+              <Link
                 key={item.href}
-                onClick={() => router.push(item.href)}
+                href={item.href}
                 className="w-full text-left"
                 aria-label={`Go to ${item.title} settings - ${item.description}`}
               >
@@ -52,7 +49,7 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </Card>
-              </button>
+              </Link>
             );
           })}
         </div>

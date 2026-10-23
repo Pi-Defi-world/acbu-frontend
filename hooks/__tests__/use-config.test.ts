@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getAssetsConfig } from '@/lib/api/config';
-import { useConfig } from '../use-config';
+import { getAssetsConfig, clearAssetsConfigCache } from '@/lib/api/config';
+import { useConfig, clearConfigCache } from '../use-config';
 
 vi.mock('@/lib/api/config', () => ({
   getAssetsConfig: vi.fn(),
@@ -41,5 +41,10 @@ describe('useConfig', () => {
     renderHook(() => useConfig());
 
     expect(getAssetsConfig).toHaveBeenCalledTimes(2);
+  });
+
+  it('clearConfigCache clears module-level cachedAt and underlying config cache', () => {
+    clearConfigCache();
+    expect(clearAssetsConfigCache).toHaveBeenCalledTimes(1);
   });
 });

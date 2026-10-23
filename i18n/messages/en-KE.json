@@ -18,7 +18,19 @@
     "some_currencies_missing_rate": "Some currencies missing a rate",
     "usd": "USD",
     "transaction_count": "{count, plural, one {# transaction} other {# transactions}}",
-    "session_count": "{count, plural, one {# active session} other {# active sessions}}"
+    "session_count": "{count, plural, one {# active session} other {# active sessions}}",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tx_type": {
+      "mint": "Mint",
+      "burn": "Burn",
+      "transfer": "Transfer"
+    },
+    "status": {
+      "pending": "Pending",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
   },
   "features": {
     "send": {
@@ -38,6 +50,51 @@
       "description": "Market rates"
     }
   },
+  "auth_signin": {
+    "title": "Sign in",
+    "description": "Sign in to your ACBU account",
+    "email_label": "Email",
+    "email_placeholder": "you@example.com",
+    "password_label": "Password",
+    "password_placeholder": "Enter your password",
+    "submit": "Sign in",
+    "submitting": "Signing in...",
+    "no_account": "Don't have an account?",
+    "signup_link": "Sign up",
+    "forgot_password": "Forgot password?",
+    "errors": {
+      "invalid_credentials": "Invalid email or password",
+      "email_required": "Email is required",
+      "password_required": "Password is required",
+      "login_failed": "Sign in failed. Please try again."
+    }
+  },
+  "auth_signup": {
+    "title": "Create account",
+    "description": "Sign up to get started with ACBU",
+    "name_label": "Full name",
+    "name_placeholder": "Jane Doe",
+    "email_label": "Email",
+    "email_placeholder": "you@example.com",
+    "password_label": "Password",
+    "password_placeholder": "Create a password",
+    "confirm_password_label": "Confirm password",
+    "confirm_password_placeholder": "Repeat your password",
+    "submit": "Create account",
+    "submitting": "Creating account...",
+    "have_account": "Already have an account?",
+    "signin_link": "Sign in",
+    "terms_notice": "By signing up, you agree to our Terms of Service and Privacy Policy.",
+    "errors": {
+      "name_required": "Full name is required",
+      "email_required": "Email is required",
+      "email_invalid": "Please enter a valid email address",
+      "password_required": "Password is required",
+      "password_too_short": "Password must be at least 8 characters",
+      "password_mismatch": "Passwords do not match",
+      "signup_failed": "Sign up failed. Please try again."
+    }
+  },
   "auth_2fa": {
     "loading": "Loading...",
     "title": "Two-Factor Authentication",
@@ -54,6 +111,52 @@
       "missing_challenge": "Missing challenge. Please sign in again.",
       "session_expired": "Session expired. Please sign in again.",
       "verification_failed": "Verification failed"
+    }
+  },
+  "auth_wallet_setup": {
+    "title": "Set Up Your Wallet",
+    "description": "ACBU uses the Stellar network. How would you like to set up your wallet?",
+    "back": "Back",
+    "generate": {
+      "title": "Generate New Wallet",
+      "description": "Create a new secure wallet locally",
+      "new_wallet": "Your New Wallet",
+      "save_key_notice": "Please save this secret key somewhere safe. It is required to recover your wallet if you switch devices.",
+      "saving": "Saving...",
+      "saved": "I have saved my key"
+    },
+    "import": {
+      "title": "Import Existing Seed",
+      "description": "Use an existing Stellar secret key",
+      "heading": "Import Seed",
+      "seed_help": "Enter your Stellar secret key (starts with 'S'). It will be stored encrypted on this device.",
+      "importing": "Importing...",
+      "submit": "Import Wallet"
+    },
+    "connect": {
+      "title": "Connect External Wallet",
+      "connecting": "Connecting...",
+      "description": "Connect Freighter, Lobstr, or others"
+    },
+    "errors": {
+      "not_logged_in": "Not logged in",
+      "address_rejected": "Backend did not accept the wallet address. Please retry.",
+      "seed_required": "Seed is required.",
+      "kit_initializing": "Wallet Kit is still initializing...",
+      "save_failed": "Failed to save wallet",
+      "import_failed": "Invalid seed or failed to import.",
+      "connect_failed": "Failed to connect wallet",
+      "passcode_unavailable": "Passcode not available. Please log in again to set up your wallet."
+    },
+    "success": {
+      "created": "New wallet created successfully!",
+      "imported": "Wallet imported successfully!",
+      "connected": "External wallet connected successfully!"
+    },
+    "modal": {
+      "title": "Set Up Your Wallet",
+      "description": "ACBU uses the Stellar network. How would you like to set up your wallet?",
+      "back": "Back"
     }
   },
   "navigation": {
@@ -89,6 +192,7 @@
       "description": "Use an existing Stellar secret key",
       "heading": "Import Seed",
       "seed_help": "Enter your Stellar secret key (starts with 'S'). It will be stored encrypted on this device.",
+      "seed_label": "Stellar secret key",
       "importing": "Importing...",
       "submit": "Import Wallet"
     },
@@ -248,7 +352,7 @@
       "mint_title": "Confirm Mint",
       "burn_title": "Confirm Burn",
       "mint_description": "Mint ACBU by exchanging {currency} {amount}{estimate}",
-      "estimate": " (≈ {amount} ACBU at current rates)",
+      "estimate": " (  {amount} ACBU at current rates)",
       "burn_description": "Burn ACBU {amount} and withdraw to bank account",
       "amount": "Amount:",
       "cancel": "Cancel",
