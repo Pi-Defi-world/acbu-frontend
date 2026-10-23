@@ -119,7 +119,7 @@ export default function BillsPage() {
     // Validate amount
     const numericAmount = parseFloat(amount);
     if (numericAmount < selectedProvider.minAmount || numericAmount > selectedProvider.maxAmount) {
-      setPaymentError(`Amount must be between ACBU ${selectedProvider.minAmount} and ACBU ${selectedProvider.maxAmount}`);
+      setPaymentError(`Amount must be between ${CURRENCY} ${selectedProvider.minAmount} and ${CURRENCY} ${selectedProvider.maxAmount}`);
       return;
     }
 
@@ -209,7 +209,7 @@ export default function BillsPage() {
             Bills & Subscriptions
           </h1>
           <p className="text-muted-foreground text-sm">
-            Pay utilities, airtime, and recurring bills with ACBU
+            Pay utilities, airtime, and recurring bills with {CURRENCY}
           </p>
         </div>
       </div>
@@ -231,7 +231,7 @@ export default function BillsPage() {
               </div>
             ) : (
               <p className="text-3xl font-bold">
-                ACBU {balance !== null ? formatAmount(balance) : "0"}
+                {CURRENCY} {balance !== null ? formatAmount(balance) : "0"}
               </p>
             )}
           </Card>
@@ -258,7 +258,7 @@ export default function BillsPage() {
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground text-xs">
-                      ACBU {formatAmount(provider.minAmount)} - ACBU{" "}
+                      {CURRENCY} {formatAmount(provider.minAmount)} - {CURRENCY}{" "}
                       {formatAmount(provider.maxAmount)}
                     </span>
                   </div>
@@ -321,7 +321,7 @@ export default function BillsPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Amount:</span>
                   <span className="text-foreground font-medium">
-                    ACBU {formatAmount(amount)}
+                    {CURRENCY} {formatAmount(amount)}
                   </span>
                 </div>
                 <div className="border-border flex justify-between border-t pt-2 text-sm">
