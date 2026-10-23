@@ -14,7 +14,7 @@ import type { ReactNode } from "react";
 export default async function LocaleLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
   params: Promise<{ locale: string }>;
 }>) {
   return <>{children}</>;
