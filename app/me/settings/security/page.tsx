@@ -1,71 +1,64 @@
 'use client';
 
+import React, { useState } from 'react';
 
 
 import React, { useMemo, useState } from 'react';
 import { plural } from '@/lib/plural';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Shield, Trash2, AlertTriangle, Globe, Key, Zap } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-
-type SessionItem = {
-  id: string;
-  device: string;
-  location: string;
-  lastSeen: string;
-  current: boolean;
-};
-
-type ApiKeyItem = {
-  id: string;
-  name: string;
-  createdAt: string;
-  lastUsed: string;
-};
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useAuth } from '@/contexts/auth-context';
+import * as userApi from '@/lib/api/user';
+import { ArrowLeft, AlertTriangle, Trash2 } from 'lucide-react';
 
 export default function SecurityPage() {
-  const [is2faEnabled, setIs2faEnabled] = useState(true);
-  const [sessions, setSessions] = useState<SessionItem[]>([
-    { id: 'current', device: 'Current device', location: 'Your location', lastSeen: 'Now', current: true },
-    { id: 'desktop-01', device: 'Desktop — Chrome', location: 'Lagos, NG', lastSeen: '2 hours ago', current: false },
-    { id: 'mobile-02', device: 'Mobile — Safari', location: 'Abuja, NG', lastSeen: 'Yesterday', current: false },
-  ]);
-  const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([
-    { id: 'key-1', name: 'Trading bot', createdAt: 'Mar 12, 2026', lastUsed: 'Today' },
-  ]);
-  const [message, setMessage] = useState<string>('');
+  const router = useRouter();
+  const { logout } = useAuth();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState('');
 
-  const activeSessionCount = useMemo(() => sessions.length, [sessions]);
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setError('');
 
-  const revokeSession = (sessionId: string) => {
-    setSessions((prev) => prev.filter((session) => session.id !== sessionId));
-    setMessage('Session revoked successfully.');
-  };
-
-  const revokeApiKey = (keyId: string) => {
-    setApiKeys((prev) => prev.filter((key) => key.id !== keyId));
-    setMessage('API key revoked successfully.');
-  };
-
-  const createApiKey = () => {
-    const id = `key-${Date.now()}`;
-    setApiKeys((prev) => [
-      ...prev,
-      {
-        id,
-        name: `New key ${prev.length + 1}`,
-        createdAt: 'Today',
-        lastUsed: 'Never',
-      },
-    ]);
-    setMessage('New API key created. Copy it before leaving the page.');
+    try {
+      await userApi.deleteMe();
+      await logout();
+      router.replace('/auth/signin');
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Failed to delete account. Please try again.',
+      );
+      setDeleting(false);
+    }
   };
 
   return (
     <>
+      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+        <div className="px-4 py-3 flex items-center gap-3">
+          <Link href="/me/settings" aria-label="Back to settings">
+            <ArrowLeft className="w-5 h-5 text-primary" />
+          </Link>
+          <div>
+            <h1 className="text-lg font-bold text-foreground">Security</h1>
+            <p className="text-sm text-muted-foreground">
+              Account security settings
+            </p>
       <div className="page-header">
         <div className="page-header-row">
           <Link
@@ -117,6 +110,14 @@ export default function SecurityPage() {
           </Card>
 
           <Card className="border-border p-4">
+            <h2 className="text-base font-medium text-foreground">
+              Security controls unavailable
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Session management, API key management, and changing two-factor
+              authentication are not available here. No security changes are
+              made from this page.
+            </p>
             <div className="flex items-center justify-between gap-4 mb-4">
               <div>
                 <h2 className="text-base font-medium text-foreground">Active Sessions</h2>
@@ -193,10 +194,22 @@ export default function SecurityPage() {
               </div>
               <div className="flex-1 min-w-0 space-y-3">
                 <div>
+                  <h2 className="text-base font-medium text-destructive">
+                    Delete account
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Permanently delete your account and associated data. This
+                    action cannot be undone.
+                  </p>
                   <h2 className="text-base font-medium text-destructive truncate" title="Danger Zone">Danger Zone</h2>
                   <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data. This action cannot be undone.</p>
                 </div>
-                <Button variant="destructive" className="w-full sm:w-auto">
+                <Button
+                  variant="destructive"
+                  className="w-full sm:w-auto"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  disabled={deleting}
+                >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete Account
                 </Button>
@@ -205,6 +218,39 @@ export default function SecurityPage() {
           </Card>
         </div>
       </PageContainer>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes your account and associated data. You
+              cannot undo this action.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          <AlertDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting...' : 'Confirm deletion'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
