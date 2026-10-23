@@ -61,7 +61,11 @@ export default function SecurityPage() {
             </p>
       <div className="page-header">
         <div className="page-header-row">
-          <Link href="/me/settings">
+          <Link
+            href="/me/settings"
+            aria-label="Back to settings"
+            className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
             <ArrowLeft className="w-5 h-5 text-primary" />
           </Link>
           <div>
@@ -73,6 +77,38 @@ export default function SecurityPage() {
 
       <PageContainer>
         <div className="space-y-4">
+          {message && (
+            <Card className="border-border p-4 bg-surface">
+              <p className="text-sm text-foreground">{message}</p>
+            </Card>
+          )}
+
+          <Card className="border-border p-4">
+            <div className="flex items-center gap-4">
+              <div className="bg-primary/10 p-2 rounded-full">
+                <Shield className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 id="2fa-label" className="text-base font-medium text-foreground">Two-Factor Authentication</h2>
+                <p className="text-sm text-muted-foreground">Protect your account with an additional security step on sign in.</p>
+              </div>
+              <Switch
+                checked={is2faEnabled}
+                onCheckedChange={setIs2faEnabled}
+                aria-labelledby="2fa-label"
+              />
+            </div>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                {is2faEnabled ? '2FA is enabled on this account.' : '2FA is currently disabled.'}
+              </p>
+              <Button variant="outline" onClick={() => setMessage('Rotate device flow started.')}>
+                <Zap className="w-4 h-4 mr-2" />
+                Rotate Device
+              </Button>
+            </div>
+          </Card>
+
           <Card className="border-border p-4">
             <h2 className="text-base font-medium text-foreground">
               Security controls unavailable

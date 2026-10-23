@@ -18,7 +18,19 @@
     "some_currencies_missing_rate": "Some currencies missing a rate",
     "usd": "USD",
     "transaction_count": "{count, plural, one {# transaction} other {# transactions}}",
-    "session_count": "{count, plural, one {# active session} other {# active sessions}}"
+    "session_count": "{count, plural, one {# active session} other {# active sessions}}",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tx_type": {
+      "mint": "Mint",
+      "burn": "Burn",
+      "transfer": "Transfer"
+    },
+    "status": {
+      "pending": "Pending",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
   },
   "features": {
     "send": {
@@ -36,6 +48,45 @@
     "rates": {
       "title": "Rates",
       "description": "Market rates"
+    }
+  },
+  "auth_signin": {
+    "title": "Sign in",
+    "description": "Sign in to your account",
+    "email_label": "Email",
+    "email_placeholder": "you@example.com",
+    "password_label": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in...",
+    "no_account": "Don't have an account?",
+    "signup_link": "Sign up",
+    "forgot_password": "Forgot password?",
+    "errors": {
+      "invalid_credentials": "Invalid email or password",
+      "required_fields": "Please enter your email and password",
+      "login_failed": "Sign in failed",
+      "unexpected": "An unexpected error occurred. Please try again."
+    }
+  },
+  "auth_signup": {
+    "title": "Create account",
+    "description": "Sign up to get started",
+    "name_label": "Full name",
+    "name_placeholder": "Jane Doe",
+    "email_label": "Email",
+    "email_placeholder": "you@example.com",
+    "password_label": "Password",
+    "confirm_password_label": "Confirm password",
+    "submit": "Sign up",
+    "submitting": "Creating account...",
+    "has_account": "Already have an account?",
+    "signin_link": "Sign in",
+    "errors": {
+      "required_fields": "Please fill in all required fields",
+      "password_mismatch": "Passwords do not match",
+      "password_too_short": "Password must be at least 8 characters",
+      "signup_failed": "Sign up failed",
+      "unexpected": "An unexpected error occurred. Please try again."
     }
   },
   "auth_2fa": {
@@ -75,7 +126,7 @@
     "current_address": "Current Wallet Address",
     "setup_title": "Change or Setup Wallet",
     "back": "← Back",
-    "security_notice": "Your wallet secret will be encrypted with your account passcode and stored securely on this device.",
+    "security_notice": "Your key is generated in your browser and encrypted in this device's IndexedDB. ACBU receives only your public address. This protects data at rest, not against active XSS or a compromised device.",
     "generate": {
       "title": "Generate New Wallet",
       "description": "Create a new secure wallet locally",
@@ -89,6 +140,7 @@
       "description": "Use an existing Stellar secret key",
       "heading": "Import Seed",
       "seed_help": "Enter your Stellar secret key (starts with 'S'). It will be stored encrypted on this device.",
+      "seed_label": "Stellar secret key",
       "importing": "Importing...",
       "submit": "Import Wallet"
     },
@@ -248,7 +300,7 @@
       "mint_title": "Confirm Mint",
       "burn_title": "Confirm Burn",
       "mint_description": "Mint ACBU by exchanging {currency} {amount}{estimate}",
-      "estimate": " (≈ {amount} ACBU at current rates)",
+      "estimate": " (» {amount} ACBU at current rates)",
       "burn_description": "Burn ACBU {amount} and withdraw to bank account",
       "amount": "Amount:",
       "cancel": "Cancel",

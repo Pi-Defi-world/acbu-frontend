@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useDeferredValue } from 'react';
+import React, { useState, useEffect, useDeferredValue, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { PageContainer } from '@/components/layout/page-container';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,12 +20,13 @@ function formatDate(iso: string) {
   return parseUtcDate(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
 }
 
-export default function TransactionsPage() {
+function TransactionsContent() {
   const opts = useApiOpts();
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const deferredQuery = useDeferredValue(query);
   const filtered = deferredQuery
     ? items.filter((t) =>
@@ -109,5 +111,13 @@ export default function TransactionsPage() {
         )}
       </PageContainer>
     </>
+  );
+}
+
+export default function TransactionsPage() {
+  return (
+    <Suspense fallback={<SkeletonList count={5} />}>
+      <TransactionsContent />
+    </Suspense>
   );
 }

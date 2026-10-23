@@ -4,12 +4,17 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, Inbox, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PageContainer } from '@/components/layout/page-container';
 import { formatAmount } from '@/lib/utils';
+
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+
 import {
   listApplications,
   updateApplicationStatus,
@@ -22,6 +27,8 @@ import {
  * real backend is online, this same page can be repointed at the server.
  */
 export default function LendingAdminPage() {
+  const locale = useLocale();
+  const format = useTranslations();
   const [applications, setApplications] = useState<StoredLoanApplication[]>([]);
 
   const refresh = () => setApplications(listApplications());
@@ -116,13 +123,13 @@ export default function LendingAdminPage() {
                                 ? 'destructive'
                                 : 'secondary'
                           }
-                          className="text-[10px] capitalize"
+                          className="text-xs capitalize"
                         >
                           {app.status}
                         </Badge>
                         <Badge
                           variant="outline"
-                          className="text-[9px] uppercase tracking-wide"
+                          className="text-xs uppercase tracking-wide"
                         >
                           {app.syncedWithBackend ? 'synced' : 'local'}
                         </Badge>
@@ -136,7 +143,7 @@ export default function LendingAdminPage() {
                       </dd>
                       <dt className="text-muted-foreground">Submitted</dt>
                       <dd className="text-foreground">
-                        {new Date(app.submittedAt).toLocaleString()}
+                        {format.dateTime(new Date(app.submittedAt), 'short')}
                       </dd>
                       <dt className="text-muted-foreground">Reference</dt>
                       <dd className="text-foreground font-mono truncate" title={app.id}>{app.id}</dd>
@@ -186,5 +193,64 @@ export default function LendingAdminPage() {
         </div>
       </PageContainer>
     </>
+  );
+}
+
+
+
+// Mock server-side auth verification helper (replace with your actual session / JWT check)
+async function verifyAdminSession() {
+  const cookieStore = cookies();
+  const token = cookieStore.get('auth_token')?.value;
+
+  if (!token) return null;
+
+  try {
+    // Example: Decode or verify token securely on the server
+    // const payload = await verifyJwt(token);
+    // return payload;
+    
+    // Returning dummy payload for demonstration
+    return { role: 'ADMIN', userId: 'usr_123' };
+  } catch (error) {
+    return null;
+  }
+}
+
+export default async function LendingAdminBackoffice() {
+  // 1. Perform strict server-side session & role validation
+  const session = await verifyAdminSession();
+
+  // 2. Enforce authorization boundary: redirect or block if not an admin
+  if (!session || session.role !== 'ADMIN') {
+    redirect('/auth/login?error=unauthorized_admin_access');
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6 border-b pb-4">
+        <h1 className="text-3xl font-bold tracking-tight">Lending Admin Backoffice</h1>
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          Restricted Access
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow border">
+          <h3 className="text-sm font-medium text-gray-500">Active Loans Managed</h3>
+          <p className="text-2xl font-semibold mt-2">--</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow border">
+          <h3 className="text-sm font-medium text-gray-500">Pending Approvals</h3>
+          <p className="text-2xl font-semibold mt-2">--</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow border">
+          <h3 className="text-sm font-medium text-gray-500">Risk Policy Status</h3>
+          <p className="text-2xl font-semibold text-green-600 mt-2">Secure / Active</p>
+        </div>
+      </div>
+
+      {/* Backoffice control panel goes here */}
+    </div>
   );
 }

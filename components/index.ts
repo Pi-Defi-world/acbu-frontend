@@ -7,6 +7,7 @@
 
 // Root-level components
 export { AppLayout } from "./app-layout";
+export { DesktopSidebar } from "./desktop-sidebar";
 export { ErrorBoundary } from "./error-boundary";
 // ErrorTestTrigger is intentionally not exported: it is a development-only
 // utility that should not be included in production bundles.
@@ -25,6 +26,13 @@ export { PageContainer } from "./layout/page-container";
 
 // Navigation
 export { BackButton } from "./navigation/BackButton";
+export {
+  isNavItemActive,
+  primaryNavItems,
+  secondaryNavItems,
+  stripLocalePrefix,
+  type NavItem,
+} from "./navigation/nav-items";
 
 // Onboarding
 export { OnboardingAudio, OnboardingVideo } from "./onboarding/media";

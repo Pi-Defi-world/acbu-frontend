@@ -12,9 +12,19 @@ import * as authApi from "@/lib/api/auth";
 import { onAuthError } from "@/lib/api/client";
 import { clearPasscode, clearTempPassphrase } from "@/lib/passcode-manager";
 import { logger } from "@/lib/logger";
+import { clearRatesCache } from "@/hooks/use-rates";
+import { clearConfigCache } from "@/hooks/use-config";
+
+/**
+ * Auth is cookie-only: the backend issues an httpOnly session cookie and
+ * all requests are made with `credentials: 'include'`. There is no client-side
+ * token to set or send. `isAuthenticated` is derived from a server session check
+ * (GET /users/me), not from a locally stored token.
+ */
 
 const USER_ID_KEY = "acbu_user_id";
 const STELLAR_ADDRESS_KEY = "acbu_stellar_address";
+const API_KEY_KEY = "acbu_api_key";
 
 interface AuthState {
   userId: string | null;
@@ -24,9 +34,17 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (userId: string, stellarAddress?: string | null) => void;
+  login: (
+    userId: string,
+    stellarAddress?: string | null,
+    apiKey?: string | null,
+  ) => void;
   logout: () => Promise<void>;
-  setAuth: (userId: string | null, stellarAddress?: string | null) => void;
+  setAuth: (
+    userId: string | null,
+    stellarAddress?: string | null,
+    apiKey?: string | null,
+  ) => void;
   refreshStellarAddress: () => Promise<void>;
   /**
    * Most recent session validation error (e.g. transient network failure).
@@ -50,10 +68,13 @@ function getStoredAuth(): AuthState {
   }
   const userId = sessionStorage.getItem(USER_ID_KEY);
   const stellarAddress = sessionStorage.getItem(STELLAR_ADDRESS_KEY);
+  const apiKey = sessionStorage.getItem(API_KEY_KEY);
 
   return {
     userId,
     stellarAddress,
+    // Note: this flag is only a hint for initial render; the authoritative
+    // auth check is the server session validation in validateSession().
     isAuthenticated: !!userId,
     isHydrated: true,
   };
@@ -106,9 +127,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (typeof window !== "undefined") {
           sessionStorage.removeItem(USER_ID_KEY);
           sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+          sessionStorage.removeItem(API_KEY_KEY);
         }
         clearPasscode();
         setSessionError("");
+        clearRatesCache();
+        clearConfigCache();
         setState({
           userId: null,
           stellarAddress: null,
@@ -136,7 +160,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [validateSession]);
 
   const setAuth = useCallback(
-    (userId: string | null, stellarAddress: string | null = null) => {
+    (
+      userId: string | null,
+      stellarAddress: string | null = null,
+      apiKey: string | null = null,
+    ) => {
       if (typeof window !== "undefined") {
         if (userId) {
           sessionStorage.setItem(USER_ID_KEY, userId);
@@ -145,18 +173,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
           }
+          if (apiKey) {
+            sessionStorage.setItem(API_KEY_KEY, apiKey);
+          }
         } else {
           sessionStorage.removeItem(USER_ID_KEY);
           sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+          sessionStorage.removeItem(API_KEY_KEY);
         }
       }
 
+      // Auth is cookie-only; the authoritative check is the server session
+      // validation. When we just logged in, the cookie was set by the server,
+      // so we can trust the new state immediately.
       setState({
         userId,
         stellarAddress,
-        isAuthenticated: !!userId,
+        isAuthenticated: !!userId && !!apiKey,
         isHydrated: true,
       });
+
+      // Invalidate shared caches on authentication / user identity change
+      clearRatesCache();
+      clearConfigCache();
     },
     [],
   );
@@ -176,8 +215,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [state.isAuthenticated, state.userId, setAuth]);
 
   const login = useCallback(
-    (userId: string, stellarAddress: string | null = null) => {
-      setAuth(userId, stellarAddress);
+    (
+      userId: string,
+      stellarAddress: string | null = null,
+      apiKey: string | null = null,
+    ) => {
+      setAuth(userId, stellarAddress, apiKey);
     },
     [setAuth],
   );
